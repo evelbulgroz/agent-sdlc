@@ -172,7 +172,7 @@ export async function runTraceSkillAuditor({
 		}
 
 		const prompt = [
-			'You are the FitnessApp SDLC Trace Attribution Auditor.',
+			'You are the SDLC Trace Attribution Auditor.',
 			'Analyze the following prompt friction and failure signals for this run and attribute root causes.',
 			'',
 			'ARCHITECTURAL RATCHET PATTERN RULES:',

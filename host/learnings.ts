@@ -109,8 +109,8 @@ export async function resolveLearningStorePath(
 	repoRoot?: string,
 ): Promise<string> {
 	if (options.store) return isAbsolute(options.store) ? options.store : resolve(process.cwd(), options.store);
-	if (process.env.FITNESS_APP_LEARNINGS_PATH) {
-		return resolve(process.cwd(), process.env.FITNESS_APP_LEARNINGS_PATH);
+	if (process.env.AGENT_SDLC_LEARNINGS_PATH) {
+		return resolve(process.cwd(), process.env.AGENT_SDLC_LEARNINGS_PATH);
 	}
 	const effectiveRoot = repoRoot ?? options.rootDir ?? (await resolveLearningRepoRoot());
 	const config = resolveLearningsConfig({ rootDir: effectiveRoot, profile: options.profile });

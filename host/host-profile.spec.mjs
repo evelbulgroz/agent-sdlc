@@ -344,13 +344,13 @@ test('@ac AC-04 @case AC-04.1 anyHighRiskPaths and hasHighRiskPaths respect cust
 	}
 });
 
-test('@ac AC-04 @case AC-04.2 review-generation.ts, citation-verifier.ts, failure-packet.ts, github-pr.ts, and reversible-decisions.ts contain no hardcoded ddd-base, fitnessapp-base, or apps/** strings', () => {
+test('@ac AC-04 @case AC-04.2 review-generation.ts, citation-verifier.ts, failure-packet.ts, github-pr.ts, and reversible-decisions.ts contain no hardcoded ddd-base, example-base, or apps/** strings', () => {
 	const files = [
 		'review/review-generation.ts', 'review/citation-verifier.ts',
 		'review/failure-packet.ts', 'adapters/github-pr.ts',
 		'policy/reversible-decisions.ts',
 	];
-	const forbidden = /ddd-base|fitnessapp-base|apps\/\*\*/;
+	const forbidden = /ddd-base|example-base|apps\/\*\*/;
 	for (const rel of files) {
 		assert.equal(forbidden.test(fs.readFileSync(path.join(PACKAGE_ROOT, rel), 'utf8')), false, `Forbidden literal in ${rel}`);
 	}
@@ -397,7 +397,7 @@ test('@ac AC-05 @case AC-05.2 pipeline-deterministic-roles.ts and task-quality-g
 
 test('@ac AC-06 @case AC-06.1 no production .ts file under packages/agent-sdlc/ contains forbidden host-specific literals', () => {
 	const forbidden =
-		/fitnessapp-agent|fitnessapp\.local|agent-run-init\.sh|fitnessapp-base/;
+		/example-agent|example\.local|agent-run-init\.sh|example-base/;
 	const tsFiles = collectTsFiles(PACKAGE_ROOT);
 	for (const file of tsFiles) {
 		const content = fs.readFileSync(file, 'utf8');
