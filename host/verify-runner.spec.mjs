@@ -277,7 +277,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile defaults require and headField whe
 			schemaVersion: '1.2.0',
 			profileId: 'legacy-client',
 			repositoryId: 'legacy-client',
-			adapter: 'fitness-app',
+			adapter: 'default',
 			stateDir: 'tools/.agent-sdlc',
 			reviewDir: 'tools/.review',
 			specDraftDir: 'docs/specs/drafts',

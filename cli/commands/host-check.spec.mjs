@@ -15,17 +15,17 @@ function withTempRoot(fn) {
 		});
 }
 
-test('@ac AC-07 @case AC-07.1 host check --json prints profileId fitness-app and adapter fitness-app and exits 0', async () => {
+test('@ac AC-07 @case AC-07.1 host check --json prints profileId default-host and adapter default and exits 0', async () => {
 	const outcome = await runCli(['host', 'check', '--json'], {
 		rootDir: REPOSITORY_ROOT,
 	});
 	assert.equal(outcome.exitCode, 0);
 	assert.equal(outcome.result.ok, true);
-	assert.equal(outcome.result.profileId, 'fitness-app');
-	assert.equal(outcome.result.adapter, 'fitness-app');
+	assert.equal(outcome.result.profileId, 'default-host');
+	assert.equal(outcome.result.adapter, 'default');
 	assert.deepEqual(JSON.parse(outcome.human), {
-		profileId: 'fitness-app',
-		adapter: 'fitness-app',
+		profileId: 'default-host',
+		adapter: 'default',
 	});
 });
 

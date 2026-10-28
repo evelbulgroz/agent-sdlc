@@ -50,6 +50,9 @@ function rememberProduction(
 }
 
 export function listBoundedPlanningFiles(rootDir: string): string[] {
+	if (!fs.existsSync(path.join(rootDir, 'packages/agent-sdlc'))) {
+		return listPackageBoundedPlanningFiles();
+	}
 	const found = new Set<string>(FIXED_PLANNING_FILES);
 	rememberProduction(rootDir, 'packages/agent-sdlc/policy/contracts', '', found);
 	rememberProduction(rootDir, 'packages/agent-sdlc/policy/task-planner', '', found);

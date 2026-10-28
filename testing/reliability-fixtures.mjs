@@ -134,7 +134,7 @@ export function canaryEvidence(overrides = {}) {
 }
 
 export const bindings = {
-	repositoryId: 'fitness-app',
+	repositoryId: 'agent-sdlc',
 	workflowHash: HASH,
 	boundedPlanningHash: HASH,
 	implementerRoleHash: HASH,

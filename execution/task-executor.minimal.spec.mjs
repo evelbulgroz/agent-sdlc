@@ -302,7 +302,7 @@ test('@ac AC-04 @case AC-04.1 a failing verification raises TASK_EXECUTION_FAILE
 					fs.writeFileSync(
 						path.join(pkgDir, 'package.json'),
 						JSON.stringify({
-							name: '@fitness-app/conditioning-service',
+							name: '@example/conditioning-service',
 							scripts: { test: 'node --test' },
 						}),
 					);

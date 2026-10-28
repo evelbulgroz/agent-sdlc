@@ -11,7 +11,9 @@ import {
 } from './navigability-support.mjs';
 import { findLeakedTestRunArtifacts } from './test-support.mjs';
 
-const AGENT_SDLC_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const AGENT_SDLC_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
 
 function filesUnder(directory) {
 	const found = [];

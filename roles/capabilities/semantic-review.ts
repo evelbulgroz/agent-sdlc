@@ -1,5 +1,5 @@
-import { truncateBody } from '@fitness-app/model-usage/sanitize-failure-text';
-import { estimatePromptTokens } from '@fitness-app/model-usage/tokenizer';
+import { truncateBody } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
+import { estimatePromptTokens } from '@evelbulgroz/model-usage-govenor/tokenizer';
 import { SEVERITIES } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
 

@@ -291,7 +291,7 @@ test('@ac AC-01 @case AC-01.1 deriveScopeFromDraft includes packages implied by 
 		owningContext: 'apps/services/conditioning',
 		touchedSurfaces: [
 			'apps/services/conditioning/src/conditioning/domain/conditioning-log.entity.ts',
-			'apps/frontends/fitnessapp-pwa-frontend/src/ui/SessionMetadata.tsx',
+			'apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
 			'docs/specs/artifacts/conditioning-log-property-rule-matrix.md',
 		],
 	};
@@ -300,11 +300,11 @@ test('@ac AC-01 @case AC-01.1 deriveScopeFromDraft includes packages implied by 
 
 	assert.deepEqual(
 		[...allowedPackages].sort(),
-		['apps/frontends/fitnessapp-pwa-frontend', 'apps/services/conditioning', 'docs'],
+		['apps/frontends/example-pwa-frontend', 'apps/services/conditioning', 'docs'],
 	);
 	assert.deepEqual(allowedPathPrefixes, [
 		'apps/services/conditioning/src/conditioning/domain/conditioning-log.entity.ts',
-		'apps/frontends/fitnessapp-pwa-frontend/src/ui/SessionMetadata.tsx',
+		'apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
 		'docs/specs/artifacts/conditioning-log-property-rule-matrix.md',
 	]);
 });
@@ -320,19 +320,19 @@ test('@ac AC-01 @case AC-01.2 deriveScopeFromDraft falls back to owningContext p
 
 test('@ac AC-01 @case AC-01.3 deriveScopeFromDraft incorporates taskManifest pathPrefixes and targetPackage', () => {
 	const draft = {
-		owningContext: 'apps/frontends/fitnessapp-pwa-frontend',
+		owningContext: 'apps/frontends/example-pwa-frontend',
 		touchedSurfaces: [
-			'apps/frontends/fitnessapp-pwa-frontend/src/domain/summary.ts',
+			'apps/frontends/example-pwa-frontend/src/domain/summary.ts',
 		],
 	};
 	const taskManifest = {
 		tasks: [
 			{
 				taskId: 'task-1',
-				targetPackage: 'apps/frontends/fitnessapp-pwa-frontend',
+				targetPackage: 'apps/frontends/example-pwa-frontend',
 				pathPrefixes: [
-					'apps/frontends/fitnessapp-pwa-frontend/src/domain',
-					'apps/frontends/fitnessapp-pwa-frontend/src/ui',
+					'apps/frontends/example-pwa-frontend/src/domain',
+					'apps/frontends/example-pwa-frontend/src/ui',
 				],
 			},
 		],
@@ -340,28 +340,28 @@ test('@ac AC-01 @case AC-01.3 deriveScopeFromDraft incorporates taskManifest pat
 
 	const { allowedPackages, allowedPathPrefixes } = deriveScopeFromDraft(draft, taskManifest);
 
-	assert.deepEqual(allowedPackages, ['apps/frontends/fitnessapp-pwa-frontend']);
+	assert.deepEqual(allowedPackages, ['apps/frontends/example-pwa-frontend']);
 	assert.deepEqual(allowedPathPrefixes, [
-		'apps/frontends/fitnessapp-pwa-frontend/src/domain/summary.ts',
-		'apps/frontends/fitnessapp-pwa-frontend/src/domain',
-		'apps/frontends/fitnessapp-pwa-frontend/src/ui',
+		'apps/frontends/example-pwa-frontend/src/domain/summary.ts',
+		'apps/frontends/example-pwa-frontend/src/domain',
+		'apps/frontends/example-pwa-frontend/src/ui',
 	]);
 });
 
 test('deriveScopeFromDraft remains the sole authorization scope deriver for a cross-package touched surface', () => {
 	const draft = {
 		owningContext: 'apps/services/conditioning',
-		touchedSurfaces: ['apps/frontends/fitnessapp-pwa-frontend/src/ui/SessionDetailPage.tsx'],
+		touchedSurfaces: ['apps/frontends/example-pwa-frontend/src/ui/SessionDetailPage.tsx'],
 	};
 
 	const { allowedPackages, allowedPathPrefixes } = deriveScopeFromDraft(draft);
 
 	assert.deepEqual(
 		[...allowedPackages].sort(),
-		['apps/frontends/fitnessapp-pwa-frontend', 'apps/services/conditioning'],
+		['apps/frontends/example-pwa-frontend', 'apps/services/conditioning'],
 	);
 	assert.deepEqual(allowedPathPrefixes, [
-		'apps/frontends/fitnessapp-pwa-frontend/src/ui/SessionDetailPage.tsx',
+		'apps/frontends/example-pwa-frontend/src/ui/SessionDetailPage.tsx',
 	]);
 });
 

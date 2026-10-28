@@ -394,7 +394,7 @@ test('@ac AC-02 @case AC-02.1 @case AC-02.2 @case AC-02.3 @ac AC-03 @case AC-03.
 
 test('@ac AC-03 @case AC-03.1 @case AC-03.2 @case AC-03.3 @case AC-03.4 pathScopedRules attach matching addenda and reject missing or executable files', () => {
 	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
-	const pwaImp = registry.loadRole('implementer', { authoredPaths: ['apps/frontends/fitnessapp-pwa-frontend/src/App.tsx'] });
+	const pwaImp = registry.loadRole('implementer', { authoredPaths: ['apps/frontends/example-pwa-frontend/src/App.tsx'] });
 	assert.ok(pwaImp.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'));
 	assert.equal(pwaImp.promptPolicy.includes('Path-Scoped Rules: Backend Services'), false);
 
@@ -402,7 +402,7 @@ test('@ac AC-03 @case AC-03.1 @case AC-03.2 @case AC-03.3 @case AC-03.4 pathScop
 	assert.ok(backendImp.promptPolicy.includes('Path-Scoped Rules: Backend Services'));
 	assert.equal(backendImp.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'), false);
 
-	const criticPwa = registry.loadRole('critic-reviewer', { authoredPaths: ['apps/frontends/fitnessapp-pwa-frontend/src/App.tsx'] });
+	const criticPwa = registry.loadRole('critic-reviewer', { authoredPaths: ['apps/frontends/example-pwa-frontend/src/App.tsx'] });
 	assert.equal(criticPwa.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'), false);
 
 	const root = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `reg-scoped-inv-${crypto.randomUUID()}`);

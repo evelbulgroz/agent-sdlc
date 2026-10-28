@@ -1,6 +1,6 @@
 # Architecture & Design Principles (`packages/agent-sdlc/`)
 
-Conceptual architecture, design principles, and outer/inner loop orchestration for the local-first LangGraph SDLC Workflow Orchestrator and Dynamic Critic Review specialist (`@fitness-app/agent-sdlc`, a private workspace package consuming `@fitness-app/model-usage` at `packages/model-usage`).
+Conceptual architecture, design principles, and outer/inner loop orchestration for the local-first LangGraph SDLC Workflow Orchestrator and Dynamic Critic Review specialist (`@evelbulgroz/agent-sdlc`, consuming `@evelbulgroz/model-usage-govenor`).
 
 For installation, host repository onboarding, CLI reference, and development/testing commands, see [`README.md`](./README.md) and [`AGENTS.md`](./AGENTS.md).
 
@@ -20,7 +20,7 @@ It was created not to compete with commercial cloud agent platforms, but as a pe
 > **Governing Maxim:** *Code for invariants and mechanisms; Prompts for policy and synthesis; Agents to build and maintain the code.*
 
 1. **Local-first and autonomous:** Runs entirely within the local repository on Node.js 22 (`>= 22.18.0` with native `.ts` type stripping where `node -p process.features.typescript` prints `strip`) and LangGraph JS/TS—without cloud agent platforms, LangSmith, or external CI runners.
-2. **Governed model invocations:** 100% of LLM calls route through `packages/model-usage/governor.ts` (`@fitness-app/model-usage`) under consumer `agent-sdlc`, with pre-dispatch budget reservations and immutable attempt accounting.
+2. **Governed model invocations:** 100% of LLM calls route through the Model Usage Governor (`@evelbulgroz/model-usage-govenor`) under consumer `agent-sdlc`, with pre-dispatch budget reservations and immutable attempt accounting.
 3. **Strict human authorization:** Workspace mutations require an affirmative `RunAuthorizationEnvelope` (`packages/agent-sdlc/policy/authorization.ts`). Git branch, commit, push, and draft PR operations require explicit envelope flags; `merge` and `deploy` are permanently forbidden.
 4. **Deterministic verification as exit criterion:** No model approves its own work. Canonical local done is the host verification gate in `.agents/sdlc-host.json` (`verify.argv`—progressive across Tier 1 `npm test` default, Tier 2 custom exit-code command, and Tier 3 receipt-backed `pnpm run agent:preflight` with `status=OK canonical=true`; see [`host/README.md`](./host/README.md)).
 5. **In-flight observability, retrospective analytics & compounding memory:** Active runs stream secret-safe `stderr` progress lines and project live state, task DAG status, and HITL continuation cards (`status.json`, `intent.md`, `plan.md`, `decisions.md`; see [`cli/README.md`](./cli/README.md) and [`persistence/README.md`](./persistence/README.md)). Across runs, the engine recalls high-confidence project learnings (`packages/agent-sdlc/roles/upstream-recall.ts`), stages new candidate learnings, and exposes retrospective analytics across per-role token/cost ledgers ([`ledger/README.md`](./ledger/README.md)), failure-fingerprint trace diagnostics ([`execution/README.md`](./execution/README.md)), stratified reliability and route-comparison reports ([`policy/README.md`](./policy/README.md)), and 3-run anti-overfitting critic/skill trend ratchets ([`roles/README.md`](./roles/README.md)).

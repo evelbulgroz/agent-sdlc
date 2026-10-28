@@ -9,7 +9,7 @@ import {
   formatScopeLearnings,
   resolveScopeLearnings,
 } from './upstream-recall.ts';
-import { addLearningBatch } from '../host/fitness-app-learnings.ts';
+import { addLearningBatch } from '../host/learnings.ts';
 
 describe('Upstream Recall & Scope Mapping', () => {
   let tmpDir;
@@ -41,8 +41,8 @@ describe('Upstream Recall & Scope Mapping', () => {
 
     it('maps frontend and e2e paths to their scopes', () => {
       assert.equal(
-        resolveTargetScope(['apps/frontends/fitnessapp-pwa-frontend/src/index.tsx']),
-        'fitnessapp-pwa-frontend'
+        resolveTargetScope(['apps/frontends/example-pwa-frontend/src/index.tsx']),
+        'example-pwa-frontend'
       );
       assert.equal(resolveTargetScope(['apps/e2e/product/smoke.spec.ts']), 'product-e2e');
     });

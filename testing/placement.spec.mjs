@@ -6,7 +6,8 @@ import test from 'node:test';
 import * as movedContracts from '../policy/contracts.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
 
 test('@ac AC-02 @case AC-02.1 capability modules exist', () => {
 	for (const relative of [
@@ -26,7 +27,7 @@ test('@ac AC-02 @case AC-02.2 the contracts root shim is absent', () => {
 
 test('@ac AC-02 @case AC-02.3 agent-sdlc help exits 0 and prints usage', () => {
 	const result = spawnSync(process.execPath, [path.join(ROOT, 'cli/cli.ts'), 'help'], {
-		cwd: REPOSITORY_ROOT,
+		cwd: ROOT,
 		encoding: 'utf8',
 		timeout: 60_000,
 	});
@@ -42,10 +43,10 @@ test('@ac AC-02 @case AC-02.4 packages/agent-sdlc contains its package.json', ()
 test('@ac AC-02 @case AC-02.5 boundedPlanningFiles names the moved planning modules', () => {
 	const source = fs.readFileSync(path.join(ROOT, 'policy/canary-planning-files.ts'), 'utf8');
 	for (const relative of [
-		'packages/agent-sdlc/policy/task-planner.ts',
-		'packages/agent-sdlc/policy/policy-gate.ts',
-		'packages/agent-sdlc/execution/task-executor.ts',
-		'packages/agent-sdlc/policy/contracts.ts',
+		'policy/task-planner.ts',
+		'policy/policy-gate.ts',
+		'execution/task-executor.ts',
+		'policy/contracts.ts',
 	]) {
 		assert.equal(source.includes(relative), true, relative);
 	}

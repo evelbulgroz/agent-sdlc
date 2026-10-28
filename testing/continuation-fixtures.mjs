@@ -40,7 +40,7 @@ export function sampleEnvelope(runId, approvedSpecHash, baseCommitSha, allowedPa
 		runId,
 		approvedSpecHash,
 		approvedPlanPolicyHash: 'b'.repeat(64),
-		repositoryId: 'fitness-app',
+		repositoryId: 'agent-sdlc',
 		baseCommitSha,
 		allowedPackages: ['packages/ddd-base'],
 		allowedPathPrefixes,

@@ -7,7 +7,8 @@ import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { listBoundedPlanningFiles } from '../policy/canary-planning-files.ts';
 import { currentCanaryBindings } from '../policy/reliability/canary.ts';
 
-const FACTORY_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
 
 const PILOT_MODULES = Object.freeze([
 	{
@@ -42,31 +43,36 @@ test('each pilot .ts module exports its runtime symbols', async () => {
 	}
 });
 
-test('pnpm --filter @fitness-app/agent-sdlc run typecheck and the pilot test suites exit 0', () => {
-	const typecheck = spawnSync('pnpm', ['--filter', '@fitness-app/agent-sdlc', 'run', 'typecheck'], {
-		cwd: REPOSITORY_ROOT,
-		encoding: 'utf8',
-		timeout: 60_000,
-	});
+test('pnpm --filter @evelbulgroz/agent-sdlc run typecheck and the pilot test suites exit 0', () => {
+	const typecheck = spawnSync(
+		'pnpm',
+		IS_STANDALONE ? ['run', 'typecheck'] : ['--filter', '@evelbulgroz/agent-sdlc', 'run', 'typecheck'],
+		{
+			cwd: FACTORY_ROOT,
+			encoding: 'utf8',
+			timeout: 60_000,
+		},
+	);
 	const typecheckOutput = `${typecheck.stdout ?? ''}\n${typecheck.stderr ?? ''}`;
 	assert.equal(typecheck.status, 0, typecheckOutput);
 
 	const env = { ...process.env };
 	delete env.NODE_TEST_CONTEXT;
+	const specPrefix = IS_STANDALONE ? '' : 'packages/agent-sdlc/';
 	const testSuite = spawnSync(
 		process.execPath,
 		[
 			'--test',
 			'--test-concurrency=1',
-			'packages/agent-sdlc/testing/type-gate.spec.mjs',
-			'packages/agent-sdlc/testing/verify-scripts.spec.mjs',
-			'packages/agent-sdlc/testing/type-escape.spec.mjs',
-			'packages/agent-sdlc/policy/contracts/dag-schema.spec.mjs',
-			'packages/agent-sdlc/policy/contract-types.spec.mjs',
-			'packages/agent-sdlc/execution/ac-coverage.spec.mjs',
+			`${specPrefix}testing/type-gate.spec.mjs`,
+			`${specPrefix}testing/verify-scripts.spec.mjs`,
+			`${specPrefix}testing/type-escape.spec.mjs`,
+			`${specPrefix}policy/contracts/dag-schema.spec.mjs`,
+			`${specPrefix}policy/contract-types.spec.mjs`,
+			`${specPrefix}execution/ac-coverage.spec.mjs`,
 		],
 		{
-			cwd: REPOSITORY_ROOT,
+			cwd: FACTORY_ROOT,
 			encoding: 'utf8',
 			timeout: 120_000,
 			env,
@@ -79,7 +85,8 @@ test('pnpm --filter @fitness-app/agent-sdlc run typecheck and the pilot test sui
 test('the computed canary bindings include policy/contracts/dag-schema.ts', () => {
 	const bounded = listBoundedPlanningFiles(REPOSITORY_ROOT);
 	assert.equal(
-		bounded.includes('packages/agent-sdlc/policy/contracts/dag-schema.ts'),
+		bounded.includes('packages/agent-sdlc/policy/contracts/dag-schema.ts') ||
+		bounded.includes('policy/contracts/dag-schema.ts'),
 		true,
 	);
 	const bindings = currentCanaryBindings(REPOSITORY_ROOT);

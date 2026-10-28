@@ -124,7 +124,7 @@ test('findingsFromExistingReview hydrates skip payloads from findingsJson', () =
 		{
 			severity: 'P1',
 			category: 'testing',
-			file: 'apps/frontends/fitnessapp-pwa-frontend/src/ui/AnalysisPage.spec.tsx',
+			file: 'apps/frontends/example-pwa-frontend/src/ui/AnalysisPage.spec.tsx',
 			evidence: 'DIVERGENT AC-04',
 			impact: 'Invariant broken',
 			remediation: 'Keep last series selected',

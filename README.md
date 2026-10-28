@@ -1,12 +1,17 @@
-# LangGraph SDLC Workflow Automation (`packages/agent-sdlc/`)
+# LangGraph SDLC Workflow Automation
 
-**Living home** for the local-first LangGraph SDLC Workflow Orchestrator and Dynamic Critic Review specialist (`@fitness-app/agent-sdlc`, a private workspace package consuming `@fitness-app/model-usage` at `packages/model-usage`).
+**Living home** for the local-first LangGraph SDLC Workflow Orchestrator and Dynamic Critic Review specialist (`@evelbulgroz/agent-sdlc`, consuming `@evelbulgroz/model-usage-govenor`).
 
-The engine automates the development lifecycle from a structured specification to a verified, critic-reviewed, and optionally locally committed implementation ready for operator Git signoff—routing 100% of model invocations through `packages/model-usage/governor.ts` (`@fitness-app/model-usage`), requiring an affirmative `RunAuthorizationEnvelope` (`packages/agent-sdlc/policy/authorization.ts`) before workspace mutations, and enforcing the host verification gate in `.agents/sdlc-host.json` (`verify.argv`—progressive across Tier 1 `npm test` default, Tier 2 custom exit-code command, and Tier 3 receipt-backed `pnpm run agent:preflight` with `status=OK canonical=true`).
+The engine automates the development lifecycle from a structured specification to a verified, critic-reviewed, and optionally locally committed implementation ready for operator Git signoff—routing 100% of model invocations through the Model Usage Governor (`@evelbulgroz/model-usage-govenor`), requiring an affirmative `RunAuthorizationEnvelope` (`policy/authorization.ts`) before workspace mutations, and enforcing the host verification gate in `.agents/sdlc-host.json` (`verify.argv`—progressive across Tier 1 `npm test` default, Tier 2 custom exit-code command, and Tier 3 receipt-backed `pnpm run agent:preflight` with `status=OK canonical=true`).
 
 **Canonical references:**
 - **Architecture, design principles & outer/inner loops:** [`ARCHITECTURE.md`](./ARCHITECTURE.md)
-- Governed model execution: [`packages/model-usage/README.md`](../model-usage/README.md)
+- **AI software factory philosophy:** [`docs/philosophy.md`](./docs/philosophy.md)
+- **Operator shell & authorization boundary:** [`docs/operator-shell-and-authorization.md`](./docs/operator-shell-and-authorization.md)
+- **Dynamic critic review protocol:** [`docs/critic-protocol.md`](./docs/critic-protocol.md)
+- **Anti-patterns & prohibitions:** [`docs/anti-patterns.md`](./docs/anti-patterns.md)
+- **Institutional memory & learnings:** [`docs/institutional-memory.md`](./docs/institutional-memory.md)
+- Governed model execution: [`@evelbulgroz/model-usage-govenor`](https://github.com/evelbulgroz/model-usage-govenor)
 - Package agent operating contract: [`AGENTS.md`](./AGENTS.md)
 - Host profile & workspace adapters: [`host/README.md`](./host/README.md)
 - Policy, authorization & task planning: [`policy/README.md`](./policy/README.md)
@@ -26,8 +31,8 @@ Detailed subsystem documentation lives in co-located module READMEs:
 | `persistence/` | SQLite event store (`runtime-store.ts`), artifacts, 7-day retention (`run-retention.ts`, `run-cleanup.ts`, `run-compaction.ts`, `run-archive.ts`) | [`persistence/README.md`](./persistence/README.md) |
 | `policy/` | `RunAuthorizationEnvelope`, Task DAG planner (`task-planner.ts`), `SdlcError` taxonomy (`errors.ts`), reliability/canary gates | [`policy/README.md`](./policy/README.md) |
 | `roles/` | Role/capability registries, cognitive tiering, upstream learning recall, closed-loop trace-skill learning (`scripts/`) | [`roles/README.md`](./roles/README.md) |
-| `adapters/` | Outbound ports to `@fitness-app/model-usage` (`model-governor.ts`) and GitHub draft PRs (`github-pr.ts`) | [`adapters/README.md`](./adapters/README.md) |
-| `host/` | `.agents/sdlc-host.json` (`1.3.0`) loader, 3-tier `verify` (`verify-config.ts`), 3-layer prompts, `fitness-app`/`script` adapters, `learnings.ts` | [`host/README.md`](./host/README.md) |
+| `adapters/` | Outbound ports to `@evelbulgroz/model-usage-govenor` (`model-governor.ts`) and GitHub draft PRs (`github-pr.ts`) | [`adapters/README.md`](./adapters/README.md) |
+| `host/` | `.agents/sdlc-host.json` (`1.3.0`) loader, 3-tier `verify` (`verify-config.ts`), 3-layer prompts, host adapters, `learnings.ts` | [`host/README.md`](./host/README.md) |
 | `ledger/` | Run token/cost ledger snapshots and model-usage archive records (`persistence/run-ledger.ts`, `persistence/ledger-archive.ts`) | [`ledger/README.md`](./ledger/README.md) |
 | `prompts/` | 3-layer role prompt & critic rubric composition (`roles/role-registry.ts`, `review/critic-prompt.ts`, `roles/defaults/`, `review/defaults/`) | [`prompts/README.md`](./prompts/README.md) |
 
@@ -58,11 +63,11 @@ packages/agent-sdlc/
 
 ### Recommended Deployment Strategy: Per-Machine Engine + Per-Project Host Profile
 
-`@fitness-app/agent-sdlc` is designed around a **hybrid deployment model** that separates the orchestration runtime from the repositories it operates on:
+`@evelbulgroz/agent-sdlc` is designed around a **hybrid deployment model** that separates the orchestration runtime from the repositories it operates on:
 
-1. **Single Per-Machine Engine Installation:** Install this workspace once on your workstation and expose its CLI binaries (`agent-sdlc`, `agent-review`, `agent-sdlc-trace`, `agent-sdlc-trends`) on your user `PATH`.
+1. **Single Per-Machine Engine Installation:** Install this package once on your workstation and expose its CLI binaries (`agent-sdlc`, `agent-review`, `agent-sdlc-trace`, `agent-sdlc-trends`) on your user `PATH`.
    - **Zero dependency pollution in target repos:** Client repositories do not need LangGraph, Zod, or engine scripts in their own `package.json` or lockfiles.
-   - **Centralized model & cost governance:** All runs share the single machine installation of [`@fitness-app/model-usage`](../model-usage/README.md), enforcing unified provider credentials, circuit-breaker state, and 3-tier lower-only budget ceilings (committed `.agents/model-usage-policy.json` $\to$ machine-wide `~/.config/model-usage/local-policy.json` $\to$ per-project `.agent-sdlc/local-policy.json` or `tools/.model-usage/local-policy.json`).
+   - **Centralized model & cost governance:** All runs share the single machine installation of [`@evelbulgroz/model-usage-govenor`](https://github.com/evelbulgroz/model-usage-govenor), enforcing unified provider credentials, circuit-breaker state, and 3-tier lower-only budget ceilings (committed `.agents/model-usage-policy.json` $\to$ machine-wide `~/.config/model-usage/local-policy.json` $\to$ per-project `.agent-sdlc/local-policy.json` or `tools/.model-usage/local-policy.json`).
 2. **Lightweight Per-Repository Onboarding:** Each target repository checks in a single declarative `.agents/sdlc-host.json` (`schemaVersion: "1.3.0"`) and gitignores `.agent-sdlc/`. Built-in workflow, role, and prompt defaults execute directly from the machine installation unless overridden locally.
 
 ### Per-Machine Installation
@@ -79,17 +84,17 @@ Clone the repository once on your machine, install workspace dependencies, and l
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter @fitness-app/agent-sdlc link --global
+pnpm link --global
 
 # Verify the CLI is reachable on PATH
 agent-sdlc help
 agent-review --help
 ```
 
-*(If you only run the engine inside this monorepo checkout, you can also invoke scripts directly via `pnpm --filter @fitness-app/agent-sdlc run sdlc -- <subcommand>` without global linking.)*
+*(You can also invoke scripts directly via `pnpm run sdlc -- <subcommand>` without global linking.)*
 
 #### 3. Configure Model Governor Credentials & Local Ceilings
-All LLM calls route through [`packages/model-usage/governor.ts`](../model-usage/governor.ts). Export the API keys for your enabled routes in your shell profile, and optionally create `~/.config/model-usage/local-policy.json` (machine-wide) or `.agent-sdlc/local-policy.json` / `tools/.model-usage/local-policy.json` (per-project) to tighten per-run or per-instance spend ceilings (see [`packages/model-usage/README.md`](../model-usage/README.md)).
+All LLM calls route through `@evelbulgroz/model-usage-govenor`. Export the API keys for your enabled routes in your shell profile, and optionally create `~/.config/model-usage/local-policy.json` (machine-wide) or `.agent-sdlc/local-policy.json` / `tools/.model-usage/local-policy.json` (per-project) to tighten per-run or per-instance spend ceilings (see [`@evelbulgroz/model-usage-govenor`](https://github.com/evelbulgroz/model-usage-govenor)).
 
 ### How to Onboard a Host Repository (`.agents/sdlc-host.json` & `.agent-sdlc/`)
 
@@ -97,7 +102,7 @@ Onboarding a repository requires one configuration file (`.agents/sdlc-host.json
 
 #### Step 1: Create `.agents/sdlc-host.json` and ignore `.agent-sdlc/`
 
-Add `.agent-sdlc/` to your repository's `.gitignore` so machine-local SQLite databases, detached worktrees, critic reports, and archived runs are never committed. Then create `.agents/sdlc-host.json` (`schemaVersion: "1.3.0"`) using the portable `script` adapter (or `fitness-app` in this monorepo; see [`host/README.md`](./host/README.md)):
+Add `.agent-sdlc/` to your repository's `.gitignore` so machine-local SQLite databases, detached worktrees, critic reports, and archived runs are never committed. Then create `.agents/sdlc-host.json` (`schemaVersion: "1.3.0"`) using the portable `script` adapter (see [`host/README.md`](./host/README.md)):
 
 ```json
 {
@@ -173,7 +178,7 @@ agent-sdlc shell status --run <run-id> --json
 ### Maintenance, Retention, Review & Analytics CLIs
 
 ```bash
-# Validate .agents/sdlc-host.json profile (fitness-app or script adapter)
+# Validate .agents/sdlc-host.json profile
 agent-sdlc host check [--root <dir>] [--json]
 
 # Sweep merged worktrees (< 7d, landed-check.ts / run-cleanup.ts) and compact idle runs
@@ -203,11 +208,11 @@ agent-sdlc-trends --skills [--threshold <N>] [--json]
 ### Develop
 
 - **No build step (native type stripping):** Sources run directly on Node.js `>= 22.18.0` (`node -p process.features.typescript` printing `strip`). Use erasable TypeScript syntax only (`erasableSyntaxOnly`, `verbatimModuleSyntax` in [`tsconfig.json`](./tsconfig.json)) and explicit `.ts` extensions on relative imports.
-- **Package boundaries & navigability ceilings:** Keep all modules self-contained inside `packages/agent-sdlc/` (no relative imports outside the package root) and within `<= 500` lines and `<= 20,480` bytes (`packages/agent-sdlc/testing/navigability-support.mjs`).
+- **Package boundaries & navigability ceilings:** Keep all modules self-contained inside the package root (no relative imports outside the package root) and within `<= 500` lines and `<= 20,480` bytes.
 
 ```bash
 # Strictly typecheck package TypeScript sources (no emit, erasable syntax only)
-pnpm --filter @fitness-app/agent-sdlc run typecheck
+pnpm run typecheck
 ```
 
 ### Test
@@ -216,10 +221,10 @@ Tests are colocated `*.spec.mjs` files executed with the built-in `node:test` ru
 
 ```bash
 # Run a single module spec during inner-loop development
-node --test packages/agent-sdlc/review/agent-review.spec.mjs
+node --test review/agent-review.spec.mjs
 
 # Run all colocated package specs (*.spec.mjs) serially
-pnpm --filter @fitness-app/agent-sdlc run test:unit
+pnpm run test:unit
 ```
 
 ### Qualify (Offline Replay & Hosted Canary)

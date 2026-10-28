@@ -105,12 +105,12 @@ test('@ac AC-01 @case AC-01.5 an unlisted oversized TypeScript file fails naming
 });
 
 test('@ac AC-01 @case AC-01.6 the repository tree returns no violation against the committed exceptions file', () => {
-	const exceptions = JSON.parse(
-		fs.readFileSync(
-			path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/navigability-exceptions.json'),
-			'utf8',
-		),
-	);
+	const exceptionsPath = fs.existsSync(
+		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/navigability-exceptions.json'),
+	)
+		? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/navigability-exceptions.json')
+		: path.join(REPOSITORY_ROOT, 'testing/navigability-exceptions.json');
+	const exceptions = JSON.parse(fs.readFileSync(exceptionsPath, 'utf8'));
 	assert.deepEqual(findNavigabilityViolations(REPOSITORY_ROOT, exceptions), []);
 });
 

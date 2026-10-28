@@ -6,13 +6,14 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const FACTORY_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
 const DAG_SCHEMA_TS_PATH = path.join(FACTORY_ROOT, 'policy/contracts/dag-schema.ts');
 const PLANNING_SCHEMA_TS_PATH = path.join(FACTORY_ROOT, 'policy/contracts/planning-schema.ts');
 const CONTRACTS_DIR = path.join(FACTORY_ROOT, 'policy/contracts');
 const TSCONFIG_PATH = path.join(FACTORY_ROOT, 'tsconfig.json');
 const PACKAGE_JSON_PATH = path.join(FACTORY_ROOT, 'package.json');
-const TSC_BIN = path.join(REPOSITORY_ROOT, 'node_modules/.bin/tsc');
+const TSC_BIN = path.join(FACTORY_ROOT, 'node_modules/.bin/tsc');
 
 function runTscOnTempFixture(sourceText) {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-sdlc-contract-types-'));
@@ -23,14 +24,14 @@ function runTscOnTempFixture(sourceText) {
 			...baseConfig,
 			compilerOptions: {
 				...baseConfig.compilerOptions,
-				typeRoots: [path.join(REPOSITORY_ROOT, 'node_modules/@types')],
+				typeRoots: [path.join(FACTORY_ROOT, 'node_modules/@types')],
 			},
 			include: ['fixture.ts'],
 		};
 		fs.writeFileSync(path.join(tempDir, 'tsconfig.json'), `${JSON.stringify(fixtureConfig, null, 2)}\n`);
 		fs.writeFileSync(path.join(tempDir, 'fixture.ts'), sourceText);
 		return spawnSync(TSC_BIN, ['--noEmit', '-p', tempDir], {
-			cwd: REPOSITORY_ROOT,
+			cwd: FACTORY_ROOT,
 			encoding: 'utf8',
 			timeout: 60_000,
 		});

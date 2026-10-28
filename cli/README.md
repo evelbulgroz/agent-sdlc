@@ -1,6 +1,6 @@
 # CLI & Operator Shell (`packages/agent-sdlc/cli/`)
 
-Command entrypoints, operator shell driver, Human-in-the-Loop (HITL) interrupt handling, and `status.json` continuation projections for `@fitness-app/agent-sdlc`.
+Command entrypoints, operator shell driver, Human-in-the-Loop (HITL) interrupt handling, and `status.json` continuation projections for `@evelbulgroz/agent-sdlc`.
 
 ## Key Files & Entrypoints
 

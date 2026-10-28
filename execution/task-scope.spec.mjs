@@ -28,12 +28,12 @@ test('collectCumulativeTaskPackages resolves targetPackage, upstream task depend
 		tasks: [
 			{ taskId: 'task-1', targetPackage: 'apps/services/conditioning' },
 			{ taskId: 'task-2', targetPackage: 'packages/managed-stateful-component', dependsOn: ['task-1'] },
-			{ taskId: 'task-3', targetPackage: 'apps/frontends/fitnessapp-pwa-frontend', dependsOn: ['task-2'] },
+			{ taskId: 'task-3', targetPackage: 'apps/frontends/example-pwa-frontend', dependsOn: ['task-2'] },
 		],
 	};
 	const authorization = {
 		allowedPackages: [
-			'apps/frontends/fitnessapp-pwa-frontend',
+			'apps/frontends/example-pwa-frontend',
 			'apps/services/conditioning',
 			'packages/managed-stateful-component',
 		],
@@ -41,7 +41,7 @@ test('collectCumulativeTaskPackages resolves targetPackage, upstream task depend
 
 	const packages = collectCumulativeTaskPackages(taskPlan.tasks[2], taskPlan, authorization);
 	assert.deepEqual(packages, [
-		'apps/frontends/fitnessapp-pwa-frontend',
+		'apps/frontends/example-pwa-frontend',
 		'apps/services/conditioning',
 		'packages/managed-stateful-component',
 	]);
@@ -80,10 +80,10 @@ test('manifest tasks restrict model writes to authored paths rather than broader
 
 test('scopeSpecSummaryForTask scopes touched surfaces to task pathPrefixes and prepends task header', () => {
 	const task = {
-		taskId: 'fitnessapp-pwa-frontend-task',
+		taskId: 'example-pwa-frontend-task',
 		title: 'PWA Frontend distance display',
-		targetPackage: 'apps/frontends/fitnessapp-pwa-frontend',
-		pathPrefixes: ['apps/frontends/fitnessapp-pwa-frontend'],
+		targetPackage: 'apps/frontends/example-pwa-frontend',
+		pathPrefixes: ['apps/frontends/example-pwa-frontend'],
 	};
 
 	const specSummary = [
@@ -92,8 +92,8 @@ test('scopeSpecSummaryForTask scopes touched surfaces to task pathPrefixes and p
 		'Touched Surfaces:',
 		'apps/services/conditioning/src/derive-effective-distance.helper.ts',
 		'apps/services/conditioning/src/conditioning.entity.ts',
-		'apps/frontends/fitnessapp-pwa-frontend/src/domain/conditioning-log.ts',
-		'apps/frontends/fitnessapp-pwa-frontend/src/ui/SessionMetadata.tsx',
+		'apps/frontends/example-pwa-frontend/src/domain/conditioning-log.ts',
+		'apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
 		'',
 		'Invariants & Constraints:',
 		'Preserve bounded context separation',
@@ -101,15 +101,15 @@ test('scopeSpecSummaryForTask scopes touched surfaces to task pathPrefixes and p
 
 	const scoped = scopeSpecSummaryForTask({ specSummary, task });
 
-	assert.match(scoped, /### Current Task Scope: fitnessapp-pwa-frontend-task/);
-	assert.match(scoped, /Target Package: apps\/frontends\/fitnessapp-pwa-frontend/);
-	assert.match(scoped, /- apps\/frontends\/fitnessapp-pwa-frontend/);
+	assert.match(scoped, /### Current Task Scope: example-pwa-frontend-task/);
+	assert.match(scoped, /Target Package: apps\/frontends\/example-pwa-frontend/);
+	assert.match(scoped, /- apps\/frontends\/example-pwa-frontend/);
 	assert.match(scoped, /Package-local files may be inspected for prior art/);
 	assert.match(scoped, /do NOT modify files outside the authorized mutation path prefixes/);
 
 	// Must include frontend touched surfaces
-	assert.ok(scoped.includes('apps/frontends/fitnessapp-pwa-frontend/src/domain/conditioning-log.ts'));
-	assert.ok(scoped.includes('apps/frontends/fitnessapp-pwa-frontend/src/ui/SessionMetadata.tsx'));
+	assert.ok(scoped.includes('apps/frontends/example-pwa-frontend/src/domain/conditioning-log.ts'));
+	assert.ok(scoped.includes('apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx'));
 
 	// Must NOT include conditioning service surfaces in touched surfaces
 	assert.ok(!scoped.includes('apps/services/conditioning/src/derive-effective-distance.helper.ts'));

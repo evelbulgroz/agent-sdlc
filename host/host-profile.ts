@@ -118,8 +118,8 @@ const BaseProfileFields = {
 	learnings: LearningsConfigSchema.optional(),
 };
 
-const FitnessAppHostProfileSchema = z.strictObject({
-	...BaseProfileFields, adapter: z.literal('fitness-app'), commands: z.array(ArgvSchema).min(1).optional(),
+const DefaultHostProfileSchema = z.strictObject({
+	...BaseProfileFields, adapter: z.literal('default'), commands: z.array(ArgvSchema).min(1).optional(),
 });
 
 const ScriptHostProfileSchema = z.strictObject({
@@ -127,7 +127,7 @@ const ScriptHostProfileSchema = z.strictObject({
 	hydration: HydrationConfigSchema, commands: z.array(ArgvSchema).min(1), workspace: DeclarativeWorkspaceSchema,
 });
 
-export const HostProfileSchema = z.discriminatedUnion('adapter', [FitnessAppHostProfileSchema, ScriptHostProfileSchema]);
+export const HostProfileSchema = z.discriminatedUnion('adapter', [DefaultHostProfileSchema, ScriptHostProfileSchema]);
 
 type ResolvedHostProfileDirs = { stateDir: string; reviewDir: string; specDraftDir: string; verify: HostVerifyConfig };
 
@@ -147,9 +147,9 @@ export type HostArchitectureConfig = z.infer<typeof ArchitectureConfigSchema>;
 export type HostQualityGateConfig = z.infer<typeof QualityGateConfigSchema>;
 export type HostLearningScopeInferenceRule = z.infer<typeof LearningScopeInferenceRuleSchema>;
 export type HostLearningsConfig = z.infer<typeof LearningsConfigSchema>;
-export type FitnessAppHostProfile = Omit<z.infer<typeof FitnessAppHostProfileSchema>, keyof ResolvedHostProfileDirs> & ResolvedHostProfileDirs;
+export type DefaultHostProfile = Omit<z.infer<typeof DefaultHostProfileSchema>, keyof ResolvedHostProfileDirs> & ResolvedHostProfileDirs;
 export type ScriptHostProfile = Omit<z.infer<typeof ScriptHostProfileSchema>, keyof ResolvedHostProfileDirs> & ResolvedHostProfileDirs;
-export type HostProfile = FitnessAppHostProfile | ScriptHostProfile;
+export type HostProfile = DefaultHostProfile | ScriptHostProfile;
 
 function invalidHostProfile(detail: string, metadata: Record<string, unknown> = {}, cause?: unknown): never {
 	throw new SdlcError('INVALID_INPUT', `HOST_PROFILE_INVALID: ${detail}`, metadata, cause !== undefined ? { cause } : {});
@@ -275,18 +275,18 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 				});
 			}
 		}
-		if (rawRecord.adapter === 'fitness-app') {
+		if (rawRecord.adapter === 'default') {
 			for (const forbidden of ['hydration', 'commands', 'workspace']) {
 				if (rawRecord[forbidden] !== undefined) {
 					invalidHostProfile(
-						`fitness-app profile at schemaVersion '${LEGACY_HOST_PROFILE_SCHEMA_VERSION}' cannot include '${forbidden}'`,
+						`default profile at schemaVersion '${LEGACY_HOST_PROFILE_SCHEMA_VERSION}' cannot include '${forbidden}'`,
 						{ fieldName: forbidden },
 					);
 				}
 			}
 		}
-	} else if (rawRecord.adapter === 'fitness-app' && rawRecord.commands !== undefined) {
-		invalidHostProfile("fitness-app profile cannot include 'commands'", { fieldName: 'commands' });
+	} else if (rawRecord.adapter === 'default' && rawRecord.commands !== undefined) {
+		invalidHostProfile("default profile cannot include 'commands'", { fieldName: 'commands' });
 	}
 
 	const parsed = HostProfileSchema.safeParse(parsedJson);
@@ -419,7 +419,7 @@ export function loadHostProfileOrFallback(rootDir: string = REPOSITORY_ROOT): Re
 		schemaVersion: HOST_PROFILE_SCHEMA_VERSION,
 		profileId: 'default-host',
 		repositoryId: 'default-host',
-		adapter: 'fitness-app',
+		adapter: 'default',
 		stateDir: 'tools/.agent-sdlc',
 		reviewDir: 'tools/.review',
 		specDraftDir: 'docs/specs/drafts',

@@ -55,7 +55,7 @@ function createSeededRunDatabase(databasePath) {
 				run_id, approved_spec_hash, task_manifest_hash, approved_plan_policy_hash, repository_id,
 				base_commit_sha, allowed_packages_json, allowed_path_prefixes_json, allowed_operations_json,
 				max_semantic_repairs, model_usage_profile, expires_at, approved_at, approval_method, created_at
-			) VALUES (?, 'spec-hash-1', 'manifest-hash-1', 'policy-hash-1', 'fitness-app', 'abc1234', '[]', '[]', '[]', 2, 'default', ?, ?, 'operator', ?)`,
+			) VALUES (?, 'spec-hash-1', 'manifest-hash-1', 'policy-hash-1', 'agent-sdlc', 'abc1234', '[]', '[]', '[]', 2, 'default', ?, ?, 'operator', ?)`,
 		).run(runId, now, now, now);
 
 		db.prepare(

@@ -42,14 +42,14 @@ function parsePnpmWorkspaceLiteralEntries(rootDir: string): string[] {
 function resolveProfileForWorkspace(
 	rootDir: string,
 	profile?: HostProfile | null,
-): HostProfile | { adapter: 'fitness-app' } {
+): HostProfile | { adapter: 'default' } {
 	if (profile) {
 		return profile;
 	}
 	if (fs.existsSync(path.join(rootDir, HOST_PROFILE_RELATIVE_PATH))) {
 		return loadHostProfile(rootDir);
 	}
-	return { adapter: 'fitness-app' };
+	return { adapter: 'default' };
 }
 
 export function discoverWorkspace(

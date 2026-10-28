@@ -93,11 +93,21 @@ const FROZEN_CONTRACT_EXPORTS = [
 	'validateWorkflowDefinition',
 ];
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const SDLC = path.join(ROOT, 'packages/agent-sdlc');
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'))
+	? PACKAGE_ROOT
+	: path.resolve(PACKAGE_ROOT, '../../..');
+const SDLC = fs.existsSync(path.join(ROOT, 'packages/agent-sdlc'))
+	? path.join(ROOT, 'packages/agent-sdlc')
+	: PACKAGE_ROOT;
+
+function resolvePath(rel) {
+	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
+	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+}
 
 function measure(rel) {
-	const data = fs.readFileSync(path.join(ROOT, rel));
+	const data = fs.readFileSync(resolvePath(rel));
 	let lines = 0;
 	for (const byte of data) if (byte === 0x0a) lines += 1;
 	return { lines, bytes: data.length };
@@ -105,7 +115,7 @@ function measure(rel) {
 
 function titles(rel) {
 	const found = [];
-	for (const line of fs.readFileSync(path.join(ROOT, rel), 'utf8').split('\n')) {
+	for (const line of fs.readFileSync(resolvePath(rel), 'utf8').split('\n')) {
 		const match = line.match(/^test\('((?:\\'|[^'])*)'/);
 		if (match) found.push(match[1]);
 	}

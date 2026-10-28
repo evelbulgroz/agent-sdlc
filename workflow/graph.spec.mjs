@@ -87,11 +87,11 @@ test('buildTaskPromptContexts attaches contract commands only on the preserving 
 	const packages = {
 		packageMap: new Map([
 			[
-				'@fitness-app/demo-service',
+				'@example/demo-service',
 				{
 					packagePath: 'apps/services/demo',
 					pkgJson: {
-						name: '@fitness-app/demo-service',
+						name: '@example/demo-service',
 						scripts: {
 							'build:contracts': 'node build.mjs',
 							'check:contract-drift':
@@ -101,7 +101,7 @@ test('buildTaskPromptContexts attaches contract commands only on the preserving 
 				},
 			],
 		]),
-		pathToPackage: new Map([['apps/services/demo', '@fitness-app/demo-service']]),
+		pathToPackage: new Map([['apps/services/demo', '@example/demo-service']]),
 	};
 	const taskPlan = {
 		slices: [{ sliceId: 's1', goal: 'Preserve', acceptanceCriteria: ['AC-01'] }],
@@ -132,8 +132,8 @@ test('buildTaskPromptContexts attaches contract commands only on the preserving 
 	});
 	assert.equal(contexts['foundation-task'].contractVerificationCommands, undefined);
 	assert.deepEqual(contexts['sink-task'].contractVerificationCommands, [
-		['pnpm', '--filter', '@fitness-app/demo-service', 'run', 'build:contracts'],
-		['pnpm', '--filter', '@fitness-app/demo-service', 'run', 'check:contract-drift'],
+		['pnpm', '--filter', '@example/demo-service', 'run', 'build:contracts'],
+		['pnpm', '--filter', '@example/demo-service', 'run', 'check:contract-drift'],
 		['pnpm', 'run', 'quality:changed'],
 	]);
 	const plain = buildTaskPromptContexts({

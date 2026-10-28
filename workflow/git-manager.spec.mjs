@@ -21,7 +21,7 @@ function setupRepoWithWorktree(testDir, runId = '2026-09-06-commit-test') {
 	fs.mkdirSync(repoDir, { recursive: true });
 
 	execFileSync('git', ['init', '-b', 'main'], { cwd: repoDir });
-	execFileSync('git', ['config', 'user.email', 'test@fitnessapp.local'], { cwd: repoDir });
+	execFileSync('git', ['config', 'user.email', 'test@example.local'], { cwd: repoDir });
 	execFileSync('git', ['config', 'user.name', 'test'], { cwd: repoDir });
 
 	fs.writeFileSync(path.join(repoDir, 'README.md'), '# Test Repo\n');
@@ -184,8 +184,8 @@ test('createLocalCommit stages changes, verifies containment, and commits', () =
 			worktreeDir,
 			message: 'feat(conditioning): update version',
 			allowedPackages: ['apps/services/conditioning'],
-			authorName: 'fitnessapp-agent',
-			authorEmail: 'agent@fitnessapp.local',
+			authorName: 'sdlc-agent',
+			authorEmail: 'agent@sdlc.local',
 		});
 
 		assert.equal(commitResult.committed, true);
@@ -200,7 +200,7 @@ test('createLocalCommit stages changes, verifies containment, and commits', () =
 			cwd: worktreeDir,
 			encoding: 'utf8',
 		}).trim();
-		assert.equal(authorLog, 'fitnessapp-agent <agent@fitnessapp.local>');
+		assert.equal(authorLog, 'sdlc-agent <agent@sdlc.local>');
 
 		// 5. Worktree reuse post-commit: accepts headOutput === commitSha
 		const reused = createDetachedWorktree({

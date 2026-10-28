@@ -2,12 +2,22 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
+import { fileURLToPath } from 'node:url';
 import { makeFixture } from './test-support.mjs';
 import {
 	NAVIGABILITY_BYTE_CEILING,
 	NAVIGABILITY_LINE_CEILING,
 } from './navigability-support.mjs';
+
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const IS_STANDALONE = !fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'));
+const ROOT = IS_STANDALONE ? PACKAGE_ROOT : path.resolve(PACKAGE_ROOT, '../../..');
+const SDLC = IS_STANDALONE ? PACKAGE_ROOT : path.join(ROOT, 'packages/agent-sdlc');
+
+function resolveRepo(rel) {
+	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
+	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+}
 
 const NODE_IDS = [
 	"check_completeness",
@@ -52,7 +62,7 @@ const PRODUCTION_SCOPE = [
 	'packages/agent-sdlc/workflow/preflight-gate.ts',
 	'packages/agent-sdlc/workflow/specification.ts',
 	'packages/agent-sdlc/workflow/acceptance-criteria.ts',
-	...fs.readdirSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/nodes'))
+	...fs.readdirSync(resolveRepo('packages/agent-sdlc/workflow/nodes'))
 		.filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !name.endsWith('.d.ts'))
 		.sort()
 		.map((name) => `packages/agent-sdlc/workflow/nodes/${name}`),
@@ -75,7 +85,7 @@ const SPEC_SCOPE = [
 	'packages/agent-sdlc/workflow/preflight-gate.spec.mjs',
 	'packages/agent-sdlc/workflow/graph-topology.spec.mjs',
 	'packages/agent-sdlc/testing/deepen-workflow.spec.mjs',
-	...fs.readdirSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/nodes'))
+	...fs.readdirSync(resolveRepo('packages/agent-sdlc/workflow/nodes'))
 		.filter((name) => name.endsWith('.spec.mjs'))
 		.sort()
 		.map((name) => `packages/agent-sdlc/workflow/nodes/${name}`),
@@ -122,11 +132,11 @@ const SPECIFICATION_EXPORTS = [
 ];
 
 function readRepo(rel) {
-	return fs.readFileSync(path.join(REPOSITORY_ROOT, rel), 'utf8');
+	return fs.readFileSync(resolveRepo(rel), 'utf8');
 }
 
 function measure(rel) {
-	const data = fs.readFileSync(path.join(REPOSITORY_ROOT, rel));
+	const data = fs.readFileSync(resolveRepo(rel));
 	let lines = 0;
 	for (const byte of data) if (byte === 0x0a) lines += 1;
 	return { lines, bytes: data.length };
@@ -201,7 +211,7 @@ test('@ac AC-04 @case AC-04.4 a runtime graph exposes the 33 nodes plus __start_
 });
 
 test('@ac AC-05 @case AC-05.1 node files do not import the graph, the topology, or each other', () => {
-	const dir = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/nodes');
+	const dir = resolveRepo('packages/agent-sdlc/workflow/nodes');
 	const files = fs.readdirSync(dir).filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !name.endsWith('.d.ts'));
 	assert.ok(files.length >= 11);
 	for (const file of files) {
@@ -231,7 +241,7 @@ test('@ac AC-05 @case AC-05.3 finish-run has no repair loop and the repair owner
 	assert.equal(finish.includes('executeRepair' + 'Loop'), false);
 	assert.equal(finish.includes("'" + 'repairer' + "'"), false);
 	const needle = 'selectRepair' + 'OwningTask';
-	const hits = walkFiles(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')).filter((file) =>
+	const hits = walkFiles(SDLC).filter((file) =>
 		fs.readFileSync(file, 'utf8').includes(needle));
 	assert.deepEqual(hits, []);
 });
@@ -242,8 +252,8 @@ test('@ac AC-05 @case AC-05.4 specification.mjs keeps the frozen non-grammar exp
 
 test('@ac AC-05 @case AC-05.5 moved names are not imported from their former modules', () => {
 	const files = [
-		...walkFiles(path.join(REPOSITORY_ROOT, 'tools')),
-		...walkFiles(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')),
+		...(IS_STANDALONE ? [] : walkFiles(path.join(ROOT, 'tools'))),
+		...walkFiles(SDLC),
 	].filter((file) => file.endsWith('.mjs') || file.endsWith('.ts'));
 	assert.ok(files.length > 10);
 	for (const file of files) {

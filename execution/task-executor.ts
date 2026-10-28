@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadPolicy } from '@fitness-app/model-usage/policy';
+import { loadPolicy } from '@evelbulgroz/model-usage-govenor/policy';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { createEvent } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';

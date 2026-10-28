@@ -6,7 +6,7 @@ import { SdlcError } from '../policy/errors.ts';
 import { resolveLocalPolicyPath } from '../policy/local-policy-fingerprint.ts';
 
 const GOVERNOR_PORT_VERSION = '1.0.0';
-const DEFAULT_GOVERNOR_FILE = fileURLToPath(import.meta.resolve('@fitness-app/model-usage'));
+const DEFAULT_GOVERNOR_FILE = fileURLToPath(import.meta.resolve('@evelbulgroz/model-usage-govenor'));
 
 export interface GovernorRouteIdentity {
 	readonly routeId: string;

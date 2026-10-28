@@ -81,7 +81,7 @@ test('hydrateWorktree executes install, security config, impact build and caches
 	fs.writeFileSync(
 		path.join(condDir, 'package.json'),
 		JSON.stringify({
-			name: '@fitness-app/conditioning-service',
+			name: '@example/conditioning-service',
 			scripts: { build: 'vite build' },
 		}),
 	);
@@ -115,7 +115,7 @@ test('hydrateWorktree executes install, security config, impact build and caches
 		assert.deepEqual(commands[2].args, ['run', 'build:packages']);
 		assert.deepEqual(commands[3].args, [
 			'--filter',
-			'@fitness-app/conditioning-service...',
+			'@example/conditioning-service...',
 			'run',
 			'build',
 		]);
@@ -195,7 +195,7 @@ test('hydrateWorktree builds service workspace prerequisites before the scoped t
 	fs.writeFileSync(
 		path.join(condDir, 'package.json'),
 		JSON.stringify({
-			name: '@fitness-app/conditioning-service',
+			name: '@example/conditioning-service',
 			scripts: { build: 'vite build' },
 		}),
 	);
@@ -226,7 +226,7 @@ test('hydrateWorktree builds service workspace prerequisites before the scoped t
 		assert.ok(workspaceBuildIndex < impactBuildIndex);
 		assert.deepEqual(impactBuildCall.args, [
 			'--filter',
-			'@fitness-app/conditioning-service...',
+			'@example/conditioning-service...',
 			'run',
 			'build',
 		]);
@@ -247,10 +247,10 @@ test('hydrateWorktree includes allowedPackages in prerequisites while scoping im
 		`run-${crypto.randomUUID()}`,
 	);
 	const taskDir = path.join(runBase, 'worktrees', 'frontend-task');
-	fs.mkdirSync(path.join(taskDir, 'apps/frontends/fitnessapp-pwa-frontend'), { recursive: true });
+	fs.mkdirSync(path.join(taskDir, 'apps/frontends/example-pwa-frontend'), { recursive: true });
 	fs.writeFileSync(
-		path.join(taskDir, 'apps/frontends/fitnessapp-pwa-frontend/package.json'),
-		JSON.stringify({ name: '@fitness-app/pwa-frontend', scripts: { build: 'vite build' } }),
+		path.join(taskDir, 'apps/frontends/example-pwa-frontend/package.json'),
+		JSON.stringify({ name: '@example/pwa-frontend', scripts: { build: 'vite build' } }),
 	);
 
 	const commands = [];
@@ -262,8 +262,8 @@ test('hydrateWorktree includes allowedPackages in prerequisites while scoping im
 	try {
 		const result = await hydrateWorktree({
 			worktreeDir: taskDir,
-			targetPackage: 'apps/frontends/fitnessapp-pwa-frontend',
-			allowedPackages: ['apps/frontends/fitnessapp-pwa-frontend', 'apps/services/conditioning'],
+			targetPackage: 'apps/frontends/example-pwa-frontend',
+			allowedPackages: ['apps/frontends/example-pwa-frontend', 'apps/services/conditioning'],
 			runner: mockRunner,
 		});
 
@@ -280,12 +280,12 @@ test('hydrateWorktree includes allowedPackages in prerequisites while scoping im
 		);
 		assert.ok(workspaceBuildIndex >= 0, 'build:packages should be run because conditioning is in allowedPackages');
 
-		// Impact build is scoped to targetPackage (@fitness-app/pwa-frontend)
+		// Impact build is scoped to targetPackage (@example/pwa-frontend)
 		const impactBuildCalls = commands.filter((c) => c.args[0] === '--filter');
 		assert.equal(impactBuildCalls.length, 1);
 		assert.deepEqual(impactBuildCalls[0].args, [
 			'--filter',
-			'@fitness-app/pwa-frontend...',
+			'@example/pwa-frontend...',
 			'run',
 			'build',
 		]);

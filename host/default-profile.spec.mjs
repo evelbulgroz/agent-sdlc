@@ -17,7 +17,7 @@ function withTempRoot(fn) {
 		});
 }
 
-test('@ac AC-04 @case AC-04.1 a synthetic 1.3.0 fitness-app profile in a temporary directory selects fitness-app and declares declarative hydration, workspace, prompts, and learnings', async () => {
+test('@ac AC-04 @case AC-04.1 a synthetic 1.3.0 host profile in a temporary directory selects default and declares declarative hydration, workspace, prompts, and learnings', async () => {
 	await withTempRoot(async (tempRoot) => {
 		writeSyntheticHostProfile(tempRoot, {
 			prompts: {
@@ -36,8 +36,8 @@ test('@ac AC-04 @case AC-04.1 a synthetic 1.3.0 fitness-app profile in a tempora
 		});
 		const profile = loadHostProfile(tempRoot);
 		assert.equal(profile.schemaVersion, '1.3.0');
-		assert.equal(profile.adapter, 'fitness-app');
-		assert.equal(profile.profileId, 'fitness-app');
+		assert.equal(profile.adapter, 'default');
+		assert.equal(profile.profileId, 'default-host');
 		assert.equal(profile.stateDir, 'tools/.agent-sdlc');
 		assert.equal(profile.reviewDir, 'tools/.review');
 		assert.equal(profile.specDraftDir, 'docs/specs/drafts');
@@ -67,19 +67,26 @@ test('@ac AC-04 @case AC-04.1 a synthetic 1.3.0 fitness-app profile in a tempora
 	});
 });
 
-test('@ac AC-04 @case AC-04.2 none of the 6 host and CLI test support/spec files contains fitness-app service names', () => {
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
+
+test('@ac AC-04 @case AC-04.2 none of the 6 host and CLI test support/spec files contains forbidden service names', () => {
 	const files = [
 		'packages/agent-sdlc/testing/cli-test-support.mjs',
 		'packages/agent-sdlc/testing/shell-driver-support.mjs',
-		'packages/agent-sdlc/host/fitness-app-profile.spec.mjs',
+		'packages/agent-sdlc/host/default-profile.spec.mjs',
 		'packages/agent-sdlc/host/command-policy.spec.mjs',
 		'packages/agent-sdlc/host/workspace.spec.mjs',
 		'packages/agent-sdlc/host/hydration.spec.mjs',
 	];
 	const forbiddenServicePath = `${'apps/services'}/${'conditioning'}`;
-	const forbiddenServicePkg = `${'@fitness-app'}/${'conditioning-service'}`;
+	const forbiddenServicePkg = `${'@' + 'conditioning'}/${'service'}`;
 	for (const relPath of files) {
-		const text = fs.readFileSync(path.join(REPOSITORY_ROOT, relPath), 'utf8');
+		const targetPath = fs.existsSync(path.join(REPOSITORY_ROOT, relPath))
+			? path.join(REPOSITORY_ROOT, relPath)
+			: path.join(PACKAGE_ROOT, relPath.replace(/^packages\/agent-sdlc\//, ''));
+		const text = fs.readFileSync(targetPath, 'utf8');
 		assert.equal(
 			text.includes(forbiddenServicePath),
 			false,
@@ -93,13 +100,13 @@ test('@ac AC-04 @case AC-04.2 none of the 6 host and CLI test support/spec files
 	}
 });
 
-test('@ac AC-05 @case AC-05.1 engine default prompts and rubrics contain zero fitness-app domain literals', () => {
+test('@ac AC-05 @case AC-05.1 engine default prompts and rubrics contain zero host-specific domain literals', () => {
 	const defaultsDirs = [
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/roles/defaults'),
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/review/defaults'),
+		path.join(PACKAGE_ROOT, 'roles/defaults'),
+		path.join(PACKAGE_ROOT, 'review/defaults'),
 	];
 	const forbidden = new RegExp(
-		`${'@fitness-app'}/|${'fitnessapp'}|${'conditioning'}|NestJS|${'docs'}/${'handbook'}/`,
+		`${'conditioning'}|NestJS|${'docs'}/${'handbook'}/`,
 		'i',
 	);
 	function scan(dir) {

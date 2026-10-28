@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { sanitize } from '@fitness-app/model-usage/sanitize-failure-text';
+import { sanitize } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 import { type VerificationDiagnosticStore, recordVerificationAttempt } from '../policy/reliability.ts';
 import type { MinimalToolCallRecord } from './minimal-prompt.ts';
 import {

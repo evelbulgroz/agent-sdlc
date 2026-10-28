@@ -258,7 +258,7 @@ test('@ac AC-04 @case AC-04.2 @ac AC-03 loadRubric appends Layer 3 host rubric a
 		phase: 'code',
 		specSummary: 'PWA change',
 		acceptanceCriteria: ['AC-01'],
-		touchedFiles: ['apps/frontends/fitnessapp-pwa-frontend/src/App.tsx'],
+		touchedFiles: ['apps/frontends/example-pwa-frontend/src/App.tsx'],
 	});
 	assert.ok(pwaCodePrompt.includes('Code Quality & Architecture Rubric'));
 	assert.ok(pwaCodePrompt.includes('Host Code & Architecture Invariants'));

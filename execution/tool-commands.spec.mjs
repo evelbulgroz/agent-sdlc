@@ -283,7 +283,7 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 		fs.mkdirSync(pkgDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(pkgDir, 'package.json'),
-			JSON.stringify({ name: '@fitness-app/conditioning-service' }),
+			JSON.stringify({ name: '@example/conditioning-service' }),
 		);
 
 		// The repository-level SDLC suite is the only unfiltered role command.
@@ -344,7 +344,7 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 		assert.ok(
 			validateCommandAllowlist(
 				'pnpm',
-				['--filter', '@fitness-app/conditioning-service', 'test'],
+				['--filter', '@example/conditioning-service', 'test'],
 				allowedPackages,
 				worktreeDir,
 			),
@@ -441,7 +441,7 @@ test('validateCommandAllowlist accepts check:contract-drift and quality:changed 
 	);
 });
 
-test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 validateHostCommand dispatches script and fitness-app command policies', () => {
+test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 validateHostCommand dispatches script and default command policies', () => {
 	const scriptProfile = {
 		schemaVersion: '1.0.0',
 		profileId: 'fixture-host',
@@ -475,7 +475,7 @@ test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 validateHostCommand di
 		);
 	}
 	assert.equal(
-		validateHostCommand('pnpm', ['--filter', '@fitness-app/conditioning-service', 'test']),
+		validateHostCommand('pnpm', ['--filter', '@example/conditioning-service', 'test']),
 		true,
 	);
 	assert.throws(

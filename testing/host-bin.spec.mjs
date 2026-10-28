@@ -10,10 +10,10 @@ import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { FakeModelGovernor } from './fake-model-governor.mjs';
 import { completeProposal } from './test-support.mjs';
 
-const FIXTURE_HOST_DIR = path.join(
-	REPOSITORY_ROOT,
-	'packages/agent-sdlc/testing/fixture-host',
-);
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const FIXTURE_HOST_DIR = IS_STANDALONE
+	? path.join(REPOSITORY_ROOT, 'testing/fixture-host')
+	: path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/fixture-host');
 
 function withTempFixtureRepo(fn, profileOverrides = {}) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-host-bin-'));
@@ -57,7 +57,9 @@ function withTempFixtureRepo(fn, profileOverrides = {}) {
 
 test('@ac AC-07 @case AC-07.1 node packages/agent-sdlc/cli/cli.ts and linked node_modules/.bin/agent-sdlc host check --root <dir> --json exit 0 and print fixture-host profile', async () => {
 	await withTempFixtureRepo(async (dir) => {
-		const cliEntry = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts');
+		const cliEntry = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts'))
+			? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts')
+			: path.join(REPOSITORY_ROOT, 'cli/cli.ts');
 		const directRes = spawnSync(
 			process.execPath,
 			[cliEntry, 'host', 'check', '--root', dir, '--json'],

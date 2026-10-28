@@ -4,11 +4,21 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const SDLC = path.join(ROOT, 'packages/agent-sdlc');
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'))
+	? PACKAGE_ROOT
+	: path.resolve(PACKAGE_ROOT, '../../..');
+const SDLC = fs.existsSync(path.join(ROOT, 'packages/agent-sdlc'))
+	? path.join(ROOT, 'packages/agent-sdlc')
+	: PACKAGE_ROOT;
+
+function resolvePath(rel) {
+	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
+	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+}
 
 function measure(rel) {
-	const data = fs.readFileSync(path.join(ROOT, rel));
+	const data = fs.readFileSync(resolvePath(rel));
 	let lines = 0;
 	for (const byte of data) if (byte === 0x0a) lines += 1;
 	return { lines, bytes: data.length };
@@ -16,7 +26,7 @@ function measure(rel) {
 
 function titles(rel) {
 	const found = [];
-	for (const line of fs.readFileSync(path.join(ROOT, rel), 'utf8').split('\n')) {
+	for (const line of fs.readFileSync(resolvePath(rel), 'utf8').split('\n')) {
 		const match = line.match(/^test\('((?:\\'|[^'])*)'/);
 		if (match) found.push(match[1]);
 	}
@@ -25,7 +35,7 @@ function titles(rel) {
 
 function productionFiles(dirRel) {
 	return fs
-		.readdirSync(path.join(ROOT, dirRel))
+		.readdirSync(resolvePath(dirRel))
 		.filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts') && !name.endsWith('.d.ts'))
 		.sort()
 		.map((name) => `${dirRel}/${name}`);
@@ -33,14 +43,14 @@ function productionFiles(dirRel) {
 
 function specFiles(dirRel) {
 	return fs
-		.readdirSync(path.join(ROOT, dirRel))
+		.readdirSync(resolvePath(dirRel))
 		.filter((name) => name.endsWith('.spec.mjs'))
 		.sort()
 		.map((name) => `${dirRel}/${name}`);
 }
 
 function relativeImports(rel) {
-	const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+	const text = fs.readFileSync(resolvePath(rel), 'utf8');
 	const found = [];
 	for (const match of text.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
 		found.push(path.posix.normalize(path.posix.join(path.posix.dirname(rel), match[1])));
@@ -111,6 +121,10 @@ test('@ac AC-04 @case AC-04.3 taskReaches is defined only in task-graph.mjs', ()
 	const definition = /(?:function|const)\s+taskReaches\b/;
 	const closure = /(?:function|const)\s+(?:taskReaches|reaches)\b/;
 	const hits = [];
+	const isMonorepo = fs.existsSync(path.join(ROOT, 'packages/agent-sdlc'));
+	const expected = isMonorepo
+		? ['packages/agent-sdlc/policy/task-planner/task-graph.ts']
+		: ['policy/task-planner/task-graph.ts'];
 	const walk = (directory) => {
 		for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
 			const full = path.join(directory, entry.name);
@@ -120,17 +134,21 @@ test('@ac AC-04 @case AC-04.3 taskReaches is defined only in task-graph.mjs', ()
 			}
 			if (!entry.name.endsWith('.ts') || entry.name.endsWith('.spec.ts') || entry.name.endsWith('.d.ts')) continue;
 			if (definition.test(fs.readFileSync(full, 'utf8'))) {
-				hits.push(path.relative(ROOT, full).split(path.sep).join('/'));
+				hits.push(
+					isMonorepo
+						? path.relative(ROOT, full).split(path.sep).join('/')
+						: path.relative(SDLC, full).split(path.sep).join('/'),
+				);
 			}
 		}
 	};
 	walk(path.join(SDLC, 'policy'));
-	assert.deepEqual(hits, ['packages/agent-sdlc/policy/task-planner/task-graph.ts']);
+	assert.deepEqual(hits, expected);
 	for (const rel of [
 		'packages/agent-sdlc/policy/task-planner.ts',
 		'packages/agent-sdlc/policy/task-planner/task-readiness.ts',
 	]) {
-		assert.equal(closure.test(fs.readFileSync(path.join(ROOT, rel), 'utf8')), false, rel);
+		assert.equal(closure.test(fs.readFileSync(resolvePath(rel), 'utf8')), false, rel);
 	}
 });
 

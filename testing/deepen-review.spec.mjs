@@ -4,18 +4,25 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const SDLC = path.join(ROOT, 'packages/agent-sdlc');
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const IS_STANDALONE = !fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'));
+const ROOT = IS_STANDALONE ? PACKAGE_ROOT : path.resolve(PACKAGE_ROOT, '../../..');
+const SDLC = IS_STANDALONE ? PACKAGE_ROOT : path.join(ROOT, 'packages/agent-sdlc');
+
+function resolvePath(rel) {
+	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
+	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+}
 
 function measure(rel) {
-	const data = fs.readFileSync(path.join(ROOT, rel));
+	const data = fs.readFileSync(resolvePath(rel));
 	let lines = 0;
 	for (const byte of data) if (byte === 0x0a) lines += 1;
 	return { lines, bytes: data.length };
 }
 
 function read(rel) {
-	return fs.readFileSync(path.join(ROOT, rel), 'utf8');
+	return fs.readFileSync(resolvePath(rel), 'utf8');
 }
 
 function relativeImports(rel) {
@@ -51,7 +58,8 @@ function productionFilesUnder(directory, found = []) {
 		) {
 			continue;
 		}
-		found.push(path.relative(ROOT, path.join(directory, entry.name)).split(path.sep).join('/'));
+		const rel = path.relative(SDLC, path.join(directory, entry.name)).split(path.sep).join('/');
+		found.push(IS_STANDALONE ? `packages/agent-sdlc/${rel}` : path.relative(ROOT, path.join(directory, entry.name)).split(path.sep).join('/'));
 	}
 	return found;
 }
@@ -178,7 +186,7 @@ test('@ac AC-07 @case AC-07.3 the split production modules form no import cycle'
 });
 
 test('@ac AC-07 @case AC-07.4 no production file imports a moved name from its former parent and parents re-export none', () => {
-	for (const rel of productionFilesUnder(path.join(SDLC, '..'))) {
+	for (const rel of productionFilesUnder(IS_STANDALONE ? SDLC : path.join(SDLC, '..'))) {
 		const dir = path.posix.dirname(rel);
 		for (const match of read(rel).matchAll(/import\s*\{([^}]*)\}\s*from\s*'(\.[^']+)'/g)) {
 			const target = path.posix.normalize(path.posix.join(dir, match[2]));

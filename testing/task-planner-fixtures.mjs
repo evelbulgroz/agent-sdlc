@@ -50,7 +50,7 @@ export function serialManifest(overrides = {}) {
 				verificationCommand: [
 					'pnpm',
 					'--filter',
-					'@fitness-app/conditioning-service',
+					'@example/conditioning-service',
 					'test',
 				],
 				generatorCommand: null,
@@ -74,7 +74,7 @@ export function serialManifest(overrides = {}) {
 				verificationCommand: [
 					'pnpm',
 					'--filter',
-					'@fitness-app/conditioning-service',
+					'@example/conditioning-service',
 					'test',
 				],
 				generatorCommand: null,
@@ -97,17 +97,17 @@ export function demoPackages(scripts) {
 	return {
 		packageMap: new Map([
 			[
-				'@fitness-app/demo-service',
+				'@example/demo-service',
 				{
 					packagePath: 'apps/services/demo',
 					pkgJson: {
-						name: '@fitness-app/demo-service',
+						name: '@example/demo-service',
 						scripts,
 					},
 				},
 			],
 		]),
-		pathToPackage: new Map([['apps/services/demo', '@fitness-app/demo-service']]),
+		pathToPackage: new Map([['apps/services/demo', '@example/demo-service']]),
 	};
 }
 
@@ -128,7 +128,7 @@ export function demoTask(overrides = {}) {
 			empty: 'no delta',
 			boundary: 'scope escape',
 		},
-		verificationCommand: ['pnpm', '--filter', '@fitness-app/demo-service', 'test'],
+		verificationCommand: ['pnpm', '--filter', '@example/demo-service', 'test'],
 		generatorCommand: null,
 		...overrides,
 	};
@@ -270,14 +270,14 @@ export function pinnedMultiPlanInput() {
 	const assessment = {
 		packagePath: 'apps/services/assessment',
 		pkgJson: {
-			name: '@fitness-app/assessment-service',
+			name: '@example/assessment-service',
 			scripts: { test: 'node --test' },
 		},
 	};
 	const conditioning = {
 		packagePath: 'apps/services/conditioning',
 		pkgJson: {
-			name: '@fitness-app/conditioning-service',
+			name: '@example/conditioning-service',
 			scripts: { test: 'node --test' },
 			dependencies: {},
 		},

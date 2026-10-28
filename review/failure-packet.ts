@@ -13,7 +13,7 @@ import {
 	type FailureClassification,
 	type FailurePacketRecord,
 } from '../policy/contracts.ts';
-import { extractSnippets, sanitize, truncateBody } from '@fitness-app/model-usage/sanitize-failure-text';
+import { extractSnippets, sanitize, truncateBody } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 
 // A busy port or similar host condition cannot be fixed by editing source.
 const ENVIRONMENT_FAILURE =

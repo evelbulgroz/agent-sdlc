@@ -98,7 +98,7 @@ test('planTaskDag produces an executable manifest-less task with legacy worktree
 	assert.deepEqual(task.verificationCommand, [
 		'pnpm',
 		'--filter',
-		'@fitness-app/conditioning-service',
+		'@example/conditioning-service',
 		'test',
 	]);
 	assert.deepEqual(plan.slices?.[0].acceptanceCriteria, ['AC-01']);

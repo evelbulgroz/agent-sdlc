@@ -121,7 +121,7 @@ test('TaskExecutor executes 1-task plan and captures delta', async () => {
 					verificationCommand: [
 						'pnpm',
 						'--filter',
-						'@fitness-app/conditioning-service',
+						'@example/conditioning-service',
 						'test',
 					],
 				},

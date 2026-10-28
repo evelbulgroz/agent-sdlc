@@ -11,7 +11,7 @@ import { ArtifactStore } from '../../persistence/artifacts.ts';
 import { SdlcWorkflowRuntime } from '../../workflow/graph.ts';
 import { createEvent, emptyDraft } from '../../policy/contracts.ts';
 import { specificationHash } from '../../workflow/specification.ts';
-import { estimatePromptTokens } from '@fitness-app/model-usage/tokenizer';
+import { estimatePromptTokens } from '@evelbulgroz/model-usage-govenor/tokenizer';
 import { SdlcError } from '../../policy/errors.ts';
 import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
 import { slug, cleanupRun, checkpointState } from '../../testing/cli-test-support.mjs';
@@ -125,7 +125,7 @@ test('CLI resumes a reviewer prompt-budget denial from the next materialized gen
 			runId,
 			approvedSpecHash,
 			approvedPlanPolicyHash: 'c'.repeat(64),
-			repositoryId: 'fitness-app',
+			repositoryId: 'agent-sdlc',
 			baseCommitSha,
 			allowedPackages: ['packages/ddd-base'],
 			allowedPathPrefixes: ['packages/ddd-base/'],

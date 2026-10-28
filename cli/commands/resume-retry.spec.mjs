@@ -81,7 +81,7 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 			runId,
 			approvedSpecHash: 'b'.repeat(64),
 			approvedPlanPolicyHash: 'c'.repeat(64),
-			repositoryId: 'fitness-app',
+			repositoryId: 'agent-sdlc',
 			baseCommitSha,
 			allowedPackages: ['apps/services/conditioning'],
 			allowedPathPrefixes: ['apps/services/conditioning/'],

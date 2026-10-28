@@ -170,11 +170,11 @@ test('a page write failure stops the attempt and is not retried', async () => {
 test('acceptance evidence binds the evidence command JSON when verification output is paged', async () => {
 	const title = 'observable behavior @ac AC-21';
 	const testPath = 'apps/services/example/src/anchor.spec.ts';
-	const verification = ['pnpm', '--filter', '@fitness-app/example', 'test'];
+	const verification = ['pnpm', '--filter', '@example/example', 'test'];
 	const evidence = [
 		'pnpm',
 		'--filter',
-		'@fitness-app/example',
+		'@example/example',
 		'run',
 		'test:unit',
 		'src/anchor.spec.ts',
@@ -236,7 +236,7 @@ test('acceptance evidence binds the evidence command JSON when verification outp
 });
 
 test('a failed evidence command retries as verification-failed', async () => {
-	const evidence = ['pnpm', '--filter', '@fitness-app/example', 'run', 'test:unit', '--reporter=json'];
+	const evidence = ['pnpm', '--filter', '@example/example', 'run', 'test:unit', '--reporter=json'];
 	const loop = openLoop({
 		label: 'evidence-fail',
 		script: [

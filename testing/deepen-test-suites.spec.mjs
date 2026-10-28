@@ -50,6 +50,14 @@ const FROZEN_CONTINUATION_TITLES = Object.freeze(
 	].sort(),
 );
 
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const SDLC_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+
+function resolveRepo(rel) {
+	if (fs.existsSync(path.join(REPOSITORY_ROOT, rel))) return path.join(REPOSITORY_ROOT, rel);
+	return path.join(SDLC_ROOT, rel.replace(/^packages\/agent-sdlc\//, ''));
+}
+
 const RECOVERY_FILES = Object.freeze([
 	'packages/agent-sdlc/workflow/recovery-answer-boundaries.spec.mjs',
 	'packages/agent-sdlc/workflow/recovery-production-isolation.spec.mjs',
@@ -67,7 +75,7 @@ const CONTINUATION_FILES = Object.freeze([
 ]);
 
 function measure(rel) {
-	const data = fs.readFileSync(path.join(REPOSITORY_ROOT, rel));
+	const data = fs.readFileSync(resolveRepo(rel));
 	let lines = 0;
 	for (const byte of data) {
 		if (byte === 0x0a) lines += 1;
@@ -76,12 +84,12 @@ function measure(rel) {
 }
 
 function topLevelTestTitles(rel) {
-	const source = fs.readFileSync(path.join(REPOSITORY_ROOT, rel), 'utf8');
+	const source = fs.readFileSync(resolveRepo(rel), 'utf8');
 	return [...source.matchAll(/^test\(\s*'([^']+)'/gm)].map((match) => match[1]);
 }
 
 function definedNames(rel) {
-	const source = fs.readFileSync(path.join(REPOSITORY_ROOT, rel), 'utf8');
+	const source = fs.readFileSync(resolveRepo(rel), 'utf8');
 	const names = new Set();
 	for (const match of source.matchAll(
 		/^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z0-9_]+)|^(?:export\s+)?(?:const|let)\s+([A-Za-z0-9_]+)/gm,
@@ -93,7 +101,7 @@ function definedNames(rel) {
 
 test('@ac AC-01 @case AC-01.1 recovery.spec.mjs is absent and the six recovery spec files are within the ceiling', () => {
 	assert.equal(
-		fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/recovery.spec.mjs')),
+		fs.existsSync(resolveRepo('packages/agent-sdlc/workflow/recovery.spec.mjs')),
 		false,
 	);
 	for (const rel of RECOVERY_FILES) {
@@ -104,7 +112,7 @@ test('@ac AC-01 @case AC-01.1 recovery.spec.mjs is absent and the six recovery s
 });
 
 test('@ac AC-01 @case AC-01.2 each frozen recovery title appears in exactly one recovery-*.spec.mjs file', () => {
-	const workflowDir = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow');
+	const workflowDir = path.join(SDLC_ROOT, 'workflow');
 	const matching = fs
 		.readdirSync(workflowDir)
 		.filter((name) => /^recovery.*\.spec\.mjs$/.test(name))
@@ -129,7 +137,7 @@ test('@ac AC-01 @case AC-01.3 no recovery spec file defines a helper that testin
 
 test('@ac AC-02 @case AC-02.1 continuation.spec.mjs is absent and the four continuation spec files are within the ceiling', () => {
 	assert.equal(
-		fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/continuation.spec.mjs')),
+		fs.existsSync(resolveRepo('packages/agent-sdlc/workflow/continuation.spec.mjs')),
 		false,
 	);
 	for (const rel of CONTINUATION_FILES) {
@@ -140,7 +148,7 @@ test('@ac AC-02 @case AC-02.1 continuation.spec.mjs is absent and the four conti
 });
 
 test('@ac AC-02 @case AC-02.2 each frozen continuation title appears in exactly one continuation-*.spec.mjs file', () => {
-	const workflowDir = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow');
+	const workflowDir = path.join(SDLC_ROOT, 'workflow');
 	const matching = fs
 		.readdirSync(workflowDir)
 		.filter((name) => /^continuation.*\.spec\.mjs$/.test(name))
@@ -165,7 +173,7 @@ test('@ac AC-02 @case AC-02.3 no continuation spec file defines a helper that te
 
 test('@ac AC-03 @case AC-03.1 the navigability exceptions file parses to an object with no keys', () => {
 	const raw = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/navigability-exceptions.json'),
+		path.join(SDLC_ROOT, 'testing/navigability-exceptions.json'),
 		'utf8',
 	);
 	const parsed = JSON.parse(raw);
@@ -197,12 +205,12 @@ test('@ac AC-03 @case AC-03.3 in a temporary root a 501-line *.spec.mjs file mak
 });
 
 test('@ac AC-04 packages/agent-sdlc/README.md names no recovery.spec.mjs or continuation.spec.mjs path and every spec path it names exists', () => {
-	const readme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/README.md'), 'utf8');
+	const readme = fs.readFileSync(path.join(SDLC_ROOT, 'README.md'), 'utf8');
 	assert.doesNotMatch(readme, /\brecovery\.spec\.mjs\b/);
 	assert.doesNotMatch(readme, /\bcontinuation\.spec\.mjs\b/);
 	for (const match of readme.matchAll(
 		/(?:tools|packages)\/agent-sdlc\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.spec\.mjs/g,
 	)) {
-		assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, match[0])), true, match[0]);
+		assert.equal(fs.existsSync(resolveRepo(match[0])), true, match[0]);
 	}
 });

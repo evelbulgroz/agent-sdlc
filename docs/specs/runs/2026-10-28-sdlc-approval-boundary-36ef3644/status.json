@@ -1,0 +1,215 @@
+{
+  "activeOwner": "human",
+  "blockedReason": null,
+  "changeClass": "B",
+  "continuation": {
+    "action": "answer",
+    "reason": "HUMAN_RESPONSE_REQUIRED"
+  },
+  "git": {
+    "branch": "unknown",
+    "dirty": true,
+    "headSha": "unknown",
+    "worktreePath": null
+  },
+  "hostInvocation": {
+    "argv": [
+      "pnpm",
+      "run",
+      "agent:sdlc",
+      "--",
+      "resume",
+      "--run",
+      "2026-10-28-sdlc-approval-boundary-36ef3644",
+      "--response-file",
+      "{response-file}",
+      "--json"
+    ],
+    "executable": true,
+    "exitCode": 2,
+    "forbiddenFlags": [
+      "--create-branch",
+      "--create-local-commits",
+      "--hitl-tty",
+      "--open-pr",
+      "--push",
+      "--retry"
+    ],
+    "packetConsumed": true,
+    "responseDocument": {
+      "action": null,
+      "approvalHash": "478c7cba9cc461924298baacd55ecaaf33a77f21b23d184524758531850e3727",
+      "changes": [],
+      "draftHash": "e8f07f7900d13aff07d36ad768acf8cbc911abecba0c1bc801b61623224423a4",
+      "interruptId": "fa32df8a67f160849fd23ade8f2540811eb1239d646159f6",
+      "schemaVersion": "1.0.0",
+      "stateHash": "3b61149a481b5f3461be17c3bac975c442dbac9a63a7fef6b5a4adfa3caf7b49"
+    },
+    "responseSlots": {
+      "changes": {
+        "field": "changes",
+        "itemKeys": [
+          "field",
+          "operation",
+          "value"
+        ],
+        "maxItems": 64,
+        "minItems": 1,
+        "requiredWhen": "revise",
+        "targets": [
+          {
+            "field": "goal",
+            "operations": [
+              "set"
+            ],
+            "valueKind": "text"
+          },
+          {
+            "field": "nonGoals",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "owningContext",
+            "operations": [
+              "set"
+            ],
+            "valueKind": "text"
+          },
+          {
+            "field": "touchedSurfaces",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "invariantsAndConstraints",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "publicContractImpact",
+            "operations": [
+              "set"
+            ],
+            "valueKind": "text"
+          },
+          {
+            "field": "acceptanceCriteria",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "failureDefenses",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "verificationPlan",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "unresolvedQuestions",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          },
+          {
+            "field": "assumptions",
+            "operations": [
+              "set",
+              "append",
+              "remove"
+            ],
+            "valueKind": "text-list"
+          }
+        ]
+      },
+      "choices": [
+        "approve",
+        "revise",
+        "reject",
+        "cancel"
+      ],
+      "field": "action"
+    },
+    "retry": {
+      "allowed": false,
+      "maxAdditionalInvocations": 0
+    },
+    "schemaVersion": "1.0.0"
+  },
+  "lane": "agent",
+  "orchestration": {
+    "draftHash": "e8f07f7900d13aff07d36ad768acf8cbc911abecba0c1bc801b61623224423a4",
+    "eventLogHash": "930e9a15ffdb6ecdbf94ce8c57f1a7b9186d6ad841be5175c0306974a8e748c7",
+    "mode": "langgraph",
+    "pendingInterruptId": "fa32df8a67f160849fd23ade8f2540811eb1239d646159f6",
+    "projectionHash": "e3a31f7c097df603e8579b28f29635b9670a8e5e764834f942ad7c2a9e2053e3",
+    "runtimeRevision": 11,
+    "schemaVersion": "1.0.0",
+    "state": "WAITING_FOR_APPROVAL"
+  },
+  "packages": [],
+  "phase": "spec",
+  "retry": {
+    "count": 0,
+    "maxRetries": 2,
+    "source": "runtime.sqlite"
+  },
+  "revision": 2,
+  "risk": "normal",
+  "runId": "2026-10-28-sdlc-approval-boundary-36ef3644",
+  "schemaVersion": 1,
+  "skillsUsed": [
+    "specification-workflow"
+  ],
+  "taskProgress": {
+    "completedCheckpoints": [],
+    "featureNonExposed": true,
+    "nextReadyTask": null,
+    "slices": []
+  },
+  "tasks": [],
+  "updatedAt": "2026-10-28T09:59:20.063Z",
+  "verification": {
+    "lastCommand": null,
+    "lastExitCode": null,
+    "lastRanAt": null,
+    "lastResult": "not_run",
+    "preflight": {
+      "changeClass": null,
+      "finishedAt": null,
+      "gitHeadSha": null,
+      "resultFile": "tools/.agent-preflight-last.json",
+      "status": null
+    }
+  }
+}

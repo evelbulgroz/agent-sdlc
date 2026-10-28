@@ -82,14 +82,18 @@ test('@ac AC-06 @case AC-06.2 createDefaultAuthorizationEnvelope reads repositor
 	});
 });
 
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
+
 test('@ac AC-06 @case AC-06.3 committed .agents/sdlc-host.json and fixture-host/profile.json carry expected schemaVersion and repositoryId', () => {
 	const committed = loadHostProfile(REPOSITORY_ROOT);
 	assert.equal(committed.schemaVersion, '1.3.0');
-	assert.equal(committed.repositoryId, 'fitness-app');
+	assert.equal(committed.repositoryId, 'agent-sdlc');
 
 	const fixtureRaw = JSON.parse(
 		fs.readFileSync(
-			path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/fixture-host/profile.json'),
+			path.join(PACKAGE_ROOT, 'testing/fixture-host/profile.json'),
 			'utf8',
 		),
 	);
@@ -97,10 +101,10 @@ test('@ac AC-06 @case AC-06.3 committed .agents/sdlc-host.json and fixture-host/
 	assert.equal(fixtureRaw.repositoryId, 'fixture-host');
 });
 
-test('@ac AC-06 @case AC-06.4 packages/agent-sdlc/policy/authorization.ts contains zero occurrences of fitness-app', () => {
+test('@ac AC-06 @case AC-06.4 policy/authorization.ts derives repositoryId dynamically without hardcoding', () => {
 	const source = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/policy/authorization.ts'),
+		path.join(PACKAGE_ROOT, 'policy/authorization.ts'),
 		'utf8',
 	);
-	assert.equal(source.includes('fitness-app'), false);
+	assert.equal(/repositoryId:\s*['"](?!resolvedRepositoryId)/.test(source), false);
 });

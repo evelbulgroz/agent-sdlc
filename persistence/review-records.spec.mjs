@@ -22,22 +22,22 @@ test('runtime store persists and retrieves git commits, critic reviews, and opti
 			treeSha: '2'.repeat(40),
 			parentSha: '3'.repeat(40),
 			message: 'feat(agent-sdlc): commit test\n\nDecisions:\n- none\n\nRemaining:\n- none\n\nTried:\n- none',
-			authorName: 'fitnessapp-agent',
-			authorEmail: 'agent@fitnessapp.local',
+			authorName: 'sdlc-agent',
+			authorEmail: 'agent@sdlc.local',
 			committedAt: new Date().toISOString(),
 		};
 		fixture.store.saveGitCommit(commit);
 		const retrievedCommit = fixture.store.getGitCommit(fixture.runId);
 		assert.equal(retrievedCommit.commitSha, '1'.repeat(40));
 		assert.equal(retrievedCommit.targetBranch, `agent-sdlc/${fixture.runId}`);
-		assert.equal(retrievedCommit.authorName, 'fitnessapp-agent');
+		assert.equal(retrievedCommit.authorName, 'sdlc-agent');
 
 		// 1b. Pull request record
 		assert.equal(fixture.store.getPullRequest(fixture.runId), null);
 		const pr = {
 			schemaVersion: '1.0.0',
 			runId: fixture.runId,
-			prUrl: 'https://github.com/evelbulgroz/fitness-app/pull/99',
+			prUrl: 'https://github.com/evelbulgroz/agent-sdlc/pull/99',
 			prNumber: 99,
 			draft: true,
 			branchName: `agent-sdlc/${fixture.runId}`,
@@ -48,7 +48,7 @@ test('runtime store persists and retrieves git commits, critic reviews, and opti
 		const retrievedPr = fixture.store.getPullRequest(fixture.runId);
 		assert.equal(retrievedPr.prNumber, 99);
 		assert.equal(retrievedPr.draft, true);
-		assert.equal(retrievedPr.prUrl, 'https://github.com/evelbulgroz/fitness-app/pull/99');
+		assert.equal(retrievedPr.prUrl, 'https://github.com/evelbulgroz/agent-sdlc/pull/99');
 		assert.equal(retrievedPr.branchName, `agent-sdlc/${fixture.runId}`);
 		assert.equal(fixture.store.listCriticReviews(fixture.runId).length, 0);
 		const review0Code = {

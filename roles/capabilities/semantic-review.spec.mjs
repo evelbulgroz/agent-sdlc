@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { estimatePromptTokens } from '@fitness-app/model-usage/tokenizer';
+import { estimatePromptTokens } from '@evelbulgroz/model-usage-govenor/tokenizer';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { getCapability } from '../capability-registry.ts';
 import { RoleRegistry } from '../role-registry.ts';

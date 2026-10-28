@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { withLockSync } from '@fitness-app/model-usage/atomic-file-state';
-import { loadRunLedger } from '@fitness-app/model-usage/ledger';
+import { withLockSync } from '@evelbulgroz/model-usage-govenor/atomic-file-state';
+import { loadRunLedger } from '@evelbulgroz/model-usage-govenor/ledger';
 import { SdlcError } from '../policy/errors.ts';
 import { checkRunLanded, resolveRunTargetRef } from '../workflow/landed-check.ts';
 import { type GitCliFn, cleanMergedRunWorktrees } from './run-cleanup.ts';

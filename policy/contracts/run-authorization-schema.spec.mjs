@@ -8,7 +8,7 @@ test('run authorization contracts validate permissions, path boundaries, and imm
 		runId: '2026-09-04-auth-test',
 		approvedSpecHash: 'a'.repeat(64),
 		approvedPlanPolicyHash: 'b'.repeat(64),
-		repositoryId: 'fitness-app',
+		repositoryId: 'agent-sdlc',
 		baseCommitSha: 'c'.repeat(40),
 		allowedPackages: ['apps/services/conditioning'],
 		allowedPathPrefixes: ['apps/services/conditioning/src/'],

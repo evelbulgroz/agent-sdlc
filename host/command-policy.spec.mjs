@@ -9,7 +9,7 @@ import {
 	validateHostCommand,
 } from '../execution/tool-commands.ts';
 import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
-import { validateCommand as validateFitnessAppCommand } from './fitness-app.ts';
+import { validateCommand as validateDefaultCommand } from './default-adapter.ts';
 import { loadHostProfile } from './host-profile.ts';
 import { validateScriptCommand } from './script.ts';
 
@@ -85,9 +85,9 @@ test('@ac AC-04 @case AC-04.2 the script adapter rejects arguments containing ;,
 	}
 });
 
-test('@ac AC-04 @case AC-04.3 the fitness-app adapter allows pnpm --filter @acme/billing-service test and rejects git commit -m x', () => {
+test('@ac AC-04 @case AC-04.3 the default adapter allows pnpm --filter @acme/billing-service test and rejects git commit -m x', () => {
 	assert.doesNotThrow(() =>
-		validateFitnessAppCommand('pnpm', [
+		validateDefaultCommand('pnpm', [
 			'--filter',
 			'@acme/billing-service',
 			'test',
@@ -102,12 +102,12 @@ test('@ac AC-04 @case AC-04.3 the fitness-app adapter allows pnpm --filter @acme
 		true,
 	);
 	assert.throws(
-		() => validateFitnessAppCommand('git', ['commit', '-m', 'x']),
+		() => validateDefaultCommand('git', ['commit', '-m', 'x']),
 		(error) => error.code === 'INVALID_INPUT',
 	);
 });
 
-test('@ac AC-03 @case AC-03.1 validateHostCommand and runCommandTool allow configured verify.argv with SHA or HEAD in baseSha slots and allow defaulted npm test across script and fitness-app adapters', () => {
+test('@ac AC-03 @case AC-03.1 validateHostCommand and runCommandTool allow configured verify.argv with SHA or HEAD in baseSha slots and allow defaulted npm test across script and default adapters', () => {
 	const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-cmd-verify-'));
 	try {
 		writeSyntheticHostProfile(tempRoot, SCRIPT_PROFILE);
@@ -132,18 +132,18 @@ test('@ac AC-03 @case AC-03.1 validateHostCommand and runCommandTool allow confi
 			schemaVersion: '1.3.0',
 			profileId: 'default-verify-host',
 			repositoryId: 'default-verify-host',
-			adapter: 'fitness-app',
+			adapter: 'default',
 			verify: undefined,
 		});
-		const fitnessDefaulted = loadHostProfile(tempRoot);
-		assert.deepEqual(fitnessDefaulted.verify.argv, ['npm', 'test']);
+		const defaultProfile = loadHostProfile(tempRoot);
+		assert.deepEqual(defaultProfile.verify.argv, ['npm', 'test']);
 		assert.equal(
-			validateHostCommand('npm', ['test'], { profile: fitnessDefaulted }),
+			validateHostCommand('npm', ['test'], { profile: defaultProfile }),
 			true,
 		);
 		const npmRes = runCommandTool(
 			{ command: 'npm', args: ['test'] },
-			{ worktreeDir: tempRoot, profile: fitnessDefaulted, execCli: () => 'npm test ok' },
+			{ worktreeDir: tempRoot, profile: defaultProfile, execCli: () => 'npm test ok' },
 		);
 		assert.equal(npmRes.exitCode, 0);
 	} finally {
@@ -174,17 +174,17 @@ test('@ac AC-03 @case AC-03.2 validateHostCommand rejects non-SHA baseSha tokens
 			schemaVersion: '1.3.0',
 			profileId: 'default-verify-host',
 			repositoryId: 'default-verify-host',
-			adapter: 'fitness-app',
+			adapter: 'default',
 			verify: undefined,
 		});
-		const fitnessDefaulted = loadHostProfile(tempRoot);
+		const defaultProfile = loadHostProfile(tempRoot);
 		for (const [cmd, args] of [
 			['npm', ['run', 'build']],
 			['npm', ['test', '--watch']],
 			['npm', ['test', '--', '--watch']],
 		]) {
 			assert.throws(
-				() => validateHostCommand(cmd, args, { profile: fitnessDefaulted }),
+				() => validateHostCommand(cmd, args, { profile: defaultProfile }),
 				(error) => error.code === 'INVALID_INPUT',
 			);
 		}

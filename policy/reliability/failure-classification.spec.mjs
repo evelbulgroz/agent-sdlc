@@ -7,7 +7,7 @@ test('@ac AC-01 classifies the rerun-5 missing literal as a stale replacement', 
 		classifyReliabilityFailure({
 			code: 'INVALID_INPUT',
 			error:
-				"old_string not found in 'apps/frontends/fitnessapp-pwa-frontend/src/ui/SignInPage.tsx'. Copy an exact unique snippet from the latest read_file output.",
+				"old_string not found in 'apps/frontends/example-pwa-frontend/src/ui/SignInPage.tsx'. Copy an exact unique snippet from the latest read_file output.",
 		}),
 		'STALE_LITERAL_REPLACEMENT',
 	);
@@ -81,7 +81,7 @@ test('@ac AC-29 classifies already-named infrastructure, repair-gate, and contra
 		classifyReliabilityFailure({
 			code: 'NON_SUBSTANTIVE_RECOVERY_MUTATION',
 			message:
-				"Mutation on 'apps/frontends/fitnessapp-pwa-frontend/src/features/auth/SignInPage.spec.tsx' modified only comments or whitespace.",
+				"Mutation on 'apps/frontends/example-pwa-frontend/src/features/auth/SignInPage.spec.tsx' modified only comments or whitespace.",
 		}),
 		'INVALID_EDIT',
 	);

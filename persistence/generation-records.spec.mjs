@@ -22,7 +22,7 @@ test('runtime store persists and retrieves authorizations, generations, tool exe
 			runId: fixture.runId,
 			approvedSpecHash: 'a'.repeat(64),
 			approvedPlanPolicyHash: 'b'.repeat(64),
-			repositoryId: 'fitness-app',
+			repositoryId: 'agent-sdlc',
 			baseCommitSha: 'c'.repeat(40),
 			allowedPackages: ['apps/services/conditioning'],
 			allowedPathPrefixes: ['apps/services/conditioning/src/'],

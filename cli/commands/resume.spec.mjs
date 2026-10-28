@@ -181,7 +181,7 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 			runId,
 			approvedSpecHash: 'b'.repeat(64),
 			approvedPlanPolicyHash: 'c'.repeat(64),
-			repositoryId: 'fitness-app',
+			repositoryId: 'agent-sdlc',
 			baseCommitSha,
 			allowedPackages: ['apps/services/conditioning'],
 			allowedPathPrefixes: ['apps/services/conditioning/'],

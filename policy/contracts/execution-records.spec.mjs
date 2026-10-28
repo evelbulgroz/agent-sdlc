@@ -56,8 +56,8 @@ test('git commit record contract validates strictly and fails closed', () => {
 		treeSha: 'b'.repeat(40),
 		parentSha: 'c'.repeat(40),
 		message: 'feat: example commit\n\nDecisions:\n- default\n\nRemaining:\n- none\n\nTried:\n- none',
-		authorName: 'fitnessapp-agent',
-		authorEmail: 'agent@fitnessapp.local',
+		authorName: 'sdlc-agent',
+		authorEmail: 'agent@sdlc.local',
 		committedAt: new Date().toISOString(),
 	};
 	const parsed = validateGitCommitRecord(validCommit);
@@ -77,7 +77,7 @@ test('pull request record contract validates strictly and covers shadow paths', 
 	const valid = {
 		schemaVersion: '1.0.0',
 		runId: '2026-09-08-pr-test',
-		prUrl: 'https://github.com/evelbulgroz/fitness-app/pull/42',
+		prUrl: 'https://github.com/evelbulgroz/agent-sdlc/pull/42',
 		prNumber: 42,
 		draft: true,
 		branchName: 'agent-sdlc/2026-09-08-pr-test',
@@ -89,7 +89,7 @@ test('pull request record contract validates strictly and covers shadow paths', 
 	const record = validatePullRequestRecord(valid);
 	assert.equal(record.prNumber, 42);
 	assert.equal(record.draft, true);
-	assert.equal(record.prUrl, 'https://github.com/evelbulgroz/fitness-app/pull/42');
+	assert.equal(record.prUrl, 'https://github.com/evelbulgroz/agent-sdlc/pull/42');
 
 	// 2. Nil / null input path
 	assert.throws(() => validatePullRequestRecord(null), /must be an object/);

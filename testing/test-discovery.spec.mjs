@@ -4,7 +4,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const PACKAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
 
 function testScript() {
 	const packageJson = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'));

@@ -10,7 +10,7 @@ test('worktree snapshot preserves ignored tracked files while recording allowed 
 	const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-worktree-snapshot-'));
 	try {
 		execFileSync('git', ['init', '-b', 'main'], { cwd: repoDir, stdio: 'ignore' });
-		execFileSync('git', ['config', 'user.email', 'test@fitnessapp.local'], { cwd: repoDir });
+		execFileSync('git', ['config', 'user.email', 'test@example.local'], { cwd: repoDir });
 		execFileSync('git', ['config', 'user.name', 'test'], { cwd: repoDir });
 
 		fs.mkdirSync(path.join(repoDir, 'packages/ddd-base'), { recursive: true });

@@ -20,7 +20,7 @@ import { SdlcError, asSdlcError, exitCodeForError } from '../policy/errors.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 import { RepositoryModelGovernor } from '../adapters/model-governor.ts';
-import { validateOperationRequest } from '@fitness-app/model-usage/policy';
+import { validateOperationRequest } from '@evelbulgroz/model-usage-govenor/policy';
 
 const ALL_CATEGORIES = Object.values(CLOSED_FRICTION_CATEGORIES).flat();
 

@@ -299,7 +299,7 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 				verificationCommand: [
 					'pnpm',
 					'--filter',
-					'@fitness-app/authentication-service',
+					'@example/authentication-service',
 					'test',
 				],
 			},
@@ -313,18 +313,18 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 		workspacePackages: {
 			packageMap: new Map([
 				[
-					'@fitness-app/authentication-service',
+					'@example/authentication-service',
 					{
 						dir: 'apps/services/authentication',
 						pkgJson: {
-							name: '@fitness-app/authentication-service',
+							name: '@example/authentication-service',
 							scripts: { test: 'node --test' },
 						},
 					},
 				],
 			]),
 			pathToPackage: new Map([
-				['apps/services/authentication', '@fitness-app/authentication-service'],
+				['apps/services/authentication', '@example/authentication-service'],
 			]),
 		},
 	});
@@ -351,7 +351,7 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 test('deriveTaskId produces valid, secret-safe task IDs', () => {
 	assert.equal(deriveTaskId('apps/services/conditioning'), 'conditioning-task');
 	assert.equal(deriveTaskId('packages/ddd-base'), 'ddd-base-task');
-	assert.equal(deriveTaskId('apps/frontends/fitnessapp-pwa-frontend'), 'fitnessapp-pwa-frontend-task');
+	assert.equal(deriveTaskId('apps/frontends/example-pwa-frontend'), 'example-pwa-frontend-task');
 
 	// Regex format compliance
 

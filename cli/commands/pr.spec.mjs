@@ -125,7 +125,7 @@ test('CLI pr command with --push and --open-pr pushes and opens draft PR on DONE
 	const execCli = createMockExecCli({ baseCommitSha, commitSha });
 	const ghCli = (cmd, args = [], opts = {}) => {
 		if (cmd === 'gh' && args.includes('pr') && args.includes('create')) {
-			return 'https://github.com/evelbulgroz/fitness-app/pull/101\n';
+			return 'https://github.com/evelbulgroz/agent-sdlc/pull/101\n';
 		}
 		throw new Error(`Unexpected command: ${cmd}`);
 	};
@@ -201,7 +201,7 @@ test('CLI pr command with --push and --open-pr pushes and opens draft PR on DONE
 		assert.equal(pushedRefs.length, 1);
 		assert.equal(pushedRefs[0].remote, 'origin');
 		assert.ok(prResult.result.pullRequest);
-		assert.equal(prResult.result.pullRequest.url, 'https://github.com/evelbulgroz/fitness-app/pull/101');
+		assert.equal(prResult.result.pullRequest.url, 'https://github.com/evelbulgroz/agent-sdlc/pull/101');
 		assert.equal(prResult.result.pullRequest.number, 101);
 
 		// Human formatting check
@@ -210,7 +210,7 @@ test('CLI pr command with --push and --open-pr pushes and opens draft PR on DONE
 			{ rootDir: REPOSITORY_ROOT, governor, gitCli, execCli, ghCli },
 		);
 		assert.equal(prHuman.exitCode, 0);
-		assert.match(prHuman.human, /Draft pull request opened: https:\/\/github\.com\/evelbulgroz\/fitness-app\/pull\/101 \(#101\)/);
+		assert.match(prHuman.human, /Draft pull request opened: https:\/\/github\.com\/evelbulgroz\/agent-sdlc\/pull\/101 \(#101\)/);
 	} finally {
 		if (runId) cleanupRun(runId);
 	}

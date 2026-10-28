@@ -15,7 +15,7 @@ Canonical workflow manifests, role and capability registries, built-in `roles/de
 
 ## Workflow Manifests, Role Definitions & Override Resolution
 
-New client repositories (and `fitness-app` itself) do not need workflow or role JSON files in `.agents/workflows/`. `RoleRegistry` (`packages/agent-sdlc/roles/role-registry.ts`) resolves the default workflow manifest (`specification.json`) and built-in role definitions (`specifier`, `implementer`, `reviewer`, `critic-reviewer`) from `packages/agent-sdlc/roles/defaults/` as the built-in source of truth, with optional per-file host overrides or additional pipeline roles in `.agents/workflows/*.json` and `.agents/workflows/roles/*.json` when present:
+New client repositories do not need workflow or role JSON files in `.agents/workflows/`. `RoleRegistry` (`packages/agent-sdlc/roles/role-registry.ts`) resolves the default workflow manifest (`specification.json`) and built-in role definitions (`specifier`, `implementer`, `reviewer`, `critic-reviewer`) from `packages/agent-sdlc/roles/defaults/` as the built-in source of truth, with optional per-file host overrides or additional pipeline roles in `.agents/workflows/*.json` and `.agents/workflows/roles/*.json` when present:
 
 1. **Workflow Manifest (`specification.json`):**
    - `roles`: Allowlisted built-in role IDs in the default workflow (`specifier`, `implementer`, `reviewer`, `critic-reviewer`), extensible via `.agents/workflows/*.json`.

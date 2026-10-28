@@ -1,6 +1,6 @@
 # Run Ledger, Cost Accounting & Fleet Analytics (`packages/agent-sdlc/ledger/`)
 
-Per-run model operation accounting, per-role token/cost aggregation, archive ledger snapshots, and cross-run fleet friction summaries for `@fitness-app/agent-sdlc`.
+Per-run model operation accounting, per-role token/cost aggregation, archive ledger snapshots, and cross-run fleet friction summaries for `@evelbulgroz/agent-sdlc`.
 
 ## Key Files & Entrypoints
 

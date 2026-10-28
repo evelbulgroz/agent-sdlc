@@ -254,7 +254,7 @@ test('Slice 2 graph interrupts for high-risk review without repair retries', asy
 						toolName: 'run_allowlisted_command',
 						parameters: {
 							command: 'pnpm',
-							args: ['--filter', '@fitness-app/ddd-base', 'test'],
+							args: ['--filter', '@example/ddd-base', 'test'],
 						},
 					},
 				});

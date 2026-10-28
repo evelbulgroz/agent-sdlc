@@ -133,7 +133,7 @@ test('@ac AC-10 @ac AC-14 HEAD drift maintains envelope baseCommitSha for detach
 			runId: fixture.runId,
 			approvedSpecHash: fixture.draftHash,
 			approvedPlanPolicyHash: 'b'.repeat(64),
-			repositoryId: 'fitness-app',
+			repositoryId: 'agent-sdlc',
 			baseCommitSha,
 			allowedPackages: ['packages/ddd-base'],
 			allowedPathPrefixes: ['packages/ddd-base/'],

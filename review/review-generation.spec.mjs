@@ -35,7 +35,7 @@ test('isHighRiskPath and anyHighRiskPaths detect protected repository surfaces',
 	assert.equal(isHighRiskPath('apps/services/authentication/src/auth.service.ts'), true);
 	assert.equal(isHighRiskPath('apps/services/registry/src/main.ts'), true);
 	assert.equal(isHighRiskPath('packages/ddd-base/src/entity.ts'), true);
-	assert.equal(isHighRiskPath('packages/fitnessapp-base/src/index.ts'), true);
+	assert.equal(isHighRiskPath('packages/base/src/index.ts'), true);
 	assert.equal(isHighRiskPath('.github/workflows/ci.yml'), true);
 	assert.equal(isHighRiskPath('tools/quality/gate.mjs'), true);
 	assert.equal(isHighRiskPath('security-config/local.env'), true);
@@ -187,7 +187,7 @@ test('materializeGenerationTree preserves tracked files matching .gitignore with
 	try {
 		fs.mkdirSync(worktreeDir, { recursive: true });
 		execFileSync('git', ['init', '-b', 'main'], { cwd: worktreeDir, stdio: 'ignore' });
-		execFileSync('git', ['config', 'user.email', 'test@fitnessapp.local'], { cwd: worktreeDir });
+		execFileSync('git', ['config', 'user.email', 'test@example.local'], { cwd: worktreeDir });
 		execFileSync('git', ['config', 'user.name', 'test'], { cwd: worktreeDir });
 
 		fs.mkdirSync(path.join(worktreeDir, 'packages/ddd-base'), { recursive: true });

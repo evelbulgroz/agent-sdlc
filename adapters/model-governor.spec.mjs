@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { ModelUsageError } from '@fitness-app/model-usage/errors';
+import { ModelUsageError } from '@evelbulgroz/model-usage-govenor/errors';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { RepositoryModelGovernor } from './model-governor.ts';
 
@@ -16,15 +16,15 @@ const TEST_ONLY_MJS_FILES = new Set([
 	'ledger-success-child.mjs',
 ]);
 
-test('@ac AC-04 @case AC-04.1 the port default path resolves @fitness-app/model-usage governor entrypoint and every source production file under packages/model-usage is .ts', () => {
+test('@ac AC-04 @case AC-04.1 the port default path resolves @evelbulgroz/model-usage-govenor governor entrypoint and every source production file under packages/model-usage is .ts', () => {
 	const governor = new RepositoryModelGovernor();
 	const normalized = governor.governorPath.split(path.sep).join('/');
 	assert.equal(
 		normalized.endsWith('packages/model-usage/dist/governor.js') ||
 			normalized.endsWith('packages/model-usage/governor.ts') ||
-			normalized.endsWith('@fitness-app/model-usage/dist/governor.js'),
+			normalized.endsWith('@evelbulgroz/model-usage-govenor/dist/governor.js'),
 		true,
-		`expected governorPath to resolve to @fitness-app/model-usage governor entrypoint, got ${normalized}`,
+		`expected governorPath to resolve to @evelbulgroz/model-usage-govenor governor entrypoint, got ${normalized}`,
 	);
 	assert.equal(fs.existsSync(governor.governorPath), true);
 

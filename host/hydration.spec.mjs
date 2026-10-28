@@ -6,9 +6,9 @@ import test from 'node:test';
 import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
 import { hydrateWorktree as workflowHydrateWorktree } from '../workflow/hydration.ts';
 import {
-	hydrate as fitnessAppHydrate,
-	hydrateWorktree as fitnessAppHydrateWorktree,
-} from './fitness-app.ts';
+	hydrate as defaultHydrate,
+	hydrateWorktree as defaultHydrateWorktree,
+} from './default-adapter.ts';
 import { hydrate as scriptHydrate } from './script.ts';
 
 function withTempWorktree(fn) {
@@ -59,12 +59,12 @@ test('@ac AC-05 @case AC-05.2 script hydration with [["node", "setup.mjs"]] make
 	});
 });
 
-test('@ac AC-05 @case AC-05.3 fitness-app adapter calls hydrateWorktree from workflow/hydration.ts against a synthetic 1.3.0 host profile', async () => {
-	assert.equal(fitnessAppHydrateWorktree, workflowHydrateWorktree);
+test('@ac AC-05 @case AC-05.3 default adapter calls hydrateWorktree from workflow/hydration.ts against a synthetic 1.3.0 host profile', async () => {
+	assert.equal(defaultHydrateWorktree, workflowHydrateWorktree);
 	await withTempWorktree(async (worktreeDir) => {
 		writeSyntheticHostProfile(worktreeDir);
 		const calls = [];
-		const result = await fitnessAppHydrate({
+		const result = await defaultHydrate({
 			worktreeDir,
 			allowedPackages: ['tools'],
 			runner: (cmd, args, opts) => {

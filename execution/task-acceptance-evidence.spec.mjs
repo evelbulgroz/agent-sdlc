@@ -20,7 +20,7 @@ test('@ac AC-01 AC-03 AC-04 validates current source citations against executed 
 		const command = [
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/Page.spec.tsx',
@@ -103,7 +103,7 @@ test('@ac AC-02 bypasses AC-citation evidence for enabling slices with no accept
 			acceptanceEvidenceCommand: [
 				'pnpm',
 				'--filter',
-				'@fitness-app/example',
+				'@example/example',
 				'test',
 			],
 		});
@@ -126,7 +126,7 @@ test('@ac AC-03 AC-05 keeps a missing oracle branch in implementer convergence',
 		const command = [
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/Page.spec.tsx',
@@ -196,7 +196,7 @@ test('createAcceptanceEvidenceValidator recognizes other spec criteria via known
 		const command = [
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/upstream.spec.ts',
@@ -258,7 +258,7 @@ test('createAcceptanceEvidenceValidator recognizes other spec criteria via known
 
 test('createAcceptanceEvidenceValidator recognizes baseline citations via baseCommitSha and gitCli', () => {
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-baseline-validator-'));
-	const testPath = 'apps/frontends/fitnessapp-pwa-frontend/src/ui/SignInPage.spec.tsx';
+	const testPath = 'apps/frontends/example-pwa-frontend/src/ui/SignInPage.spec.tsx';
 	const absPath = path.join(worktreeDir, testPath);
 	fs.mkdirSync(path.dirname(absPath), { recursive: true });
 	fs.writeFileSync(
@@ -278,7 +278,7 @@ test('createAcceptanceEvidenceValidator recognizes baseline citations via baseCo
 		const command = [
 			'pnpm',
 			'--filter',
-			'@fitness-app/pwa-frontend',
+			'@example/pwa-frontend',
 			'test',
 			'--',
 			'src/ui/SignInPage.spec.tsx',
@@ -292,7 +292,7 @@ test('createAcceptanceEvidenceValidator recognizes baseline citations via baseCo
 			gitCli,
 			worktreeDir,
 			authoredTestPaths: [testPath],
-			allowedPathPrefixes: ['apps/frontends/fitnessapp-pwa-frontend'],
+			allowedPathPrefixes: ['apps/frontends/example-pwa-frontend'],
 			acceptanceEvidenceCommand: command,
 		});
 		const result = validator({

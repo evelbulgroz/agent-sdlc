@@ -290,7 +290,7 @@ test('a directory prefix on the sink covers controllers and generated outputs co
 			generatorCommand: [
 				'pnpm',
 				'--filter',
-				'@fitness-app/demo-service',
+				'@example/demo-service',
 				'run',
 				'build:contracts',
 			],
@@ -392,7 +392,7 @@ test('a non-preserving spec and a package without both contract scripts stay val
 
 test('missingContractCommands requires each argv to pass after the latest write', () => {
 	const quality = ['pnpm', 'run', 'quality:changed'];
-	const drift = ['pnpm', '--filter', '@fitness-app/demo-service', 'run', 'check:contract-drift'];
+	const drift = ['pnpm', '--filter', '@example/demo-service', 'run', 'check:contract-drift'];
 	const commandItem = (argv, stepIndex, result) => ({
 		toolName: 'run_allowlisted_command',
 		stepIndex,

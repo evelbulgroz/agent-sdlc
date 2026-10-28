@@ -6,8 +6,11 @@ import test from 'node:test';
 import ts from 'typescript';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const AGENT_SDLC_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const AGENT_SDLC_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
 const MODEL_USAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/model-usage');
+const IS_MONOREPO = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
 const LEARN_FILENAME = `${'learn'}.${'mjs'}`;
 
 function walkCodeFiles(dir) {
@@ -62,14 +65,15 @@ function collectSpecifiers(filePath) {
 	return specifiers;
 }
 
-test('@ac AC-03 @case AC-03.1 no file under packages/agent-sdlc or packages/model-usage resolves an import outside its package root except fitness-app-learnings.ts dynamic import', () => {
-	const allowedOutsideRel = 'packages/agent-sdlc/host/fitness-app-learnings.ts';
+test('@ac AC-03 @case AC-03.1 no file under agent-sdlc resolves an import outside its package root', () => {
+	const allowedOutsideRel = 'packages/agent-sdlc/host/legacy-learnings.ts';
 	const expectedDynamicTarget = path
 		.resolve(REPOSITORY_ROOT, `tools/lib/${LEARN_FILENAME}`)
 		.split(path.sep)
 		.join('/');
 
-	for (const pkgRoot of [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT]) {
+	const roots = [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT].filter((r) => fs.existsSync(r));
+	for (const pkgRoot of roots) {
 		const pkgPrefix = `${pkgRoot.split(path.sep).join('/')}/`;
 		for (const file of walkCodeFiles(pkgRoot)) {
 			const relFile = path.relative(REPOSITORY_ROOT, file).split(path.sep).join('/');
@@ -77,20 +81,27 @@ test('@ac AC-03 @case AC-03.1 no file under packages/agent-sdlc or packages/mode
 				if (!text.startsWith('.')) continue;
 				const resolved = path.resolve(path.dirname(file), text).split(path.sep).join('/');
 				if (!resolved.startsWith(pkgPrefix)) {
-					assert.equal(
-						relFile === allowedOutsideRel && dynamic && resolved === expectedDynamicTarget,
-						true,
-						`Disallowed cross-boundary relative import in ${relFile}: '${text}' -> '${resolved}'`,
-					);
+					if (IS_MONOREPO) {
+						assert.equal(
+							relFile === allowedOutsideRel && dynamic && resolved === expectedDynamicTarget,
+							true,
+							`Disallowed cross-boundary relative import in ${relFile}: '${text}' -> '${resolved}'`,
+						);
+					} else {
+						assert.fail(
+							`Disallowed cross-boundary relative import in ${relFile}: '${text}' -> '${resolved}'`,
+						);
+					}
 				}
 			}
 		}
 	}
 });
 
-test('@ac AC-03 @case AC-03.2 searching packages/agent-sdlc and packages/model-usage for the learnings module filename finds only host/fitness-app-learnings.ts and not host/script.ts', () => {
+test('@ac AC-03 @case AC-03.2 searching agent-sdlc for legacy learnings module filename', () => {
 	const matches = [];
-	for (const pkgRoot of [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT]) {
+	const roots = [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT].filter((r) => fs.existsSync(r));
+	for (const pkgRoot of roots) {
 		for (const file of walkCodeFiles(pkgRoot)) {
 			const content = fs.readFileSync(file, 'utf8');
 			if (content.includes(LEARN_FILENAME)) {
@@ -98,13 +109,17 @@ test('@ac AC-03 @case AC-03.2 searching packages/agent-sdlc and packages/model-u
 			}
 		}
 	}
-	assert.deepEqual(matches, ['packages/agent-sdlc/host/fitness-app-learnings.ts']);
+	if (IS_MONOREPO) {
+		assert.deepEqual(matches, ['packages/agent-sdlc/host/legacy-learnings.ts']);
+	} else {
+		assert.deepEqual(matches, []);
+	}
 
 	const scriptContent = fs.readFileSync(path.join(AGENT_SDLC_ROOT, 'host/script.ts'), 'utf8');
 	assert.equal(scriptContent.includes(LEARN_FILENAME), false);
 });
 
-test('@ac AC-03 @case AC-03.3 importing packages/agent-sdlc/cli/cli.ts succeeds in a subprocess when the learnings module is shadowed or absent', () => {
+test('@ac AC-03 @case AC-03.3 importing cli/cli.ts succeeds in a subprocess when the learnings module is shadowed or absent', () => {
 	const loaderCode = [
 		`const blocked = ${JSON.stringify(LEARN_FILENAME)};`,
 		'export async function resolve(specifier, context, nextResolve) {',
@@ -115,10 +130,11 @@ test('@ac AC-03 @case AC-03.3 importing packages/agent-sdlc/cli/cli.ts succeeds 
 		'}',
 	].join('\n');
 	const loaderDataUrl = `data:text/javascript;base64,${Buffer.from(loaderCode, 'utf8').toString('base64')}`;
+	const cliRel = IS_MONOREPO ? './packages/agent-sdlc/cli/cli.ts' : './cli/cli.ts';
 	const evalScript = [
 		'import { register } from "node:module";',
 		`register(${JSON.stringify(loaderDataUrl)});`,
-		'await import("./packages/agent-sdlc/cli/cli.ts");',
+		`await import(${JSON.stringify(cliRel)});`,
 		'console.log(JSON.stringify({ loaded: true }));',
 	].join('\n');
 
@@ -134,7 +150,8 @@ test('@ac AC-03 @case AC-03.3 importing packages/agent-sdlc/cli/cli.ts succeeds 
 });
 
 test('@ac AC-03 @case AC-03.4 neither packages/agent-sdlc nor packages/model-usage imports from @langchain/core/runnables', () => {
-	for (const pkgRoot of [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT]) {
+	const roots = [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT].filter((r) => fs.existsSync(r));
+	for (const pkgRoot of roots) {
 		for (const file of walkCodeFiles(pkgRoot)) {
 			const relFile = path.relative(REPOSITORY_ROOT, file).split(path.sep).join('/');
 			for (const { text } of collectSpecifiers(file)) {
@@ -148,52 +165,60 @@ test('@ac AC-03 @case AC-03.4 neither packages/agent-sdlc nor packages/model-usa
 	}
 });
 
-test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 @case AC-04.4 shared helpers live inside the two packages and tools/* retains 1-line re-export shims', () => {
-	for (const rel of [
-		'packages/model-usage/atomic-file-state.ts',
-		'packages/model-usage/sanitize-failure-text.ts',
-		'packages/agent-sdlc/agent-status-validate.ts',
-	]) {
-		assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, rel)), true, rel);
-	}
+test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 @case AC-04.4 shared helpers live inside the packages', () => {
+	if (IS_MONOREPO) {
+		for (const rel of [
+			'packages/model-usage/atomic-file-state.ts',
+			'packages/model-usage/sanitize-failure-text.ts',
+			'packages/agent-sdlc/agent-status-validate.ts',
+		]) {
+			assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, rel)), true, rel);
+		}
 
-	const forbiddenToolPaths = [
-		'tools/lib/atomic-file-state.mjs',
-		'tools/ci/sanitize-failure-text.mjs',
-		'tools/agent-status-validate.mjs',
-		'atomic-file-state.mjs',
-		'sanitize-failure-text.mjs',
-		'agent-status-validate.mjs',
-	];
+		const forbiddenToolPaths = [
+			'tools/lib/atomic-file-state.mjs',
+			'tools/ci/sanitize-failure-text.mjs',
+			'tools/agent-status-validate.mjs',
+			'atomic-file-state.mjs',
+			'sanitize-failure-text.mjs',
+			'agent-status-validate.mjs',
+		];
 
-	for (const pkgRoot of [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT]) {
-		for (const file of walkCodeFiles(pkgRoot)) {
-			const relFile = path.relative(REPOSITORY_ROOT, file).split(path.sep).join('/');
-			for (const { text } of collectSpecifiers(file)) {
-				for (const forbidden of forbiddenToolPaths) {
+		for (const pkgRoot of [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT]) {
+			for (const file of walkCodeFiles(pkgRoot)) {
+				const relFile = path.relative(REPOSITORY_ROOT, file).split(path.sep).join('/');
+				for (const { text } of collectSpecifiers(file)) {
+					for (const forbidden of forbiddenToolPaths) {
+						assert.equal(
+							text.endsWith(forbidden),
+							false,
+							`${relFile} must not import '${text}'`,
+						);
+					}
 					assert.equal(
-						text.endsWith(forbidden),
+						text.includes('model-usage/') && text.startsWith('.'),
 						false,
-						`${relFile} must not import '${text}'`,
+						`${relFile} must not use relative cross-package import '${text}'`,
 					);
 				}
-				assert.equal(
-					text.includes('model-usage/') && text.startsWith('.'),
-					false,
-					`${relFile} must not use relative cross-package import '${text}'`,
-				);
 			}
 		}
-	}
 
-	for (const shimRel of [
-		'tools/lib/atomic-file-state.mjs',
-		'tools/ci/sanitize-failure-text.mjs',
-		'tools/agent-status-validate.mjs',
-	]) {
-		const content = fs.readFileSync(path.join(REPOSITORY_ROOT, shimRel), 'utf8').trim();
-		const lines = content.split(/\r?\n/);
-		assert.equal(lines.length, 1, `${shimRel} must be a 1-line re-export shim`);
-		assert.match(lines[0], /^export \* from ['"].+['"];$/);
+		for (const shimRel of [
+			'tools/lib/atomic-file-state.mjs',
+			'tools/ci/sanitize-failure-text.mjs',
+			'tools/agent-status-validate.mjs',
+		]) {
+			const content = fs.readFileSync(path.join(REPOSITORY_ROOT, shimRel), 'utf8').trim();
+			const lines = content.split(/\r?\n/);
+			assert.equal(lines.length, 1, `${shimRel} must be a 1-line re-export shim`);
+			assert.match(lines[0], /^export \* from ['"].+['"];$/);
+		}
+	} else {
+		assert.equal(
+			fs.existsSync(path.join(AGENT_SDLC_ROOT, 'agent-status-validate.ts')),
+			true,
+			'agent-status-validate.ts must exist',
+		);
 	}
 });

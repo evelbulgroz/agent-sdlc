@@ -7,7 +7,9 @@ import { hasCapability } from '../roles/capability-registry.ts';
 import { PACKAGE_ROLE_DEFAULTS_ROOT, RoleRegistry } from '../roles/role-registry.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
 const ACTIVE_ROLES = ['specifier', 'implementer', 'reviewer', 'critic-reviewer'];
 const RETIRED_ROLES = ['architect', 'cleaner', 'hardener', 'repairer', 'verifier'];
 const RETIRED = [

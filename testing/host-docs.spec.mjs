@@ -4,22 +4,24 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const PACKAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
 
-test('@ac AC-09 @case AC-09.1 packages/agent-sdlc/README.md mentions .agents/sdlc-host.json, host/, fitness-app, and script, and does not call packages/agent-sdlc an npm package', () => {
+test('@ac AC-09 @case AC-09.1 README.md mentions .agents/sdlc-host.json, host/, default, and script, and does not call packages/agent-sdlc an npm package', () => {
 	const readme = fs.readFileSync(path.join(PACKAGE_ROOT, 'README.md'), 'utf8');
 	assert.match(readme, /\.agents\/sdlc-host\.json/);
 	assert.match(readme, /host\//);
-	assert.match(readme, /fitness-app/);
+	assert.match(readme, /default/);
 	assert.match(readme, /script/);
 	assert.equal(/npm package/i.test(readme), false);
 });
 
-test('@ac AC-09 @case AC-09.2 packages/agent-sdlc/host/README.md documents schemaVersion 1.3.0, declarative hydration/workspace/prompts/learnings, and the fitness-app and script adapters', () => {
+test('@ac AC-09 @case AC-09.2 host/README.md documents schemaVersion 1.3.0, declarative hydration/workspace/prompts/learnings, and the default and script adapters', () => {
 	const hostReadme = fs.readFileSync(path.join(PACKAGE_ROOT, 'host/README.md'), 'utf8');
 	assert.match(hostReadme, /\.agents\/sdlc-host\.json/);
 	assert.match(hostReadme, /1\.3\.0/);
-	assert.match(hostReadme, /fitness-app/);
+	assert.match(hostReadme, /default/);
 	assert.match(hostReadme, /script/);
 	assert.match(hostReadme, /learnings\.ts/);
 	assert.equal(/npm package/i.test(hostReadme), false);

@@ -40,7 +40,7 @@ test('@ac AC-08 @ac AC-14 authorized manifest change refreshes lockfile via pnpm
 		fs.mkdirSync(pkgDir, { recursive: true });
 		fs.mkdirSync(path.join(tempDir, 'node_modules'), { recursive: true });
 		const manifestPath = path.join(pkgDir, 'package.json');
-		fs.writeFileSync(manifestPath, '{"name":"@fitness-app/ddd-base"}\n');
+		fs.writeFileSync(manifestPath, '{"name":"@example/ddd-base"}\n');
 		fs.writeFileSync(path.join(tempDir, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
 		const packages = ['packages/ddd-base'];
 		const markerPath = path.join(path.dirname(tempDir), `hydration-${path.basename(tempDir)}.json`);
@@ -49,7 +49,7 @@ test('@ac AC-08 @ac AC-14 authorized manifest change refreshes lockfile via pnpm
 			JSON.stringify({ fingerprint: computeHydrationFingerprint(tempDir, packages) }),
 		);
 		assert.equal(isWorktreeHydrated(tempDir, packages), true);
-		fs.writeFileSync(manifestPath, '{"name":"@fitness-app/ddd-base","version":"0.0.1"}\n');
+		fs.writeFileSync(manifestPath, '{"name":"@example/ddd-base","version":"0.0.1"}\n');
 		assert.equal(isWorktreeHydrated(tempDir, packages), false);
 
 		const hydrated = await hydrateWorktree({
@@ -101,7 +101,7 @@ test('@ac AC-03 @ac AC-09 @ac AC-10 @ac AC-14 hydration failure continues once w
 			runId: fixture.runId,
 			approvedSpecHash: fixture.draftHash,
 			approvedPlanPolicyHash: 'c'.repeat(64),
-			repositoryId: 'fitness-app',
+			repositoryId: 'agent-sdlc',
 			baseCommitSha,
 			allowedPackages: ['packages/ddd-base'],
 			allowedPathPrefixes: ['packages/ddd-base/'],

@@ -5,10 +5,14 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
-import * as fitnessAppAdapter from './fitness-app.ts';
+import * as defaultAdapter from './default-adapter.ts';
 import { loadHostProfile } from './host-profile.ts';
 import * as scriptAdapter from './script.ts';
 import { discoverWorkspace } from './workspace.ts';
+
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
 
 function withTempRoot(fn) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-workspace-test-'));
@@ -38,7 +42,7 @@ const SCRIPT_PROFILE = Object.freeze({
 	workspace: { directories: ['.'] },
 });
 
-test('@ac AC-06 @case AC-06.1 the fitness-app adapter reports packages/a when a synthetic 1.3.0 profile and pnpm-workspace.yaml list packages/a', async () => {
+test('@ac AC-06 @case AC-06.1 the default adapter reports packages/a when a synthetic 1.3.0 profile and pnpm-workspace.yaml list packages/a', async () => {
 	await withTempRoot(async (rootDir) => {
 		writeSyntheticHostProfile(rootDir);
 		fs.writeFileSync(
@@ -70,13 +74,13 @@ test('@ac AC-06 @case AC-06.2 the script adapter reports . and does not read pnp
 	});
 });
 
-test('@ac AC-06 @case AC-06.3 planTaskDag calls discoverWorkspace in host/workspace.ts, which calls scanWorkspacePackages for fitness-app and returns workspace.directories for script, and neither fitness-app.ts nor script.ts exports discovery', () => {
+test('@ac AC-06 @case AC-06.3 planTaskDag calls discoverWorkspace in host/workspace.ts, which calls scanWorkspacePackages for default and returns workspace.directories for script, and neither default-adapter.ts nor script.ts exports discovery', () => {
 	const plannerSource = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/policy/task-planner.ts'),
+		path.join(PACKAGE_ROOT, 'policy/task-planner.ts'),
 		'utf8',
 	);
 	const workspaceSource = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/host/workspace.ts'),
+		path.join(PACKAGE_ROOT, 'host/workspace.ts'),
 		'utf8',
 	);
 
@@ -85,8 +89,8 @@ test('@ac AC-06 @case AC-06.3 planTaskDag calls discoverWorkspace in host/worksp
 	assert.match(workspaceSource, /scanWorkspacePackages\(rootDir\)/);
 	assert.match(workspaceSource, /resolved\.workspace\.directories/);
 
-	assert.equal('discoverWorkspace' in fitnessAppAdapter, false);
-	assert.equal('scanWorkspacePackages' in fitnessAppAdapter, false);
+	assert.equal('discoverWorkspace' in defaultAdapter, false);
+	assert.equal('scanWorkspacePackages' in defaultAdapter, false);
 	assert.equal('discoverWorkspace' in scriptAdapter, false);
 	assert.equal('scanWorkspacePackages' in scriptAdapter, false);
 });

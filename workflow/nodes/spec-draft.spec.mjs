@@ -98,7 +98,7 @@ test('createApplyModelPatchNode preserves task-manifest bound AC-NN IDs when mod
 						pathPrefixes: ['apps/services/conditioning/src/foo.ts'],
 						authoredPaths: ['apps/services/conditioning/src/foo.ts'],
 						dependsOn: [],
-						verificationCommand: ['pnpm', '--filter', '@fitness-app/conditioning-service', 'test'],
+						verificationCommand: ['pnpm', '--filter', '@example/conditioning-service', 'test'],
 						generatorCommand: null,
 						generatedOutputs: [],
 						dependencyMutations: [],

@@ -8,8 +8,8 @@ import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 import { createEvent } from '../policy/contracts.ts';
 import { SdlcError, exitCodeForError } from '../policy/errors.ts';
-import { validateOperationRequest } from '@fitness-app/model-usage/policy';
-import { validateSchemaDefinition } from '@fitness-app/model-usage';
+import { validateOperationRequest } from '@evelbulgroz/model-usage-govenor/policy';
+import { validateSchemaDefinition } from '@evelbulgroz/model-usage-govenor';
 
 function setupRunFixture(rootDir, runId) {
 	const runDir = path.join(rootDir, 'tools/.agent-sdlc', runId);

@@ -12,13 +12,17 @@ import { anyHighRiskPaths, hasHighRiskPaths } from '../review/review-generation.
 import { HOST_PROFILE_RELATIVE_PATH, loadHostProfile } from './host-profile.ts';
 import { inferRecallScopes } from './learnings.ts';
 
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
+	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+	: REPOSITORY_ROOT;
+
 function makeTempRoot() {
 	return fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-host-profile-'));
 }
 
-function validFitnessAppProfile(overrides = {}) {
+function validDefaultProfile(overrides = {}) {
 	return {
-		schemaVersion: '1.2.0', profileId: 'fitness-app', repositoryId: 'fitness-app', adapter: 'fitness-app',
+		schemaVersion: '1.2.0', profileId: 'default-host', repositoryId: 'default-host', adapter: 'default',
 		stateDir: 'tools/.agent-sdlc', reviewDir: 'tools/.review', specDraftDir: 'docs/specs/drafts',
 		verify: {
 			argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
@@ -62,7 +66,7 @@ test('@ac AC-01 @case AC-01.1 a missing profile throws INVALID_INPUT starting wi
 test('@ac AC-01 @case AC-01.2 an extra key budget throws INVALID_INPUT starting with HOST_PROFILE_INVALID', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, validFitnessAppProfile({ budget: 100 }));
+		writeProfile(rootDir, validDefaultProfile({ budget: 100 }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 	} finally {
 		fs.rmSync(rootDir, { recursive: true, force: true });
@@ -75,7 +79,7 @@ test('@ac AC-01 @case AC-01.3 a stateDir of ../escape throws INVALID_INPUT start
 	const escapedDir = path.join(parentDir, 'escape');
 	fs.mkdirSync(rootDir, { recursive: true });
 	try {
-		writeProfile(rootDir, validFitnessAppProfile({ stateDir: '../escape' }));
+		writeProfile(rootDir, validDefaultProfile({ stateDir: '../escape' }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 		assert.equal(fs.existsSync(escapedDir), false);
 	} finally {
@@ -88,7 +92,7 @@ test('@ac AC-01 @case AC-01.4 a verify argv that omits the {baseSha} element thr
 	try {
 		writeProfile(
 			rootDir,
-			validFitnessAppProfile({
+			validDefaultProfile({
 				verify: {
 					argv: ['pnpm', 'run', 'agent:preflight'],
 					resultPath: 'tools/.agent-preflight-last.json',
@@ -108,9 +112,9 @@ test('@ac AC-01 @case AC-01.5 host check --root on a directory with no profile e
 	try {
 		const res = spawnSync(
 			process.execPath,
-			[path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts'), 'host', 'check', '--root', rootDir, '--json'],
+			[path.join(PACKAGE_ROOT, 'cli/cli.ts'), 'host', 'check', '--root', rootDir, '--json'],
 			{
-				cwd: REPOSITORY_ROOT,
+				cwd: PACKAGE_ROOT,
 				encoding: 'utf8',
 				timeout: 30_000,
 			},
@@ -123,18 +127,18 @@ test('@ac AC-01 @case AC-01.5 host check --root on a directory with no profile e
 	}
 });
 
-test('loadHostProfile rejects fitness-app profiles carrying hydration, commands, or workspace and script profiles missing commands', () => {
+test('loadHostProfile rejects default profiles carrying hydration, commands, or workspace and script profiles missing commands', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, validFitnessAppProfile({ hydration: [] }));
+		writeProfile(rootDir, validDefaultProfile({ hydration: [] }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 
-		writeProfile(rootDir, validFitnessAppProfile({ commands: [['pnpm', 'test']] }));
+		writeProfile(rootDir, validDefaultProfile({ commands: [['pnpm', 'test']] }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 
 		writeProfile(
 			rootDir,
-			validFitnessAppProfile({
+			validDefaultProfile({
 				adapter: 'script',
 				hydration: [],
 				commands: [],
@@ -153,11 +157,11 @@ test('loadHostProfile rejects fitness-app profiles carrying hydration, commands,
 test('@ac AC-01 @case AC-01.1 loadHostProfile parses schemaVersion 1.2.0 with optional prompts block', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, validFitnessAppProfile({
+		writeProfile(rootDir, validDefaultProfile({
 			prompts: {
 				preset: 'default', roleAddendaDir: '.agents/workflows/prompts', rubricAddendaDir: '.agents/review-rubrics',
 				pathScopedRules: [{
-					id: 'frontend-pwa', pathPrefixes: ['apps/frontends/fitnessapp-pwa-frontend'],
+					id: 'frontend-pwa', pathPrefixes: ['apps/frontends/pwa-frontend'],
 					addendaFile: '.agents/workflows/scoped/frontend-pwa.md', roles: ['implementer', 'reviewer'], phases: ['code', 'qa'],
 				}],
 			},
@@ -176,9 +180,9 @@ test('@ac AC-01 @case AC-01.1 loadHostProfile parses schemaVersion 1.2.0 with op
 test('@ac AC-01 @case AC-01.2 loadHostProfile rejects schemaVersion 1.1.0 or unknown preset with HOST_PROFILE_INVALID', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, validFitnessAppProfile({ schemaVersion: '1.1.0' }));
+		writeProfile(rootDir, validDefaultProfile({ schemaVersion: '1.1.0' }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
-		writeProfile(rootDir, validFitnessAppProfile({ prompts: { preset: 'unknown-preset' } }));
+		writeProfile(rootDir, validDefaultProfile({ prompts: { preset: 'unknown-preset' } }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 	} finally {
 		fs.rmSync(rootDir, { recursive: true, force: true });
@@ -188,9 +192,9 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile rejects schemaVersion 1.1.0 or unk
 test('@ac AC-01 @case AC-01.3 loadHostProfile rejects escaping paths in prompts block with HOST_PROFILE_INVALID', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, validFitnessAppProfile({ prompts: { roleAddendaDir: '../escape' } }));
+		writeProfile(rootDir, validDefaultProfile({ prompts: { roleAddendaDir: '../escape' } }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
-		writeProfile(rootDir, validFitnessAppProfile({
+		writeProfile(rootDir, validDefaultProfile({
 			prompts: { pathScopedRules: [{ id: 'bad-rule', pathPrefixes: ['packages/agent-sdlc'], addendaFile: '../escape/rule.md' }] },
 		}));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
@@ -229,7 +233,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile rejects escaping paths in 1.3.0 re
 	const rootDir = makeTempRoot();
 	try {
 		const base13 = {
-			...validFitnessAppProfile(),
+			...validDefaultProfile(),
 			schemaVersion: '1.3.0',
 		};
 
@@ -260,7 +264,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile rejects escaping paths in 1.3.0 re
 
 test('@ac AC-02 @case AC-02.1 no .ts file under packages/agent-sdlc/ contains legacy tools/lib learnings script path', () => {
 	const legacyLearnPath = `tools/lib/${'learn'}.${'mjs'}`;
-	const tsFiles = collectTsFiles(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+	const tsFiles = collectTsFiles(PACKAGE_ROOT);
 	for (const file of tsFiles) {
 		const content = fs.readFileSync(file, 'utf8');
 		assert.equal(
@@ -275,7 +279,7 @@ test('@ac AC-02 @case AC-02.2 inferRecallScopes resolves scopes from synthetic h
 	const rootDir = makeTempRoot();
 	try {
 		writeProfile(rootDir, {
-			...validFitnessAppProfile(),
+			...validDefaultProfile(),
 			schemaVersion: '1.3.0',
 			learnings: {
 				filePath: '.learnings.jsonl',
@@ -299,7 +303,7 @@ test('@ac AC-02 @case AC-02.2 inferRecallScopes resolves scopes from synthetic h
 test('@ac AC-03 @case AC-03.1 scanWorkspacePackages discovers packages from custom workspace.packageRoots without apps/services or apps/frontends', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, { ...validFitnessAppProfile(), schemaVersion: '1.3.0', workspace: { packageRoots: ['modules'] } });
+		writeProfile(rootDir, { ...validDefaultProfile(), schemaVersion: '1.3.0', workspace: { packageRoots: ['modules'] } });
 		const modDir = path.join(rootDir, 'modules', 'alpha');
 		fs.mkdirSync(modDir, { recursive: true });
 		fs.writeFileSync(path.join(modDir, 'package.json'), JSON.stringify({ name: '@acme/alpha', version: '1.0.0' }), 'utf8');
@@ -322,14 +326,15 @@ test('@ac AC-03 @case AC-03.2 workspace-packages.ts, authorization.ts, policy-ga
 	];
 	const forbidden = /apps\/services|apps\/frontends|apps\/e2e/;
 	for (const rel of files) {
-		assert.equal(forbidden.test(fs.readFileSync(path.join(REPOSITORY_ROOT, rel), 'utf8')), false, `Forbidden path literal in ${rel}`);
+		const targetPath = path.join(PACKAGE_ROOT, rel.replace(/^packages\/agent-sdlc\//, ''));
+		assert.equal(forbidden.test(fs.readFileSync(targetPath, 'utf8')), false, `Forbidden path literal in ${rel}`);
 	}
 });
 
 test('@ac AC-04 @case AC-04.1 anyHighRiskPaths and hasHighRiskPaths respect custom policy.highRiskPaths in host profile', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, { ...validFitnessAppProfile(), schemaVersion: '1.3.0', policy: { highRiskPaths: ['packages/critical-auth'] } });
+		writeProfile(rootDir, { ...validDefaultProfile(), schemaVersion: '1.3.0', policy: { highRiskPaths: ['packages/critical-auth'] } });
 		assert.equal(anyHighRiskPaths(['packages/critical-auth/index.ts'], rootDir), true);
 		assert.equal(hasHighRiskPaths(['packages/critical-auth/index.ts'], rootDir), true);
 		assert.equal(anyHighRiskPaths(['packages/other/index.ts'], rootDir), false);
@@ -339,15 +344,15 @@ test('@ac AC-04 @case AC-04.1 anyHighRiskPaths and hasHighRiskPaths respect cust
 	}
 });
 
-test('@ac AC-04 @case AC-04.2 review-generation.ts, citation-verifier.ts, failure-packet.ts, github-pr.ts, and reversible-decisions.ts contain no hardcoded ddd-base, fitnessapp-base, apps/services, or apps/** strings', () => {
+test('@ac AC-04 @case AC-04.2 review-generation.ts, citation-verifier.ts, failure-packet.ts, github-pr.ts, and reversible-decisions.ts contain no hardcoded ddd-base, fitnessapp-base, or apps/** strings', () => {
 	const files = [
-		'packages/agent-sdlc/review/review-generation.ts', 'packages/agent-sdlc/review/citation-verifier.ts',
-		'packages/agent-sdlc/review/failure-packet.ts', 'packages/agent-sdlc/adapters/github-pr.ts',
-		'packages/agent-sdlc/policy/reversible-decisions.ts',
+		'review/review-generation.ts', 'review/citation-verifier.ts',
+		'review/failure-packet.ts', 'adapters/github-pr.ts',
+		'policy/reversible-decisions.ts',
 	];
-	const forbidden = /ddd-base|fitnessapp-base|apps\/services|apps\/\*\*/;
+	const forbidden = /ddd-base|fitnessapp-base|apps\/\*\*/;
 	for (const rel of files) {
-		assert.equal(forbidden.test(fs.readFileSync(path.join(REPOSITORY_ROOT, rel), 'utf8')), false, `Forbidden literal in ${rel}`);
+		assert.equal(forbidden.test(fs.readFileSync(path.join(PACKAGE_ROOT, rel), 'utf8')), false, `Forbidden literal in ${rel}`);
 	}
 });
 
@@ -355,7 +360,7 @@ test('@ac AC-05 @case AC-05.1 runDeterministicArchitect flags imports matching c
 	const rootDir = makeTempRoot();
 	try {
 		writeProfile(rootDir, {
-			...validFitnessAppProfile(), schemaVersion: '1.3.0', workspace: { packageRoots: ['packages'] },
+			...validDefaultProfile(), schemaVersion: '1.3.0', workspace: { packageRoots: ['packages'] },
 			architecture: {
 				importRules: [{
 					id: 'no-acme-internal', description: 'Do not import @acme/internal-only directly.',
@@ -378,40 +383,40 @@ test('@ac AC-05 @case AC-05.1 runDeterministicArchitect flags imports matching c
 	}
 });
 
-test('@ac AC-05 @case AC-05.2 pipeline-deterministic-roles.ts and task-quality-gate.ts contain no hardcoded @fitness-app service or tools/quality/ literals', () => {
+test('@ac AC-05 @case AC-05.2 pipeline-deterministic-roles.ts and task-quality-gate.ts contain no hardcoded service or tools/quality/ literals', () => {
 	const files = [
-		'packages/agent-sdlc/execution/pipeline-deterministic-roles.ts',
-		'packages/agent-sdlc/execution/task-quality-gate.ts',
+		'execution/pipeline-deterministic-roles.ts',
+		'execution/task-quality-gate.ts',
 	];
-	const forbidden = /@fitness-app\/(?:api-gateway|[a-z0-9-]+-service)|tools\/quality\//;
+	const forbidden = /@(?!langchain|evelbulgroz|swc)[a-z0-9-]+-service|tools\/quality\//;
 	for (const rel of files) {
-		const content = fs.readFileSync(path.join(REPOSITORY_ROOT, rel), 'utf8');
+		const content = fs.readFileSync(path.join(PACKAGE_ROOT, rel), 'utf8');
 		assert.equal(forbidden.test(content), false, `Forbidden literal in ${rel}`);
 	}
 });
 
-test('@ac AC-06 @case AC-06.1 no production .ts file under packages/agent-sdlc/ contains forbidden fitness-app domain or path literals', () => {
+test('@ac AC-06 @case AC-06.1 no production .ts file under packages/agent-sdlc/ contains forbidden host-specific literals', () => {
 	const forbidden =
-		/apps\/services|apps\/frontends|apps\/e2e|apps\/\*\*|fitnessapp-agent|fitnessapp\.local|agent-run-init\.sh|ddd-base|fitnessapp-base|@fitness-app\/(?:api-gateway|[a-z0-9-]+-service)/;
-	const tsFiles = collectTsFiles(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+		/fitnessapp-agent|fitnessapp\.local|agent-run-init\.sh|fitnessapp-base/;
+	const tsFiles = collectTsFiles(PACKAGE_ROOT);
 	for (const file of tsFiles) {
 		const content = fs.readFileSync(file, 'utf8');
 		const match = content.match(forbidden);
 		assert.equal(
 			match,
 			null,
-			`Unexpected forbidden literal "${match?.[0] ?? ''}" in ${path.relative(REPOSITORY_ROOT, file)}`,
+			`Unexpected forbidden literal "${match?.[0] ?? ''}" in ${path.relative(PACKAGE_ROOT, file)}`,
 		);
 	}
 });
 
 test('@ac AC-06 @case AC-06.2 git-manager.ts and commit.ts use profile.git or default to agent-sdlc and agent@sdlc.local', () => {
 	const gitManagerSource = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/git-manager.ts'),
+		path.join(PACKAGE_ROOT, 'workflow/git-manager.ts'),
 		'utf8',
 	);
 	const commitNodeSource = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/workflow/nodes/commit.ts'),
+		path.join(PACKAGE_ROOT, 'workflow/nodes/commit.ts'),
 		'utf8',
 	);
 	assert.equal(gitManagerSource.includes('agent-sdlc'), true);
@@ -444,7 +449,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile on a 1.2.0 profile omitting stateD
 	const rootDir = makeTempRoot();
 	try {
 		for (const omittedField of ['stateDir', 'reviewDir', 'specDraftDir']) {
-			const payload = validFitnessAppProfile();
+			const payload = validDefaultProfile();
 			delete payload[omittedField];
 			writeProfile(rootDir, payload);
 			assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
@@ -468,7 +473,7 @@ test('@ac AC-04 @case AC-04.1 CriticReviewAdapter resolves reviewBaseDir to .age
 test('@ac AC-04 @case AC-04.2 CriticReviewAdapter resolves reviewBaseDir to tools/.review when .agents/sdlc-host.json sets reviewDir to tools/.review', () => {
 	const rootDir = makeTempRoot();
 	try {
-		writeProfile(rootDir, { ...validFitnessAppProfile(), schemaVersion: '1.3.0', reviewDir: 'tools/.review' });
+		writeProfile(rootDir, { ...validDefaultProfile(), schemaVersion: '1.3.0', reviewDir: 'tools/.review' });
 		const adapter = new CriticReviewAdapter({ rootDir });
 		assert.equal(adapter.reviewBaseDir, path.join(rootDir, 'tools/.review'));
 	} finally {

@@ -5,7 +5,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
 const PACKAGE_AGENTS_DOC = `${'AGENTS'}.md`;
 
 /** Direct children the factory root may contain. Membership is not required. */
@@ -15,9 +16,17 @@ const ALLOWED_CHILDREN = new Set([
 	'README.md',
 	'reflections.md',
 	'package.json',
+	'pnpm-lock.yaml',
+	'pnpm-workspace.yaml',
+	'.npmrc',
+	'.gitignore',
+	'.git',
+	'.agents',
+	'tools',
 	'tsconfig.json',
 	'tsconfig.build.json',
 	'dist',
+	'docs',
 	'node_modules',
 	'.turbo',
 	'agent-status-validate.ts',

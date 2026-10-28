@@ -39,7 +39,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 			'apps/frontends/example/src/ui/Page.tsx',
 			'apps/frontends/example/src/ui/Page.spec.tsx',
 		],
-		verificationCommand: ['pnpm', '--filter', '@fitness-app/example', 'test'],
+		verificationCommand: ['pnpm', '--filter', '@example/example', 'test'],
 	};
 	assert.deepEqual(
 		resolveTargetedVerificationCommand(task, {
@@ -48,7 +48,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -68,7 +68,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -76,7 +76,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 	);
 	assert.deepEqual(
 		resolveTargetedVerificationCommand(task, {
-			name: '@fitness-app/example',
+			name: '@example/example',
 			scripts: {
 				test: 'pnpm run test:unit && pnpm run test:integration',
 				'test:unit': 'cross-env NODE_ENV=test vitest run --config vitest.config.ts',
@@ -87,7 +87,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'run',
 			'test:unit',
 			'src/ui/Page.spec.tsx',
@@ -97,10 +97,10 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		resolveTargetedVerificationCommand(
 			{
 				...task,
-				verificationCommand: ['pnpm', '--filter', '@fitness-app/example', 'run', 'test:unit'],
+				verificationCommand: ['pnpm', '--filter', '@example/example', 'run', 'test:unit'],
 			},
 			{
-				name: '@fitness-app/example',
+				name: '@example/example',
 				scripts: {
 					test: 'pnpm run test:unit && pnpm run test:integration',
 					'test:unit': 'cross-env NODE_ENV=test vitest run --config vitest.config.ts',
@@ -110,7 +110,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'run',
 			'test:unit',
 			'src/ui/Page.spec.tsx',
@@ -122,7 +122,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 	const task = {
 		targetPackage: 'apps/frontends/example',
 		authoredPaths: ['apps/frontends/example/src/ui/Page.spec.tsx'],
-		verificationCommand: ['pnpm', '--filter', '@fitness-app/example', 'test'],
+		verificationCommand: ['pnpm', '--filter', '@example/example', 'test'],
 	};
 	assert.deepEqual(
 		resolveAcceptanceEvidenceCommand(task, {
@@ -131,7 +131,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -140,7 +140,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 	);
 	assert.deepEqual(
 		resolveAcceptanceEvidenceCommand(task, {
-			name: '@fitness-app/example',
+			name: '@example/example',
 			scripts: {
 				test: 'pnpm run test:unit && pnpm run test:integration',
 				'test:unit': 'cross-env NODE_ENV=test vitest run --config vitest.config.ts',
@@ -151,7 +151,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'run',
 			'test:unit',
 			'src/ui/Page.spec.tsx',
@@ -165,7 +165,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -179,7 +179,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@fitness-app/example',
+			'@example/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -217,12 +217,12 @@ test('verification sequence runs the declared generator before the verification 
 });
 
 test('verification sequence appends the package build when the package defines one', () => {
-	const verificationCommand = ['pnpm', '--filter', '@fitness-app/conditioning-service', 'test'];
+	const verificationCommand = ['pnpm', '--filter', '@example/conditioning-service', 'test'];
 	const packageJson = {
-		name: '@fitness-app/conditioning-service',
+		name: '@example/conditioning-service',
 		scripts: { build: 'nest build', test: 'vitest run' },
 	};
-	const build = ['pnpm', '--filter', '@fitness-app/conditioning-service', 'run', 'build'];
+	const build = ['pnpm', '--filter', '@example/conditioning-service', 'run', 'build'];
 	assert.deepEqual(resolveTaskVerificationSequence({ verificationCommand }, packageJson), [
 		verificationCommand,
 		build,
@@ -231,7 +231,7 @@ test('verification sequence appends the package build when the package defines o
 		resolveTaskVerificationSequence(
 			{
 				verificationCommand,
-				generatorCommand: ['pnpm', '--filter', '@fitness-app/conditioning-service', 'run', 'build:contracts'],
+				generatorCommand: ['pnpm', '--filter', '@example/conditioning-service', 'run', 'build:contracts'],
 			},
 			packageJson,
 		).at(-1),
@@ -245,13 +245,13 @@ test('verification sequence appends the package build when the package defines o
 });
 
 test('withContractPreservationCommands appends sink checks and leaves a plain sequence unchanged', () => {
-	const verificationCommand = ['pnpm', '--filter', '@fitness-app/demo-service', 'test'];
+	const verificationCommand = ['pnpm', '--filter', '@example/demo-service', 'test'];
 	const base = resolveTaskVerificationSequence({ verificationCommand });
 	assert.deepEqual(withContractPreservationCommands(base, null), base);
 	assert.deepEqual(withContractPreservationCommands(base, {}), base);
 	const extra = [
-		['pnpm', '--filter', '@fitness-app/demo-service', 'run', 'build:contracts'],
-		['pnpm', '--filter', '@fitness-app/demo-service', 'run', 'check:contract-drift'],
+		['pnpm', '--filter', '@example/demo-service', 'run', 'build:contracts'],
+		['pnpm', '--filter', '@example/demo-service', 'run', 'check:contract-drift'],
 		['pnpm', 'run', 'quality:changed'],
 	];
 	assert.deepEqual(

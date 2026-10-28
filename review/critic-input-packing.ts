@@ -1,7 +1,7 @@
 // Document packing for critic prompts: plan, spec, and QA excerpts. Leaf module.
 
 import { canonicalJson } from '../policy/contracts.ts';
-import { truncateBody } from '@fitness-app/model-usage/sanitize-failure-text';
+import { truncateBody } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 
 export interface PlanTaskPackingInput {
 	taskId?: unknown;

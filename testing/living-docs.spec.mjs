@@ -8,7 +8,8 @@ import {
 	NAVIGABILITY_LINE_CEILING,
 } from './navigability-support.mjs';
 
-const PACKAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const PACKAGE_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
 const PACKAGE_AGENTS_DOC = `${'AGENTS'}.md`;
 
 const MODULE_README_FOLDERS = Object.freeze([
@@ -55,7 +56,13 @@ function missingModulePaths(packageRelPath) {
 	const missing = [];
 	for (const line of text.split('\n')) {
 		for (const modulePath of line.match(MODULE_PATH) ?? []) {
-			if (fs.existsSync(path.join(REPOSITORY_ROOT, modulePath))) continue;
+			const resolved =
+				fs.existsSync(path.join(REPOSITORY_ROOT, modulePath)) ||
+				(IS_STANDALONE &&
+					fs.existsSync(
+						path.join(PACKAGE_ROOT, modulePath.replace(/^packages\/agent-sdlc\//, '')),
+					));
+			if (resolved) continue;
 			missing.push(modulePath);
 		}
 	}

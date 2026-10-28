@@ -9,14 +9,14 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive 3-t
 - `packages/agent-sdlc/host/verify-runner.ts` — Shared host verification command runner supporting both exit-code mode and structured JSON receipt mode (`resultPath`).
 - `packages/agent-sdlc/host/workspace.ts` — Adapter-aware workspace package discovery (`discoverWorkspace`).
 - `packages/agent-sdlc/host/learnings.ts` — Native project learnings store, validator, weighted scorer, and `inferRecallScopes` driven by `profile.learnings`.
-- `packages/agent-sdlc/host/fitness-app.ts` — `fitness-app` host adapter (`hydrateWorktree`, `validateCommandAllowlist`, `scanWorkspacePackages`).
-- `packages/agent-sdlc/host/fitness-app-learnings.ts` — Compatibility re-export of `packages/agent-sdlc/host/learnings.ts`.
+- `packages/agent-sdlc/host/default-adapter.ts` — Default host adapter (`hydrateWorktree`, `validateCommandAllowlist`, `scanWorkspacePackages`).
+- `packages/agent-sdlc/host/learnings.ts` — Native project learnings store, validator, weighted scorer, and `inferRecallScopes` driven by `profile.learnings`.
 - `packages/agent-sdlc/host/script.ts` — Portable `script` host adapter (explicit `commands`, `hydration`, and `workspace.directories`).
 
 ## Core Invariants
 
 1. **Closed Host Profile Contract (`host-profile.ts`, `verify-config.ts`):**
-   - `.agents/sdlc-host.json` (`schemaVersion: "1.3.0"`) declares `repositoryId` (bound into every `RunAuthorizationEnvelope`), the active adapter (`fitness-app` or `script`), progressive `verify` gate configuration, declarative hydration, workspace layout, policy/architecture/qualityGate rules, learnings scope inference, and optional 3-layer prompt/rubric composition (`prompts.preset`, `prompts.roleAddendaDir`, `prompts.rubricAddendaDir`, `prompts.pathScopedRules`).
+   - `.agents/sdlc-host.json` (`schemaVersion: "1.3.0"`) declares `repositoryId` (bound into every `RunAuthorizationEnvelope`), the active adapter (`default` or `script`), progressive `verify` gate configuration, declarative hydration, workspace layout, policy/architecture/qualityGate rules, learnings scope inference, and optional 3-layer prompt/rubric composition (`prompts.preset`, `prompts.roleAddendaDir`, `prompts.rubricAddendaDir`, `prompts.pathScopedRules`).
    - **Single-directory `.agent-sdlc` defaults (`1.3.0`):** In `schemaVersion: "1.3.0"` profiles, `stateDir`, `reviewDir`, `specDraftDir`, and `runsDir` are optional. When omitted, `loadHostProfile()` defaults `stateDir` to `".agent-sdlc"`, `reviewDir` to `"<stateDir>/reviews"` (`".agent-sdlc/reviews"`), and `specDraftDir` to `"<stateDir>/specs/drafts"` (`".agent-sdlc/specs/drafts"`). When `runsDir` is omitted in `1.3.0`, `runsRootDir(rootDir)` defaults to `liveRunRoot(rootDir)` (`<stateDir>`), co-locating `status.json`, `intent.md`, `decisions.md`, `plan.md`, and `candidate-learnings.json` inside `<stateDir>/<run-id>/` and copying them into `<stateDir>/.archive/<run-id>/` during `prune-runs` archival. Setting `runsDir` (e.g. `"docs/specs/runs"`) enables an opt-in separate compatibility projection directory. Legacy `schemaVersion: "1.2.0"` profiles continue to require explicit `stateDir`, `reviewDir`, and `specDraftDir` fields and resolve `runsRootDir` to `docs/specs/runs`.
    - `start [--root <dir>]` validates `.agents/sdlc-host.json` before creating a run directory or SQLite row.
    - Validate a host profile standalone via `agent-sdlc host check [--root <dir>] [--json]`, which returns `{ profileId, adapter }`.

@@ -325,7 +325,7 @@ test('CLI authorize with --push and --open-pr reaches DONE, pushes branch, and o
 	const ghCli = (cmd, args = [], opts = {}) => {
 		ghCliCalls.push({ cmd, args, opts });
 		if (cmd === 'gh' && args.includes('pr') && args.includes('create')) {
-			return 'https://github.com/evelbulgroz/fitness-app/pull/99\n';
+			return 'https://github.com/evelbulgroz/agent-sdlc/pull/99\n';
 		}
 		throw new Error(`Unexpected command: ${cmd} ${args.join(' ')}`);
 	};
@@ -397,7 +397,7 @@ test('CLI authorize with --push and --open-pr reaches DONE, pushes branch, and o
 		assert.equal(pushedRefs[0].remote, 'origin');
 		assert.equal(pushedRefs[0].branch, authorized.result.branch);
 		assert.ok(authorized.result.pullRequest);
-		assert.equal(authorized.result.pullRequest.url, 'https://github.com/evelbulgroz/fitness-app/pull/99');
+		assert.equal(authorized.result.pullRequest.url, 'https://github.com/evelbulgroz/agent-sdlc/pull/99');
 		assert.equal(authorized.result.pullRequest.number, 99);
 		assert.equal(authorized.result.pullRequest.draft, true);
 
@@ -418,7 +418,7 @@ test('CLI authorize with --push and --open-pr reaches DONE, pushes branch, and o
 		});
 		assert.equal(statusHuman.exitCode, 0);
 		assert.match(statusHuman.human, /DONE/);
-		assert.match(statusHuman.human, /Pull Request:\s+https:\/\/github\.com\/evelbulgroz\/fitness-app\/pull\/99 \(#99\) \[draft\]/);
+		assert.match(statusHuman.human, /Pull Request:\s+https:\/\/github\.com\/evelbulgroz\/agent-sdlc\/pull\/99 \(#99\) \[draft\]/);
 	} finally {
 		if (runId) cleanupRun(runId);
 	}

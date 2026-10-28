@@ -11,7 +11,7 @@ import {
 	resolveHostPromptsConfig,
 } from '../roles/role-registry.ts';
 import { extractTestExcerpts, type TouchedTestFileObject } from './excerpt-extractor.ts';
-import { estimatePromptTokens } from '@fitness-app/model-usage/tokenizer';
+import { estimatePromptTokens } from '@evelbulgroz/model-usage-govenor/tokenizer';
 
 const PACKAGE_REVIEW_DEFAULTS_ROOT = path.resolve(import.meta.dirname, 'defaults');
 

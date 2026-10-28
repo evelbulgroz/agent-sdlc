@@ -143,7 +143,7 @@ test('@ac AC-16 manifest-less planning preserves executable verification and dra
 	assert.deepEqual(context.verificationCommand, [
 		'pnpm',
 		'--filter',
-		'@fitness-app/conditioning-service',
+		'@example/conditioning-service',
 		'test',
 	]);
 });

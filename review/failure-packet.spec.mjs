@@ -126,18 +126,18 @@ test('buildFailurePacket ignores stack trace frames, node_modules, and scripts i
 		❯ src/conditioning/domain/conditioning-log.entity.spec.ts (23 tests | 20 failed)
 		  ✖ expected to not throw but TypeError was thrown
 		    at ConditioningLogEntity.create (/home/ulrik/apps/services/conditioning/src/conditioning/domain/conditioning-log.entity.ts:123:4)
-		    at Object.toPlainObject (/home/ulrik/packages/fitnessapp-base/src/dtos/recording/plain-object.util.ts:45:6)
+		    at Object.toPlainObject (/home/ulrik/packages/example-base/src/dtos/recording/plain-object.util.ts:45:6)
 		    at BaseEntity.constructor (/home/ulrik/packages/ddd-base/src/domain/entity.class.ts:12:3)
 		    at Module._compile (/home/ulrik/tools/.agent-sdlc/test-run/worktrees/conditioning-task/node_modules/.pnpm/some-dep/index.js:1:1)
 		 ❯ Function.validateDTO ../../../packages/ddd-base/src/domain/entity.class.ts:452:11
-		 ❯ requireKey ../../../packages/fitnessapp-base/src/dtos/recording/plain-object.util.ts:64:7
+		 ❯ requireKey ../../../packages/example-base/src/dtos/recording/plain-object.util.ts:64:7
 		> tools/clean-security-config-js.sh
 	`;
 
 	const packet = buildFailurePacket({
 		runId,
 		generation: 0,
-		failedCommand: 'pnpm --filter @fitness-app/conditioning-service test',
+		failedCommand: 'pnpm --filter @example/conditioning-service test',
 		exitCode: 1,
 		output: rawOutput,
 		targetPaths: ['apps/services/conditioning/'],
@@ -147,7 +147,7 @@ test('buildFailurePacket ignores stack trace frames, node_modules, and scripts i
 	assert.equal(packet.runId, runId);
 	assert.deepEqual(packet.targetPaths, ['apps/services/conditioning/']);
 	assert.ok(!packet.targetPaths.includes('packages/ddd-base/src/domain/entity.class.ts'));
-	assert.ok(!packet.targetPaths.includes('packages/fitnessapp-base/src/dtos/recording/plain-object.util.ts'));
+	assert.ok(!packet.targetPaths.includes('packages/example-base/src/dtos/recording/plain-object.util.ts'));
 	assert.ok(!packet.targetPaths.includes('tools/clean-security-config-js.sh'));
 });
 
@@ -155,15 +155,15 @@ test('@ac AC-01 output paths stay out of the failure packet', () => {
 	const packet = buildFailurePacket({
 		runId: '2026-09-27-verifier-ac01',
 		generation: 0,
-		failedCommand: 'pnpm --filter @fitness-app/conditioning-service test',
+		failedCommand: 'pnpm --filter @example/conditioning-service test',
 		exitCode: 1,
-		output: 'FAIL packages/fitnessapp-base/src/index.ts\nFAIL tools/quality/check.mjs\n',
+		output: 'FAIL packages/example-base/src/index.ts\nFAIL tools/quality/check.mjs\n',
 		targetPaths: ['apps/services/conditioning/'],
 		baseCommitSha: '1111111111111111111111111111111111111111',
 	});
 
 	assert.deepEqual(packet.targetPaths, ['apps/services/conditioning/']);
-	assert.ok(packet.sanitizedOutput.includes('packages/fitnessapp-base/src/index.ts'));
+	assert.ok(packet.sanitizedOutput.includes('packages/example-base/src/index.ts'));
 });
 
 test('empty output leaves the caller targetPaths unchanged', () => {

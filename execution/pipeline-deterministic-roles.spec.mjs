@@ -26,10 +26,10 @@ test('architect scans touched files and attributes all required import violation
 		'apps/services/conditioning/src/local.ts': "import { value } from './value';\n",
 		'apps/services/conditioning/src/cross.ts':
 			"import { User } from '../../../packages/ddd-base/src/user.js';\n",
-		'apps/frontends/fitnessapp-pwa-frontend/src/direct.ts':
-			"import { Contract } from '@fitness-app/conditioning-service/contracts';\n",
-		'packages/fitnessapp-base/src/deep.ts':
-			"import { hidden } from '@fitness-app/ddd-base/dist/internal.js';\n",
+		'apps/frontends/pwa-frontend/src/direct.ts':
+			"import { Contract } from '@example/conditioning-service/contracts';\n",
+		'packages/base/src/deep.ts':
+			"import { hidden } from '@example/ddd-base/dist/internal.js';\n",
 	};
 	try {
 		for (const [file, content] of Object.entries(files)) {
@@ -54,12 +54,12 @@ test('architect scans touched files and attributes all required import violation
 				},
 				{
 					boundary: 'frontend-backend-import',
-					file: 'apps/frontends/fitnessapp-pwa-frontend/src/direct.ts',
+					file: 'apps/frontends/pwa-frontend/src/direct.ts',
 					severity: 'P1',
 				},
 				{
 					boundary: 'deep-dist-import',
-					file: 'packages/fitnessapp-base/src/deep.ts',
+					file: 'packages/base/src/deep.ts',
 					severity: 'P1',
 				},
 			],

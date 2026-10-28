@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { containsSensitiveCredential } from '@fitness-app/model-usage/sanitize-failure-text';
+import { containsSensitiveCredential } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 import { canonicalJson, normalizeText, sha256 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import type { RunLedger } from './run-ledger.ts';

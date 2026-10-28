@@ -7,8 +7,16 @@ import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const PERSISTENCE = path.join(ROOT, 'packages/agent-sdlc/persistence');
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'))
+	? PACKAGE_ROOT
+	: path.resolve(PACKAGE_ROOT, '../../..');
+const PERSISTENCE = path.join(PACKAGE_ROOT, 'persistence');
+
+function resolvePath(rel) {
+	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
+	return path.join(PACKAGE_ROOT, rel.replace(/^packages\/agent-sdlc\//, ''));
+}
 
 const FROZEN_PROTOTYPE_NAMES = [
 	'appendContinuationProjection',
@@ -160,7 +168,7 @@ const EXCEPTION_PATHS = [
 const SQL_OWNERS = PRODUCTION.filter((rel) => !rel.endsWith('/runtime-store.ts'));
 
 function measure(rel) {
-	const data = fs.readFileSync(path.join(ROOT, rel));
+	const data = fs.readFileSync(resolvePath(rel));
 	let lines = 0;
 	for (const byte of data) if (byte === 0x0a) lines += 1;
 	return { lines, bytes: data.length };
@@ -191,14 +199,14 @@ test('@ac AC-05 @case AC-05.2 production persistence modules do not import the s
 	const sources = productionSources(PERSISTENCE, 'packages/agent-sdlc/persistence', []);
 	for (const rel of sources) {
 		if (rel === 'packages/agent-sdlc/persistence/runtime-store.ts') continue;
-		const source = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+		const source = fs.readFileSync(resolvePath(rel), 'utf8');
 		assert.equal(/from\s+['"][^'"]*runtime-store\.(?:mjs|ts)['"]/.test(source), false, rel);
 	}
 });
 
 test('@ac AC-05 @case AC-05.3 record and migration modules do not begin their own transactions', () => {
 	for (const rel of SQL_OWNERS) {
-		const source = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+		const source = fs.readFileSync(resolvePath(rel), 'utf8');
 		assert.equal(/\b(?:BEGIN|COMMIT|ROLLBACK)\b/.test(source), false, rel);
 	}
 });
@@ -210,7 +218,7 @@ test('@ac AC-05 @case AC-05.4 the run ledger imports no other record module', ()
 });
 
 test('@ac AC-05 @case AC-05.5 a new store exposes database as DatabaseSync', () => {
-	const root = path.join(ROOT, 'tools/.agent-sdlc/test-fixtures', `database-sync-${crypto.randomUUID()}`);
+	const root = path.join(PACKAGE_ROOT, 'tools/.agent-sdlc/test-fixtures', `database-sync-${crypto.randomUUID()}`);
 	fs.mkdirSync(root, { recursive: true });
 	try {
 		const store = new RuntimeStore(path.join(root, 'runtime.sqlite'));
@@ -238,6 +246,6 @@ test('@ac AC-06 @case AC-06.2 store spec files are within the ceiling', () => {
 });
 
 test('@ac AC-06 @case AC-06.3 store paths are absent from the navigability exceptions', () => {
-	const exceptions = JSON.parse(fs.readFileSync(path.join(ROOT, 'packages/agent-sdlc/testing/navigability-exceptions.json'), 'utf8'));
+	const exceptions = JSON.parse(fs.readFileSync(resolvePath('packages/agent-sdlc/testing/navigability-exceptions.json'), 'utf8'));
 	for (const rel of EXCEPTION_PATHS) assert.equal(Object.hasOwn(exceptions, rel), false, rel);
 });

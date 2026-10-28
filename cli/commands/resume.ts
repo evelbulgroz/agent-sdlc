@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadLearningStore } from '../../host/fitness-app-learnings.ts';
+import { loadLearningStore } from '../../host/learnings.ts';
 import { RepositoryModelGovernor } from '../../adapters/model-governor.ts';
 import type { CandidateLearningInput } from '../../persistence/learning-records.ts';
 import {

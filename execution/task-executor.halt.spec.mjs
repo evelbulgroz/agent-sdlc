@@ -76,7 +76,7 @@ test('@ac AC-07 Task completion is gated by deterministic verification in TaskEx
 					title: 'Implement conditioning',
 					targetPackage: 'apps/services/conditioning',
 					pathPrefixes: ['apps/services/conditioning'],
-					verificationCommand: ['pnpm', '--filter', '@fitness-app/conditioning-service', 'test'],
+					verificationCommand: ['pnpm', '--filter', '@example/conditioning-service', 'test'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -362,7 +362,7 @@ test('@ac AC-08 Exhausted repair budget halts with REPAIR_BUDGET_EXCEEDED leavin
 					fs.writeFileSync(
 						path.join(pkgDir, 'package.json'),
 						JSON.stringify({
-							name: '@fitness-app/conditioning-service',
+							name: '@example/conditioning-service',
 							scripts: { test: 'node --test' },
 						}),
 					);

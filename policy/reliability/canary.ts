@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadPolicy } from '@fitness-app/model-usage/policy';
+import { loadPolicy } from '@evelbulgroz/model-usage-govenor/policy';
 import { liveRunRoot, resolveRunPaths } from '../../persistence/run-paths.ts';
 import { RoleRegistry } from '../../roles/role-registry.ts';
 import {

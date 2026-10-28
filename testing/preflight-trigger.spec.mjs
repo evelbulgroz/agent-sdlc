@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { runAutoPrune } from '../cli/auto-prune.ts';
@@ -41,8 +42,11 @@ test('AC-08.4: runAutoPrune spawns detached prune-runs only on primary checkout 
 	assert.equal(result.triggered, true);
 	assert.equal(result.reason, 'spawned');
 	assert.equal(spawned.length, 1);
+	const expectedCliPath = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts'))
+		? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts')
+		: path.join(REPOSITORY_ROOT, 'cli/cli.ts');
 	assert.deepEqual(spawned[0].args, [
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts'),
+		expectedCliPath,
 		'prune-runs',
 	]);
 });

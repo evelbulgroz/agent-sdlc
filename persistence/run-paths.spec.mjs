@@ -233,7 +233,7 @@ test('@ac AC-01 @case AC-01.1 resolveRepositoryRoot honors AGENT_SDLC_REPO_ROOT,
 			resolveRepositoryRoot('/some/other/dir', { AGENT_SDLC_REPO_ROOT: tempHost }),
 			tempHost,
 		);
-		const nestedNodeModules = path.join(tempHost, 'node_modules/@fitness-app/agent-sdlc/dist');
+		const nestedNodeModules = path.join(tempHost, 'node_modules/@evelbulgroz/agent-sdlc/dist');
 		const resolved = resolveRepositoryRoot(nestedNodeModules, {});
 		assert.equal(resolved, tempHost);
 		assert.equal(resolved.includes('node_modules'), false);

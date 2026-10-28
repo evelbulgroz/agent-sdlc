@@ -113,25 +113,25 @@ test('readFileTool resolves a unique same-stem TypeScript source correction', ()
 	try {
 		const domainDir = path.join(
 			tempDir,
-			'apps/frontends/fitnessapp-pwa-frontend/src/domain',
+			'apps/frontends/example-pwa-frontend/src/domain',
 		);
 		fs.mkdirSync(domainDir, { recursive: true });
 		fs.writeFileSync(path.join(domainDir, 'conditioning-log.ts'), 'export const log = true;\n');
 
 		const result = readFileTool(
 			{
-				path: 'apps/frontends/fitnessapp-pwa-frontend/src/domain/ConditioningLog.js',
+				path: 'apps/frontends/example-pwa-frontend/src/domain/ConditioningLog.js',
 			},
 			{ worktreeDir: tempDir },
 		);
 		assert.equal(result.content, 'export const log = true;\n');
 		assert.equal(
 			result.requestedPath,
-			'apps/frontends/fitnessapp-pwa-frontend/src/domain/ConditioningLog.js',
+			'apps/frontends/example-pwa-frontend/src/domain/ConditioningLog.js',
 		);
 		assert.equal(
 			result.resolvedPath,
-			'apps/frontends/fitnessapp-pwa-frontend/src/domain/conditioning-log.ts',
+			'apps/frontends/example-pwa-frontend/src/domain/conditioning-log.ts',
 		);
 	} finally {
 		fs.rmSync(tempDir, { recursive: true, force: true });
@@ -143,7 +143,7 @@ test('readFileTool rejects ambiguous same-stem source corrections', () => {
 	try {
 		const domainDir = path.join(
 			tempDir,
-			'apps/frontends/fitnessapp-pwa-frontend/src/domain',
+			'apps/frontends/example-pwa-frontend/src/domain',
 		);
 		fs.mkdirSync(domainDir, { recursive: true });
 		fs.writeFileSync(path.join(domainDir, 'conditioning-log.ts'), 'export const ts = true;\n');
@@ -153,7 +153,7 @@ test('readFileTool rejects ambiguous same-stem source corrections', () => {
 			() =>
 				readFileTool(
 					{
-						path: 'apps/frontends/fitnessapp-pwa-frontend/src/domain/ConditioningLog.js',
+						path: 'apps/frontends/example-pwa-frontend/src/domain/ConditioningLog.js',
 					},
 					{ worktreeDir: tempDir },
 				),

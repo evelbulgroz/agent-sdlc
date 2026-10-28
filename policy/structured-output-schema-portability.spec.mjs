@@ -8,7 +8,7 @@ import { ATTRIBUTION_OUTPUT_SCHEMA } from '../scripts/trace-skill-auditor.ts';
 import {
 	validateSchemaDefinition,
 	assertStrictModeSchemaCompleteness,
-} from '@fitness-app/model-usage';
+} from '@evelbulgroz/model-usage-govenor';
 import { minimalActionSchema } from '../execution/minimal-executor.ts';
 
 // Every known structuredOutputSchema authored across the repo, keyed by a

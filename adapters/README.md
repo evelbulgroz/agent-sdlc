@@ -1,6 +1,6 @@
 # Outbound Adapters (`packages/agent-sdlc/adapters/`)
 
-Outbound infrastructure ports connecting `@fitness-app/agent-sdlc` to the repository Model Usage Governor (`@fitness-app/model-usage`) and GitHub CLI (`gh`) draft pull request workflows.
+Outbound infrastructure ports connecting `@evelbulgroz/agent-sdlc` to the repository Model Usage Governor (`@evelbulgroz/model-usage-govenor`) and GitHub CLI (`gh`) draft pull request workflows.
 
 ## Key Files & Entrypoints
 

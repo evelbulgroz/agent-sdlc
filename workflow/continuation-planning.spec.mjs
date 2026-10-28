@@ -3,7 +3,6 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { loadPolicy } from '@fitness-app/model-usage/policy';
 import { runCli } from '../cli/cli.ts';
 import { createPlanCriticInterrupt } from '../cli/hitl.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
@@ -127,16 +126,10 @@ test('@ac AC-13 @ac AC-14 both host documents describe the same continuation loo
 });
 
 test('@ac AC-15 committed model limits do not increase and profiles stay coherent', () => {
-	const hostPolicyPath = path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json');
-	const policyPath = fs.existsSync(hostPolicyPath)
-		? hostPolicyPath
-		: loadPolicy.DEFAULT_BUNDLED_POLICY_PATH;
+	const policyPath = path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json');
 	const current = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
-	const headSpec = fs.existsSync(hostPolicyPath)
-		? 'HEAD:.agents/model-usage-policy.json'
-		: 'HEAD:packages/model-usage/policy/default-policy.json';
 	const parent = JSON.parse(
-		execFileSync('git', ['show', headSpec], {
+		execFileSync('git', ['show', 'HEAD:.agents/model-usage-policy.json'], {
 			cwd: REPOSITORY_ROOT,
 			encoding: 'utf8',
 		}),

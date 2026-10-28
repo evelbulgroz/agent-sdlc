@@ -23,9 +23,7 @@ function copyRelative(root, relative) {
 function makeCanaryRoot() {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'canary-planning-'));
 	fs.cpSync(path.join(REPOSITORY_ROOT, '.agents/workflows'), path.join(root, '.agents/workflows'), { recursive: true });
-	if (fs.existsSync(path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json'))) {
-		copyRelative(root, '.agents/model-usage-policy.json');
-	}
+	copyRelative(root, '.agents/model-usage-policy.json');
 	for (const relative of listBoundedPlanningFiles(REPOSITORY_ROOT)) copyRelative(root, relative);
 	return root;
 }

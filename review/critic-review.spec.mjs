@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { estimatePromptTokens } from '@fitness-app/model-usage/tokenizer';
+import { estimatePromptTokens } from '@evelbulgroz/model-usage-govenor/tokenizer';
 import { CriticReviewAdapter, buildCriticOperationId, computeScopeDigest } from './critic-review.ts';
 import { CRITIC_FINDINGS_SCHEMA, buildPhasePrompt } from './critic-prompt.ts';
 import { RepositoryModelGovernor } from '../adapters/model-governor.ts';

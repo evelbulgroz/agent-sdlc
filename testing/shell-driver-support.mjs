@@ -104,9 +104,9 @@ export function spyOnRunCli(realRunCliFn = runCli) {
 export function syntheticHostProfile(overrides = {}) {
 	return {
 		schemaVersion: '1.3.0',
-		profileId: 'fitness-app',
+		profileId: 'default-host',
 		repositoryId: 'fixture-repo',
-		adapter: 'fitness-app',
+		adapter: 'default',
 		stateDir: 'tools/.agent-sdlc',
 		reviewDir: 'tools/.review',
 		specDraftDir: 'docs/specs/drafts',

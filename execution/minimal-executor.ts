@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { estimatePromptTokens as estimatePromptTokensDefault } from '@fitness-app/model-usage/tokenizer';
+import { estimatePromptTokens as estimatePromptTokensDefault } from '@evelbulgroz/model-usage-govenor/tokenizer';
 import type { ModelOperationInput } from '../persistence/model-operation-records.ts';
 import { SdlcError } from '../policy/errors.ts';
 import {

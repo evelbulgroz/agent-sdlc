@@ -3,17 +3,17 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { FakeModelAdapter } from '@fitness-app/model-usage/adapters/fake';
-import { ModelUsageError } from '@fitness-app/model-usage/errors';
-import { executeOperation } from '@fitness-app/model-usage';
+import { FakeModelAdapter } from '@evelbulgroz/model-usage-govenor/adapters/fake';
+import { ModelUsageError } from '@evelbulgroz/model-usage-govenor/errors';
+import { executeOperation } from '@evelbulgroz/model-usage-govenor';
 import {
 	cleanupTestRoot,
 	enabledFakePolicy,
 	makeTestRoot,
 	writePolicy,
-} from '@fitness-app/model-usage/test-support';
-import { selectRoutes } from '@fitness-app/model-usage/routing';
-import { validatePolicy } from '@fitness-app/model-usage/policy';
+} from '@evelbulgroz/model-usage-govenor/test-support';
+import { selectRoutes } from '@evelbulgroz/model-usage-govenor/routing';
+import { validatePolicy } from '@evelbulgroz/model-usage-govenor/policy';
 import { RepositoryModelGovernor } from '../adapters/model-governor.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { RoleExecutor } from './role-executor.ts';

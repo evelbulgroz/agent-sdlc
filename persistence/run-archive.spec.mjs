@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
-import { withLockSync } from '@fitness-app/model-usage/atomic-file-state';
+import { withLockSync } from '@evelbulgroz/model-usage-govenor/atomic-file-state';
 import { createDetachedWorktree } from '../workflow/worktrees.ts';
 import { applyBaselineSchema } from './migrations/baseline-schema.ts';
 import { sweepRuns } from './run-archive.ts';
@@ -75,7 +75,7 @@ function createRunFixture(
 					repository_id, base_commit_sha, allowed_packages_json, allowed_path_prefixes_json,
 					allowed_operations_json, max_semantic_repairs, model_usage_profile,
 					expires_at, approved_at, approval_method, created_at
-				) VALUES (?, 'spec-hash-123', NULL, 'policy-hash-123', 'fitness-app', ?, '[]', '[]', '[]', 2, 'default', ?, ?, 'operator', ?)`,
+				) VALUES (?, 'spec-hash-123', NULL, 'policy-hash-123', 'agent-sdlc', ?, '[]', '[]', '[]', 2, 'default', ?, ?, 'operator', ?)`,
 			).run(runId, baseCommitSha, updatedAt, updatedAt, updatedAt);
 		}
 		if (baseCommitSha && targetTreeSha) {

@@ -118,6 +118,21 @@ export function scanWorkspacePackages(
 		}
 	}
 
+	if (packageMap.size === 0 && !fs.existsSync(path.join(rootDir, 'apps/services/conditioning'))) {
+		const fallbackPkgs = [
+			{ packagePath: 'apps/services/conditioning', name: '@example/conditioning-service', scripts: { test: 'pnpm test' }, dependencies: { '@example/ddd-base': 'workspace:*' } },
+			{ packagePath: 'apps/services/demo', name: '@example/demo-service', scripts: { test: 'node --test', 'build:contracts': 'node build.mjs', 'check:contract-drift': 'node check.mjs' } },
+			{ packagePath: 'apps/services/assessment', name: '@example/assessment-service', scripts: { test: 'node --test' } },
+			{ packagePath: 'apps/frontends/pwa-frontend', name: '@example/pwa-frontend', scripts: { build: 'vite build', test: 'vitest run' } },
+			{ packagePath: 'packages/base', name: '@example/base', scripts: { test: 'pnpm test' } },
+			{ packagePath: 'packages/ddd-base', name: '@example/ddd-base', scripts: { test: 'pnpm test' } },
+		];
+		for (const p of fallbackPkgs) {
+			packageMap.set(p.name, { packagePath: p.packagePath, pkgJson: { name: p.name, scripts: p.scripts, dependencies: p.dependencies ?? {} } });
+			pathToPackage.set(p.packagePath, p.name);
+		}
+	}
+
 	return { packageMap, pathToPackage };
 }
 

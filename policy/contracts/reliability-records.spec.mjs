@@ -61,7 +61,7 @@ test('reliability record validators reject null and a bad canary qualification',
 	assert.throws(() => validateRouteAttribution(null), /must be an object/);
 	const valid = {
 		schemaVersion: '1.0.0',
-		repositoryId: 'fitness-app',
+		repositoryId: 'agent-sdlc',
 		runId: '2026-10-22-canary-probe',
 		status: 'PASSED',
 		failureCategories: [],

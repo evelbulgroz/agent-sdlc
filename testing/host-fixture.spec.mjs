@@ -11,10 +11,10 @@ import { runHostVerify } from '../host/verify-runner.ts';
 import { discoverWorkspace } from '../host/workspace.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const FIXTURE_HOST_DIR = path.join(
-	REPOSITORY_ROOT,
-	'packages/agent-sdlc/testing/fixture-host',
-);
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const FIXTURE_HOST_DIR = IS_STANDALONE
+	? path.join(REPOSITORY_ROOT, 'testing/fixture-host')
+	: path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/fixture-host');
 
 function withTempFixtureRepo(fn) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-fixture-host-'));

@@ -12,14 +12,14 @@ test('isHighRiskPath correctly identifies high risk directories and normal direc
 	assert.equal(isHighRiskPath('packages/service-auth-core/src/index.ts'), true);
 	assert.equal(isHighRiskPath('packages/nest-service-auth/src/index.ts'), true);
 	assert.equal(isHighRiskPath('packages/ddd-base/src/index.ts'), true);
-	assert.equal(isHighRiskPath('packages/fitnessapp-base/src/index.ts'), true);
+	assert.equal(isHighRiskPath('packages/base/src/index.ts'), true);
 	assert.equal(isHighRiskPath('.github/workflows/verify.yml'), true);
 	assert.equal(isHighRiskPath('tools/quality/rules.json'), true);
 	assert.equal(isHighRiskPath('security-config/keys.json'), true);
 
 	// Normal paths
 	assert.equal(isHighRiskPath('apps/services/conditioning/src/index.ts'), false);
-	assert.equal(isHighRiskPath('apps/frontends/fitnessapp-pwa-frontend/src/App.tsx'), false);
+	assert.equal(isHighRiskPath('apps/frontends/pwa-frontend/src/App.tsx'), false);
 	assert.equal(isHighRiskPath('tools/agent-sdlc/workflow/graph.mjs'), false);
 
 	// Shadow paths: nil, empty, non-string
@@ -113,7 +113,7 @@ test('createDraftPullRequest handles happy path, shadow paths, and CLI failures'
 		assert.ok(args.includes('--draft'));
 		assert.ok(args.includes('--title'));
 		assert.ok(args.includes('--head'));
-		return 'https://github.com/evelbulgroz/fitness-app/pull/105\n';
+		return 'https://github.com/evelbulgroz/agent-sdlc/pull/105\n';
 	};
 
 	const result = createDraftPullRequest({
@@ -125,7 +125,7 @@ test('createDraftPullRequest handles happy path, shadow paths, and CLI failures'
 		ghCli: mockGh,
 	});
 
-	assert.equal(result.prUrl, 'https://github.com/evelbulgroz/fitness-app/pull/105');
+	assert.equal(result.prUrl, 'https://github.com/evelbulgroz/agent-sdlc/pull/105');
 	assert.equal(result.prNumber, 105);
 	assert.equal(result.draft, true);
 	assert.equal(result.branchName, 'agent-sdlc/feat-gps');

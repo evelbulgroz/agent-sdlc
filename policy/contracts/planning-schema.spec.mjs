@@ -94,7 +94,7 @@ test('task manifest rejects verification and generator argv outside the closed c
 	unitManifest.tasks[1].verificationCommand = [
 		'pnpm',
 		'--filter',
-		'@fitness-app/conditioning-service',
+		'@example/conditioning-service',
 		'run',
 		'test:unit',
 	];
@@ -104,7 +104,7 @@ test('task manifest rejects verification and generator argv outside the closed c
 	intManifest.tasks[1].verificationCommand = [
 		'pnpm',
 		'--filter',
-		'@fitness-app/conditioning-service',
+		'@example/conditioning-service',
 		'run',
 		'test:integration',
 	];
@@ -114,7 +114,7 @@ test('task manifest rejects verification and generator argv outside the closed c
 	generatorManifest.tasks[1].generatorCommand = [
 		'pnpm',
 		'--filter',
-		'@fitness-app/conditioning-service',
+		'@example/conditioning-service',
 		'run',
 		'build:contracts',
 	];

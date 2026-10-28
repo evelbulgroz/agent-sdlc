@@ -31,7 +31,7 @@ test('isSecretOrExcludedPath identifies secrets, certificates, and build artifac
 	assert.equal(isSecretOrExcludedPath('.env.local'), true);
 	assert.equal(isSecretOrExcludedPath('.envrc'), true);
 	assert.equal(isSecretOrExcludedPath('.env.example'), true);
-	assert.equal(isSecretOrExcludedPath('apps/frontends/fitnessapp-pwa-frontend/.env.example'), true);
+	assert.equal(isSecretOrExcludedPath('apps/frontends/example-pwa-frontend/.env.example'), true);
 	assert.equal(isSecretOrExcludedPath('apps/services/auth/.env.test'), true);
 
 	// Key and cert files

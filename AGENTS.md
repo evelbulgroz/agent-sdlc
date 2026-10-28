@@ -1,6 +1,6 @@
-# AGENTS.md — @fitness-app/agent-sdlc
+# AGENTS.md — @evelbulgroz/agent-sdlc
 
-Private workspace package providing the local SDLC orchestration engine (`packages/agent-sdlc`).
+Standalone library providing the local SDLC orchestration engine.
 
 ## Critical Rules
 
@@ -25,6 +25,12 @@ Private workspace package providing the local SDLC orchestration engine (`packag
 
 - `./README.md` (package overview, installation, host onboarding, CLI quickstart, and development/testing)
 - `./ARCHITECTURE.md` (architectural intent, design principles, and outer/inner loop orchestration)
+- `./docs/philosophy.md` (AI software factory thesis, paradigms, and ratchet pattern)
+- `./docs/operator-shell-and-authorization.md` (Operator shell, authorization envelope, worktree isolation)
+- `./docs/critic-protocol.md` (Heterogeneous dynamic critic review protocol)
+- `./docs/anti-patterns.md` (Anti-patterns, repair budget, and unmerged canary invariant)
+- `./docs/institutional-memory.md` (Native learnings store and graduation workflow)
+- `./.agents/skills/README.md` (Interactive pairing skills index)
 - Module documentation:
   - `./cli/README.md` — Operator shell (`shell start/watch/reply/status`), CLI subcommands, `status.json` continuation projection, and exit codes
   - `./workflow/README.md` — LangGraph state graph, detached worktrees, lazy hydration, patch reconciliation, and git delivery
@@ -33,8 +39,8 @@ Private workspace package providing the local SDLC orchestration engine (`packag
   - `./persistence/README.md` — `runtime.sqlite` event store, artifacts, and 7-day run retention/compaction (`prune-runs`)
   - `./policy/README.md` — `RunAuthorizationEnvelope`, Task DAG planning, `SdlcError` taxonomy, and reliability/canary gates
   - `./roles/README.md` — Role/capability registries, semantic cognitive tiering, upstream learning recall, and trace-skill learning
-  - `./adapters/README.md` — Model usage governor bridge (`@fitness-app/model-usage`) and GitHub draft PR adapter
-  - `./host/README.md` — `.agents/sdlc-host.json` (`1.3.0`) schema, native learnings store, and `fitness-app` / `script` host adapters
+  - `./adapters/README.md` — Model usage governor bridge (`@evelbulgroz/model-usage-govenor`) and GitHub draft PR adapter
+  - `./host/README.md` — `.agents/sdlc-host.json` (`1.3.0`) schema, native learnings store, and host adapters
   - `./ledger/README.md` — Per-run model usage ledger records and archive snapshots
   - `./prompts/README.md` — 3-layer prompt and critic rubric composition
 
@@ -42,18 +48,18 @@ Private workspace package providing the local SDLC orchestration engine (`packag
 
 | Task | Command |
 |------|---------|
-| CLI | `agent-sdlc` (`pnpm --filter @fitness-app/agent-sdlc run sdlc`) |
-| Review CLI | `agent-review` (`pnpm --filter @fitness-app/agent-sdlc run review`) |
-| Trace Summary | `agent-sdlc-trace` (`pnpm --filter @fitness-app/agent-sdlc run trace`) |
-| Critic & Skill Trends | `agent-sdlc-trends` (`pnpm --filter @fitness-app/agent-sdlc run trends`) |
-| Package Unit Tests | `pnpm --filter @fitness-app/agent-sdlc run test:unit` |
-| Package Typecheck | `pnpm --filter @fitness-app/agent-sdlc run typecheck` |
-| Build | `pnpm --filter @fitness-app/agent-sdlc run build` |
+| CLI | `agent-sdlc` (`pnpm run sdlc`) |
+| Review CLI | `agent-review` (`pnpm run review`) |
+| Trace Summary | `agent-sdlc-trace` (`pnpm run trace`) |
+| Critic & Skill Trends | `agent-sdlc-trends` (`pnpm run trends`) |
+| Package Unit Tests | `pnpm run test:unit` |
+| Package Typecheck | `pnpm run typecheck` |
+| Build | `pnpm run build` |
 
 ## Local Done Bar
 
 Before claiming an implementation task is done in this package:
 
 ```bash
-pnpm --filter @fitness-app/agent-sdlc run build && pnpm --filter @fitness-app/agent-sdlc run typecheck && pnpm --filter @fitness-app/agent-sdlc run test:unit && node packages/agent-sdlc/cli/cli.ts reliability replay
+pnpm run build && pnpm run typecheck && pnpm run test:unit && node cli/cli.ts reliability replay
 ```

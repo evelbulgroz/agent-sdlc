@@ -1,6 +1,6 @@
 # 3-Layer Prompt & Rubric Composition (`packages/agent-sdlc/prompts/`)
 
-Engine-generic role prompts, critic review rubrics, and host-configured 3-layer prompt composition for `@fitness-app/agent-sdlc`.
+Engine-generic role prompts, critic review rubrics, and host-configured 3-layer prompt composition for `@evelbulgroz/agent-sdlc`.
 
 ## Key Files & Entrypoints
 

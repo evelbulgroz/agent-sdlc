@@ -15,7 +15,9 @@ function assertContainsAll(policy, expected, label) {
 	}
 }
 
-test('live role policies retain architecture prevention and independent detection', () => {
+const hasHostRubrics = fs.existsSync(path.join(REPOSITORY_ROOT, '.agents/review-rubrics/code.md'));
+
+test('live role policies retain architecture prevention and independent detection', { skip: !hasHostRubrics }, () => {
 	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
 	const implementer = registry.loadRole('implementer').promptPolicy;
 	const reviewer = registry.loadRole('reviewer').promptPolicy;
@@ -24,9 +26,9 @@ test('live role policies retain architecture prevention and independent detectio
 	const permanentArchitectureContracts = [
 		/UI -> application use case -> port -> gateway adapter/i,
 		/generated gateway client/i,
-		/PWA must never import @fitness-app\/\*-service packages or service \/contracts/i,
+		/PWA must never import @example\/\*-service packages or service \/contracts/i,
 		/controller -> application use case -> domain aggregate -> adapter/i,
-		/@fitness-app\/<service>-service\/contracts/i,
+		/@example\/<service>-service\/contracts/i,
 	];
 
 	assertContainsAll(implementer, permanentArchitectureContracts, 'implementer policy');
@@ -34,7 +36,7 @@ test('live role policies retain architecture prevention and independent detectio
 	assertContainsAll(codeRubric, permanentArchitectureContracts, 'code rubric');
 });
 
-test('@ac AC-03 @case AC-03.1 live implementer and backend-scoped reviewer policies retain the complete dual-enforcement contract', () => {
+test('@ac AC-03 @case AC-03.1 live implementer and backend-scoped reviewer policies retain the complete dual-enforcement contract', { skip: !hasHostRubrics }, () => {
 	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
 	const implementer = registry.loadRole('implementer').promptPolicy;
 	const backendReviewer = registry.loadRole('reviewer', {
@@ -54,7 +56,7 @@ test('@ac AC-03 @case AC-03.1 live implementer and backend-scoped reviewer polic
 	assertContainsAll(backendReviewer, dualEnforcementContracts, 'backend-scoped reviewer policy');
 });
 
-test('@ac AC-03 @case AC-03.1 baseline testing remains an implementer obligation and an independent QA audit', () => {
+test('@ac AC-03 @case AC-03.1 baseline testing remains an implementer obligation and an independent QA audit', { skip: !hasHostRubrics }, () => {
 	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
 	const implementer = registry.loadRole('implementer').promptPolicy;
 	const qaRubric = readRepositoryFile('.agents/review-rubrics/qa.md');
@@ -68,7 +70,7 @@ test('@ac AC-03 @case AC-03.1 baseline testing remains an implementer obligation
 	assert.match(qaRubric, /without treating the hardener as the owner of baseline tests/i);
 });
 
-test('@ac AC-05 semantic review blocks grounded unrequested behavior', () => {
+test('@ac AC-05 semantic review blocks grounded unrequested behavior', { skip: !hasHostRubrics }, () => {
 	const reviewer = new RoleRegistry({ rootDir: REPOSITORY_ROOT }).loadRole(
 		'reviewer',
 	).promptPolicy;
@@ -82,7 +84,7 @@ test('@ac AC-05 semantic review blocks grounded unrequested behavior', () => {
 	}
 });
 
-test('visible-control specs name the accessible name and the keyboard action', () => {
+test('visible-control specs name the accessible name and the keyboard action', { skip: !hasHostRubrics }, () => {
 	const specifier = new RoleRegistry({ rootDir: REPOSITORY_ROOT }).loadRole(
 		'specifier',
 	).promptPolicy;
