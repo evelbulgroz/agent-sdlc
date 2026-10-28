@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { listBoundedPlanningFiles } from './canary-planning-files.ts';
+import { listBoundedPlanningFiles, resolveBoundedPlanningFilePath } from './canary-planning-files.ts';
 import { currentCanaryBindings, evaluateCurrentCanaryGate } from './reliability.ts';
 
 const FIXED = [
@@ -17,13 +17,12 @@ const FIXED = [
 function copyRelative(root, relative) {
 	const destination = path.join(root, relative);
 	fs.mkdirSync(path.dirname(destination), { recursive: true });
-	fs.copyFileSync(path.join(REPOSITORY_ROOT, relative), destination);
+	fs.copyFileSync(resolveBoundedPlanningFilePath(REPOSITORY_ROOT, relative), destination);
 }
 
 function makeCanaryRoot() {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'canary-planning-'));
 	fs.cpSync(path.join(REPOSITORY_ROOT, '.agents/workflows'), path.join(root, '.agents/workflows'), { recursive: true });
-	copyRelative(root, '.agents/model-usage-policy.json');
 	for (const relative of listBoundedPlanningFiles(REPOSITORY_ROOT)) copyRelative(root, relative);
 	return root;
 }
@@ -32,13 +31,13 @@ test('@ac AC-03 @case AC-03.1 the repository planning list is sorted and has no 
 	const list = listBoundedPlanningFiles(REPOSITORY_ROOT);
 	assert.deepEqual(list, [...list].sort());
 	for (const relative of FIXED) assert.equal(list.includes(relative), true, relative);
-	const contractsDir = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/policy/contracts');
+	const contractsDir = path.join(REPOSITORY_ROOT, 'policy/contracts');
 	const walk = (dir) => {
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
 			const full = path.join(dir, entry.name);
 			if (entry.isDirectory()) walk(full);
 			else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts') && !entry.name.endsWith('.d.ts')) {
-				const relative = path.relative(REPOSITORY_ROOT, full).split(path.sep).join('/');
+				const relative = `packages/agent-sdlc/${path.relative(REPOSITORY_ROOT, full).split(path.sep).join('/')}`;
 				assert.equal(list.includes(relative), true, relative);
 			}
 		}

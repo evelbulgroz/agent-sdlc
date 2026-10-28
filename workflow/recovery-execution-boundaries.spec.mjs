@@ -23,7 +23,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('auth-transition');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -74,7 +74,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('worktree-prep');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -131,7 +131,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('worktree-hydrated');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -184,7 +184,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('tool-result');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -256,7 +256,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('gen-materialized');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -309,7 +309,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('review-eval');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -358,7 +358,7 @@ test('Slice 2 execution and repair crash boundaries resume without duplicate eff
 		const { runId } = await startSpecApproved('ready-git');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,

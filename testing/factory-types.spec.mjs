@@ -133,7 +133,7 @@ test('@ac AC-05 @case AC-05.3 every boundedPlanningFiles path ends in .ts and ca
 			`expected bounded planning file to end with .ts: ${relPath}`,
 		);
 		assert.equal(
-			fs.existsSync(path.join(REPOSITORY_ROOT, relPath)),
+			fs.existsSync(path.join(REPOSITORY_ROOT, relPath.replace(/^packages\/agent-sdlc\//, ''))),
 			true,
 			`missing bounded planning file: ${relPath}`,
 		);

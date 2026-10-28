@@ -145,7 +145,9 @@ export function currentCanaryBindings(rootDir: string): CanaryBindings {
 	const registry = new RoleRegistry({ rootDir });
 	const workflow = registry.load();
 	const implementer = registry.loadRole('implementer');
-	const hasHostAgentSdlc = fs.existsSync(path.join(rootDir, 'packages/agent-sdlc'));
+	const hasHostAgentSdlc =
+		fs.existsSync(path.join(rootDir, 'packages/agent-sdlc')) ||
+		fs.existsSync(path.join(rootDir, 'policy/task-planner.ts'));
 	const boundedPlanningFiles = hasHostAgentSdlc
 		? listBoundedPlanningFiles(rootDir)
 		: listPackageBoundedPlanningFiles();

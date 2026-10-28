@@ -5,7 +5,7 @@ import test from 'node:test';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { commandEntry, dispatchCommand, exitCodeForCommand } from './index.ts';
 
-const CLI_DIR = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli');
+const CLI_DIR = path.join(REPOSITORY_ROOT, 'cli');
 
 function resolvesToCliEntry(fromFile, specifier) {
 	if (!specifier.startsWith('.')) return false;

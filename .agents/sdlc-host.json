@@ -131,11 +131,17 @@
 			"suunto-t6-sync",
 			"local-user-association",
 			"pwa-frontend",
+			"example-pwa-frontend",
 			"product-e2e"
 		],
 		"scopeInference": [
 			{ "prefix": "apps/services/", "extractSegment": true },
 			{ "prefix": "packages/", "extractSegment": true },
+			{
+				"prefix": "apps/frontends/example-pwa-frontend",
+				"scope": "example-pwa-frontend"
+			},
+			{ "exact": "example-pwa-frontend", "scope": "example-pwa-frontend" },
 			{
 				"prefix": "apps/frontends/pwa-frontend",
 				"scope": "pwa-frontend"

@@ -258,7 +258,10 @@ test('@ac AC-03 @case AC-03.2 the planning-file list contains the task-planner s
 test('@ac AC-03 @case AC-03.3 boundedPlanningHash is the sha256 of the planning-file pairs', () => {
 	const pairs = listBoundedPlanningFiles(REPOSITORY_ROOT).map((filename) => [
 		filename,
-		fs.readFileSync(path.join(REPOSITORY_ROOT, filename), 'utf8'),
+		fs.readFileSync(
+			path.join(REPOSITORY_ROOT, filename.replace(/^packages\/agent-sdlc\//, '')),
+			'utf8',
+		),
 	]);
 	assert.equal(currentCanaryBindings(REPOSITORY_ROOT).boundedPlanningHash, sha256(pairs));
 });
@@ -286,7 +289,7 @@ test('@ac AC-02 @case AC-02.1 currentCanaryBindings and resolveRunMaxPhysicalCal
 	try {
 		fs.mkdirSync(path.join(externalHost, '.agents'), { recursive: true });
 		fs.copyFileSync(
-			path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/fixture-host/profile.json'),
+			path.join(REPOSITORY_ROOT, 'testing/fixture-host/profile.json'),
 			path.join(externalHost, '.agents/sdlc-host.json'),
 		);
 		const extBindings = currentCanaryBindings(externalHost);

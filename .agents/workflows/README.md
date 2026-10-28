@@ -1,6 +1,6 @@
 # Host Workflow Configurations
 
-The `.agents/workflows/` directory contains host-level workflow addenda and prompt customizations.
+The `.agents/workflows/` directory contains host-level workflow addenda (`prompts/`) and path-scoped rule customizations (`scoped/`).
 
 This directory is optional for new clients, as the orchestration engine provides built-in defaults.
 

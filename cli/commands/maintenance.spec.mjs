@@ -109,21 +109,66 @@ test('CLI reliability replay is provider-free and canary check reports every exc
 	assert.equal(replay.result.status, 'PASSED');
 	assert.equal(replay.result.providerOperations, 0);
 
-	const checked = await runCli(
-		[
-			'canary',
-			'check',
-			'--goal-file',
-			'docs/specs/retired/conditioning-session-weather.md',
-			'--task-plan-file',
-			'docs/specs/retired/conditioning-session-weather.tasks.json',
-			'--json',
-		],
-		{ rootDir: REPOSITORY_ROOT },
-	);
-	assert.equal(checked.exitCode, 2);
-	assert.equal(checked.result.status, 'CANARY_INELIGIBLE');
-	assert.ok(checked.result.violations.length > 1);
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-canary-check-'));
+	try {
+		const goalFile = path.join(tempDir, 'goal.json');
+		const manifestFile = path.join(tempDir, 'tasks.json');
+		const { completeSpecJson } = await import('../../testing/cli-test-support.mjs');
+		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.mjs');
+		fs.writeFileSync(
+			goalFile,
+			JSON.stringify(
+				completeSpecJson({
+					touchedSurfaces: [
+						'tools/agent-sdlc/a.mjs',
+						'tools/agent-sdlc/b.mjs',
+						'tools/agent-sdlc/c.mjs',
+						'tools/agent-sdlc/d.mjs',
+					],
+				}),
+			),
+		);
+		const manifest = pinnedToolsManifest();
+		manifest.tasks = [
+			{
+				...manifest.tasks[0],
+				taskId: 'task-1',
+				authoredPaths: [
+					'tools/agent-sdlc/a.mjs',
+					'tools/agent-sdlc/b.mjs',
+					'tools/agent-sdlc/c.mjs',
+					'tools/agent-sdlc/d.mjs',
+				],
+				pathPrefixes: ['tools/agent-sdlc'],
+				dependsOn: [],
+			},
+			{
+				...manifest.tasks[0],
+				taskId: 'task-2',
+				authoredPaths: ['tools/agent-sdlc/a.mjs'],
+				pathPrefixes: ['tools/agent-sdlc'],
+				dependsOn: ['task-1'],
+			},
+		];
+		fs.writeFileSync(manifestFile, JSON.stringify(manifest));
+		const checked = await runCli(
+			[
+				'canary',
+				'check',
+				'--goal-file',
+				goalFile,
+				'--task-plan-file',
+				manifestFile,
+				'--json',
+			],
+			{ rootDir: REPOSITORY_ROOT },
+		);
+		assert.equal(checked.exitCode, 2);
+		assert.equal(checked.result.status, 'CANARY_INELIGIBLE');
+		assert.ok(checked.result.violations.length > 1);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
 });
 
 test('@ac AC-06 @case AC-06.3 canary step is retired before a model call', async () => {

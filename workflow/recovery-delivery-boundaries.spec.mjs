@@ -28,7 +28,7 @@ test('Slice 3 git and commit crash boundaries resume without duplicate commits',
 		const { runId } = await startSpecApproved('s3-branch');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -73,7 +73,7 @@ test('Slice 3 git and commit crash boundaries resume without duplicate commits',
 		const { runId } = await startSpecApproved('s3-commit');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -126,7 +126,7 @@ test('Slice 3 git and commit crash boundaries resume without duplicate commits',
 		const { runId } = await startSpecApproved('s3-done');
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -173,7 +173,7 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 		const { runId } = await startSpecApproved('s4-parent-done', proposal);
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -249,7 +249,7 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 		const { runId } = await startSpecApproved('s4-child-wt', proposal);
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -338,7 +338,7 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 		const { runId } = await startSpecApproved('s4-recon-crash', proposal);
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,

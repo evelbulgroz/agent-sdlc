@@ -44,7 +44,7 @@ test('answer-record crash window resumes once without duplicate event or model o
 		);
 		fs.writeFileSync(responseFile, JSON.stringify(response), { mode: 0o600 });
 		const child = fork(
-			path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+			path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 			[
 				'--root',
 				REPOSITORY_ROOT,
@@ -124,7 +124,7 @@ test('named answer and approval crash boundaries resume exactly once', async (t)
 					mode: 0o600,
 				});
 				const child = fork(
-					path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+					path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 					[
 						'--root',
 						REPOSITORY_ROOT,
@@ -224,7 +224,7 @@ test('named answer and approval crash boundaries resume exactly once', async (t)
 			);
 			fs.writeFileSync(approvalFile, JSON.stringify(approval), { mode: 0o600 });
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,

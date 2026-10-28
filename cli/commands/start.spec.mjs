@@ -10,7 +10,7 @@ import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { RuntimeStore } from '../../persistence/runtime-store.ts';
 import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
 import { completeProposal } from '../../testing/test-support.mjs';
-import { slug, cleanupRun, readyGoalFile, readStoredExecutor } from '../../testing/cli-test-support.mjs';
+import { slug, cleanupRun, readyGoalFile, readStoredExecutor, completeSpecJson } from '../../testing/cli-test-support.mjs';
 
 test('CLI start accepts --author-vendor flag and persists canonical vendor', async () => {
 	const testSlug = slug('author-vendor');
@@ -56,7 +56,18 @@ test('CLI blocks a larger task manifest before governor dispatch when canary evi
 	const backup = fs.existsSync(qualification)
 		? fs.readFileSync(qualification)
 		: null;
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-start-canary-'));
 	try {
+		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.mjs');
+		const goalFile = path.join(tempDir, 'goal.json');
+		const manifestFile = path.join(tempDir, 'tasks.json');
+		fs.writeFileSync(goalFile, JSON.stringify(completeSpecJson({ touchedSurfaces: ['tools/agent-sdlc'] })));
+		const manifest = pinnedToolsManifest();
+		manifest.tasks = [
+			{ ...manifest.tasks[0], taskId: 'task-1', dependsOn: [] },
+			{ ...manifest.tasks[0], taskId: 'task-2', dependsOn: ['task-1'] },
+		];
+		fs.writeFileSync(manifestFile, JSON.stringify(manifest));
 		if (fs.existsSync(qualification)) fs.unlinkSync(qualification);
 		const outcome = await runCli(
 			[
@@ -64,9 +75,9 @@ test('CLI blocks a larger task manifest before governor dispatch when canary evi
 				'--slug',
 				testSlug,
 				'--goal-file',
-				'docs/specs/retired/conditioning-session-weather.md',
+				goalFile,
 				'--task-plan-file',
-				'docs/specs/retired/conditioning-session-weather.tasks.json',
+				manifestFile,
 				'--json',
 			],
 			{ rootDir: REPOSITORY_ROOT, governor },
@@ -79,6 +90,7 @@ test('CLI blocks a larger task manifest before governor dispatch when canary evi
 			false,
 		);
 	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
 		if (backup) {
 			fs.mkdirSync(path.dirname(qualification), { recursive: true });
 			fs.writeFileSync(qualification, backup, { mode: 0o600 });
@@ -95,16 +107,27 @@ test('CLI --skip-canary passes a larger manifest through the canary gate', async
 			throw new Error('PAST_CANARY_GATE');
 		},
 	};
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-skip-canary-'));
 	try {
+		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.mjs');
+		const goalFile = path.join(tempDir, 'goal.json');
+		const manifestFile = path.join(tempDir, 'tasks.json');
+		fs.writeFileSync(goalFile, JSON.stringify(completeSpecJson({ touchedSurfaces: ['tools/agent-sdlc'] })));
+		const manifest = pinnedToolsManifest();
+		manifest.tasks = [
+			{ ...manifest.tasks[0], taskId: 'task-1', dependsOn: [] },
+			{ ...manifest.tasks[0], taskId: 'task-2', dependsOn: ['task-1'] },
+		];
+		fs.writeFileSync(manifestFile, JSON.stringify(manifest));
 		const outcome = await runCli(
 			[
 				'start',
 				'--slug',
 				testSlug,
 				'--goal-file',
-				'docs/specs/retired/conditioning-session-weather.md',
+				goalFile,
 				'--task-plan-file',
-				'docs/specs/retired/conditioning-session-weather.tasks.json',
+				manifestFile,
 				'--skip-canary',
 				'--json',
 			],
@@ -115,6 +138,7 @@ test('CLI --skip-canary passes a larger manifest through the canary gate', async
 		assert.match(outcome.result.error.message, /PAST_CANARY_GATE/);
 		assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc', runId)), false);
 	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
 		cleanupRun(runId);
 	}
 });

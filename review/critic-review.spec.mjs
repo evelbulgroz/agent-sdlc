@@ -109,7 +109,7 @@ test('executeReview derives status strictly from P1 findings even if model repor
 				{
 					severity: 'P1',
 					category: 'correctness',
-					file: 'packages/agent-sdlc/review/critic-review.ts',
+					file: 'review/critic-review.ts',
 					evidence: 'Critical error',
 					impact: 'Crash',
 					remediation: 'Fix',

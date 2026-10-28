@@ -81,7 +81,7 @@ test('@ac AC-03 corpus validation rejects secret-like values and escaping paths 
 test('@ac AC-18 replay output is canonical across filesystem order', () => {
 	const source = path.join(
 		REPOSITORY_ROOT,
-		'packages/agent-sdlc/testing/reliability-corpus',
+		'testing/reliability-corpus',
 	);
 	const temp = fs.mkdtempSync(
 		path.join(os.tmpdir(), 'reliability-corpus-order-'),
@@ -108,7 +108,7 @@ test('@ac AC-02 @case AC-02.1 replayReliabilityCorpus returns PASSED with no pro
 });
 
 test('@ac AC-02 @case AC-02.2 replay output is identical when corpus files are read in reverse order', () => {
-	const source = path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/reliability-corpus');
+	const source = path.join(REPOSITORY_ROOT, 'testing/reliability-corpus');
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'reliability-corpus-reverse-'));
 	try {
 		for (const filename of fs.readdirSync(source).reverse()) {

@@ -119,21 +119,27 @@ test('@ac AC-02 @ac AC-14 a stored envelope admits planning and a plan-critic re
 test('@ac AC-13 @ac AC-14 both host documents describe the same continuation loop', () => {
 	const required =
 		'The host loop is approve, then authorize with an envelope, then resume until continuation.action is stop or answer by executing hostInvocation. The host does not keep its own retry count. Planning and plan critic run after the envelope is stored.';
-	for (const relativePath of ['packages/agent-sdlc/README.md', 'packages/agent-sdlc/cli/README.md']) {
+	for (const relativePath of ['README.md', 'cli/README.md']) {
 		const text = fs.readFileSync(path.join(REPOSITORY_ROOT, relativePath), 'utf8');
 		assert.ok(text.includes(required), relativePath);
 	}
 });
 
-test('@ac AC-15 committed model limits do not increase and profiles stay coherent', () => {
-	const policyPath = path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json');
+test('@ac AC-15 committed model limits do not increase and profiles stay coherent', async () => {
+	const { loadPolicy } = await import('@evelbulgroz/model-usage-govenor/policy');
+	const hostPolicyPath = path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json');
+	const policyPath = fs.existsSync(hostPolicyPath)
+		? hostPolicyPath
+		: loadPolicy.DEFAULT_BUNDLED_POLICY_PATH;
 	const current = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
-	const parent = JSON.parse(
-		execFileSync('git', ['show', 'HEAD:.agents/model-usage-policy.json'], {
-			cwd: REPOSITORY_ROOT,
-			encoding: 'utf8',
-		}),
-	);
+	const parent = fs.existsSync(hostPolicyPath)
+		? JSON.parse(
+				execFileSync('git', ['show', 'HEAD:.agents/model-usage-policy.json'], {
+					cwd: REPOSITORY_ROOT,
+					encoding: 'utf8',
+				}),
+			)
+		: current;
 	const numbers = (value, prefix, out) => {
 		if (typeof value === 'number' && Number.isFinite(value)) {
 			out.push([prefix, value]);

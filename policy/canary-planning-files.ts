@@ -50,7 +50,10 @@ function rememberProduction(
 }
 
 export function listBoundedPlanningFiles(rootDir: string): string[] {
-	if (!fs.existsSync(path.join(rootDir, 'packages/agent-sdlc'))) {
+	if (
+		!fs.existsSync(path.join(rootDir, 'packages/agent-sdlc')) &&
+		fs.existsSync(path.join(rootDir, 'policy/task-planner.ts'))
+	) {
 		return listPackageBoundedPlanningFiles();
 	}
 	const found = new Set<string>(FIXED_PLANNING_FILES);
@@ -98,6 +101,9 @@ export function resolveBoundedPlanningFilePath(
 		return path.join(rootDir, logicalPath);
 	}
 	const innerRel = logicalPath.replace(/^packages\/agent-sdlc\//, '');
+	if (fs.existsSync(path.join(rootDir, 'policy/task-planner.ts'))) {
+		return path.join(rootDir, innerRel);
+	}
 	const tsCandidate = path.join(AGENT_SDLC_PACKAGE_ROOT, innerRel);
 	if (fs.existsSync(tsCandidate)) return tsCandidate;
 	const jsRel = innerRel.endsWith('.ts') ? `${innerRel.slice(0, -3)}.js` : innerRel;

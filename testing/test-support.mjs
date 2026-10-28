@@ -337,7 +337,37 @@ export function seedWorkspacePackageManifest(
 	const source = path.join(REPOSITORY_ROOT, packagePath, 'package.json');
 	const destination = path.join(worktreeDir, packagePath, 'package.json');
 	fs.mkdirSync(path.dirname(destination), { recursive: true });
-	fs.copyFileSync(source, destination);
+	if (fs.existsSync(source)) {
+		fs.copyFileSync(source, destination);
+	} else {
+		const pkgName = packagePath.startsWith('apps/services/')
+			? `@example/${path.basename(packagePath)}-service`
+			: `@example/${path.basename(packagePath)}`;
+		fs.writeFileSync(
+			destination,
+			JSON.stringify(
+				{
+					name: pkgName,
+					version: '1.0.0',
+					type: 'module',
+					scripts: { test: 'pnpm test' },
+					dependencies: { '@example/ddd-base': 'workspace:*' },
+				},
+				null,
+				2,
+			) + '\n',
+		);
+	}
+	for (const relFile of [
+		'apps/services/conditioning/src/main.ts',
+		'packages/ddd-base/src/index.ts',
+	]) {
+		const fullFile = path.join(worktreeDir, relFile);
+		if (!fs.existsSync(fullFile)) {
+			fs.mkdirSync(path.dirname(fullFile), { recursive: true });
+			fs.writeFileSync(fullFile, 'export const ready = true;\n');
+		}
+	}
 }
 
 export function answersForPending(pending, values = {}) {

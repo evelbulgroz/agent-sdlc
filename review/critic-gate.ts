@@ -447,6 +447,7 @@ export async function runQaCritic({
 		testOutput: packQaExcerpts(preflightResult),
 		artifactHash,
 		attemptKey,
+		groundingRootDir: worktreeDir || runtime.registry.rootDir,
 	});
 	return Object.freeze({
 		status: result.hasP1 ? 'FAIL' : 'PASS',

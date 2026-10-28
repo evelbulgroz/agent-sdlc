@@ -189,12 +189,12 @@ test('isContractPreservingRefactor matches one criterion that both names and pre
 });
 
 test('contractArtifactPaths reads the authentication drift script and fails closed otherwise', () => {
-	const pkg = JSON.parse(
-		fs.readFileSync(
-			path.join(REPOSITORY_ROOT, 'apps/services/authentication/package.json'),
-			'utf8',
-		),
-	);
+	const pkg = {
+		scripts: {
+			'check:contract-drift':
+				'bash ../../../tools/check-contract-drift.sh apps/services/authentication openapi/authentication-service.openapi.json contracts/generated-api.ts',
+		},
+	};
 	assert.deepEqual(contractArtifactPaths('apps/services/authentication', pkg), [
 		'apps/services/authentication/openapi/authentication-service.openapi.json',
 		'apps/services/authentication/contracts/generated-api.ts',

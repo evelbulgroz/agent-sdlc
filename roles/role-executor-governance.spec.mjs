@@ -13,7 +13,7 @@ import {
 	writePolicy,
 } from '@evelbulgroz/model-usage-govenor/test-support';
 import { selectRoutes } from '@evelbulgroz/model-usage-govenor/routing';
-import { validatePolicy } from '@evelbulgroz/model-usage-govenor/policy';
+import { loadPolicy, validatePolicy } from '@evelbulgroz/model-usage-govenor/policy';
 import { RepositoryModelGovernor } from '../adapters/model-governor.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { RoleExecutor } from './role-executor.ts';
@@ -289,7 +289,10 @@ test('@ac AC-03 @case AC-03.1 example:conditioning-specifier-synthesis-tier1-chu
 	// Reliability-first calibration keeps synthesis on Tier 3 even under pressure.
 	assert.equal(specifierRole.phaseMinQualityTiers?.synthesis, 3);
 
-	const policyPath = path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json');
+	const hostPolicyPath = path.join(REPOSITORY_ROOT, '.agents/model-usage-policy.json');
+	const policyPath = fs.existsSync(hostPolicyPath)
+		? hostPolicyPath
+		: loadPolicy.DEFAULT_BUNDLED_POLICY_PATH;
 	const committedPolicy = validatePolicy(JSON.parse(fs.readFileSync(policyPath, 'utf8')));
 	const profile = committedPolicy.profiles['agent-sdlc-default'];
 

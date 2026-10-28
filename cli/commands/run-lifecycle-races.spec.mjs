@@ -88,7 +88,7 @@ test('concurrent no-overwrite exports create exactly one destination', async () 
 			new Promise((resolve, reject) => {
 				const child = spawn(
 					process.execPath,
-					['packages/agent-sdlc/cli/cli.ts', 'export', '--run', runId, '--dest', destination, '--json'],
+					['cli/cli.ts', 'export', '--run', runId, '--dest', destination, '--json'],
 					{ cwd: REPOSITORY_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
 				);
 				child.once('error', reject);

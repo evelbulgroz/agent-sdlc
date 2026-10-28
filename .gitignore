@@ -3,5 +3,6 @@ dist
 .turbo
 .test-state
 .agent-sdlc
+.tmp
 tools
 *.log

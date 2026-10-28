@@ -23,7 +23,7 @@ function summarize(runId, taskId) {
 	return execFileSync(
 		process.execPath,
 		[
-			path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/scripts/trace-summary.ts'),
+			path.join(REPOSITORY_ROOT, 'scripts/trace-summary.ts'),
 			'--run',
 			runId,
 			'--task',

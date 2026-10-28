@@ -51,6 +51,7 @@ export interface ExecuteCriticReviewInput {
 	acceptanceCriteria?: readonly string[]; diff?: string; touchedFiles?: readonly TouchedFileEntry[];
 	testOutput?: string; documentText?: string; rubric?: string; preferredRouteIds?: readonly string[];
 	requestedLimits?: { maxPromptTokens?: number; [key: string]: unknown }; artifactHash?: string | null; attemptKey?: string | null;
+	groundingRootDir?: string | null;
 }
 
 export interface CriticReviewExecutionResult {
@@ -263,6 +264,7 @@ export class CriticReviewAdapter {
 			requestedLimits,
 			artifactHash,
 			attemptKey,
+			groundingRootDir,
 		} = input;
 		const canonicalAuthors = canonicalizeAuthorVendors({ authorVendor, authorVendors });
 		if (!['spec', 'plan', 'code', 'qa'].includes(phase)) {
@@ -374,7 +376,7 @@ export class CriticReviewAdapter {
 
 		const { verified: groundedFindings, unverified: ungroundedFindings } = verifyFindings({
 			findings: typedFindings,
-			rootDir: this.rootDir,
+			rootDir: groundingRootDir || this.rootDir,
 		});
 
 		let findings: CriticFinding[] = [...groundedFindings];

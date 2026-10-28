@@ -218,7 +218,7 @@ test('runReviewCli executes code phase and returns exit code 1 when P1 finding e
 			{
 				severity: 'P1',
 				category: 'correctness',
-				file: 'packages/agent-sdlc/review/agent-review.ts',
+				file: 'review/agent-review.ts',
 				evidence: 'Potential race condition',
 				impact: 'Process hang',
 				remediation: 'Add timeout',
@@ -235,7 +235,7 @@ test('runReviewCli executes code phase and returns exit code 1 when P1 finding e
 
 	try {
 		const exitCode = await runReviewCli(
-			['--phase', 'code', '--author-vendor', 'openai', '--scope', 'packages/agent-sdlc/review/agent-review.ts'],
+			['--phase', 'code', '--author-vendor', 'openai', '--scope', 'review/agent-review.ts'],
 			{
 				rootDir: REPOSITORY_ROOT,
 				governor,
@@ -425,7 +425,7 @@ test('Governor AC 16: Dispatches via consumer agent-sdlc and persists operationI
 test('agent-review CLI process exits with code 2 on argument errors', () => {
 	assert.throws(
 		() => {
-			execFileSync(process.execPath, ['packages/agent-sdlc/review/agent-review.ts', '--phase', 'spec'], {
+			execFileSync(process.execPath, ['review/agent-review.ts', '--phase', 'spec'], {
 				cwd: REPOSITORY_ROOT,
 				encoding: 'utf8',
 				stdio: ['ignore', 'pipe', 'pipe'],

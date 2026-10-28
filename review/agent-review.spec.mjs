@@ -424,7 +424,7 @@ test('runReviewCli validates required flags and inputs', async () => {
 				'--author-vendor',
 				'google',
 				'--target',
-				'docs/specs/runs/_example/intent.md',
+				'README.md',
 			]),
 		(err) => err.code === 'INVALID_INPUT' && err.message.includes('--test-output is required'),
 	);
@@ -438,7 +438,7 @@ test('runReviewCli validates required flags and inputs', async () => {
 				'--author-vendor',
 				'google',
 				'--target',
-				'docs/specs/runs/_example/intent.md',
+				'README.md',
 				'--test-output',
 				'security-config/test.security.config.ts',
 			]),

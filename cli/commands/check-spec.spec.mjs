@@ -8,24 +8,22 @@ import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { RoleRegistry } from '../../roles/role-registry.ts';
 import { slug, completeSpecMarkdown, completeSpecJson, runCheckSpec } from '../../testing/cli-test-support.mjs';
+import { pinnedToolsManifest } from '../../testing/task-planner-fixtures.mjs';
 
 test('CLI check-spec rejects a slice goal that would exceed the 256 character task title limit', async () => {
-	const manifest = JSON.parse(
-		fs.readFileSync(
-			path.join(REPOSITORY_ROOT, 'docs/specs/retired/conditioning-session-weather.tasks.json'),
-			'utf8',
-		),
-	);
+	const manifest = pinnedToolsManifest();
 	manifest.slices[0].goal = 'x'.repeat(260);
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cli-title-'));
+	const goalPath = path.join(directory, 'goal.json');
 	const manifestPath = path.join(directory, 'tasks.json');
 	try {
+		fs.writeFileSync(goalPath, JSON.stringify(completeSpecJson({ touchedSurfaces: ['tools/agent-sdlc'] })));
 		fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 		const outcome = await runCli(
 			[
 				'check-spec',
 				'--goal-file',
-				'docs/specs/retired/conditioning-session-weather.md',
+				goalPath,
 				'--task-plan-file',
 				manifestPath,
 				'--json',
@@ -41,24 +39,22 @@ test('CLI check-spec rejects a slice goal that would exceed the 256 character ta
 });
 
 test('CLI check-spec rejects same-package tasks that have no dependency path between them', async () => {
-	const manifest = JSON.parse(
-		fs.readFileSync(
-			path.join(REPOSITORY_ROOT, 'docs/specs/retired/conditioning-session-weather.tasks.json'),
-			'utf8',
-		),
-	);
-	manifest.tasks.find((task) => task.taskId === 'weather-backfill-task').dependsOn = [
-		'weather-track-samples-task',
+	const manifest = pinnedToolsManifest();
+	manifest.tasks = [
+		{ ...manifest.tasks[0], taskId: 'weather-track-samples-task', dependsOn: [] },
+		{ ...manifest.tasks[0], taskId: 'weather-backfill-task', dependsOn: [] },
 	];
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cli-concurrent-'));
+	const goalPath = path.join(directory, 'goal.json');
 	const manifestPath = path.join(directory, 'tasks.json');
 	try {
+		fs.writeFileSync(goalPath, JSON.stringify(completeSpecJson({ touchedSurfaces: ['tools/agent-sdlc'] })));
 		fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 		const outcome = await runCli(
 			[
 				'check-spec',
 				'--goal-file',
-				'docs/specs/retired/conditioning-session-weather.md',
+				goalPath,
 				'--task-plan-file',
 				manifestPath,
 				'--json',
@@ -75,7 +71,7 @@ test('CLI check-spec rejects same-package tasks that have no dependency path bet
 
 test('@ac AC-18 policy README documents the closed bounded-plan authoring path', () => {
 	const policyReadme = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/policy/README.md'),
+		path.join(REPOSITORY_ROOT, 'policy/README.md'),
 		'utf8',
 	);
 	assert.match(policyReadme, /--task-plan-file <path>/);
@@ -196,7 +192,7 @@ test('@ac AC-08 check-spec rejects a missing goal file', async () => {
 
 test('@ac AC-10 package CLI usage and README document check-spec --goal-file', () => {
 	const readme = fs.readFileSync(
-		path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/README.md'),
+		path.join(REPOSITORY_ROOT, 'README.md'),
 		'utf8',
 	);
 	assert.match(readme, /agent-sdlc check-spec --goal-file/);

@@ -19,7 +19,7 @@ import {
 function runCheckSpecCli(args) {
 	const result = spawnSync(
 		process.execPath,
-		['packages/agent-sdlc/cli/cli.ts', 'check-spec', ...args],
+		['cli/cli.ts', 'check-spec', ...args],
 		{ cwd: REPOSITORY_ROOT, encoding: 'utf8', timeout: 60_000 },
 	);
 	return { status: result.status, parsed: JSON.parse(result.stdout) };

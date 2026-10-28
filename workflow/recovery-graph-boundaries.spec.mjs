@@ -40,7 +40,7 @@ test('named graph and projection crash boundaries resume without duplicate effec
 			const runId = `${new Date().toISOString().slice(0, 10)}-${testSlug}`;
 			try {
 				const child = fork(
-					path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+					path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 					[
 						'--root',
 						REPOSITORY_ROOT,
@@ -129,7 +129,7 @@ test('blocked, revision, rejection, cancellation, and operator-cancel boundaries
 		const runId = `${new Date().toISOString().slice(0, 10)}-${testSlug}`;
 		try {
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,
@@ -211,7 +211,7 @@ test('blocked, revision, rejection, cancellation, and operator-cancel boundaries
 					mode: 0o600,
 				});
 				const child = fork(
-					path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+					path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 					[
 						'--root',
 						REPOSITORY_ROOT,
@@ -271,7 +271,7 @@ test('blocked, revision, rejection, cancellation, and operator-cancel boundaries
 			);
 			runId = started.result.runId;
 			const child = fork(
-				path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/crash-fixture-runner.mjs'),
+				path.join(REPOSITORY_ROOT, 'testing/crash-fixture-runner.mjs'),
 				[
 					'--root',
 					REPOSITORY_ROOT,

@@ -1,1 +1,1 @@
-# Frontend PWA Scoped Rule Addenda
+# Path-Scoped Rules: Frontend PWA

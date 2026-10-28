@@ -163,7 +163,7 @@ export function resolveCodeAuthorVendors(
 			 WHERE run_id = ?
 			   AND status = 'succeeded'
 			   AND role_id IN (${placeholders})
-			 ORDER BY created_at, operation_id`,
+			 ORDER BY created_at, rowid, operation_id`,
 		)
 		.all(snapshot.runId, ...CODE_AUTHOR_ROLES);
 	const vendors: CanonicalAuthorVendor[] = [];

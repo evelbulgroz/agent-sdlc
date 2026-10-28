@@ -75,8 +75,8 @@ test('@ac AC-13 host documents tell every host to run the card and stop on a con
 	const executable = 'The host runs every executable hostInvocation.argv, including the approval response-file resume and a resume whose retry.allowed is false.';
 	const finished = 'packetConsumed true with a null argv is a finished packet when the process exit is 0, 2, 3, or 4.';
 	const planning = 'Planning and plan critic run after the envelope is stored.';
-	for (const relativePath of ['packages/agent-sdlc/README.md', 'packages/agent-sdlc/cli/README.md']) {
-		const text = fs.readFileSync(new URL(`../../../${relativePath}`, import.meta.url), 'utf8');
+	for (const relativePath of ['README.md', 'cli/README.md']) {
+		const text = fs.readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
 		assert.equal(text.includes(executable), true, relativePath);
 		assert.equal(text.includes(finished), true, relativePath);
 		assert.equal(text.includes(planning), true, relativePath);

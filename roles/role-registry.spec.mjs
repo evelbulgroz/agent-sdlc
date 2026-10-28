@@ -437,9 +437,9 @@ test('@ac AC-01 @case AC-01.1 @case AC-01.2 redundant workflow and role JSONs ar
 });
 
 test('@ac AC-04 @case AC-04.1 @case AC-04.2 roles and workflows READMEs document defaults fallback and built-in role inventory', () => {
-	const promptsReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/prompts/README.md'), 'utf8');
+	const promptsReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'prompts/README.md'), 'utf8');
 	assert.match(promptsReadme, /roles\/defaults\/protocol\//);
-	const rolesReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/roles/README.md'), 'utf8');
+	const rolesReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'roles/README.md'), 'utf8');
 	assert.match(rolesReadme, /packages\/agent-sdlc\/roles\/defaults\//);
 	assert.match(rolesReadme, /\.agents\/workflows\/roles\/\*\.json/);
 	for (const token of ['specification.json', 'specifier', 'implementer', 'reviewer', 'critic-reviewer']) {
