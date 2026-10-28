@@ -1,0 +1,20 @@
+{
+	"schemaVersion": "1.0.0",
+	"roleId": "critic-reviewer",
+	"roleKind": "review",
+	"insertionPoint": "review",
+	"capabilityId": "semantic-review-v1",
+	"evaluatorId": "review-rubric-v1",
+	"promptFile": "critic-reviewer.md",
+	"modelProfile": "critic-review",
+	"routingStrategy": "quality-first",
+	"minQualityTier": 3,
+	"requestedLimits": {
+		"maxPromptTokens": 20000,
+		"maxCompletionTokens": 6000,
+		"timeoutMs": 120000,
+		"maxPhysicalAttempts": 3,
+		"maxRetriesPerRoute": 2,
+		"maxFailovers": 1
+	}
+}

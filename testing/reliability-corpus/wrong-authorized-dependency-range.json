@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"wrong-authorized-dependency-range","failureCategory":"WRONG_AUTHORIZED_DEPENDENCY_RANGE","entryPoint":"classify-failure","input":{"code":"POLICY_VIOLATION","message":"requested version differs from the authorized dependency range","path":"package.json"},"expected":{"failureCategory":"WRONG_AUTHORIZED_DEPENDENCY_RANGE"}}

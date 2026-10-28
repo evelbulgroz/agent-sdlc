@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"configuration-drift","failureCategory":"CONFIGURATION_DRIFT","entryPoint":"classify-failure","input":{"code":"CONFIGURATION_CHANGED","message":"Workflow, role, prompt, capability, or evaluator policy changed","path":"tools/agent-sdlc"},"expected":{"failureCategory":"CONFIGURATION_DRIFT"}}

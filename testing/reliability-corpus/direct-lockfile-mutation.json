@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"direct-lockfile-mutation","failureCategory":"DIRECT_LOCKFILE_MUTATION","entryPoint":"classify-failure","input":{"code":"POLICY_VIOLATION","message":"direct lockfile mutation is forbidden because lockfiles are generated","path":"pnpm-lock.yaml"},"expected":{"failureCategory":"DIRECT_LOCKFILE_MUTATION"}}

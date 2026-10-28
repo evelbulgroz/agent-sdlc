@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"missing-source-extension","failureCategory":"MISSING_SOURCE_EXTENSION","entryPoint":"classify-failure","input":{"code":"INVALID_EDIT","message":"relative ESM import must include '.js' source extension","path":"src/example.ts"},"expected":{"failureCategory":"MISSING_SOURCE_EXTENSION"}}

@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"missing-post-edit-verification","failureCategory":"MISSING_POST_EDIT_VERIFICATION","entryPoint":"classify-failure","input":{"code":"INVALID_ACTION","message":"after modifying files, you must run the declared verification before completing","path":"src/example.ts"},"expected":{"failureCategory":"MISSING_POST_EDIT_VERIFICATION"}}

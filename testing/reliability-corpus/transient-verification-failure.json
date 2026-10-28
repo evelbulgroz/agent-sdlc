@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"transient-verification-failure","failureCategory":"TRANSIENT_VERIFICATION_FAILURE","entryPoint":"classify-failure","input":{"code":"TRANSIENT_VERIFICATION_FAILURE","message":"transient verification failure confirmed on rerun","path":"src/example.spec.ts"},"expected":{"failureCategory":"TRANSIENT_VERIFICATION_FAILURE"}}

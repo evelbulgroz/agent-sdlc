@@ -1,0 +1,18 @@
+{
+	"schemaVersion": "1.0.0",
+	"roleId": "implementer",
+	"capabilityId": "lean-tool-loop-v1",
+	"evaluatorId": "implementer-action-v1",
+	"promptFile": "implementer.md",
+	"modelProfile": "agent-sdlc-default",
+	"routingStrategy": "balanced",
+	"minQualityTier": 3,
+	"requestedLimits": {
+		"maxPromptTokens": 968000,
+		"maxCompletionTokens": 16000,
+		"timeoutMs": 180000,
+		"maxPhysicalAttempts": 4,
+		"maxRetriesPerRoute": 1,
+		"maxFailovers": 2
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"schemaVersion": "1.0.0",
+	"workflowId": "specification",
+	"roleId": "specifier",
+	"limits": {
+		"maxInterviewRounds": 5,
+		"maxQuestionsPerBatch": 5,
+		"maxModelOperations": 8,
+		"maxGoalBytes": 65536,
+		"maxAnswerBytes": 65536,
+		"maxArtifactBytes": 4194304,
+		"maxExportBytes": 524288
+	}
+}

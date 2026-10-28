@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "implementer-nonexecuted-ac-evidence",
+  "failureCategory": "POLICY_REJECTION",
+  "entryPoint": "ac-execution-coverage",
+  "input": {
+    "acceptanceCriteria": [
+      "AC-01: Submission readiness is tested. Given both credentials are present. Then the sign-in button is enabled."
+    ],
+    "testSource": "function helper() { it('readiness @ac AC-01', () => { expect(true).toBe(true); }); }",
+    "path": "src/ui/SignInPage.spec.tsx",
+    "executionOutput": "{\"testResults\":[{\"assertionResults\":[{\"title\":\"existing login test\",\"status\":\"passed\"}]}]}"
+  },
+  "expected": {
+    "notExecutedAcIds": ["AC-01"]
+  }
+}

@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"stale-literal-replacement","failureCategory":"STALE_LITERAL_REPLACEMENT","entryPoint":"classify-failure","input":{"code":"STALE_FILE_SNAPSHOT","message":"stale literal replacement rejected","path":"src/example.ts"},"expected":{"failureCategory":"STALE_LITERAL_REPLACEMENT"}}

@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"undeclared-dependency-mutation","failureCategory":"UNDECLARED_DEPENDENCY_MUTATION","entryPoint":"classify-failure","input":{"code":"POLICY_VIOLATION","message":"dependency mutation was not declared by the task","path":"package.json"},"expected":{"failureCategory":"UNDECLARED_DEPENDENCY_MUTATION"}}

@@ -1,0 +1,16 @@
+{
+	"schemaVersion": "1.0.0",
+	"roleId": "reviewer",
+	"capabilityId": "semantic-review-v1",
+	"evaluatorId": "review-rubric-v1",
+	"promptFile": "reviewer.md",
+	"modelProfile": "agent-sdlc-default",
+	"requestedLimits": {
+		"maxPromptTokens": 12000,
+		"maxCompletionTokens": 16000,
+		"timeoutMs": 180000,
+		"maxPhysicalAttempts": 3,
+		"maxRetriesPerRoute": 1,
+		"maxFailovers": 1
+	}
+}

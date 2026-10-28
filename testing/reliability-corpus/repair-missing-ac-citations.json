@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "repair-missing-ac-citations",
+  "failureCategory": "POLICY_REJECTION",
+  "entryPoint": "ac-coverage",
+  "input": {
+    "acceptanceCriteria": [
+      "AC-01: Incomplete input is blocked. Given one required field is empty. Then submission is disabled.",
+      "AC-02: Complete input is accepted. Given every required field has a value. Then submission is enabled."
+    ],
+    "testSource": "it('changes readiness', () => { expect(true).toBe(true); });",
+    "path": "src/feature.spec.ts"
+  },
+  "expected": {
+    "uncoveredAcIds": ["AC-01", "AC-02"]
+  }
+}

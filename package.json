@@ -1,0 +1,49 @@
+{
+  "name": "@fitness-app/agent-sdlc",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "testing/reliability-corpus"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "bin": {
+    "agent-sdlc": "./dist/cli/cli.js",
+    "agent-review": "./dist/review/agent-review.js",
+    "agent-sdlc-trace": "./dist/scripts/trace-summary.js",
+    "agent-sdlc-trends": "./dist/scripts/aggregate-critic-trends.js",
+    "agent-sdlc-auto-prune": "./dist/cli/auto-prune.js"
+  },
+  "exports": {
+    "./agent-status-validate": {
+      "types": "./dist/agent-status-validate.d.ts",
+      "default": "./dist/agent-status-validate.js"
+    },
+    "./auto-prune": {
+      "types": "./dist/cli/auto-prune.d.ts",
+      "default": "./dist/cli/auto-prune.js"
+    }
+  },
+  "scripts": {
+    "build": "node -e \"const fs=require('node:fs');fs.rmSync('dist',{recursive:true,force:true});\" && tsc -p tsconfig.build.json && node -e \"const fs=require('node:fs');fs.cpSync('roles/defaults','dist/roles/defaults',{recursive:true});fs.cpSync('review/defaults','dist/review/defaults',{recursive:true});\"",
+    "sdlc": "node ./cli/cli.ts",
+    "review": "node ./review/agent-review.ts",
+    "trace": "node ./scripts/trace-summary.ts",
+    "trends": "node ./scripts/aggregate-critic-trends.ts",
+    "skills": "node ./cli/cli.ts skills",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:unit": "node --test --test-concurrency=1 '**/*.spec.mjs'"
+  },
+  "dependencies": {
+    "@fitness-app/model-usage": "workspace:*",
+    "@langchain/langgraph": "1.4.13",
+    "@langchain/langgraph-checkpoint": "1.1.5",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  }
+}

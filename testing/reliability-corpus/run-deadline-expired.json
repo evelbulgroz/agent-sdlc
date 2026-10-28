@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"run-deadline-expired","failureCategory":"RUN_DEADLINE_EXPIRED","entryPoint":"classify-failure","input":{"code":"ERR_RUN_DEADLINE_EXCEEDED","message":"run deadline expired before dispatch","path":"tools/agent-sdlc"},"expected":{"failureCategory":"RUN_DEADLINE_EXPIRED"}}

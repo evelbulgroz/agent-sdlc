@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"unsupported-author-vendor","failureCategory":"UNSUPPORTED_AUTHOR_VENDOR","entryPoint":"classify-failure","input":{"code":"AUTHOR_VENDOR_UNKNOWN","message":"Unknown or unsupported author vendor: 'deterministic-json'","path":"tools/agent-sdlc"},"expected":{"failureCategory":"UNSUPPORTED_AUTHOR_VENDOR"}}

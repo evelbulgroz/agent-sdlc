@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.2.0",
+  "profileId": "fixture-host",
+  "repositoryId": "fixture-host",
+  "adapter": "script",
+  "stateDir": "tools/.agent-sdlc",
+  "reviewDir": "tools/.review",
+  "specDraftDir": "docs/specs/drafts",
+  "verify": {
+    "argv": ["node", "verify.mjs", "{baseSha}"],
+    "resultPath": "tools/.verify/last.json",
+    "headField": "head",
+    "require": { "status": "OK", "canonical": true }
+  },
+  "commands": [["node", "--test"]],
+  "hydration": [],
+  "workspace": { "directories": ["."] }
+}

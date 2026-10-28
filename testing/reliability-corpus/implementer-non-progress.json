@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"implementer-non-progress","failureCategory":"IMPLEMENTER_NON_PROGRESS","entryPoint":"classify-failure","input":{"code":"IMPLEMENTER_NON_PROGRESS","message":"Implementer made no bounded progress after route failover: repeated-failed-reads","path":"tools/agent-sdlc"},"expected":{"failureCategory":"IMPLEMENTER_NON_PROGRESS"}}

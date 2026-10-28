@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"implementer-non-completed","failureCategory":"IMPLEMENTER_NON_COMPLETED","entryPoint":"classify-failure","input":{"code":"TASK_EXECUTION_FAILED","message":"implementer did not complete task: terminal status step_limit_reached","path":"src/example.ts"},"expected":{"failureCategory":"IMPLEMENTER_NON_COMPLETED"}}

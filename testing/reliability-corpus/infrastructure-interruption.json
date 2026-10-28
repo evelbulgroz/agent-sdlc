@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"infrastructure-interruption","failureCategory":"INFRASTRUCTURE_INTERRUPTION","entryPoint":"classify-failure","input":{"code":"GOVERNOR_ROUTES_EXHAUSTED","message":"No allowed governed model route completed","path":"tools/agent-sdlc"},"expected":{"failureCategory":"INFRASTRUCTURE_INTERRUPTION"}}

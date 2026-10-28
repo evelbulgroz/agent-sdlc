@@ -1,0 +1,25 @@
+{
+	"schemaVersion": "1.0.0",
+	"roleId": "specifier",
+	"capabilityId": "governed-structured-synthesis-v1",
+	"evaluatorId": "specification-proposal-v1",
+	"promptFile": "specifier.md",
+	"modelProfile": "agent-sdlc-default",
+	"routingStrategy": "quality-first",
+	"minQualityTier": 3,
+	"phaseStrategies": {
+		"interview": "quality-first",
+		"synthesis": "quality-first"
+	},
+	"phaseMinQualityTiers": {
+		"synthesis": 3
+	},
+	"requestedLimits": {
+		"maxPromptTokens": 12000,
+		"maxCompletionTokens": 4000,
+		"timeoutMs": 60000,
+		"maxPhysicalAttempts": 1,
+		"maxRetriesPerRoute": 0,
+		"maxFailovers": 1
+	}
+}

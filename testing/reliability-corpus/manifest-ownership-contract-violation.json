@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"manifest-ownership-contract-violation","failureCategory":"TASK_PLAN_CONTRACT_VIOLATION","entryPoint":"classify-failure","input":{"code":"INVALID_CONTRACT","message":"taskManifest acceptance criterion ownership is invalid (missing: AC-03, AC-04)","path":"docs/specs/drafts"},"expected":{"failureCategory":"TASK_PLAN_CONTRACT_VIOLATION"}}

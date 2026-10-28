@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"repair-gate-exhausted","failureCategory":"REPAIR_GATE_EXHAUSTED","entryPoint":"classify-failure","input":{"code":"REPAIR_BUDGET_EXHAUSTED","message":"Autonomous repair prohibited: REPAIR_BUDGET_EXHAUSTED","path":"tools/agent-sdlc"},"expected":{"failureCategory":"REPAIR_GATE_EXHAUSTED"}}

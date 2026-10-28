@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0.0","caseId":"repeated-nonexistent-source-path","failureCategory":"NONEXISTENT_SOURCE_PATH_REPEATED","entryPoint":"classify-failure","input":{"code":"INVALID_INPUT","message":"source path does not exist after repeated lookup","path":"src/missing.ts"},"expected":{"failureCategory":"NONEXISTENT_SOURCE_PATH_REPEATED"}}
