@@ -37,7 +37,7 @@ Detailed subsystem documentation lives in co-located module READMEs:
 | `prompts/` | 3-layer role prompt & critic rubric composition (`roles/role-registry.ts`, `review/critic-prompt.ts`, `roles/defaults/`, `review/defaults/`) | [`prompts/README.md`](./prompts/README.md) |
 
 ```text
-packages/agent-sdlc/
+agent-sdlc/
 ├── cli/
 ├── workflow/
 ├── execution/
@@ -79,8 +79,8 @@ packages/agent-sdlc/
   ```
 - **`pnpm` (`>= 9`)** (`corepack enable`) and **`git`**.
 
-#### 2. Install Workspace & Link CLI Binaries
-Clone the repository once on your machine, install workspace dependencies, and link the package binaries declared in [`packages/agent-sdlc/package.json`](./package.json) onto your global `pnpm` bin path:
+#### 2. Install Workspace, Link CLI Binaries & Export `AGENT_SDLC_PATH`
+Clone the repository once on your machine, install workspace dependencies, and link the package binaries declared in [`package.json`](./package.json) onto your global `pnpm` bin path:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -92,6 +92,13 @@ agent-review --help
 ```
 
 *(You can also invoke scripts directly via `pnpm run sdlc -- <subcommand>` without global linking.)*
+
+For host repositories whose scripts, preflight hooks (`auto-prune.ts`), or dynamic ESM shims (`agent-status-validate.ts`) invoke the local checkout directly without adding `@evelbulgroz/agent-sdlc` to the host `package.json`, export `AGENT_SDLC_PATH` (alongside `MODEL_USAGE_PATH`) in your shell login/environment profile (`~/.profile`, `~/.bashrc`, or `~/.zshenv` so both interactive terminals and non-interactive agent/worktree subshells inherit it):
+
+```bash
+export AGENT_SDLC_PATH="/path/to/agent-sdlc"
+export MODEL_USAGE_PATH="/path/to/model-usage-govenor"
+```
 
 #### 3. Configure Model Governor Credentials & Local Ceilings
 All LLM calls route through `@evelbulgroz/model-usage-govenor`. Export the API keys for your enabled routes in your shell profile, and optionally create `~/.config/model-usage/local-policy.json` (machine-wide) or `.agent-sdlc/local-policy.json` / `tools/.model-usage/local-policy.json` (per-project) to tighten per-run or per-instance spend ceilings (see [`@evelbulgroz/model-usage-govenor`](https://github.com/evelbulgroz/model-usage-govenor)).
@@ -139,7 +146,7 @@ agent-sdlc host check --json
 
 #### Step 3: Choose a verification tier (`verify`)
 
-The engine never lets a model self-approve its work; every run must pass your host verification gate (`packages/agent-sdlc/host/verify-config.ts`). You can start simple and tighten the gate as your repo matures:
+The engine never lets a model self-approve its work; every run must pass your host verification gate (`host/verify-config.ts`). You can start simple and tighten the gate as your repo matures:
 
 1. **Tier 1 — Default (`npm test`):** Omit `verify` in `.agents/sdlc-host.json`. The engine runs `npm test` in the worktree and passes on exit code `0`.
 2. **Tier 2 — Custom exit-code command (`verify.argv`):** Set `"verify": { "argv": ["pnpm", "run", "verify"] }` (optionally including a discrete `"{baseSha}"` argument for diff-aware scripts).
@@ -147,7 +154,7 @@ The engine never lets a model self-approve its work; every run must pass your ho
 
 #### Step 4: Customize prompts, rules, and roles only when needed
 
-- **Built-in defaults work out of the box:** `.agents/workflows/` is optional. When omitted, `packages/agent-sdlc/roles/defaults/` and `packages/agent-sdlc/review/defaults/` supply the default `specification.json` workflow, the 4 built-in roles (`specifier`, `implementer`, `reviewer`, `critic-reviewer`), Layer 1 `protocol/` prompts, and Layer 2 `philosophy/` prompts and rubrics (see [`roles/README.md`](./roles/README.md) and [`prompts/README.md`](./prompts/README.md)).
+- **Built-in defaults work out of the box:** `.agents/workflows/` is optional. When omitted, `roles/defaults/` and `review/defaults/` supply the default `specification.json` workflow, the 4 built-in roles (`specifier`, `implementer`, `reviewer`, `critic-reviewer`), Layer 1 `protocol/` prompts, and Layer 2 `philosophy/` prompts and rubrics (see [`roles/README.md`](./roles/README.md) and [`prompts/README.md`](./prompts/README.md)).
 - **Repo-specific guardrails (Layer 3):** To teach the roles your repository's conventions without forked role JSONs, add markdown addenda in `.agents/workflows/prompts/<roleId>.md`, attach path-scoped rules via `prompts.pathScopedRules` in `.agents/sdlc-host.json`, or configure `architecture`, `policy`, `qualityGate`, and `learnings` rules in `.agents/sdlc-host.json`.
 
 ---
@@ -156,7 +163,7 @@ The engine never lets a model self-approve its work; every run must pass your ho
 
 ### Operator Shell (`agent-sdlc shell`)
 
-`shell` (`packages/agent-sdlc/cli/shell-driver.ts`, documented in [`cli/README.md`](./cli/README.md) and [`ARCHITECTURE.md`](./ARCHITECTURE.md)) is the only surface that drives an orchestrated run for an operator or host chat session. The host loop is approve, then authorize with an envelope, then resume until continuation.action is stop or answer by executing hostInvocation. The host does not keep its own retry count. Planning and plan critic run after the envelope is stored. The host runs every executable hostInvocation.argv, including the approval response-file resume and a resume whose retry.allowed is false. packetConsumed true with a null argv is a finished packet when the process exit is 0, 2, 3, or 4.
+`shell` (`cli/shell-driver.ts`, documented in [`cli/README.md`](./cli/README.md) and [`ARCHITECTURE.md`](./ARCHITECTURE.md)) is the only surface that drives an orchestrated run for an operator or host chat session. The host loop is approve, then authorize with an envelope, then resume until continuation.action is stop or answer by executing hostInvocation. The host does not keep its own retry count. Planning and plan critic run after the envelope is stored. The host runs every executable hostInvocation.argv, including the approval response-file resume and a resume whose retry.allowed is false. packetConsumed true with a null argv is a finished packet when the process exit is 0, 2, 3, or 4.
 
 ```bash
 # 1. Validate spec and task manifest (governor-free, no run or worktree created)
@@ -229,7 +236,7 @@ pnpm run test:unit
 
 ### Qualify (Offline Replay & Hosted Canary)
 
-Before running a multi-task DAG after modifying orchestration logic, qualify the engine in two stages (`packages/agent-sdlc/policy/reliability/canary.ts`, documented in [`policy/README.md`](./policy/README.md)):
+Before running a multi-task DAG after modifying orchestration logic, qualify the engine in two stages (`policy/reliability/canary.ts`, documented in [`policy/README.md`](./policy/README.md)):
 
 - **Purpose (Why):** Any change to the workflow manifest (`workflowHash`), task-planning/execution modules (`boundedPlanningHash`, [`policy/canary-planning-files.ts`](./policy/canary-planning-files.ts)), the `implementer` role/prompts (`implementerRoleHash`), or committed `.agents/model-usage-policy.json` (`modelPolicyHash`) invalidates `<stateDir>/canary-qualification.json` (`CANARY_STALE` / `CANARY_REQUIRED`), blocking multi-task runs until a fresh canary passes. Documentation-only commits (`*.md`) do not mark the canary stale.
 - **Manner (How):**
