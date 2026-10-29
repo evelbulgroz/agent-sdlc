@@ -21,6 +21,7 @@ import {
 	type WorkspacePackagesScan,
 	assertContractPreservingIntegration,
 	isContractProducerSurface,
+	repositoryScopesOf,
 	resolveTargetPackage,
 	scanWorkspacePackages,
 } from './workspace-packages.ts';
@@ -282,6 +283,7 @@ function deriveManifestlessTasks({
 		new Set(draft.touchedSurfaces.map((surface) => surface.replaceAll('\\', '/').replace(/\/+$/, ''))),
 	);
 	const grouped = new Map<string, string[]>();
+	const repositoryScopes = new Set(repositoryScopesOf(loadHostProfileOrFallback(rootDir)));
 	for (const surface of touched) {
 		const targetPackage = resolveTargetPackage(surface, pathToPackage, { rootDir });
 		const group = grouped.get(targetPackage) ?? [];
@@ -291,7 +293,7 @@ function deriveManifestlessTasks({
 	return [...grouped.entries()].map(([targetPackage, paths], index) => {
 		const packageName = pathToPackage.get(targetPackage);
 		let verificationCommand: string[];
-		if (['docs', '.agents', 'tools'].includes(targetPackage)) {
+		if (repositoryScopes.has(targetPackage)) {
 			verificationCommand = ['pnpm', 'run', 'test:unit'];
 		} else {
 			const pkgData = packageName ? packageMap.get(packageName) : null;

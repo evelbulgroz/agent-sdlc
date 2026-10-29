@@ -33,6 +33,14 @@ export interface WorkspacePackagesScan {
 	pathToPackage: Map<string, string>;
 }
 
+/** Repository scopes verified by the host suite rather than a workspace package script. */
+export function repositoryScopesOf(profile: Readonly<HostProfile>): string[] {
+	return (profile.workspace?.repositoryScopes ?? [])
+		.map((scope) => scope.replace(/\/+$/, ''))
+		.filter((scope) => scope.length > 0)
+		.sort((left, right) => right.length - left.length);
+}
+
 export function resolveTargetPackage(
 	surface: string,
 	pathToPackage: ReadonlyMap<string, string>,
@@ -43,17 +51,11 @@ export function resolveTargetPackage(
 		(candidate) => surface === candidate || surface.startsWith(`${candidate}/`),
 	);
 	if (workspacePath) return workspacePath;
-	if (surface === 'docs' || surface.startsWith('docs/')) return 'docs';
-	if (surface === '.agents' || surface.startsWith('.agents/')) return '.agents';
-	if (
-		surface === 'tools' ||
-		surface.startsWith('tools/') ||
-		surface === 'package.json' ||
-		surface === 'pnpm-lock.yaml'
-	) {
-		return 'tools';
-	}
 	const profile = options.profile ?? loadHostProfileOrFallback(options.rootDir);
+	const scope = repositoryScopesOf(profile).find(
+		(candidate) => surface === candidate || surface.startsWith(`${candidate}/`),
+	);
+	if (scope) return scope;
 	for (const allowedRoot of profile.workspace?.allowedPathRoots ?? []) {
 		const cleanRoot = allowedRoot.replace(/\/+$/, '');
 		if (cleanRoot && (surface === cleanRoot || surface.startsWith(`${cleanRoot}/`))) {
@@ -115,24 +117,6 @@ export function scanWorkspacePackages(
 			} catch {
 				// Ignore unparseable package.json
 			}
-		}
-	}
-
-	if (packageMap.size === 0 && packageRoots.length >= 3) {
-		const [pkgRoot, svcRoot, feRoot] = packageRoots;
-		const fallbackPkgs = [
-			{ packagePath: `${svcRoot}/conditioning`, name: '@example/conditioning-service', scripts: { test: 'pnpm test' }, dependencies: { '@example/ddd-base': 'workspace:*' } },
-			{ packagePath: `${svcRoot}/demo`, name: '@example/demo-service', scripts: { test: 'node --test', 'build:contracts': 'node build.mjs', 'check:contract-drift': 'node check.mjs' } },
-			{ packagePath: `${svcRoot}/assessment`, name: '@example/assessment-service', scripts: { test: 'node --test' } },
-			{ packagePath: `${svcRoot}/registry`, name: '@example/registry-service', scripts: { test: 'pnpm test', 'build:contracts': 'node build.mjs' } },
-			{ packagePath: `${svcRoot}/authentication`, name: '@example/authentication-service', scripts: { test: 'pnpm test' }, dependencies: { '@example/registry-service': 'workspace:*' } },
-			{ packagePath: `${feRoot}/pwa-frontend`, name: '@example/pwa-frontend', scripts: { build: 'vite build', test: 'vitest run' } },
-			{ packagePath: `${pkgRoot}/base`, name: '@example/base', scripts: { test: 'pnpm test' } },
-			{ packagePath: `${pkgRoot}/ddd-base`, name: '@example/ddd-base', scripts: { test: 'pnpm test' } },
-		];
-		for (const p of fallbackPkgs) {
-			packageMap.set(p.name, { packagePath: p.packagePath, pkgJson: { name: p.name, scripts: p.scripts, dependencies: p.dependencies ?? {} } });
-			pathToPackage.set(p.packagePath, p.name);
 		}
 	}
 

@@ -29,6 +29,26 @@
 			"tools",
 			"workflow",
 			".agents"
+		],
+		"repositoryScopes": [
+			"adapters",
+			"cli",
+			"docs",
+			"execution",
+			"host",
+			"ledger",
+			"persistence",
+			"policy",
+			"prompts",
+			"review",
+			"roles",
+			"scripts",
+			"testing",
+			"tools",
+			"workflow",
+			".agents",
+			"package.json",
+			"pnpm-lock.yaml"
 		]
 	},
 	"policy": {

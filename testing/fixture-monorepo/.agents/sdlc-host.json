@@ -28,6 +28,13 @@
 			"tools",
 			"docs",
 			".agents"
+		],
+		"repositoryScopes": [
+			"docs",
+			".agents",
+			"tools",
+			"package.json",
+			"pnpm-lock.yaml"
 		]
 	},
 	"hydration": {

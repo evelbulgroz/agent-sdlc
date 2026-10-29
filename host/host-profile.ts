@@ -47,6 +47,7 @@ const GitConfigSchema = z.strictObject({ authorName: NonEmptyTokenSchema, author
 const DeclarativeWorkspaceSchema = z.strictObject({
 	directories: z.array(NonEmptyTokenSchema).min(1).optional(), packageRoots: z.array(NonEmptyTokenSchema).optional(),
 	singlePackages: z.array(NonEmptyTokenSchema).optional(), allowedPathRoots: z.array(NonEmptyTokenSchema).optional(),
+	repositoryScopes: z.array(NonEmptyTokenSchema).optional(),
 });
 
 const HydrationUntrackedCopyRuleSchema = z.strictObject({
@@ -343,6 +344,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 		checkRelList(w.packageRoots, 'workspace.packageRoots', true);
 		checkRelList(w.singlePackages, 'workspace.singlePackages', true);
 		checkRelList(w.allowedPathRoots, 'workspace.allowedPathRoots', true);
+		checkRelList(w.repositoryScopes, 'workspace.repositoryScopes', true);
 	}
 
 	if (profile.hydration && !Array.isArray(profile.hydration)) {

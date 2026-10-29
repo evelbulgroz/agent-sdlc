@@ -63,7 +63,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Task-plan validation takes the resolved policy as a parameter.
 - Tests: boundary cases (unknown verb rejected; configured script accepted; shell metacharacters still rejected; `--filter` containment unchanged; default profile accepts only `verify.argv`).
 
-### Slice 2: Remove fabricated workspace (B)
+### Slice 2: Remove fabricated workspace (B) — DONE
 - Delete the `fallbackPkgs` block; empty discovery yields an empty package map and a typed `TASK_PLAN_INVALID` pointing at `workspace.*`.
 - `workspace.repositoryScopes` replaces hardcoded `docs/.agents/tools`.
 - Tests: no-packages repo plans repository-scope tasks only; touched surface outside scopes fails closed.
