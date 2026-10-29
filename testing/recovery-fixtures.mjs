@@ -27,10 +27,23 @@ export function seedSlice4CrashWorktree(dir) {
 
 export function waitForBoundary(child) {
 	return new Promise((resolve, reject) => {
-		const timer = setTimeout(() => reject(new Error('Boundary marker timeout')), 10_000);
+		let output = '';
+		const collect = (chunk) => {
+			output = `${output}${chunk}`.slice(-4000);
+		};
+		child.stdout?.on('data', collect);
+		child.stderr?.on('data', collect);
+		const fail = (reason) => {
+			clearTimeout(timer);
+			reject(new Error(`${reason}\n--- child output (tail) ---\n${output}`));
+		};
+		const timer = setTimeout(() => fail('Boundary marker timeout'), 10_000);
 		child.once('message', (message) => {
 			clearTimeout(timer);
 			resolve(message);
+		});
+		child.once('exit', (code, signal) => {
+			fail(`Child exited before boundary marker (code=${code}, signal=${signal})`);
 		});
 		child.once('error', (error) => {
 			clearTimeout(timer);
@@ -97,6 +110,11 @@ export async function startWaitingForApproval(label, proposal = completeProposal
 	const waiting = await runCli(
 		['answer', '--run', runId, '--interrupt', pending.interruptId, '--response-file', responseFile],
 		{ rootDir: REPOSITORY_ROOT, governor },
+	);
+	assert.equal(
+		waiting.result.state,
+		'WAITING_FOR_APPROVAL',
+		`answer did not reach approval: ${JSON.stringify(waiting.result).slice(0, 1500)}`,
 	);
 	return { runId, governor, pending: waiting.result.pendingInterrupt };
 }
