@@ -37,29 +37,29 @@ test('@ac AC-05 @case AC-05.1 packages/agent-sdlc/README.md and packages/agent-s
 	}
 });
 
-test('@ac AC-05 @case AC-05.2 packages/agent-sdlc/roles/README.md and packages/agent-sdlc/prompts/README.md document .agents/workflows/ override resolution against roles/defaults/protocol/ and roles/defaults/philosophy/ with zero stale prompt-composer.ts or roles/defaults/prompts/ references', () => {
+test('@ac AC-05 @case AC-05.2 roles/README.md and prompts/README.md document .agents/workflows/ override resolution against roles/defaults/protocol/ and roles/defaults/philosophy/ with zero stale prompt-composer.ts or roles/defaults/prompts/ references', () => {
 	const rolesReadme = fs.readFileSync(path.join(PACKAGE_ROOT, 'roles/README.md'), 'utf8');
 	const promptsReadme = fs.readFileSync(path.join(PACKAGE_ROOT, 'prompts/README.md'), 'utf8');
 	for (const doc of [rolesReadme, promptsReadme]) {
 		assert.match(doc, /\.agents\/workflows\//);
-		assert.match(doc, /packages\/agent-sdlc\/roles\/defaults\/protocol\//);
-		assert.match(doc, /packages\/agent-sdlc\/roles\/defaults\/philosophy\//);
+		assert.match(doc, /roles\/defaults\/protocol\//);
+		assert.match(doc, /roles\/defaults\/philosophy\//);
 		assert.equal(doc.includes('prompt-composer.ts'), false);
 		assert.equal(doc.includes('roles/defaults/prompts/'), false);
 	}
 });
 
-test('@ac AC-05 @case AC-05.3 .agents/workflows/README.md links to ../../packages/agent-sdlc/roles/README.md and ../../packages/agent-sdlc/prompts/README.md as canonical and explains that .agents/workflows/ is optional for new clients', () => {
+test('@ac AC-05 @case AC-05.3 .agents/workflows/README.md links to ../../roles/README.md and ../../prompts/README.md as canonical and explains that .agents/workflows/ is optional for new clients', () => {
 	const workflowsReadme = fs.readFileSync(
 		path.join(REPOSITORY_ROOT, '.agents/workflows/README.md'),
 		'utf8',
 	);
-	assert.match(workflowsReadme, /\.\.\/\.\.\/packages\/agent-sdlc\/roles\/README\.md/);
-	assert.match(workflowsReadme, /\.\.\/\.\.\/packages\/agent-sdlc\/prompts\/README\.md/);
+	assert.match(workflowsReadme, /\.\.\/\.\.\/roles\/README\.md/);
+	assert.match(workflowsReadme, /\.\.\/\.\.\/prompts\/README\.md/);
 	assert.match(workflowsReadme, /optional/i);
 });
 
-test('@ac AC-04 @case AC-04.1 packages/agent-sdlc/host/README.md documents the 3 verification tiers, exit-code self-attestation trust trade-off, verify-config.ts, and the agent:preflight case study', () => {
+test('@ac AC-04 @case AC-04.1 host/README.md documents the 3 verification tiers, exit-code self-attestation trust trade-off, verify-config.ts, and the verify:receipt case study', () => {
 	const hostReadme = fs.readFileSync(path.join(PACKAGE_ROOT, 'host/README.md'), 'utf8');
 	assert.match(hostReadme, /verify-config\.ts/);
 	assert.match(hostReadme, /Tier 1/);
@@ -69,7 +69,7 @@ test('@ac AC-04 @case AC-04.1 packages/agent-sdlc/host/README.md documents the 3
 	assert.match(hostReadme, /Tier 3/);
 	assert.match(hostReadme, /resultPath/);
 	assert.match(hostReadme, /self-attested/i);
-	assert.match(hostReadme, /agent:preflight/);
+	assert.match(hostReadme, /verify:receipt/);
 	assert.match(hostReadme, /\{baseSha\}/);
 	assert.match(hostReadme, /PARTIAL/);
 	assert.match(hostReadme, /canonical/);
@@ -77,13 +77,13 @@ test('@ac AC-04 @case AC-04.1 packages/agent-sdlc/host/README.md documents the 3
 	assert.match(hostReadme, /EXIT/);
 });
 
-test('@ac AC-04 @case AC-04.2 packages/agent-sdlc/README.md and packages/agent-sdlc/review/README.md reflect configurable host verification (verify.argv / npm test default and receipt-backed agent:preflight)', () => {
+test('@ac AC-04 @case AC-04.2 README.md and review/README.md reflect configurable host verification (verify.argv / npm test default and receipt-backed verify:receipt)', () => {
 	const readme = fs.readFileSync(path.join(PACKAGE_ROOT, 'README.md'), 'utf8');
 	const reviewReadme = fs.readFileSync(path.join(PACKAGE_ROOT, 'review/README.md'), 'utf8');
 	for (const doc of [readme, reviewReadme]) {
 		assert.match(doc, /verify\.argv/);
 		assert.match(doc, /npm test/);
-		assert.match(doc, /agent:preflight/);
+		assert.match(doc, /verify:receipt/);
 		assert.match(doc, /verify-config\.ts/);
 	}
 });

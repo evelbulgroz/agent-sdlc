@@ -1,11 +1,11 @@
-# Outbound Adapters (`packages/agent-sdlc/adapters/`)
+# Outbound Adapters (`adapters/`)
 
 Outbound infrastructure ports connecting `@evelbulgroz/agent-sdlc` to the repository Model Usage Governor (`@evelbulgroz/model-usage-govenor`) and GitHub CLI (`gh`) draft pull request workflows.
 
 ## Key Files & Entrypoints
 
-- `packages/agent-sdlc/adapters/model-governor.ts` — `RepositoryModelGovernor` wrapping `executeOperation` and `assessReservation` from `packages/model-usage/governor.ts` under consumer `agent-sdlc`.
-- `packages/agent-sdlc/adapters/github-pr.ts` — `createDraftPullRequest` and remote branch push integration for explicitly authorized runs (`agent-sdlc pr`).
+- `adapters/model-governor.ts` — `RepositoryModelGovernor` wrapping `executeOperation` and `assessReservation` from `packages/model-usage/governor.ts` under consumer `agent-sdlc`.
+- `adapters/github-pr.ts` — `createDraftPullRequest` and remote branch push integration for explicitly authorized runs (`agent-sdlc pr`).
 
 ## Core Invariants
 

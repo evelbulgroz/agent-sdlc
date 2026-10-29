@@ -1,15 +1,15 @@
-# CLI & Operator Shell (`packages/agent-sdlc/cli/`)
+# CLI & Operator Shell (`cli/`)
 
 Command entrypoints, operator shell driver, Human-in-the-Loop (HITL) interrupt handling, and `status.json` continuation projections for `@evelbulgroz/agent-sdlc`.
 
 ## Key Files & Entrypoints
 
-- `packages/agent-sdlc/cli/cli.ts` — Thin CLI facade (`agent-sdlc`) and `exitCodeForResult` process exit mapper.
-- `packages/agent-sdlc/cli/shell-driver.ts` — Operator shell (`shell start`, `shell status`, `shell reply`, `shell watch`), the only process permitted to drive an orchestrated run for an operator or host chat session.
-- `packages/agent-sdlc/cli/commands/index.ts` — Subcommand handlers (`start.ts`, `authorize.ts`, `resume.ts`, `run-lifecycle.ts`, `pr.ts`, `maintenance.ts`, `skills.ts`, `candidate-learning.ts`, `host-check.ts`).
-- `packages/agent-sdlc/cli/status-projection.ts` — Status projection facade combining `status-document.ts`, `status-result.ts`, `continuation.ts`, `continuation-card.ts`, and `host-invocation.ts`.
-- `packages/agent-sdlc/cli/progress.ts` — Best-effort `stderr` progress line emitter (`<= 240` bytes per line).
-- `packages/agent-sdlc/cli/auto-prune.ts` — Detached post-preflight retention sweep trigger (`AGENT_SDLC_AUTO_PRUNE`).
+- `cli/cli.ts` — Thin CLI facade (`agent-sdlc`) and `exitCodeForResult` process exit mapper.
+- `cli/shell-driver.ts` — Operator shell (`shell start`, `shell status`, `shell reply`, `shell watch`), the only process permitted to drive an orchestrated run for an operator or host chat session.
+- `cli/commands/index.ts` — Subcommand handlers (`start.ts`, `authorize.ts`, `resume.ts`, `run-lifecycle.ts`, `pr.ts`, `maintenance.ts`, `skills.ts`, `candidate-learning.ts`, `host-check.ts`).
+- `cli/status-projection.ts` — Status projection facade combining `status-document.ts`, `status-result.ts`, `continuation.ts`, `continuation-card.ts`, and `host-invocation.ts`.
+- `cli/progress.ts` — Best-effort `stderr` progress line emitter (`<= 240` bytes per line).
+- `cli/auto-prune.ts` — Detached post-preflight retention sweep trigger (`AGENT_SDLC_AUTO_PRUNE`).
 
 ## Core Invariants
 

@@ -1,17 +1,17 @@
-# Workflow State Graph, Worktrees & Reconciliation (`packages/agent-sdlc/workflow/`)
+# Workflow State Graph, Worktrees & Reconciliation (`workflow/`)
 
 LangGraph JS/TS state machine orchestration, specification hashing, detached git worktree isolation, lazy workspace hydration, binary patch reconciliation, and authorized git branch/commit delivery.
 
 ## Key Files & Entrypoints
 
-- `packages/agent-sdlc/workflow/graph.ts` & `packages/agent-sdlc/workflow/graph-topology.ts` — LangGraph state graph wiring, node transitions, and checkpoint persistence.
-- `packages/agent-sdlc/workflow/nodes/` — Modular graph node implementations (`spec-interview.ts`, `spec-draft.ts`, `approval.ts`, `authorization.ts`, `planning.ts`, `workspace.ts`, `execute-tasks.ts`, `reconcile.ts`, `review-qa.ts`, `commit.ts`, `finish-run.ts`).
-- `packages/agent-sdlc/workflow/specification.ts` & `packages/agent-sdlc/workflow/acceptance-criteria.ts` — Specification completeness checks, `AC-NN` grammar validation, and `approvedSpecHash` binding.
-- `packages/agent-sdlc/workflow/worktrees.ts` & `packages/agent-sdlc/workflow/worktree-guard.ts` — Detached worktree lifecycle and `assertPlanFrozenThenCreateWorktree` enforcement.
-- `packages/agent-sdlc/workflow/hydration.ts` — Lazy worktree dependency installation, security-config setup, and prerequisite package builds.
-- `packages/agent-sdlc/workflow/reconciliation.ts` — Topological binary patch extraction, `git apply --check` dry-run validation, and integration worktree assembly.
-- `packages/agent-sdlc/workflow/git-manager.ts` & `packages/agent-sdlc/workflow/landed-check.ts` — Opt-in local branch creation, structured commit formatting, remote push, and blob-level `main` landed checks.
-- `packages/agent-sdlc/workflow/preflight-gate.ts` & `packages/agent-sdlc/workflow/fleet.ts` — Preflight verification gating and fleet friction/learning-debt scanning.
+- `workflow/graph.ts` & `workflow/graph-topology.ts` — LangGraph state graph wiring, node transitions, and checkpoint persistence.
+- `workflow/nodes/` — Modular graph node implementations (`spec-interview.ts`, `spec-draft.ts`, `approval.ts`, `authorization.ts`, `planning.ts`, `workspace.ts`, `execute-tasks.ts`, `reconcile.ts`, `review-qa.ts`, `commit.ts`, `finish-run.ts`).
+- `workflow/specification.ts` & `workflow/acceptance-criteria.ts` — Specification completeness checks, `AC-NN` grammar validation, and `approvedSpecHash` binding.
+- `workflow/worktrees.ts` & `workflow/worktree-guard.ts` — Detached worktree lifecycle and `assertPlanFrozenThenCreateWorktree` enforcement.
+- `workflow/hydration.ts` — Lazy worktree dependency installation and host-declared `hydration.steps`.
+- `workflow/reconciliation.ts` — Topological binary patch extraction, `git apply --check` dry-run validation, and integration worktree assembly.
+- `workflow/git-manager.ts` & `workflow/landed-check.ts` — Opt-in local branch creation, structured commit formatting, remote push, and blob-level `main` landed checks.
+- `workflow/preflight-gate.ts` & `workflow/fleet.ts` — Preflight verification gating and fleet friction/learning-debt scanning.
 
 ## Core Invariants
 
@@ -22,7 +22,7 @@ LangGraph JS/TS state machine orchestration, specification hashing, detached git
    - **Single-task runs:** `tools/.agent-sdlc/<run-id>/worktree`
    - **Multi-task DAG runs:** `tools/.agent-sdlc/<run-id>/worktrees/<task-id>` plus `tools/.agent-sdlc/<run-id>/worktrees/integration`
    - Dependent tasks initialize from synthetic parent commit objects (`git commit-tree`) derived from preceding task trees without polluting repository branch refs.
-   - Worktrees hydrate lazily via `pnpm install --frozen-lockfile`, `pnpm run setup:security-config`, `pnpm run build:packages` (when service tasks require workspace entrypoints), and scoped package builds (`pnpm --filter "<pkg>..." run build`).
+   - Worktrees hydrate lazily via `pnpm install --frozen-lockfile`, and the host-declared `hydration.steps` (for example setup scripts and scoped package builds).
 
 3. **Binary Patch Reconciliation (`reconciliation.ts`):**
    - Task deltas are extracted using isolated git index files (`GIT_INDEX_FILE`) and applied sequentially to `worktrees/integration` in topological order after `git apply --check` and realpath containment checks.

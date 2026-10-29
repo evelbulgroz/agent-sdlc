@@ -1,15 +1,15 @@
-# Policy, Authorization, Planning & Reliability (`packages/agent-sdlc/policy/`)
+# Policy, Authorization, Planning & Reliability (`policy/`)
 
 Run Authorization Envelope validation, Task DAG planning and serialization rules, state and schema contracts, typed error taxonomy (`SdlcError`), and offline reliability replay and hosted canary qualification.
 
 ## Key Files & Entrypoints
 
-- `packages/agent-sdlc/policy/authorization.ts` — `RunAuthorizationEnvelope` creation, cryptographic hash binding, scope derivation (`deriveScopeFromDraft`), and operation permission guards.
-- `packages/agent-sdlc/policy/task-planner.ts` & `packages/agent-sdlc/policy/policy-gate.ts` — Task DAG planning, per-task complexity scoring (`<= 20`), topological serialization, and contract-sink synthesis.
-- `packages/agent-sdlc/policy/contracts.ts` — Closed state schemas, allowed tool definitions (`ALLOWED_TOOLS`), and structural validators (`policy/contracts/*`).
-- `packages/agent-sdlc/policy/errors.ts` — `SdlcError` and `SDLC_ERROR_CODES`.
-- `packages/agent-sdlc/policy/reliability.ts` & `packages/agent-sdlc/policy/canary-planning-files.ts` — Offline reliability corpus replay, read-only SQLite reliability reporting, and hosted canary qualification (`policy/reliability/*`).
-- `packages/agent-sdlc/policy/reversible-decisions.ts` & `packages/agent-sdlc/policy/local-policy-fingerprint.ts` — Standard repository decision rules and local model-usage policy fingerprinting.
+- `policy/authorization.ts` — `RunAuthorizationEnvelope` creation, cryptographic hash binding, scope derivation (`deriveScopeFromDraft`), and operation permission guards.
+- `policy/task-planner.ts` & `policy/policy-gate.ts` — Task DAG planning, per-task complexity scoring (`<= 20`), topological serialization, and contract-sink synthesis.
+- `policy/contracts.ts` — Closed state schemas, allowed tool definitions (`ALLOWED_TOOLS`), and structural validators (`policy/contracts/*`).
+- `policy/errors.ts` — `SdlcError` and `SDLC_ERROR_CODES`.
+- `policy/reliability.ts` & `policy/canary-planning-files.ts` — Offline reliability corpus replay, read-only SQLite reliability reporting, and hosted canary qualification (`policy/reliability/*`).
+- `policy/reversible-decisions.ts` & `policy/local-policy-fingerprint.ts` — Standard repository decision rules and local model-usage policy fingerprinting.
 
 ## Core Invariants
 
@@ -27,15 +27,15 @@ Run Authorization Envelope validation, Task DAG planning and serialization rules
    - Shared kernel tasks (`packages/*`) serialize before dependent consumers; contract producers (`registry`, `authentication`) serialize before consumers (`api-gateway`, `pwa-frontend`).
 
 3. **Reliability Replay, Stratified Reporting & Hosted Canary Gate (`reliability.ts`, `policy/reliability/report.ts`, `policy/reliability/canary.ts`):**
-   - `agent-sdlc reliability report [--json]` (`packages/agent-sdlc/policy/reliability/report.ts` and `packages/agent-sdlc/policy/reliability/run-evidence.ts`) aggregates read-only run evidence across live and archived runs into overall rates (`taskCompletion`, `validEdit`, `firstPassVerification`, `repairSuccess`), stratified metrics (`strata` by `complexityBand`, `targetPackage`, `deliveryLayers`, `highRisk`, `routeId`, `modelId`, and `failover` with `latencyMs`, `inputTokens`, `outputTokens`, and `costMicrousd` distributions), head-to-head matched `routeComparisons`, and ranked `failureRecurrence` tables.
-   - `agent-sdlc reliability replay --json` validates the closed corpus (`packages/agent-sdlc/testing/reliability-corpus/`) with provider credentials removed (`providerOperations: 0`).
+   - `agent-sdlc reliability report [--json]` (`policy/reliability/report.ts` and `policy/reliability/run-evidence.ts`) aggregates read-only run evidence across live and archived runs into overall rates (`taskCompletion`, `validEdit`, `firstPassVerification`, `repairSuccess`), stratified metrics (`strata` by `complexityBand`, `targetPackage`, `deliveryLayers`, `highRisk`, `routeId`, `modelId`, and `failover` with `latencyMs`, `inputTokens`, `outputTokens`, and `costMicrousd` distributions), head-to-head matched `routeComparisons`, and ranked `failureRecurrence` tables.
+   - `agent-sdlc reliability replay --json` validates the closed corpus (`testing/reliability-corpus/`) with provider credentials removed (`providerOperations: 0`).
    - `agent-sdlc canary check` and `canary qualify --run <run-id> --json` enforce hosted canary qualification (1 vertical slice/task, $\le 2$ ACs, $\le 3$ authored files, complexity $\le 10$, non-high-risk, no contract/dependency/generated outputs, `0` rejected mutations, `0` semantic repairs, green verification + QA critic), writing mode-`0600` evidence to `<stateDir>/canary-qualification.json` (e.g. `tools/.agent-sdlc/canary-qualification.json`).
-   - **Hash Binding & Staleness:** Qualification binds five hashes—`repositoryId`, `workflowHash`, `boundedPlanningHash` (`packages/agent-sdlc/policy/canary-planning-files.ts`), `implementerRoleHash`, and `modelPolicyHash` (`.agents/model-usage-policy.json`). Any drift in those four code/policy hashes marks the receipt `CANARY_STALE` (or `CANARY_REQUIRED` if missing/failed), blocking non-canary multi-task runs; documentation-only commits (`*.md`) preserve qualification across `HEAD` advances.
-   - **Failure Categories & Unmerged-Fixture Invariant:** Qualification classifies failures into `STALE_BASE_COMMIT`, `IMPLEMENTER_NON_COMPLETED`, `REPAIR_INVOKED`, `INVALID_EDIT`, `VERIFICATION_FAILURE`, and `QA_ACCEPTANCE_DIVERGENCE`. Because `packages/agent-sdlc/execution/ac-coverage.ts` treats `@ac` tags already present on `HEAD` as `baselineTestCitations`, a standing canary fixture must stop at `READY_FOR_GIT_APPROVAL` and **never** be merged into `main`.
+   - **Hash Binding & Staleness:** Qualification binds five hashes—`repositoryId`, `workflowHash`, `boundedPlanningHash` (`policy/canary-planning-files.ts`), `implementerRoleHash`, and `modelPolicyHash` (`.agents/model-usage-policy.json`). Any drift in those four code/policy hashes marks the receipt `CANARY_STALE` (or `CANARY_REQUIRED` if missing/failed), blocking non-canary multi-task runs; documentation-only commits (`*.md`) preserve qualification across `HEAD` advances.
+   - **Failure Categories & Unmerged-Fixture Invariant:** Qualification classifies failures into `STALE_BASE_COMMIT`, `IMPLEMENTER_NON_COMPLETED`, `REPAIR_INVOKED`, `INVALID_EDIT`, `VERIFICATION_FAILURE`, and `QA_ACCEPTANCE_DIVERGENCE`. Because `execution/ac-coverage.ts` treats `@ac` tags already present on `HEAD` as `baselineTestCitations`, a standing canary fixture must stop at `READY_FOR_GIT_APPROVAL` and **never** be merged into `main`.
 
 ## Error Taxonomy (`SdlcError`)
 
-| Category | Error Codes (`packages/agent-sdlc/policy/errors.ts`) |
+| Category | Error Codes (`policy/errors.ts`) |
 |---|---|
 | **Input & Contract** | `INVALID_INPUT`, `INVALID_CONTRACT`, `INVALID_TRANSITION`, `PATH_OUTSIDE_ROOT`, `PATH_CONTAINMENT_VIOLATION`, `INPUT_OVERSIZED` |
 | **Run & Lifecycle** | `RUN_NOT_FOUND`, `RUN_ALREADY_EXISTS`, `RUN_CANCELLED`, `RUN_REJECTED`, `STALE_RESPONSE`, `INTERRUPT_RESOLVED` |

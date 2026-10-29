@@ -1,6 +1,6 @@
 ---
 name: test-writing-workflow
-description: Write handbook-aligned tests covering the 4 Shadow Paths, regression boundaries, and contract surfaces. Use when adding or updating tests.
+description: Write convention-aligned tests covering the 4 Shadow Paths, regression boundaries, and contract surfaces. Use when adding or updating tests.
 ---
 
 Use this skill when authoring tests.

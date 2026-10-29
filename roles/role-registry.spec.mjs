@@ -15,7 +15,7 @@ import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
 import { completeProposal } from '../testing/test-support.mjs';
 
 test('@ac AC-02 @case AC-02.1 loads and hashes configured workflow, role, prompt, capability, and evaluator from PACKAGE_ROLE_DEFAULTS_ROOT with Layer 3 addenda', () => {
-	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
+	const registry = new RoleRegistry({ rootDir: FIXTURE_MONOREPO_ROOT });
 	assert.equal(registry.workflowRoot, PACKAGE_ROLE_DEFAULTS_ROOT);
 	assert.equal(registry.workflowRoot, path.dirname(registry.workflowPath));
 	const loaded = registry.load();
@@ -430,8 +430,6 @@ test('@ac AC-01 @case AC-01.1 @case AC-01.2 redundant workflow and role JSONs ar
 	}
 	for (const rel of [
 		'.agents/workflows/prompts/implementer.md',
-		'.agents/workflows/scoped/frontend-pwa.md',
-		'.agents/workflows/scoped/backend-services.md',
 	]) {
 		assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, rel)), true, `${rel} must exist`);
 	}
@@ -441,7 +439,7 @@ test('@ac AC-04 @case AC-04.1 @case AC-04.2 roles and workflows READMEs document
 	const promptsReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'prompts/README.md'), 'utf8');
 	assert.match(promptsReadme, /roles\/defaults\/protocol\//);
 	const rolesReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, 'roles/README.md'), 'utf8');
-	assert.match(rolesReadme, /packages\/agent-sdlc\/roles\/defaults\//);
+	assert.match(rolesReadme, /roles\/defaults\//);
 	assert.match(rolesReadme, /\.agents\/workflows\/roles\/\*\.json/);
 	for (const token of ['specification.json', 'specifier', 'implementer', 'reviewer', 'critic-reviewer']) {
 		assert.equal(rolesReadme.includes(token), true, `roles/README.md must include ${token}`);
@@ -450,8 +448,8 @@ test('@ac AC-04 @case AC-04.1 @case AC-04.2 roles and workflows READMEs document
 	assert.equal(rolesReadme.includes('sdlc-single-worktree.json'), false);
 	const workflowsReadme = fs.readFileSync(path.join(REPOSITORY_ROOT, '.agents/workflows/README.md'), 'utf8');
 	assert.match(workflowsReadme, /prompts\//);
-	assert.match(workflowsReadme, /scoped\//);
+	assert.match(workflowsReadme, /pathScopedRules/);
 	assert.equal(/├──\s+roles\//.test(workflowsReadme), false);
-	assert.match(workflowsReadme, /\.\.\/\.\.\/packages\/agent-sdlc\/roles\/README\.md/);
-	assert.match(workflowsReadme, /\.\.\/\.\.\/packages\/agent-sdlc\/prompts\/README\.md/);
+	assert.match(workflowsReadme, /\.\.\/\.\.\/roles\/README\.md/);
+	assert.match(workflowsReadme, /\.\.\/\.\.\/prompts\/README\.md/);
 });

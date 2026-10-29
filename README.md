@@ -2,7 +2,7 @@
 
 **Living home** for the local-first LangGraph SDLC Workflow Orchestrator and Dynamic Critic Review specialist (`@evelbulgroz/agent-sdlc`, consuming `@evelbulgroz/model-usage-govenor`).
 
-The engine automates the development lifecycle from a structured specification to a verified, critic-reviewed, and optionally locally committed implementation ready for operator Git signoff—routing 100% of model invocations through the Model Usage Governor (`@evelbulgroz/model-usage-govenor`), requiring an affirmative `RunAuthorizationEnvelope` (`policy/authorization.ts`) before workspace mutations, and enforcing the host verification gate in `.agents/sdlc-host.json` (`verify.argv`—progressive across Tier 1 `npm test` default, Tier 2 custom exit-code command, and Tier 3 receipt-backed `pnpm run agent:preflight` with `status=OK canonical=true`).
+The engine automates the development lifecycle from a structured specification to a verified, critic-reviewed, and optionally locally committed implementation ready for operator Git signoff—routing 100% of model invocations through the Model Usage Governor (`@evelbulgroz/model-usage-govenor`), requiring an affirmative `RunAuthorizationEnvelope` (`policy/authorization.ts`) before workspace mutations, and enforcing the host verification gate in `.agents/sdlc-host.json` (`verify.argv`—progressive across Tier 1 `npm test` default, Tier 2 custom exit-code command, and Tier 3 receipt-backed `pnpm run verify:receipt` with `status=OK canonical=true`).
 
 **Canonical references:**
 - **Architecture, design principles & outer/inner loops:** [`ARCHITECTURE.md`](./ARCHITECTURE.md)
@@ -150,7 +150,7 @@ The engine never lets a model self-approve its work; every run must pass your ho
 
 1. **Tier 1 — Default (`npm test`):** Omit `verify` in `.agents/sdlc-host.json`. The engine runs `npm test` in the worktree and passes on exit code `0`.
 2. **Tier 2 — Custom exit-code command (`verify.argv`):** Set `"verify": { "argv": ["pnpm", "run", "verify"] }` (optionally including a discrete `"{baseSha}"` argument for diff-aware scripts).
-3. **Tier 3 — Receipt-backed preflight (`verify.resultPath`):** Point `verify.argv` at a script like `agent:preflight` that writes a JSON receipt (`status: "OK"`, `canonical: true`, `base`, and `gitHeadSha`) to `verify.resultPath`, preventing skipped suites or early `exit 0` from passing verification (see [`host/README.md`](./host/README.md)).
+3. **Tier 3 — Receipt-backed preflight (`verify.resultPath`):** Point `verify.argv` at a script like `verify:receipt` that writes a JSON receipt (`status: "OK"`, `canonical: true`, `base`, and `gitHeadSha`) to `verify.resultPath`, preventing skipped suites or early `exit 0` from passing verification (see [`host/README.md`](./host/README.md)).
 
 #### Step 4: Customize prompts, rules, and roles only when needed
 

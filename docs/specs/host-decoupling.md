@@ -87,7 +87,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Critic done-bar text is composed from `verify.argv` (partially done).
 - Tests: default decision text contains no file paths; override applied.
 
-### Slice 7: Prompts, rubrics, scoped addenda, docs (G)
+### Slice 7: Prompts, rubrics, scoped addenda, docs (G) — DONE
 - Delete `.agents/workflows/scoped/{backend-services,frontend-pwa}.md`; strip handbook/frontend references from engine prompts and rubrics; replace `candidate-learning` example scopes with profile scopes.
 - Update READMEs, `ARCHITECTURE.md`, `host/README.md` (new fields, migration table), and `docs/operator-shell-and-authorization.md`.
 - Tests: existing living-docs and `host-docs` specs updated to the new fields; docs-drift check passes.
