@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REPOSITORY_ROOT, archiveRoot } from '../persistence/run-paths.ts';
+import { engineSelfRoot } from '../policy/canary-planning-files.ts';
 import type { GitCliFn } from '../workflow/git-manager.ts';
 
 const SELF_FILENAME = fileURLToPath(import.meta.url);
@@ -93,7 +94,7 @@ export function runAutoPrune({
 		const logPath = path.join(archiveDir, 'sweep.log');
 		const logFd = fsImpl.openSync(logPath, 'a');
 		try {
-			const repoCliCandidate = path.join(rootDir, 'packages/agent-sdlc/cli/cli.ts');
+			const repoCliCandidate = path.join(rootDir, engineSelfRoot(rootDir), 'cli/cli.ts');
 			const cliPath = fs.existsSync(repoCliCandidate) ? repoCliCandidate : FALLBACK_CLI_PATH;
 			const child = spawnFn(process.execPath, [cliPath, 'prune-runs'], {
 				cwd: rootDir,

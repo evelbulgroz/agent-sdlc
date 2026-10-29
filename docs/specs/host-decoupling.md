@@ -68,7 +68,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - `workspace.repositoryScopes` replaces hardcoded `docs/.agents/tools`.
 - Tests: no-packages repo plans repository-scope tasks only; touched surface outside scopes fails closed.
 
-### Slice 3: Engine self-location (C)
+### Slice 3: Engine self-location (C) — DONE (deviation: logical names lose the `packages/agent-sdlc/` prefix, so canary hashes change once; a test asserts the vendored and root layouts list identical files modulo prefix)
 - Introduce `engine.selfRoot` (default `.`); update canary planning-file listing, canary hash bindings, reliability corpus lookup, auto-prune CLI discovery.
 - Canary hashes must remain identical for this repo (add a pinned-hash regression test before the change, assert equal after).
 - Tests: engine at `.` and engine vendored at `vendor/agent-sdlc` produce the same relative file list.

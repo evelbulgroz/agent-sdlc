@@ -12,6 +12,7 @@ import {
 	type HostVerifyConfig,
 } from './verify-config.ts';
 import { CommandPolicySchema } from './command-policy-schema.ts';
+import { EngineConfigSchema } from './engine-config-schema.ts';
 
 export {
 	DEFAULT_VERIFY_ARGV,
@@ -118,6 +119,7 @@ const BaseProfileFields = {
 	hydration: HydrationConfigSchema.optional(), policy: PolicyConfigSchema.optional(),
 	architecture: ArchitectureConfigSchema.optional(), qualityGate: QualityGateConfigSchema.optional(),
 	learnings: LearningsConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
+	engine: EngineConfigSchema.optional(),
 };
 
 const DefaultHostProfileSchema = z.strictObject({
@@ -269,7 +271,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 				);
 			}
 		}
-		for (const key of ['runsDir', 'git', 'policy', 'architecture', 'qualityGate', 'learnings', 'commandPolicy']) {
+		for (const key of ['runsDir', 'git', 'policy', 'architecture', 'qualityGate', 'learnings', 'commandPolicy', 'engine']) {
 			if (rawRecord[key] !== undefined) {
 				invalidHostProfile(`Field '${key}' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
 					fieldName: key,
@@ -322,6 +324,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	checkRel(profile.reviewDir, 'reviewDir');
 	checkRel(profile.specDraftDir, 'specDraftDir');
 	checkRel(profile.runsDir, 'runsDir');
+	checkRel(profile.engine?.selfRoot, 'engine.selfRoot', true);
 
 	if (profile.prompts) {
 		checkRel(profile.prompts.roleAddendaDir, 'prompts.roleAddendaDir');

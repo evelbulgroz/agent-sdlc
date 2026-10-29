@@ -251,7 +251,7 @@ test('@ac AC-03 @case AC-03.1 facade bindings deep-equal the canary module and u
 test('@ac AC-03 @case AC-03.2 the planning-file list contains the task-planner submodules', () => {
 	const listed = listBoundedPlanningFiles(REPOSITORY_ROOT);
 	for (const name of ['task-graph.ts', 'workspace-packages.ts', 'task-readiness.ts']) {
-		assert.ok(listed.includes(`packages/agent-sdlc/policy/task-planner/${name}`), name);
+		assert.ok(listed.includes(`policy/task-planner/${name}`), name);
 	}
 });
 

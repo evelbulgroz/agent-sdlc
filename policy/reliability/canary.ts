@@ -9,7 +9,6 @@ import { liveRunRoot, resolveRunPaths } from '../../persistence/run-paths.ts';
 import { RoleRegistry } from '../../roles/role-registry.ts';
 import {
 	listBoundedPlanningFiles,
-	listPackageBoundedPlanningFiles,
 	resolveBoundedPlanningFilePath,
 } from '../canary-planning-files.ts';
 import {
@@ -145,12 +144,7 @@ export function currentCanaryBindings(rootDir: string): CanaryBindings {
 	const registry = new RoleRegistry({ rootDir });
 	const workflow = registry.load();
 	const implementer = registry.loadRole('implementer');
-	const hasHostAgentSdlc =
-		fs.existsSync(path.join(rootDir, 'packages/agent-sdlc')) ||
-		fs.existsSync(path.join(rootDir, 'policy/task-planner.ts'));
-	const boundedPlanningFiles = hasHostAgentSdlc
-		? listBoundedPlanningFiles(rootDir)
-		: listPackageBoundedPlanningFiles();
+	const boundedPlanningFiles = listBoundedPlanningFiles(rootDir);
 	const hostPolicyPath = path.join(rootDir, '.agents/model-usage-policy.json');
 	const policyPath = fs.existsSync(hostPolicyPath)
 		? hostPolicyPath

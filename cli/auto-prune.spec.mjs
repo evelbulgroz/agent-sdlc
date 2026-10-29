@@ -1,3 +1,4 @@
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -67,7 +68,7 @@ test('AC-08: runAutoPrune guards branch, linked worktree, CI, and AGENT_SDLC_AUT
 
 	// @ac AC-01 @case AC-01.2
 	await t.test(
-		'AC-01.2: prefers host packages/agent-sdlc/cli/cli.ts when present and falls back to package-local cli entrypoint when absent',
+		'AC-01.2: prefers the host engine.selfRoot cli/cli.ts when present and falls back to package-local cli entrypoint when absent',
 		() => {
 			const rootDir = createTempGitRepo();
 			try {
@@ -82,7 +83,8 @@ test('AC-08: runAutoPrune guards branch, linked worktree, CI, and AGENT_SDLC_AUT
 				});
 				assert.equal(fallbackSpawns[0].args[0], path.join(import.meta.dirname, 'cli.ts'));
 
-				const hostCliPath = path.join(rootDir, 'packages/agent-sdlc/cli/cli.ts');
+				writeSyntheticHostProfile(rootDir, { engine: { selfRoot: 'vendor/agent-sdlc' } });
+				const hostCliPath = path.join(rootDir, 'vendor/agent-sdlc/cli/cli.ts');
 				fs.mkdirSync(path.dirname(hostCliPath), { recursive: true });
 				fs.writeFileSync(hostCliPath, '// stub\n');
 

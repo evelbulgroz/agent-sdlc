@@ -7,7 +7,7 @@ import {
 	evaluateAcCoverage,
 } from '../../execution/ac-coverage.ts';
 import { getEvaluator } from '../../review/evaluator-registry.ts';
-import { AGENT_SDLC_PACKAGE_ROOT } from '../canary-planning-files.ts';
+import { AGENT_SDLC_PACKAGE_ROOT, engineSelfRoot } from '../canary-planning-files.ts';
 import {
 	RELIABILITY_FAILURE_CATEGORIES,
 	RELIABILITY_SCHEMA_VERSION,
@@ -134,7 +134,7 @@ export function replayReliabilityCorpus({
 	rootDir?: string;
 	corpusDir?: string;
 } = {}): Record<string, unknown> {
-	const hostCorpusCandidate = path.join(rootDir, 'packages/agent-sdlc/testing/reliability-corpus');
+	const hostCorpusCandidate = path.join(rootDir, engineSelfRoot(rootDir), 'testing/reliability-corpus');
 	const resolvedCorpusDir =
 		corpusDir ?? (fs.existsSync(hostCorpusCandidate) ? hostCorpusCandidate : BUNDLED_CORPUS_DIR);
 	const files = fs
