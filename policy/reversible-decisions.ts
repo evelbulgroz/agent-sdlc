@@ -85,53 +85,31 @@ export interface AutoDecision {
 	readonly matchedPrompt: string;
 }
 
-export const REVERSIBLE_RULES: readonly DecisionRule[] = Object.freeze([
-	{
-		id: 'module_system_esm',
-		name: 'Module System',
-		category: 'module_system',
-		matcher: /\b(?:esm|commonjs|cjs|module\s+system|module\s+format|import\s+extension|type:\s*module)\b/i,
-		decision: 'Use Node.js ESM (type: "module" or .mjs) with explicit .js relative import extensions.',
-		assumption: 'Architecture strictly uses ECMAScript Modules (ESM) with .js relative import extensions.',
-		rationale: 'Monorepo convention per docs/handbook/style-guide.md and root AGENTS.md.',
-	},
-	{
-		id: 'test_framework_placement',
-		name: 'Test Framework Placement',
-		category: 'test_framework',
-		matcher: /\b(?:test\s+framework|jest|vitest|node:test|unit\s+test\s+runner|testing\s+framework)\b/i,
-		decision: 'Services use Jest (*.spec.ts); Frontends use Vitest (*.spec.tsx); Tooling harness uses node:test (*.spec.mjs).',
-		assumption: 'Tests use existing repository framework placements (services: Jest, frontends: Vitest, tooling: node:test).',
-		rationale: 'Standard repository test framework matrix per docs/handbook/testing.md.',
-	},
-	{
-		id: 'package_manager_pnpm',
-		name: 'Package Manager',
-		category: 'package_manager',
-		matcher: /\b(?:npm|yarn|pnpm|bun|package\s+manager|lockfile)\b/i,
-		decision: 'Toolchain uses pnpm exclusively with frozen lockfile; internal dependencies use "workspace:*".',
-		assumption: 'Toolchain uses pnpm exclusively; external packages are not added casually without Class B justification.',
-		rationale: 'AGENTS.md Critical Rule 3 (pnpm exclusive toolchain).',
-	},
-	{
-		id: 'change_classification_classifier',
-		name: 'Change Classification',
-		category: 'change_classification',
-		matcher: /\b(?:change\s+class|preflight\s+class|class\s+[a-e]|classify-only)\b/i,
-		decision: 'Derive change classification mechanically from tools/agent-preflight.sh -- --classify-only.',
-		assumption: 'Change classification follows repo-deterministic classification via tools/agent-preflight.sh.',
-		rationale: 'Deterministic preflight classification per AGENTS.md Directive 7.',
-	},
-	{
-		id: 'error_handling_hierarchy',
-		name: 'Error Handling',
-		category: 'error_handling',
-		matcher: /\b(?:error\s+handling|exception\s+class|sdlcerror|typed\s+errors|silent\s+failure)\b/i,
-		decision: 'Use typed domain error hierarchy extending SdlcError (tools) or Nest HTTP exceptions (services); ban silent swallows.',
-		assumption: 'Error handling strictly adheres to Zero Silent Failures with typed errors.',
-		rationale: 'Zero Silent Failures rule per docs/handbook/style-guide.md.',
-	},
-]);
+/**
+ * Host `policy.reversibleDecisions` replaces the neutral default, whose only rule answers
+ * "how do we verify" from the profile's `verify.argv`. Matchers are case-insensitive regex sources.
+ */
+export function buildReversibleRules(
+	options: { rootDir?: string; profile?: Readonly<HostProfile> } = {},
+): readonly DecisionRule[] {
+	const profile = options.profile ?? loadHostProfileOrFallback(options.rootDir);
+	const configured = profile.policy?.reversibleDecisions;
+	if (configured) {
+		return Object.freeze(configured.map((rule) => ({ ...rule, matcher: new RegExp(rule.matcher, 'i') })));
+	}
+	const command = (profile.verify?.argv ?? []).join(' ');
+	return Object.freeze(command ? [{
+		id: 'verification_command',
+		name: 'Verification Command',
+		category: 'verification',
+		matcher: /\b(?:test\s+framework|unit\s+test\s+runner|testing\s+framework|verification\s+command|how\s+(?:do\s+we|to)\s+(?:run|verify)\s+tests?)\b/i,
+		decision: `Verify changes with \`${command}\`.`,
+		assumption: `Verification runs the host's configured command: ${command}.`,
+		rationale: 'Host profile verify.argv.',
+	}] : []);
+}
+
+export const REVERSIBLE_RULES: readonly DecisionRule[] = buildReversibleRules();
 
 export function validateDecisionRule(rule: unknown): DecisionRule {
 	if (!rule || typeof rule !== 'object') {
@@ -153,7 +131,7 @@ export function validateDecisionRule(rule: unknown): DecisionRule {
 export function resolveReversibleDecisions({
 	draft,
 	questions = [],
-	rules = REVERSIBLE_RULES,
+	rules = buildReversibleRules(),
 }: {
 	draft: unknown;
 	questions?: readonly unknown[];

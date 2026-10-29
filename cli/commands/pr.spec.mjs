@@ -83,7 +83,7 @@ test('CLI pr command prepares PR body on READY_FOR_GIT_APPROVAL', async () => {
 		assert.equal(prResult.result.state, 'READY_FOR_GIT_APPROVAL');
 		assert.ok(prResult.result.prBody);
 		assert.match(prResult.result.prBody, /## Canonical local done bar/);
-		assert.match(prResult.result.prBody, /agent-preflight: RESULT status=OK/);
+		assert.match(prResult.result.prBody, /verification: RESULT status=OK/);
 		assert.equal(prResult.result.pullRequest, null);
 		assert.equal(prResult.result.pushed, false);
 

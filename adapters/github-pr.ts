@@ -127,13 +127,13 @@ export function formatPullRequestBody({
 	const packagesList =
 		allowedPackages.length > 0
 			? allowedPackages.map((p) => `- \`${p}\``).join('\n')
-			: '- `tools/agent-sdlc`';
+			: '- _(none declared)_';
 
 	const resultLine =
 		preflightEvidence?.resultLine ??
 		(preflightEvidence?.status === 'OK'
-			? `agent-preflight: RESULT status=OK class=${preflightEvidence.changeClass ?? 'B'} canonical=true`
-			: 'agent-preflight: RESULT status=OK class=B canonical=true');
+			? `verification: RESULT status=OK class=${preflightEvidence.changeClass ?? 'B'} canonical=true`
+			: 'verification: RESULT status=OK class=B canonical=true');
 	const changeClass = preflightEvidence?.changeClass ?? 'B';
 
 	const decisionItems =

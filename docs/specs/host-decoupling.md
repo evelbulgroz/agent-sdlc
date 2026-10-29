@@ -82,7 +82,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Compatibility note: hosts that relied on the default must set `stateDir` (this repo and fitness-app already do).
 - Tests: custom `stateDir` honoured by shell scratch dirs, resume worktree paths, PR-body message, trace auditor.
 
-### Slice 6: Reversible-decision and preflight wording (E)
+### Slice 6: Reversible-decision and preflight wording (E) — DONE (config block is `policy.reversibleDecisions`; PR fallback text now `verification: RESULT ...`; test-fixture preflight strings remain under Slice 0b)
 - Move preflight/handbook references into `policy.reversibleDecisions`; defaults reference only the profile's `verify.argv`.
 - Critic done-bar text is composed from `verify.argv` (partially done).
 - Tests: default decision text contains no file paths; override applied.

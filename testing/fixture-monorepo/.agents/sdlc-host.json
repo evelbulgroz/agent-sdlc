@@ -45,6 +45,15 @@
 		]
 	},
 	"policy": {
+		"reversibleDecisions": [
+			{
+				"id": "module_system_esm", "name": "Module System", "category": "module_system",
+				"matcher": "\\b(?:esm|commonjs|cjs|module\\s+system)\\b",
+				"decision": "Use Node.js ESM with explicit relative import extensions.",
+				"assumption": "Architecture strictly uses ECMAScript Modules (ESM).",
+				"rationale": "Fixture host convention."
+			}
+		],
 		"secretPaths": ["vault", "*.vault.config.ts"],
 		"highRiskPaths": [
 			"apps/services/authentication",

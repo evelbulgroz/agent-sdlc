@@ -11,9 +11,15 @@ export const ContractProducerRulesSchema = z.strictObject({
 	sharedPackageBuildArgv: ArgvSchema.optional(),
 });
 
+export const ReversibleDecisionRuleSchema = z.strictObject({
+	id: TokenSchema, name: TokenSchema, category: TokenSchema,
+	matcher: TokenSchema, decision: TokenSchema, assumption: TokenSchema, rationale: TokenSchema,
+});
+
 export const PolicyConfigSchema = z.strictObject({
 	highRiskPaths: z.array(TokenSchema).optional(), protectedBaselinePaths: z.array(TokenSchema).optional(),
 	defaultFailureTargetPaths: z.array(TokenSchema).optional(),
 	contractProducerRules: ContractProducerRulesSchema.optional(), irreversiblePatterns: z.array(TokenSchema).optional(),
 	secretPaths: z.array(TokenSchema).optional(),
+	reversibleDecisions: z.array(ReversibleDecisionRuleSchema).optional(),
 });

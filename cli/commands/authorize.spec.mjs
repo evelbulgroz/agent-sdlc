@@ -406,7 +406,7 @@ test('CLI authorize with --push and --open-pr reaches DONE, pushes branch, and o
 		assert.ok(fs.existsSync(prBodyPath));
 		const prBodyContent = fs.readFileSync(prBodyPath, 'utf8');
 		assert.match(prBodyContent, /## Canonical local done bar/);
-		assert.match(prBodyContent, /agent-preflight: RESULT status=OK/);
+		assert.match(prBodyContent, /verification: RESULT status=OK/);
 
 		// Verify human status output formatting
 		const statusHuman = await runCli(['status', '--run', runId], {

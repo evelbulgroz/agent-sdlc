@@ -8,11 +8,41 @@ import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import {
 	IRREVERSIBLE_PATTERNS,
 	REVERSIBLE_RULES,
+	buildReversibleRules,
 	formatDecisionsMarkdown,
 	projectDecisionsFile,
 	resolveReversibleDecisions,
 	validateDecisionRule,
 } from './reversible-decisions.ts';
+
+const HOST_RULE_SOURCES = [
+	['module_system', 'Module System', '\\b(?:esm|commonjs|cjs)\\b', 'Architecture strictly uses ECMAScript Modules (ESM).'],
+	['test_framework', 'Test Framework', '\\b(?:test\\s+framework|jest|vitest)\\b', 'Tests use existing framework placements.'],
+	['package_manager', 'Package Manager', '\\b(?:npm|yarn|pnpm)\\b', 'Toolchain uses pnpm exclusively.'],
+	['change_classification', 'Change Classification', '\\b(?:change\\s+class|preflight\\s+class)\\b', 'Classification is derived mechanically.'],
+	['error_handling', 'Error Handling', '\\b(?:error\\s+handling|typed\\s+errors|sdlcerror)\\b', 'Errors are typed.'],
+];
+const HOST_RULES = buildReversibleRules({
+	profile: {
+		version: '1.3.0',
+		policy: {
+			reversibleDecisions: HOST_RULE_SOURCES.map(([category, name, matcher, assumption]) => ({
+				id: `${category}_rule`, name, category, matcher, decision: `Decision for ${name}.`, assumption, rationale: 'Host convention.',
+			})),
+		},
+	},
+});
+
+test('buildReversibleRules: neutral default references only verify.argv; host rules override it', () => {
+	const defaults = buildReversibleRules({ profile: { version: '1.3.0', verify: { argv: ['pnpm', 'run', 'test:unit'] } } });
+	assert.equal(defaults.length, 1);
+	assert.match(defaults[0].decision, /`pnpm run test:unit`/);
+	assert.doesNotMatch(JSON.stringify(defaults), /handbook|AGENTS\.md|Jest|Vitest|Nest|preflight\.sh|services/);
+	assert.deepEqual(buildReversibleRules({ profile: { version: '1.3.0' } }), []);
+	assert.equal(HOST_RULES.length, 5);
+	assert.ok(HOST_RULES[0].matcher instanceof RegExp);
+	assert.ok(REVERSIBLE_RULES.every((rule) => !/handbook/.test(rule.rationale)));
+});
 
 test('reversible decisions: happy path auto-resolves standard technical questions and appends assumptions', () => {
 	const draft = emptyDraft('Build a reporting utility');
@@ -58,6 +88,7 @@ test('reversible decisions: happy path auto-resolves standard technical question
 	const { autoDecisions, remainingQuestions, updatedDraft } = resolveReversibleDecisions({
 		draft,
 		questions,
+		rules: HOST_RULES,
 	});
 
 	// 5 standard questions auto-resolved, 1 domain question remains
@@ -84,7 +115,7 @@ test('reversible decisions: happy path auto-resolves standard technical question
 	);
 	assert.ok(
 		updatedDraft.assumptions.some((a) =>
-			a.includes('Tests use existing repository framework placements'),
+			a.includes('Tests use existing framework placements'),
 		),
 	);
 
@@ -92,6 +123,7 @@ test('reversible decisions: happy path auto-resolves standard technical question
 	const secondPass = resolveReversibleDecisions({
 		draft: updatedDraft,
 		questions: [questions[0]], // question about ESM again
+		rules: HOST_RULES,
 	});
 	assert.equal(secondPass.autoDecisions.length, 1);
 	assert.equal(secondPass.updatedDraft.assumptions.length, 5); // count did not increase
