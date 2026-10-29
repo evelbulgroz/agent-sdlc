@@ -21,6 +21,7 @@ const ALLOWED_CHILDREN = new Set([
 	'.npmrc',
 	'.gitignore',
 	'.git',
+	'.tmp',
 	'.agents',
 	'tools',
 	'tsconfig.json',
