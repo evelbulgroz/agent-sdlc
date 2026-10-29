@@ -223,7 +223,7 @@ test('TaskExecutor fails closed when implementer reaches its step limit', async 
 					patchHash: null,
 					failurePacketArtifact: null,
 					repairCount: 0,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 			integrationOrder: ['task-0'],

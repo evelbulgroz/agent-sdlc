@@ -272,7 +272,7 @@ test('@ac AC-04 @case AC-04.4 promptBlocks on the class matches the prompt modul
 		taskId: 'task-a',
 		specSummary: 'Ship the slice',
 		acceptanceCriteria: ['AC-04: the verification log survives. Cases: AC-04.1: inline log'],
-		verificationCommands: [['pnpm', 'run', 'agent:test-sdlc']],
+		verificationCommands: [['pnpm', 'run', 'test:unit']],
 		allowedPackages: ['tools'],
 		agentsMd: 'Use pnpm',
 	};

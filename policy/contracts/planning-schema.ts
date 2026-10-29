@@ -336,7 +336,7 @@ function declaredTaskCommand(value: unknown, name: string): string[] {
 		argv.length === 3 &&
 		argv[0] === 'pnpm' &&
 		argv[1] === 'run' &&
-		(argv[2] === 'agent:test-sdlc' || argv[2] === 'test:unit');
+		/^[A-Za-z0-9][A-Za-z0-9:_-]*$/.test(argv[2] ?? '');
 	const isFilteredScript =
 		argv[0] === 'pnpm' &&
 		argv[1] === '--filter' &&
@@ -348,7 +348,7 @@ function declaredTaskCommand(value: unknown, name: string): string[] {
 				ALLOWED_TASK_VERBS.includes(argv[4])));
 	if (!isRepositorySuite && !isFilteredScript) {
 		failContract(
-			`${name} must be pnpm run test:unit, pnpm run agent:test-sdlc or a pnpm --filter package test/build/lint/typecheck command`,
+			`${name} must be pnpm run <script> (checked against the host commandPolicy at execution) or a pnpm --filter package test/build/lint/typecheck command`,
 		);
 	}
 	return argv;

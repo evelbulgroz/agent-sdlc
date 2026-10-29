@@ -15,7 +15,7 @@ test('host invocation rejects null, a forbidden flag, and accepts a no-slot invo
 		executable: true,
 		packetConsumed: false,
 		exitCode: 0,
-		argv: ['pnpm', 'run', 'agent:test-sdlc', '--push'],
+		argv: ['pnpm', 'run', 'test:unit', '--push'],
 		forbiddenFlags: HOST_FORBIDDEN_FLAGS,
 		retry: { allowed: false, maxAdditionalInvocations: 0 },
 		responseDocument: null,

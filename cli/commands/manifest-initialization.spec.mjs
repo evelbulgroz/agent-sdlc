@@ -63,7 +63,7 @@ test('@ac AC-03 manifest initialization persists immutable hash-bound input', ()
 						empty: 'no delta',
 						boundary: 'scope escape',
 					},
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 					generatorCommand: null,
 				},
 			],

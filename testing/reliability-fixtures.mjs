@@ -34,7 +34,7 @@ export function verificationAttempt(
 		attemptId: `${taskId}-verification-${attempt}`,
 		runId: '2026-09-29-reliability-test',
 		taskId,
-		command: ['pnpm', 'run', 'agent:test-sdlc'],
+		command: ['pnpm', 'run', 'test:unit'],
 		attempt,
 		phase,
 		status,

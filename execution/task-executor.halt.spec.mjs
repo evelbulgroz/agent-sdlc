@@ -189,7 +189,7 @@ test('@ac AC-08 Over-budget task halts with CAPACITY_LIMIT_EXCEEDED leaving root
 					failurePacketArtifact: null,
 					repairCount: 0,
 					lean: true,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 			integrationOrder: ['task-0'],

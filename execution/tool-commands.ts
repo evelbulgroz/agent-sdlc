@@ -8,6 +8,12 @@ import {
 	loadHostProfile,
 	type HostProfile,
 } from '../host/host-profile.ts';
+import {
+	DEFAULT_COMMAND_POLICY,
+	matchesRepositoryScript,
+	resolveCommandPolicy,
+	type CommandPolicy,
+} from '../host/command-policy.ts';
 import { validateScriptCommand } from '../host/script.ts';
 import { SdlcError } from '../policy/errors.ts';
 import {
@@ -16,17 +22,6 @@ import {
 } from './test-execution-evidence.ts';
 import { presentPagedText } from './tool-read.ts';
 
-const ALLOWED_COMMAND_VERBS: ReadonlySet<string> = new Set([
-	'test',
-	'build',
-	'lint',
-	'typecheck',
-	'build:contracts',
-	'check:contract-drift',
-	'agent:test-sdlc',
-	'agent:preflight',
-]);
-const GIT_SHA_PATTERN = /^[0-9a-f]{7,40}$/;
 const VERIFY_BASE_SHA_TOKEN_PATTERN = /^(?:[0-9a-f]{7,40}|HEAD)$/;
 const ALLOWED_TARGETED_TEST_VERBS: ReadonlySet<string> = new Set([
 	'test:unit',
@@ -47,6 +42,7 @@ export function validateCommandAllowlist(
 	args: unknown,
 	allowedPackages: readonly string[] = [],
 	worktreeDir: string | null = null,
+	policy: CommandPolicy = DEFAULT_COMMAND_POLICY,
 ): true {
 	if (command !== 'pnpm') {
 		throw new SdlcError(
@@ -114,19 +110,11 @@ export function validateCommandAllowlist(
 		}
 	} else if (strArgs[0] === 'run') {
 		verbIndex = 1;
-		const isTestSdlc =
-			strArgs.length === 2 && (strArgs[1] === 'agent:test-sdlc' || strArgs[1] === 'test:unit');
-		const isQualityChanged = strArgs.length === 2 && strArgs[1] === 'quality:changed';
-		const isPreflightRecovery =
-			strArgs.length === 5 &&
-			strArgs[1] === 'agent:preflight' &&
-			strArgs[2] === '--' &&
-			strArgs[3] === '--base' &&
-			GIT_SHA_PATTERN.test(strArgs[4] ?? '');
-		if (!isTestSdlc && !isPreflightRecovery && !isQualityChanged) {
+		const isUnfilteredTestUnit = strArgs.length === 2 && strArgs[1] === 'test:unit';
+		if (!isUnfilteredTestUnit && !matchesRepositoryScript(strArgs, policy)) {
 			throw new SdlcError(
 				'INVALID_INPUT',
-				`Unfiltered repository role commands must exactly match 'pnpm run test:unit', 'pnpm run agent:test-sdlc', 'pnpm run quality:changed', or 'pnpm run agent:preflight -- --base <sha>'`,
+				`Unfiltered repository role commands must exactly match 'pnpm run test:unit' or a script declared in the host profile commandPolicy.repositoryScripts`,
 			);
 		}
 	} else {
@@ -137,32 +125,14 @@ export function validateCommandAllowlist(
 	}
 
 	const verb = strArgs[verbIndex];
-	const unfilteredQualityChanged = targetPkg === null && verb === 'quality:changed';
-	if (
-		!verb ||
-		(!ALLOWED_COMMAND_VERBS.has(verb) &&
-			!ALLOWED_TARGETED_TEST_VERBS.has(verb) &&
-			!unfilteredQualityChanged)
-	) {
-		throw new SdlcError(
-			'INVALID_INPUT',
-			`Command verb '${String(verb)}' is not allowlisted (allowed: ${[
-				...ALLOWED_COMMAND_VERBS,
-				...ALLOWED_TARGETED_TEST_VERBS,
-			].join(', ')})`,
-		);
-	}
-
-	if (targetPkg === null) {
-		if (
-			verb !== 'test:unit' &&
-			verb !== 'agent:test-sdlc' &&
-			verb !== 'agent:preflight' &&
-			verb !== 'quality:changed'
-		) {
+	if (targetPkg !== null) {
+		if (!verb || (!policy.allowedVerbs.has(verb) && !ALLOWED_TARGETED_TEST_VERBS.has(verb))) {
 			throw new SdlcError(
 				'INVALID_INPUT',
-				`Unfiltered 'pnpm run ${verb}' is not permitted`,
+				`Command verb '${String(verb)}' is not allowlisted (allowed: ${[
+					...policy.allowedVerbs,
+					...ALLOWED_TARGETED_TEST_VERBS,
+				].join(', ')})`,
 			);
 		}
 	}
@@ -378,7 +348,13 @@ export function validateHostCommand(
 		);
 		return true;
 	}
-	return validateCommandAllowlist(command, args, allowedPackages, worktreeDir);
+	return validateCommandAllowlist(
+		command,
+		args,
+		allowedPackages,
+		worktreeDir,
+		resolveCommandPolicy(resolvedProfile),
+	);
 }
 
 export interface RunCommandResult {

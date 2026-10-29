@@ -191,17 +191,17 @@ test('repository-scoped tasks retain their exact declared verification command w
 	const task = {
 		targetPackage: 'docs',
 		authoredPaths: ['tools/agent-sdlc/example.spec.mjs'],
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 	};
 	assert.deepEqual(resolveTaskVerificationCommand(task, {}), [
 		'pnpm',
 		'run',
-		'agent:test-sdlc',
+		'test:unit',
 	]);
 	assert.deepEqual(resolveAcceptanceEvidenceCommand(task, {}), [
 		'pnpm',
 		'run',
-		'agent:test-sdlc',
+		'test:unit',
 	]);
 });
 

@@ -31,7 +31,7 @@ Remaining coupling found by survey:
 ### 3.1 Host-config additions (additive, schema `1.3.0` optional fields)
 
 - `verify.argv` (exists): the single repository-level verification command. Replaces `agent:preflight`/`agent:test-sdlc` as a special case.
-- `commands.allowedVerbs?: string[]` and `commands.repositoryScripts?: string[][]` (exact unfiltered `pnpm run ...` argv lists). Defaults: verbs `test, test:unit, build, lint, typecheck`; repository scripts: the profile's `verify.argv` only.
+- `commandPolicy.allowedVerbs?: string[]`, `commandPolicy.repositoryScripts?: string[][]` and `commandPolicy.contractGateScripts?: string[][]` (named `commandPolicy` because `commands` is already the script adapter's argv list) (exact unfiltered `pnpm run ...` argv lists). Defaults: verbs `test, build, lint, typecheck, build:contracts, check:contract-drift` (the contract verbs move out with Slice 2's contract-producer cleanup); unfiltered scripts: `pnpm run test:unit` and the profile's `verify.argv` only.
 - `workspace.repositoryScopes?: string[]` (paths mapped to the repository scope instead of a package; today hardcoded `docs`, `.agents`, `tools`).
 - `policy.secretPaths?: string[]` (path prefixes and suffix globs excluded from review/PR; default `.env*` only).
 - `policy.reversibleDecisions?: {...}` overrides (classification command, style/testing doc pointers); defaults neutral wording with no file paths.
@@ -58,7 +58,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Done when: full unit suite passes with this repo's clean profile. Test: no spec reads fitness-app names (see Slice 8 guard).
 
 ### Slice 1: Command policy from config (A)
-- New `host/command-policy.ts` additions: resolve allowed verbs and repository scripts from `commands.*`, defaulting to `verify.argv`.
+- New `host/command-policy.ts` additions: resolve allowed verbs and repository scripts from `commandPolicy.*`, defaulting to `verify.argv`.
 - Remove `agent:*` and `quality:changed` literals from `tool-commands.ts`, `planning-schema.ts`, `task-verification-plan.ts`, `task-readiness.ts`, `workspace-packages.ts`.
 - Task-plan validation takes the resolved policy as a parameter.
 - Tests: boundary cases (unknown verb rejected; configured script accepted; shell metacharacters still rejected; `--filter` containment unchanged; default profile accepts only `verify.argv`).
@@ -111,7 +111,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Slice 0 is the largest effort (about 144 files carry literals); batching by directory with the suite green after each batch limits risk.
 - Changing the default `stateDir` affects any host without an explicit value; verify other hosts before release.
 - Canary hash bindings change whenever planning files change (Slices 1-3); requalify after Slice 3.
-- Decided: `commands` is a new top-level block in the host profile.
+- Decided: a new top-level `commandPolicy` block in the host profile (`commands` is taken by the script adapter).
 - Decided: clean break. The `agent:*` and `quality:changed` verbs are removed with no deprecation window.
 
 ## 7. Host configuration impact

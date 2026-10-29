@@ -5,6 +5,8 @@ import {
 	createReconciliationConflictInterrupt,
 } from '../../cli/hitl.ts';
 import { TaskExecutor } from '../../execution/task-executor.ts';
+import { loadHostProfileOrFallback } from '../../host/host-profile.ts';
+import { resolveCommandPolicy } from '../../host/command-policy.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import type { DagTask, ManifestSlice, RuntimeState, TaskPlan } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
@@ -98,6 +100,7 @@ export function buildTaskPromptContexts({
 						task,
 						tasks,
 						packageMap: packages?.packageMap ?? null,
+						contractGateScripts: resolveCommandPolicy(loadHostProfileOrFallback(rootDir)).contractGateScripts,
 					})
 				: [];
 			return [

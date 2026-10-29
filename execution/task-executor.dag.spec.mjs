@@ -102,7 +102,7 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 					patchHash: null,
 					failurePacketArtifact: null,
 					repairCount: 0,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 				{
 					taskId: 'task-cond',
@@ -119,7 +119,7 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 					patchHash: null,
 					failurePacketArtifact: null,
 					repairCount: 0,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 			integrationOrder: ['task-ddd', 'task-cond'],

@@ -93,7 +93,7 @@ test('@ac AC-03 @case AC-03.2 a temporary typecheck fixture that assigns a TaskM
 		"\t\t\t\tempty: 'empty diff',",
 		"\t\t\t\tboundary: 'path containment breach',",
 		'\t\t\t},',
-		"\t\t\tverificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],",
+		"\t\t\tverificationCommand: ['pnpm', 'run', 'test:unit'],",
 		'\t\t\tgeneratorCommand: null,',
 		"\t\t\tacceptanceCriteria: ['AC-01'],",
 		'\t\t},',

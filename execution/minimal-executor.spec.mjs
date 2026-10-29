@@ -312,7 +312,7 @@ test('an attempt transcript above 524288 bytes is stored', async () => {
 				action: {
 					kind: 'tool_call',
 					toolName: 'run_allowlisted_command',
-					parameters: { command: 'pnpm', args: ['run', 'agent:test-sdlc'] },
+					parameters: { command: 'pnpm', args: ['run', 'test:unit'] },
 				},
 			})),
 			{ action: { kind: 'complete', summary: 'done' } },

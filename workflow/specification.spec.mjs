@@ -379,7 +379,7 @@ test('task manifest parsing validates JSON and produces a stable canonical hash'
 					empty: 'no delta',
 					boundary: 'scope escape',
 				},
-				verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+				verificationCommand: ['pnpm', 'run', 'test:unit'],
 				generatorCommand: null,
 			},
 		],

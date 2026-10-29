@@ -11,6 +11,7 @@ import {
 	VerifySchema,
 	type HostVerifyConfig,
 } from './verify-config.ts';
+import { CommandPolicySchema } from './command-policy-schema.ts';
 
 export {
 	DEFAULT_VERIFY_ARGV,
@@ -115,7 +116,7 @@ const BaseProfileFields = {
 	prompts: PromptsConfigSchema.optional(), git: GitConfigSchema.optional(), workspace: DeclarativeWorkspaceSchema.optional(),
 	hydration: HydrationConfigSchema.optional(), policy: PolicyConfigSchema.optional(),
 	architecture: ArchitectureConfigSchema.optional(), qualityGate: QualityGateConfigSchema.optional(),
-	learnings: LearningsConfigSchema.optional(),
+	learnings: LearningsConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
 };
 
 const DefaultHostProfileSchema = z.strictObject({
@@ -267,7 +268,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 				);
 			}
 		}
-		for (const key of ['runsDir', 'git', 'policy', 'architecture', 'qualityGate', 'learnings']) {
+		for (const key of ['runsDir', 'git', 'policy', 'architecture', 'qualityGate', 'learnings', 'commandPolicy']) {
 			if (rawRecord[key] !== undefined) {
 				invalidHostProfile(`Field '${key}' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
 					fieldName: key,

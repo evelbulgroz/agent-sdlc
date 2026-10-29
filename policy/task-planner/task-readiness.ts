@@ -292,7 +292,7 @@ function deriveManifestlessTasks({
 		const packageName = pathToPackage.get(targetPackage);
 		let verificationCommand: string[];
 		if (['docs', '.agents', 'tools'].includes(targetPackage)) {
-			verificationCommand = ['pnpm', 'run', 'agent:test-sdlc'];
+			verificationCommand = ['pnpm', 'run', 'test:unit'];
 		} else {
 			const pkgData = packageName ? packageMap.get(packageName) : null;
 			if (!pkgData?.pkgJson?.scripts?.test || !packageName) {

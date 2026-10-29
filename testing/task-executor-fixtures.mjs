@@ -137,7 +137,7 @@ export const POST_IMPLEMENT_RUNTIME = {
 
 export function failingVerificationExec() {
 	return (_command, args) => {
-		if (args?.includes('agent:test-sdlc')) {
+		if (args?.includes('test:unit')) {
 			const error = new Error('tests failed');
 			error.status = 1;
 			error.stdout = 'tests failed';

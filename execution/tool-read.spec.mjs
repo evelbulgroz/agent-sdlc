@@ -267,7 +267,7 @@ test('@ac AC-03 @case AC-03.2 paged command output keeps every byte and a later 
 		assert.equal(Buffer.byteLength(output, 'utf8'), 100_000);
 		let started = false;
 		const result = runCommandTool(
-			{ command: 'pnpm', args: ['run', 'agent:test-sdlc'] },
+			{ command: 'pnpm', args: ['run', 'test:unit'] },
 			{
 				worktreeDir,
 				pageOverflow: true,

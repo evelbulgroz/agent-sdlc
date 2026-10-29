@@ -89,7 +89,7 @@ export function loopInput(worktreeDir, extra = {}) {
 		runId: 'run-minimal',
 		taskId: 'task-a',
 		worktreeDir,
-		verificationCommands: [['pnpm', 'run', 'agent:test-sdlc']],
+		verificationCommands: [['pnpm', 'run', 'test:unit']],
 		specSummary: 'Ship the slice',
 		acceptanceCriteria: ['AC-04: the verification log survives'],
 		agentsMd: 'Use pnpm',

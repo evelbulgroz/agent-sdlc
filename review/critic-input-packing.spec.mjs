@@ -37,7 +37,7 @@ test('@ac AC-14 plan critic packet includes deterministic feasibility and done-b
 					},
 					highRisk: false,
 					humanReviewEvidence: 'not_required',
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 		}),
@@ -57,7 +57,7 @@ test('@ac AC-14 plan critic packet includes deterministic feasibility and done-b
 	assert.deepEqual(document.tasks[0].verificationCommand, [
 		'pnpm',
 		'run',
-		'agent:test-sdlc',
+		'test:unit',
 	]);
 });
 
@@ -71,7 +71,7 @@ test('packSpecDocument is deterministic and omits interview chatter', () => {
 		publicContractImpact: 'None',
 		acceptanceCriteria: ['Spec critic before approval'],
 		failureDefenses: ['Unknown vendor fails'],
-		verificationPlan: ['agent:test-sdlc'],
+		verificationPlan: ['test:unit'],
 		assumptions: [],
 		unresolvedQuestions: ['should not appear'],
 	});

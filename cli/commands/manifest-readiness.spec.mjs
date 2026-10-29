@@ -54,7 +54,7 @@ test('@ac AC-02 bounded manifest readiness reports score, change class, and risk
 							empty: 'no delta',
 							boundary: 'scope escape',
 						},
-						verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+						verificationCommand: ['pnpm', 'run', 'test:unit'],
 						generatorCommand: null,
 					},
 				],
@@ -212,7 +212,7 @@ test('@ac AC-19 legal dimensions with score 21 require decomposition', async () 
 							empty: 'empty',
 							boundary: 'boundary',
 						},
-						verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+						verificationCommand: ['pnpm', 'run', 'test:unit'],
 						generatorCommand: null,
 					},
 				],
@@ -262,7 +262,7 @@ test('@ac AC-20 disconnected slice task fails before run creation or model dispa
 				empty: 'empty',
 				boundary: 'boundary',
 			},
-			verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+			verificationCommand: ['pnpm', 'run', 'test:unit'],
 			generatorCommand: null,
 		});
 		fs.writeFileSync(

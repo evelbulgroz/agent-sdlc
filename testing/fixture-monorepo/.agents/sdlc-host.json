@@ -233,5 +233,14 @@
 				]
 			}
 		]
+	},
+	"commandPolicy": {
+		"contractGateScripts": [
+			[
+				"pnpm",
+				"run",
+				"quality:changed"
+			]
+		]
 	}
 }

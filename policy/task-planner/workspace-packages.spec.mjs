@@ -81,7 +81,7 @@ test('readiness reports every exceeded task dimension and aggregate score', () =
 					empty: 'empty',
 					boundary: 'boundary',
 				},
-				verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+				verificationCommand: ['pnpm', 'run', 'test:unit'],
 				generatorCommand: null,
 			},
 		],

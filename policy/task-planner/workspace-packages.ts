@@ -276,10 +276,12 @@ export function contractVerificationCommandsForTask({
 	task,
 	tasks,
 	packageMap,
+	contractGateScripts = [],
 }: {
 	task?: PlannerTaskLike | null;
 	tasks?: readonly PlannerTaskLike[];
 	packageMap?: ReadonlyMap<string, WorkspacePackageEntry> | null;
+	contractGateScripts?: readonly (readonly string[])[];
 } = {}): string[][] {
 	if (!isPackageSink(task, tasks ?? [])) return [];
 	const record = packageRecordForTarget(packageMap, task?.targetPackage);
@@ -295,7 +297,7 @@ export function contractVerificationCommandsForTask({
 	return [
 		['pnpm', '--filter', packageName, 'run', 'build:contracts'],
 		['pnpm', '--filter', packageName, 'run', 'check:contract-drift'],
-		['pnpm', 'run', 'quality:changed'],
+		...contractGateScripts.map((script) => [...script]),
 	];
 }
 

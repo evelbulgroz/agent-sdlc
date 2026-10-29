@@ -3,6 +3,7 @@ import test from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { resolveCommandPolicy } from '../host/command-policy.ts';
 import {
 	readFileTool,
 } from './tool-read.ts';
@@ -59,52 +60,15 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 			),
 		);
 		assert.ok(
-			validateCommandAllowlist('pnpm', ['run', 'agent:test-sdlc'], allowedPackages),
+			validateCommandAllowlist('pnpm', ['run', 'test:unit'], allowedPackages),
 		);
-		// Regression: repair/implementer roles must be able to re-run the exact
-		// forced full declared verification command (pnpm run agent:preflight --
-		// --base <sha>), matching verifier.mjs's executePreflightVerifier argv.
-		assert.ok(
-			validateCommandAllowlist(
-				'pnpm',
-				['run', 'agent:preflight', '--', '--base', '6c277953d732ed447f89035d51716ec0bab56b3f'],
-				allowedPackages,
-			),
-		);
-		assert.throws(
-			() =>
-				validateCommandAllowlist(
-					'pnpm',
-					['run', 'agent:preflight', '--', '--base', 'not-a-sha'],
-					allowedPackages,
-				),
-			(err) => err.code === 'INVALID_INPUT',
-		);
-		assert.throws(
-			() =>
-				validateCommandAllowlist(
-					'pnpm',
-					['run', 'agent:preflight', '--', '--base'],
-					allowedPackages,
-				),
-			(err) => err.code === 'INVALID_INPUT',
-		);
-		assert.throws(
-			() =>
-				validateCommandAllowlist(
-					'pnpm',
-					[
-						'run',
-						'agent:preflight',
-						'--',
-						'--base',
-						'6c277953d732ed447f89035d51716ec0bab56b3f',
-						'--extra',
-					],
-					allowedPackages,
-				),
-			(err) => err.code === 'INVALID_INPUT',
-		);
+		// Removed engine-baked verbs are rejected unless the host declares them.
+		for (const legacy of [['run', 'agent:test-sdlc'], ['run', 'agent:preflight', '--', '--base', '6c277953d732ed447f89035d51716ec0bab56b3f']]) {
+			assert.throws(
+				() => validateCommandAllowlist('pnpm', legacy, allowedPackages),
+				(err) => err.code === 'INVALID_INPUT',
+			);
+		}
 		assert.ok(
 			validateCommandAllowlist(
 				'pnpm',
@@ -240,7 +204,7 @@ test('@ac AC-01 AC-03 preserves parsed TAP evidence before command output trunca
 	const result = runCommandTool(
 		{
 			command: 'pnpm',
-			args: ['run', 'agent:test-sdlc'],
+			args: ['run', 'test:unit'],
 		},
 		{
 			worktreeDir: process.cwd(),
@@ -286,11 +250,11 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 			JSON.stringify({ name: '@example/conditioning-service' }),
 		);
 
-		// The repository-level SDLC suite is the only unfiltered role command.
+		// The repository-level unit suite is the only unfiltered role command by default.
 		assert.ok(
 			validateCommandAllowlist(
 				'pnpm',
-				['run', 'agent:test-sdlc'],
+				['run', 'test:unit'],
 				allowedPackages,
 				worktreeDir,
 			),
@@ -403,7 +367,7 @@ test('@ac AC-08 @case AC-08.1 @case AC-08.2 @case AC-08.3 @case AC-08.4 @case AC
 	}
 });
 
-test('validateCommandAllowlist accepts check:contract-drift and quality:changed only', () => {
+test('validateCommandAllowlist accepts contract verbs by default and unfiltered scripts only when the host declares them', () => {
 	const allowedPackages = ['apps/services/authentication'];
 	assert.equal(
 		validateCommandAllowlist(
@@ -421,7 +385,25 @@ test('validateCommandAllowlist accepts check:contract-drift and quality:changed 
 		),
 		true,
 	);
-	assert.equal(validateCommandAllowlist('pnpm', ['run', 'quality:changed'], allowedPackages), true);
+	assert.throws(
+		() => validateCommandAllowlist('pnpm', ['run', 'quality:changed'], allowedPackages),
+		(error) => error.code === 'INVALID_INPUT' && /commandPolicy/.test(error.message),
+	);
+	const declared = resolveCommandPolicy({ commandPolicy: { repositoryScripts: [['pnpm', 'run', 'quality:changed']] } });
+	assert.equal(validateCommandAllowlist('pnpm', ['run', 'quality:changed'], allowedPackages, null, declared), true);
+	assert.throws(
+		() => validateCommandAllowlist('pnpm', ['run', 'quality:changed', '--', 'x'], allowedPackages, null, declared),
+		(error) => error.code === 'INVALID_INPUT',
+	);
+	assert.throws(
+		() => validateCommandAllowlist('pnpm', ['run', 'quality:changed;rm'], allowedPackages, null, declared),
+		(error) => error.code === 'INVALID_INPUT',
+	);
+	const narrowed = resolveCommandPolicy({ commandPolicy: { allowedVerbs: ['test'] } });
+	assert.throws(
+		() => validateCommandAllowlist('pnpm', ['--filter', 'apps/services/authentication', 'run', 'build:contracts'], allowedPackages, null, narrowed),
+		(error) => error.code === 'INVALID_INPUT' && /not allowlisted/.test(error.message),
+	);
 	assert.throws(
 		() => validateCommandAllowlist('pnpm', ['run', 'quality:full'], allowedPackages),
 		(error) => error.code === 'INVALID_INPUT' && /Unfiltered/.test(error.message),

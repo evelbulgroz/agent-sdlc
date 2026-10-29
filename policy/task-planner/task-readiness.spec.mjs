@@ -41,7 +41,7 @@ test('manifest-less readiness preserves touched surfaces and derives determinist
 	assert.deepEqual(readiness.tasks[0].verificationCommand, [
 		'pnpm',
 		'run',
-		'agent:test-sdlc',
+		'test:unit',
 	]);
 	assert.equal(readiness.tasks[0].complexityScore, 4);
 });
@@ -373,7 +373,7 @@ test('@ac AC-06 @case AC-06.1 the manifest-less readiness hash stays pinned', ()
 	const readiness = evaluateTaskReadiness(pinnedManifestlessReadinessInput());
 	assert.equal(
 		sha256(canonicalJson(readiness)),
-		'7d588445cf2bdd7f8b324640b76a3fbcea097d8294df7a30ec6d102fd44650a8',
+		'2378eb1c525ed93cfdaa9650544fb449cb94940f3c9ed5f16c41589233284519',
 	);
 });
 
@@ -381,7 +381,7 @@ test('@ac AC-06 @case AC-06.2 the manifest readiness hash stays pinned', () => {
 	const readiness = evaluateTaskReadiness(pinnedManifestReadinessInput());
 	assert.equal(
 		sha256(canonicalJson(readiness)),
-		'fe7d7e29063f9d0db53327b5f13250bad4d0076c750abad028fa95f61720da32',
+		'00d14a2bfc3b5d7bce95bf6248a89b3b21ce8ee7fc3bd7266084a765d930d109',
 	);
 });
 

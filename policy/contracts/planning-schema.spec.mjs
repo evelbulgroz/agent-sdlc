@@ -38,7 +38,7 @@ function validTaskManifest() {
 					empty: 'no delta',
 					boundary: 'path escape',
 				},
-				verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+				verificationCommand: ['pnpm', 'run', 'test:unit'],
 				generatorCommand: null,
 			},
 			{
@@ -57,7 +57,7 @@ function validTaskManifest() {
 					empty: 'empty manifest',
 					boundary: 'scope mismatch',
 				},
-				verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+				verificationCommand: ['pnpm', 'run', 'test:unit'],
 				generatorCommand: null,
 			},
 		],
@@ -68,7 +68,7 @@ test('task manifest contract validates closed slices, tasks, commands, and neste
 	const manifest = validTaskManifest();
 	const parsed = validateTaskManifest(manifest);
 	assert.equal(parsed.slices.length, 2);
-	assert.equal(parsed.tasks[1].verificationCommand[2], 'agent:test-sdlc');
+	assert.equal(parsed.tasks[1].verificationCommand[2], 'test:unit');
 });
 
 test('task manifest rejects verification and generator argv outside the closed command allowlist', () => {

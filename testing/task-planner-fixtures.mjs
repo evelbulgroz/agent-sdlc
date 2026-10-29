@@ -215,7 +215,7 @@ function toolsTask(overrides = {}) {
 			empty: 'no delta',
 			boundary: 'scope escape',
 		},
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		generatorCommand: null,
 		...overrides,
 	};

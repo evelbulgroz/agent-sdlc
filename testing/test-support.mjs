@@ -770,7 +770,7 @@ export function createSlice2SmartGovernor({
 										toolName: 'run_allowlisted_command',
 										parameters: {
 											command: 'pnpm',
-											args: ['run', 'agent:test-sdlc'],
+											args: ['run', 'test:unit'],
 										},
 									},
 								}

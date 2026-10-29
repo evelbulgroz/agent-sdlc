@@ -193,3 +193,17 @@ test('@ac AC-03 @case AC-03.2 validateHostCommand rejects non-SHA baseSha tokens
 	}
 });
 
+
+test('commandPolicy schema accepts pnpm run scripts and rejects anything else', () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cmd-policy-'));
+	try {
+		writeSyntheticHostProfile(root, { commandPolicy: { repositoryScripts: [['pnpm', 'run', 'quality:changed']] } });
+		assert.deepEqual(loadHostProfile(root).commandPolicy.repositoryScripts, [['pnpm', 'run', 'quality:changed']]);
+		for (const bad of [{ repositoryScripts: [['node', 'x.js']] }, { contractGateScripts: [['pnpm', 'run']] }, { allowedVerbs: [] }, { extra: true }]) {
+			writeSyntheticHostProfile(root, { commandPolicy: bad });
+			assert.throws(() => loadHostProfile(root), (err) => err.code === 'INVALID_INPUT');
+		}
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});

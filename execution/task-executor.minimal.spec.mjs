@@ -78,7 +78,7 @@ test('TaskExecutor completes an empty delta when post-hoc verification passed', 
 					failurePacketArtifact: null,
 					repairCount: 0,
 					lean: true,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 			integrationOrder: ['task-0'],
@@ -152,7 +152,7 @@ test('governor budget denial fails the attempt and does not start a repairer', a
 					patchHash: null,
 					failurePacketArtifact: null,
 					repairCount: 0,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 			integrationOrder: ['task-blocked'],
@@ -363,7 +363,7 @@ test('@ac AC-01 @case AC-01.2 the product implementer tool_call replace_snapshot
 	const { governor, error, content, task } = await runProductImplementer({
 		label: 'product-ac-01-snapshot',
 		sameTree: true,
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		script: [
 			{
 				action: {
@@ -393,7 +393,7 @@ test('@ac AC-01 an omitted executor completes an empty delta when verification p
 	const { error, task, content } = await runProductImplementer({
 		label: 'omitted-empty-delta',
 		sameTree: true,
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		script: [
 			{
 				action: {
@@ -420,7 +420,7 @@ test('@ac AC-02 @case AC-02.1 a minimal executor verification failure is not rep
 		label: 'minimal-verification-failure',
 		executor: 'minimal',
 		runtime: POST_IMPLEMENT_RUNTIME,
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		execCli: failingVerificationExec(),
 		script: [
 			{ action: { kind: 'complete', summary: 'done' } },
@@ -442,7 +442,7 @@ test('@ac AC-09 @case AC-09.1 zero edits and a passing verification complete the
 		executor: 'minimal',
 		sameTree: true,
 		runtime: POST_IMPLEMENT_RUNTIME,
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		script: [{ action: { kind: 'complete', summary: 'done' } }],
 	});
 	assert.equal(error, null);
@@ -454,7 +454,7 @@ test('@ac AC-09 @case AC-09.2 a diff outside the authored paths is not completed
 		label: 'minimal-outside-diff',
 		executor: 'minimal',
 		runtime: POST_IMPLEMENT_RUNTIME,
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		authoredPaths: ['apps/services/conditioning/src/locked.ts'],
 		diffFile: 'outside.txt',
 		script: [{ action: { kind: 'complete', summary: 'done' } }],

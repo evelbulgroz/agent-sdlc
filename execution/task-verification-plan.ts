@@ -186,10 +186,7 @@ export function resolveAcceptanceEvidenceCommand(
 ): readonly string[] | null {
 	const verificationCommand = resolveTaskVerificationCommand(task, packageJson);
 	const repositorySuite = JSON.stringify(verificationCommand);
-	if (
-		repositorySuite === JSON.stringify(['pnpm', 'run', 'agent:test-sdlc']) ||
-		repositorySuite === JSON.stringify(['pnpm', 'run', 'test:unit'])
-	) {
+	if (repositorySuite === JSON.stringify(['pnpm', 'run', 'test:unit'])) {
 		return verificationCommand;
 	}
 	const targeted = resolveTargetedVerificationCommand(task, packageJson);

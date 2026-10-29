@@ -97,7 +97,7 @@ test('TaskExecutor reuses parentCommitSha on resume without minting new syntheti
 					patchHash: null,
 					failurePacketArtifact: null,
 					repairCount: 0,
-					verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+					verificationCommand: ['pnpm', 'run', 'test:unit'],
 				},
 			],
 			integrationOrder: ['task-0', 'task-1'],
@@ -157,7 +157,7 @@ test('@ac AC-01 @case AC-01.1 the product implementer replace_in_file changes th
 	const expectedHash = crypto.createHash('sha256').update(PRODUCT_IMPLEMENTER_ORIGINAL, 'utf8').digest('hex');
 	const { governor, error, content, task } = await runProductImplementer({
 		label: 'product-ac-01-replace',
-		verificationCommand: ['pnpm', 'run', 'agent:test-sdlc'],
+		verificationCommand: ['pnpm', 'run', 'test:unit'],
 		script: [
 			leanReplaceAction(
 				PRODUCT_IMPLEMENTER_PATH,
