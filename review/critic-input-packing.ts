@@ -47,7 +47,7 @@ export function packPlanDocument(plan: PlanDocumentPackingInput): string {
 		baseCommitSha: plan.baseCommitSha,
 		changeClass: derivePlanChangeClass(plan.tasks ?? []),
 		doneBar:
-			'host verify command (sdlc-host.json verify.argv) must pass',
+			'host verify command (sdlc-host.json verify.argv) is run by the engine after tasks complete and must return a receipt with status=OK and canonical=true; task verificationCommand values are separate per-task checks and need not equal verify.argv',
 		isParallel: plan.isParallel,
 		integrationOrder: plan.integrationOrder,
 		tasks: (plan.tasks ?? []).map((task) => ({

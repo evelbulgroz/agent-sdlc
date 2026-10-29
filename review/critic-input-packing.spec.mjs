@@ -45,7 +45,7 @@ test('@ac AC-14 plan critic packet includes deterministic feasibility and done-b
 	assert.equal(document.changeClass, 'B');
 	assert.equal(
 		document.doneBar,
-		'host verify command (sdlc-host.json verify.argv) must pass',
+		'host verify command (sdlc-host.json verify.argv) is run by the engine after tasks complete and must return a receipt with status=OK and canonical=true; task verificationCommand values are separate per-task checks and need not equal verify.argv',
 	);
 	assert.equal(document.tasks[0].complexityScore, 5);
 	assert.deepEqual(document.tasks[0].shadowPaths, {
