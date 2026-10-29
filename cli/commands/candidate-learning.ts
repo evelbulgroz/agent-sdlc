@@ -28,7 +28,7 @@ export async function promptOptionalLearning(
 			'Capture post-mortem learning insight (optional, press Enter to skip): ',
 		);
 		if (!insight || !insight.trim()) return null;
-		const scope = await rl.question('Scope (e.g. conditioning, authentication): ');
+		const scope = await rl.question('Scope (repository area or package name): ');
 		return { insight: insight.trim(), scope: scope ? scope.trim() : '' };
 	} finally {
 		rl.close();

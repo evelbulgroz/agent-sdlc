@@ -1,0 +1,33 @@
+{
+	"schemaVersion": "1.0.0",
+	"slices": [
+		{
+			"sliceId": "canary-probe",
+			"kind": "vertical",
+			"goal": "Deliver clampPercent with a co-located spec",
+			"acceptanceCriteria": ["AC-01", "AC-02"],
+			"dependsOn": []
+		}
+	],
+	"tasks": [
+		{
+			"taskId": "canary-probe-task",
+			"sliceId": "canary-probe",
+			"targetPackage": "scripts",
+			"authoredPaths": ["scripts/canary-probe.ts", "scripts/canary-probe.spec.mjs"],
+			"pathPrefixes": ["scripts"],
+			"generatedOutputs": [],
+			"dependsOn": [],
+			"deliveryLayers": ["tooling"],
+			"dependencyMutations": [],
+			"shadowPaths": {
+				"unhappy": "non-number input returns 0",
+				"timeout": "pure synchronous helper, no timeout path",
+				"empty": "undefined input returns 0",
+				"boundary": "values below 0 and above 100 are clamped"
+			},
+			"verificationCommand": ["pnpm", "run", "test:unit"],
+			"generatorCommand": null
+		}
+	]
+}

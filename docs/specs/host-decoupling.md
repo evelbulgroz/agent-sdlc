@@ -92,7 +92,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Update READMEs, `ARCHITECTURE.md`, `host/README.md` (new fields, migration table), and `docs/operator-shell-and-authorization.md`.
 - Tests: existing living-docs and `host-docs` specs updated to the new fields; docs-drift check passes.
 
-### Slice 8: Leak guard and canary qualification
+### Slice 8: Leak guard and canary qualification (guard and canary fixture DONE and `CANARY_ELIGIBLE`; hosted run pending)
 - Add `testing/host-neutrality.spec.mjs`: fails if any non-fixture source, prompt, rubric, doc, or profile matches a denylist (`fitness`, `@example/`, `apps/services`, `apps/frontends`, `apps/e2e`, `security-config`, `agent:preflight`, `agent:test-sdlc`, `quality:changed`, `ddd-base`, `conditioning`, `packages/agent-sdlc`). Allowlist: this spec and the migration table in `host/README.md`.
 - Draft the canary fixture (`docs/specs/drafts/canary.md` + `canary.tasks.json`: 1 vertical slice, 1 task, <= 2 ACs, <= 3 files under `scripts/` or `testing/`, `verificationCommand: ["pnpm","run","test:unit"]`), run `canary check`, then the hosted run to `READY_FOR_GIT_APPROVAL`; never merge the canary worktree. Requires operator approval for live model calls.
 
