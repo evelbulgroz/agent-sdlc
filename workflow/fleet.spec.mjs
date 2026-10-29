@@ -15,13 +15,13 @@ test('readFleetFrictionSummary calculates fleet-wide unreviewed friction and sta
 		'tools/.agent-sdlc/test-fixtures',
 		`fleet-summary-${crypto.randomUUID()}`,
 	);
-	fs.mkdirSync(path.join(tempRoot, 'tools/.agent-sdlc'), { recursive: true });
+	fs.mkdirSync(path.join(tempRoot, '.agent-sdlc'), { recursive: true });
 	fs.mkdirSync(path.join(tempRoot, '.agents/trace-findings'), { recursive: true });
 
 	try {
 		// Run 1: has friction, unanalyzed
 		const run1Id = '2026-09-01-fleet-run-1';
-		const run1Dir = path.join(tempRoot, 'tools/.agent-sdlc', run1Id);
+		const run1Dir = path.join(tempRoot, '.agent-sdlc', run1Id);
 		fs.mkdirSync(run1Dir, { recursive: true });
 		const store1 = new RuntimeStore(path.join(run1Dir, 'runtime.sqlite'));
 		store1.database.prepare(`
@@ -56,7 +56,7 @@ test('readFleetFrictionSummary calculates fleet-wide unreviewed friction and sta
 
 		// Run 2: has friction, analyzed
 		const run2Id = '2026-09-02-fleet-run-2';
-		const run2Dir = path.join(tempRoot, 'tools/.agent-sdlc', run2Id);
+		const run2Dir = path.join(tempRoot, '.agent-sdlc', run2Id);
 		fs.mkdirSync(run2Dir, { recursive: true });
 		const store2 = new RuntimeStore(path.join(run2Dir, 'runtime.sqlite'));
 		store2.database.prepare(`

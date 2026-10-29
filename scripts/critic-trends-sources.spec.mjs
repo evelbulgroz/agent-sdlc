@@ -8,7 +8,7 @@ import { aggregateCriticTrends, aggregateSkillsTrends } from './aggregate-critic
 import { listRunDatabases, readDatabaseFindings } from './critic-trends-sources.ts';
 
 function createRunDatabase(rootDir, runId) {
-	const runtimeDir = path.join(rootDir, 'tools/.agent-sdlc', runId);
+	const runtimeDir = path.join(rootDir, '.agent-sdlc', runId);
 	fs.mkdirSync(runtimeDir, { recursive: true });
 	const database = new DatabaseSync(path.join(runtimeDir, 'runtime.sqlite'));
 	try {
@@ -28,12 +28,12 @@ function makeTrendsRoot() {
 	const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'critic-trends-sources-'));
 	createRunDatabase(rootDir, 'run-a');
 	createRunDatabase(rootDir, 'run-b');
-	fs.mkdirSync(path.join(rootDir, 'tools/.agent-sdlc/run-empty'), { recursive: true });
+	fs.mkdirSync(path.join(rootDir, '.agent-sdlc/run-empty'), { recursive: true });
 	const linkTarget = path.join(rootDir, 'linked-run-target');
 	createRunDatabase(linkTarget, 'inner');
 	fs.symlinkSync(
-		path.join(linkTarget, 'tools/.agent-sdlc/inner'),
-		path.join(rootDir, 'tools/.agent-sdlc/run-linked'),
+		path.join(linkTarget, '.agent-sdlc/inner'),
+		path.join(rootDir, '.agent-sdlc/run-linked'),
 	);
 	return rootDir;
 }
@@ -46,7 +46,7 @@ test('@ac AC-06 @case AC-06.1 listRunDatabases returns the two run databases and
 		for (const item of listed) {
 			assert.equal(
 				item.databasePath,
-				path.join(rootDir, 'tools/.agent-sdlc', item.runId, 'runtime.sqlite'),
+				path.join(rootDir, '.agent-sdlc', item.runId, 'runtime.sqlite'),
 			);
 		}
 	} finally {

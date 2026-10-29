@@ -12,7 +12,7 @@ import { validateOperationRequest } from '@evelbulgroz/model-usage-govenor/polic
 import { validateSchemaDefinition } from '@evelbulgroz/model-usage-govenor';
 
 function setupRunFixture(rootDir, runId) {
-	const runDir = path.join(rootDir, 'tools/.agent-sdlc', runId);
+	const runDir = path.join(rootDir, '.agent-sdlc', runId);
 	fs.mkdirSync(runDir, { recursive: true });
 	const store = new RuntimeStore(path.join(runDir, 'runtime.sqlite'));
 
@@ -113,7 +113,7 @@ test('AC-06 & AC-10: runTraceSkillAuditor attributes findings, enforces Layer 1 
 		assert.equal(artifactContent.findings[0].findingKey, '[implementer] tool_failure:script-missing');
 
 		// Invariant 2 verification: runtimeRevision is UNCHANGED
-		const store = new RuntimeStore(path.join(tempRoot, 'tools/.agent-sdlc', runId, 'runtime.sqlite'));
+		const store = new RuntimeStore(path.join(tempRoot, '.agent-sdlc', runId, 'runtime.sqlite'));
 		const runRow = store.database.prepare('SELECT runtime_revision FROM runs WHERE run_id = ?').get(runId);
 		assert.equal(runRow.runtime_revision, 2); // Checkpoint preserved!
 		assert.equal(store.hasUnreviewedFriction(runId), false);
@@ -172,7 +172,7 @@ test('AC-07: runTraceSkillAuditor handles governor concurrency denial with exit 
 		);
 
 		// Verify 0 SQLite corruption and no partial finding rows
-		const store = new RuntimeStore(path.join(tempRoot, 'tools/.agent-sdlc', runId, 'runtime.sqlite'));
+		const store = new RuntimeStore(path.join(tempRoot, '.agent-sdlc', runId, 'runtime.sqlite'));
 		const findings = store.listPromptFrictionFindings(runId);
 		assert.equal(findings.length, 0);
 		store.close();
@@ -223,7 +223,7 @@ test('AC-11: runTraceSkillAuditor rejects model output violating closed category
 		);
 
 		// Verify 0 rows inserted in SQLite
-		const store = new RuntimeStore(path.join(tempRoot, 'tools/.agent-sdlc', runId, 'runtime.sqlite'));
+		const store = new RuntimeStore(path.join(tempRoot, '.agent-sdlc', runId, 'runtime.sqlite'));
 		const findings = store.listPromptFrictionFindings(runId);
 		assert.equal(findings.length, 0);
 		store.close();

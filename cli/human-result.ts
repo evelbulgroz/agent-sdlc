@@ -2,7 +2,7 @@ import {
 	type CoverageAdvisorySource,
 	acceptanceCoverageMissText,
 } from '../execution/coverage-advisory.ts';
-import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
+import { REPOSITORY_ROOT, stateDirRelative } from '../persistence/run-paths.ts';
 import { readFleetFrictionSummary } from '../workflow/fleet.ts';
 import { usage } from './arguments.ts';
 
@@ -294,9 +294,9 @@ export function humanResult(
 			return `Draft pull request opened: ${result.pullRequest.url} (#${result.pullRequest.number})\nBranch: ${result.pullRequest.branchName} -> ${result.pullRequest.baseBranch}`;
 		}
 		if (result.pushed) {
-			return `Branch pushed to origin. PR body prepared at tools/.agent-sdlc/${result.runId}/artifacts/pr-body.md`;
+			return `Branch pushed to origin. PR body prepared at ${stateDirRelative(rootDir)}/${result.runId}/artifacts/pr-body.md`;
 		}
-		return `PR body prepared at tools/.agent-sdlc/${result.runId}/artifacts/pr-body.md`;
+		return `PR body prepared at ${stateDirRelative(rootDir)}/${result.runId}/artifacts/pr-body.md`;
 	}
 	if (result.state === 'READY_FOR_GIT_APPROVAL') {
 		const lines = [

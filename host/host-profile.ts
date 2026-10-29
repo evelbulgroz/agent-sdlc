@@ -413,7 +413,7 @@ export function loadHostProfileOrFallback(rootDir: string = REPOSITORY_ROOT): Re
 		profileId: 'default-host',
 		repositoryId: 'default-host',
 		adapter: 'default',
-		stateDir: 'tools/.agent-sdlc',
+		stateDir: '.agent-sdlc',
 		reviewDir: 'tools/.review',
 		specDraftDir: 'docs/specs/drafts',
 		runsDir: 'docs/specs/runs',

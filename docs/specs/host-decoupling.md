@@ -77,7 +77,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - `policy.secretPaths` drives `isSecretOrExcludedPath`, reversible-decision secret detection, and the PR template checkbox text (template uses the configured paths or omits the line).
 - Tests: default excludes `.env*` only; configured paths excluded from review excerpts and PR body; no path mentioning `security-config` remains in engine source.
 
-### Slice 5: State directory from profile only (F)
+### Slice 5: State directory from profile only (F) — DONE
 - Route all `tools/.agent-sdlc` literals through `resolveStateDir(rootDir)`; neutral default `.agent-sdlc`; update human-readable messages.
 - Compatibility note: hosts that relied on the default must set `stateDir` (this repo and fitness-app already do).
 - Tests: custom `stateDir` honoured by shell scratch dirs, resume worktree paths, PR-body message, trace auditor.

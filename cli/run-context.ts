@@ -62,7 +62,7 @@ export function openContext({
 	const effectiveRoot = rootDir ?? REPOSITORY_ROOT;
 	validateRunId(runId);
 	if (fs.existsSync(path.join(archiveRoot(effectiveRoot), runId))) {
-		const archiveRelPath = archivedRunRelativePath(runId);
+		const archiveRelPath = archivedRunRelativePath(runId, effectiveRoot);
 		throw new SdlcError(
 			'INVALID_INPUT',
 			`Run '${runId}' is archived at ${archiveRelPath} and cannot be resumed or inspected as a live run`,

@@ -60,9 +60,24 @@ test('@ac AC-05 @case AC-05.2 liveRunRoot(REPOSITORY_ROOT) returns tools/.agent-
 	);
 });
 
-test('@ac AC-05 @case AC-05.3 liveRunRoot falls back to tools/.agent-sdlc when .agents/sdlc-host.json is absent', async () => {
+test('@ac AC-05 @case AC-05.3 liveRunRoot falls back to .agent-sdlc when .agents/sdlc-host.json is absent', async () => {
 	await withTempDir(async (dir) => {
-		assert.equal(liveRunRoot(dir), path.join(dir, 'tools/.agent-sdlc'));
-		assert.equal(archiveRoot(dir), path.join(dir, 'tools/.agent-sdlc/.archive'));
+		assert.equal(liveRunRoot(dir), path.join(dir, '.agent-sdlc'));
+		assert.equal(archiveRoot(dir), path.join(dir, '.agent-sdlc/.archive'));
+	});
+});
+
+test('a custom stateDir is honoured by run paths, archive paths, and the PR-body message', async () => {
+	const { writeSyntheticHostProfile } = await import('./cli-test-support.mjs');
+	const { stateDirRelative, archivedRunRelativePath } = await import('../persistence/run-paths.ts');
+	const { humanResult } = await import('../cli/human-result.ts');
+	await withTempDir(async (dir) => {
+		assert.equal(stateDirRelative(dir), '.agent-sdlc');
+		writeSyntheticHostProfile(dir, { stateDir: 'var/sdlc-state' });
+		assert.equal(liveRunRoot(dir), path.join(dir, 'var/sdlc-state'));
+		assert.equal(archivedRunRelativePath('r1', dir), 'var/sdlc-state/.archive/r1');
+		const text = humanResult('pr', { runId: 'r1' }, dir);
+		assert.match(text, /var\/sdlc-state\/r1\/artifacts\/pr-body\.md/);
+		assert.doesNotMatch(text, /tools\/\.agent-sdlc/);
 	});
 });

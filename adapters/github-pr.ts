@@ -122,7 +122,7 @@ export function formatPullRequestBody({
 		(resolvedProfile.verify?.argv ?? ['npm', 'test'])
 			.filter((token) => token !== '--' && token !== '--base' && token !== '{baseSha}')
 			.join(' ') || 'npm test';
-	const stateDir = resolvedProfile.stateDir ?? 'tools/.agent-sdlc';
+	const stateDir = resolvedProfile.stateDir ?? '.agent-sdlc';
 
 	const packagesList =
 		allowedPackages.length > 0

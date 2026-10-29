@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadLearningStore } from '../../host/learnings.ts';
 import { RepositoryModelGovernor } from '../../adapters/model-governor.ts';
+import { stateDirRelative } from '../../persistence/run-paths.ts';
 import type { CandidateLearningInput } from '../../persistence/learning-records.ts';
 import {
 	type DagTask,
@@ -321,7 +322,7 @@ export async function resumeRun(
 									failurePacketArtifact: null,
 								});
 								const taskWorktreeDir = t.worktreeSubdir
-									? path.resolve(rootDir, 'tools/.agent-sdlc', runId, t.worktreeSubdir)
+									? path.resolve(rootDir, stateDirRelative(rootDir), runId, t.worktreeSubdir)
 									: null;
 								if (taskWorktreeDir && fs.existsSync(taskWorktreeDir)) {
 									try {

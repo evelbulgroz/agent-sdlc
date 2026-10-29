@@ -164,7 +164,7 @@ export async function runCheckSpec(args) {
 
 
 export function seedSkillsRun(tempRoot, runId, findings) {
-	const runDir = path.join(tempRoot, 'tools/.agent-sdlc', runId);
+	const runDir = path.join(tempRoot, '.agent-sdlc', runId);
 	fs.mkdirSync(runDir, { recursive: true });
 	const store = new RuntimeStore(path.join(runDir, 'runtime.sqlite'));
 	store.database

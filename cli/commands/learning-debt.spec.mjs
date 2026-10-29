@@ -15,11 +15,11 @@ test('AC-14: maybePromptLearningDebt interactive TTY prompt handles answer y and
 		'tools/.agent-sdlc/test-fixtures',
 		`tty-prompt-${crypto.randomUUID()}`,
 	);
-	fs.mkdirSync(path.join(tempRoot, 'tools/.agent-sdlc'), { recursive: true });
+	fs.mkdirSync(path.join(tempRoot, '.agent-sdlc'), { recursive: true });
 	try {
 		for (let i = 1; i <= 3; i++) {
 			const runId = `2026-09-0${i}-unreviewed-${i}`;
-			const runDir = path.join(tempRoot, 'tools/.agent-sdlc', runId);
+			const runDir = path.join(tempRoot, '.agent-sdlc', runId);
 			fs.mkdirSync(runDir, { recursive: true });
 			const store = new RuntimeStore(path.join(runDir, 'runtime.sqlite'));
 			store.database.prepare(`
@@ -130,11 +130,11 @@ test('@ac AC-02 @case AC-02.2 AC-15: maybePromptLearningDebt in non-TTY mode log
 		'tools/.agent-sdlc/test-fixtures',
 		`nontty-prompt-${crypto.randomUUID()}`,
 	);
-	fs.mkdirSync(path.join(tempRoot, 'tools/.agent-sdlc'), { recursive: true });
+	fs.mkdirSync(path.join(tempRoot, '.agent-sdlc'), { recursive: true });
 	try {
 		for (let i = 1; i <= 3; i++) {
 			const runId = `2026-09-0${i}-unreviewed-${i}`;
-			const runDir = path.join(tempRoot, 'tools/.agent-sdlc', runId);
+			const runDir = path.join(tempRoot, '.agent-sdlc', runId);
 			fs.mkdirSync(runDir, { recursive: true });
 			const store = new RuntimeStore(path.join(runDir, 'runtime.sqlite'));
 			store.database.prepare(`

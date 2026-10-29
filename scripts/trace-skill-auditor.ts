@@ -17,7 +17,7 @@ import {
 	type PromptRole,
 } from '../policy/contracts.ts';
 import { SdlcError, asSdlcError, exitCodeForError } from '../policy/errors.ts';
-import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
+import { REPOSITORY_ROOT, liveRunRoot } from '../persistence/run-paths.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 import { RepositoryModelGovernor } from '../adapters/model-governor.ts';
 import { validateOperationRequest } from '@evelbulgroz/model-usage-govenor/policy';
@@ -110,7 +110,7 @@ export async function runTraceSkillAuditor({
 }): Promise<TraceSkillAuditorResult> {
 	validateRunId(runId);
 
-	const storePath = path.join(rootDir, 'tools/.agent-sdlc', runId, 'runtime.sqlite');
+	const storePath = path.join(liveRunRoot(rootDir), runId, 'runtime.sqlite');
 	if (!fs.existsSync(storePath)) {
 		throw new SdlcError('RUN_NOT_FOUND', `Run ${runId} not found at ${storePath}`, { runId });
 	}

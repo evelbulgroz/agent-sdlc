@@ -97,11 +97,11 @@ test('export containment rejects symlink components before creating outside dire
 test('liveRunRoot, archiveRoot, and listRunDatabases discover live and archived run databases', () => {
 	const root = fs.mkdtempSync(path.join(REPOSITORY_ROOT, '.agent-sdlc-run-paths-'));
 	try {
-		assert.equal(liveRunRoot(root), path.join(root, 'tools/.agent-sdlc'));
-		assert.equal(archiveRoot(root), path.join(root, 'tools/.agent-sdlc/.archive'));
+		assert.equal(liveRunRoot(root), path.join(root, '.agent-sdlc'));
+		assert.equal(archiveRoot(root), path.join(root, '.agent-sdlc/.archive'));
 		assert.equal(
-			archivedRunRelativePath('2026-10-01-sample'),
-			'tools/.agent-sdlc/.archive/2026-10-01-sample',
+			archivedRunRelativePath('2026-10-01-sample', root),
+			'.agent-sdlc/.archive/2026-10-01-sample',
 		);
 		assert.deepEqual(listRunDatabases(root), []);
 

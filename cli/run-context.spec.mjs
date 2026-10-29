@@ -58,7 +58,7 @@ test('AC-06.3: openContext, resume, and status reject an archived runId with INV
 	const runId = '2026-10-01-archived-sample';
 	try {
 		fs.mkdirSync(path.join(archiveRoot(rootDir), runId), { recursive: true });
-		const expectedRelPath = archivedRunRelativePath(runId);
+		const expectedRelPath = archivedRunRelativePath(runId, rootDir);
 
 		assert.throws(
 			() => openContext({ rootDir, runId }),

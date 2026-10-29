@@ -70,13 +70,16 @@ function errnoCode(error: unknown): string | undefined {
 	return undefined;
 }
 
-export function liveRunRoot(rootDir = REPOSITORY_ROOT): string {
+export const DEFAULT_STATE_DIR = '.agent-sdlc';
+
+/** Repository-relative state directory from the host profile (neutral default when no profile exists). */
+export function stateDirRelative(rootDir = REPOSITORY_ROOT): string {
 	const profilePath = path.join(path.resolve(rootDir), HOST_PROFILE_RELATIVE_PATH);
-	if (fs.existsSync(profilePath)) {
-		const profile = loadHostProfile(rootDir);
-		return path.join(rootDir, profile.stateDir);
-	}
-	return path.join(rootDir, 'tools/.agent-sdlc');
+	return fs.existsSync(profilePath) ? loadHostProfile(rootDir).stateDir : DEFAULT_STATE_DIR;
+}
+
+export function liveRunRoot(rootDir = REPOSITORY_ROOT): string {
+	return path.join(rootDir, stateDirRelative(rootDir));
 }
 
 export function runsRootDir(rootDir = REPOSITORY_ROOT): string {
@@ -97,8 +100,8 @@ export function archiveRoot(rootDir = REPOSITORY_ROOT): string {
 	return path.join(liveRunRoot(rootDir), '.archive');
 }
 
-export function archivedRunRelativePath(runId: string): string {
-	return path.posix.join('tools/.agent-sdlc', '.archive', runId);
+export function archivedRunRelativePath(runId: string, rootDir = REPOSITORY_ROOT): string {
+	return path.posix.join(stateDirRelative(rootDir), '.archive', runId);
 }
 
 export function listRunDatabases(rootDir = REPOSITORY_ROOT): Readonly<RunDatabaseEntry>[] {
@@ -286,7 +289,7 @@ export function resolveExportPath(
 	if (!externalAbsolute && !lexicallyWithin(runsRootPath) && !lexicallyWithin(runtimeRootPath)) {
 		throw new SdlcError(
 			'PATH_OUTSIDE_ROOT',
-			'Relative export destinations must stay under docs/specs/runs or tools/.agent-sdlc',
+			'Relative export destinations must stay under the configured runs or state directory',
 		);
 	}
 	const existingAncestor = nearestExistingAncestorWithoutSymlinks(parent);
@@ -310,7 +313,7 @@ export function resolveExportPath(
 	if (!externalAbsolute && !isWithin(runsRoot, realParent) && !isWithin(runtimeRoot, realParent)) {
 		throw new SdlcError(
 			'PATH_OUTSIDE_ROOT',
-			'Relative export destinations must stay under docs/specs/runs or tools/.agent-sdlc',
+			'Relative export destinations must stay under the configured runs or state directory',
 		);
 	}
 	if (fs.existsSync(resolved) && fs.lstatSync(resolved).isSymbolicLink()) {

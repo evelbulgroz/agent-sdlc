@@ -15,6 +15,7 @@
  * invoked a real engine during a unit test would defeat the point of this
  * module, so a missing `runCliFn` fails closed instead of guessing.
  */
+import { stateDirRelative } from '../persistence/run-paths.ts';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -366,7 +367,7 @@ function writeTempResponseFile(
 	runId: string,
 	document: Record<string, unknown>,
 ): string {
-	const scratchDir = path.join(rootDir, 'tools/.agent-sdlc', runId, 'scratch');
+	const scratchDir = path.join(rootDir, stateDirRelative(rootDir), runId, 'scratch');
 	fs.mkdirSync(scratchDir, { recursive: true });
 	const filePath = path.join(
 		scratchDir,

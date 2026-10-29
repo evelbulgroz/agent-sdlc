@@ -94,7 +94,7 @@ test('@ac AC-03 @case AC-03.4 a new contracts file makes the canary stale withou
 			taskManifestHash: 'c'.repeat(64),
 			qualifiedAt: '2026-10-22T00:00:00.000Z',
 		};
-		const qualificationPath = path.join(root, 'tools/.agent-sdlc/canary-qualification.json');
+		const qualificationPath = path.join(root, '.agent-sdlc/canary-qualification.json');
 		fs.mkdirSync(path.dirname(qualificationPath), { recursive: true });
 		fs.writeFileSync(qualificationPath, `${JSON.stringify(qualification)}\n`);
 		const before = fs.readFileSync(qualificationPath);

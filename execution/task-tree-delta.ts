@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
+import { REPOSITORY_ROOT, stateDirRelative } from '../persistence/run-paths.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../workflow/worktree-guard.ts';
@@ -120,7 +120,7 @@ export function deriveParentTreeSha({
 	const runId = taskPlan.runId;
 	const tmpWorktreeDir = path.join(
 		rootDir,
-		'tools/.agent-sdlc',
+		stateDirRelative(rootDir),
 		runId,
 		'worktrees',
 		`.tmp-multi-${task.taskId}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,

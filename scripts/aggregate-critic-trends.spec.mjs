@@ -13,7 +13,7 @@ import {
 } from './aggregate-critic-trends.ts';
 
 function createTrendDatabase(rootDir, runId, structuredFindings) {
-	const runtimeDir = path.join(rootDir, 'tools/.agent-sdlc', runId);
+	const runtimeDir = path.join(rootDir, '.agent-sdlc', runId);
 	fs.mkdirSync(runtimeDir, { recursive: true });
 	const database = new DatabaseSync(path.join(runtimeDir, 'runtime.sqlite'));
 	try {
@@ -34,7 +34,7 @@ function createTrendDatabase(rootDir, runId, structuredFindings) {
 }
 
 function createSkillsDatabase(rootDir, runId, findings) {
-	const runtimeDir = path.join(rootDir, 'tools/.agent-sdlc', runId);
+	const runtimeDir = path.join(rootDir, '.agent-sdlc', runId);
 	fs.mkdirSync(runtimeDir, { recursive: true });
 	const database = new DatabaseSync(path.join(runtimeDir, 'runtime.sqlite'));
 	try {
