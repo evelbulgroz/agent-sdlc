@@ -90,6 +90,7 @@ export async function startWaitingForApproval(label, proposal = completeProposal
 	);
 	const runId = started.result.runId;
 	const pending = started.result.pendingInterrupt;
+	assert.ok(pending, `start returned no pending interrupt: ${JSON.stringify(started.result).slice(0, 1500)}`);
 	const response = {
 		schemaVersion: '1.0.0',
 		interruptId: pending.interruptId,

@@ -48,3 +48,30 @@ test('checkpoint records list an empty thread and reject a row without a thread 
 		fixture.close();
 	}
 });
+
+test('the latest checkpoint is the last one written even when its time-based id sorts earlier', () => {
+	const fixture = makeFixture('checkpoint-clock-regression');
+	try {
+		const records = createCheckpointRecords(recordContext(fixture.store));
+		const put = (checkpointId, parentCheckpointId) =>
+			records.putCheckpointRow({
+				threadId: 'thread-clock',
+				checkpointNamespace: '',
+				checkpointId,
+				parentCheckpointId,
+				checkpointType: 'json',
+				checkpoint: Buffer.from('{}'),
+				metadataType: 'json',
+				metadata: Buffer.from('{}'),
+			});
+		put('1f0b0000-0000-6000-8000-000000000002', null);
+		// A wall clock that steps backwards yields a later checkpoint with a smaller id.
+		put('1f0a0000-0000-6000-8000-000000000001', '1f0b0000-0000-6000-8000-000000000002');
+		assert.equal(
+			records.getCheckpointRow({ threadId: 'thread-clock', checkpointNamespace: '' }).checkpoint_id,
+			'1f0a0000-0000-6000-8000-000000000001',
+		);
+	} finally {
+		fixture.close();
+	}
+});

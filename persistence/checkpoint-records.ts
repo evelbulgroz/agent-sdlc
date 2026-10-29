@@ -91,7 +91,7 @@ export function createCheckpointRecords(ctx: StoreContext): CheckpointRecords {
 				`
 				SELECT * FROM checkpoints
 				WHERE thread_id = ? AND checkpoint_ns = ?
-				ORDER BY checkpoint_id DESC LIMIT 1
+				ORDER BY rowid DESC LIMIT 1
 			`,
 			)
 			.get(threadId, checkpointNamespace);

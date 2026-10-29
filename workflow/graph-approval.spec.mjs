@@ -111,6 +111,11 @@ test('approval supports revision, rejection, and cancellation as distinct termin
 				let state = await reachQuestions(fixture);
 				const questions = fixture.store.getPendingInterrupt(fixture.runId);
 				state = await recordAndResume(fixture, state, answersForPending(questions));
+				assert.equal(
+					state.state,
+					'WAITING_FOR_APPROVAL',
+					`answers did not reach approval: ${JSON.stringify(state).slice(0, 1500)}`,
+				);
 				const pending = fixture.store.getPendingInterrupt(fixture.runId);
 				const request = fixture.artifacts.readJson(pending.requestArtifact);
 				const response = {
