@@ -21,10 +21,10 @@ import {
 } from './test-support.mjs';
 import { SdlcWorkflowRuntime } from '../workflow/graph.ts';
 
-export function conditioningProposal() {
+export function billingProposal() {
 	return completeProposal({
-		owningContext: 'Conditioning',
-		touchedSurfaces: ['apps/services/conditioning'],
+		owningContext: 'Billing',
+		touchedSurfaces: ['services/billing'],
 	});
 }
 
@@ -71,8 +71,8 @@ function makeSlice2Fixture(label, script = [], { gitCli, execCli } = {}) {
 			}
 			if (sub === 'ls-tree') {
 				return [
-					'100644 blob cccc\tapps/services/conditioning/src/file.ts',
-					'100644 blob dddd\tpackages/ddd-base/src/feature.ts',
+					'100644 blob cccc\tservices/billing/src/file.ts',
+					'100644 blob dddd\tpackages/shared-base/src/feature.ts',
 				].join('\n');
 			}
 			if (sub === 'diff-tree') {
@@ -112,7 +112,7 @@ function makeSlice2Fixture(label, script = [], { gitCli, execCli } = {}) {
 
 	const defaultExecCli = (cmd, args = [], opts = {}) => {
 		if (cmd === 'pnpm') {
-			if (args.includes('agent:preflight')) {
+			if (args.includes('agent:verify')) {
 				const preflightDir = path.join(opts.cwd || REPOSITORY_ROOT, 'tools');
 				fs.mkdirSync(preflightDir, { recursive: true });
 				fs.writeFileSync(
@@ -171,7 +171,7 @@ function makeSlice3Fixture(label, script = [], { workflowPath, gitCli, execCli }
 			baseCommitSha,
 			targetTreeSha,
 			commitSha,
-			stagedPath: 'apps/services/conditioning/src/file.ts',
+			stagedPath: 'services/billing/src/file.ts',
 			onWorktreeAdd: seedWorkspacePackageManifest,
 		});
 	const effectiveExecCli =
@@ -198,9 +198,9 @@ function makeSlice3Fixture(label, script = [], { workflowPath, gitCli, execCli }
 
 export function implementerScript() {
 	return [
-		conditioningProposal(),
+		billingProposal(),
 		leanWriteAction(
-			'apps/services/conditioning/src/feature.ts',
+			'services/billing/src/feature.ts',
 			'export const feature = true;\n',
 		),
 		citingSpecWriteAction(),
@@ -219,11 +219,11 @@ export function slice4ImplementerScript() {
 }
 
 const SLICE4_PACKAGES = [
-	'apps/services/conditioning',
-	'apps/services/assessment',
-	'apps/services/registry',
-	'apps/services/authentication',
-	'packages/ddd-base',
+	'services/billing',
+	'services/assessment',
+	'services/registry',
+	'services/authentication',
+	'packages/shared-base',
 ];
 
 export function seedSlice4Worktree(dir) {
@@ -418,7 +418,7 @@ export function makeGraphFixture(label, script = [], options = {}) {
 	const profile = options.profile ?? 'slice3';
 	if (profile === 'slice2') {
 		const fixture = makeSlice2Fixture(label, script, options);
-		fixture.defaultGoal = 'Implement automated conditioning features in Slice 2';
+		fixture.defaultGoal = 'Implement automated billing features in Slice 2';
 		return fixture;
 	}
 	if (profile === 'slice4') {

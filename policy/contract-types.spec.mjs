@@ -6,8 +6,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 const DAG_SCHEMA_TS_PATH = path.join(FACTORY_ROOT, 'policy/contracts/dag-schema.ts');
 const PLANNING_SCHEMA_TS_PATH = path.join(FACTORY_ROOT, 'policy/contracts/planning-schema.ts');
 const CONTRACTS_DIR = path.join(FACTORY_ROOT, 'policy/contracts');

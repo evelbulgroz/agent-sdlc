@@ -25,7 +25,7 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 	let store;
 	try {
 		fs.mkdirSync(paths.artifactsDir, { recursive: true });
-		fs.mkdirSync(path.join(worktreeDir, 'apps/services/conditioning'), { recursive: true });
+		fs.mkdirSync(path.join(worktreeDir, 'services/billing'), { recursive: true });
 
 		store = new RuntimeStore(paths.databasePath);
 		const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
@@ -83,8 +83,8 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning/'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -113,8 +113,8 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 				{
 					taskId: 't-1',
 					title: 'Task 1',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning/'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing/'],
 					dependsOn: [],
 					status: 'completed',
 					targetTreeSha: '2'.repeat(40),
@@ -125,9 +125,9 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 				{
 					taskId: 't-2',
 					title: 'Task 2',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning/'],
-					authoredPaths: ['apps/services/conditioning/src/two.ts'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing/'],
+					authoredPaths: ['services/billing/src/two.ts'],
 					sliceId: 'behavior',
 					dependsOn: ['t-1'],
 					status: 'failed',
@@ -139,9 +139,9 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 				{
 					taskId: 't-4',
 					title: 'Task 2 descendant',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning/descendant'],
-					authoredPaths: ['apps/services/conditioning/descendant/four.ts'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing/descendant'],
+					authoredPaths: ['services/billing/descendant/four.ts'],
 					sliceId: 'activation',
 					dependsOn: ['t-2'],
 					status: 'pending',
@@ -153,8 +153,8 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 				{
 					taskId: 't-3',
 					title: 'Independent task',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning/independent'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing/independent'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 3,
@@ -215,11 +215,11 @@ test('@ac AC-15 CLI retry resets only the failed task and its unfinished descend
 			assert.equal(t2.status, 'pending');
 			assert.equal(t2.repairCount, 0);
 			assert.equal(t2.sliceId, 'behavior');
-			assert.deepEqual(t2.authoredPaths, ['apps/services/conditioning/src/two.ts']);
+			assert.deepEqual(t2.authoredPaths, ['services/billing/src/two.ts']);
 			assert.equal(t4.status, 'pending');
 			assert.equal(t4.repairCount, 0);
 			assert.equal(t4.sliceId, 'activation');
-			assert.deepEqual(t4.pathPrefixes, ['apps/services/conditioning/descendant']);
+			assert.deepEqual(t4.pathPrefixes, ['services/billing/descendant']);
 			assert.equal(t3.status, 'pending');
 			assert.equal(t3.repairCount, 1);
 		} finally {

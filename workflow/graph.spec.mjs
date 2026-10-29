@@ -88,21 +88,21 @@ test('buildTaskPromptContexts attaches contract commands only on the preserving 
 	const packages = {
 		packageMap: new Map([
 			[
-				'@example/demo-service',
+				'@fixture/demo-service',
 				{
-					packagePath: 'apps/services/demo',
+					packagePath: 'services/demo',
 					pkgJson: {
-						name: '@example/demo-service',
+						name: '@fixture/demo-service',
 						scripts: {
 							'build:contracts': 'node build.mjs',
 							'check:contract-drift':
-								'bash ../../../tools/check-contract-drift.sh apps/services/demo openapi/demo.openapi.json contracts/generated-api.ts',
+								'bash ../../../tools/check-contract-drift.sh services/demo openapi/demo.openapi.json contracts/generated-api.ts',
 						},
 					},
 				},
 			],
 		]),
-		pathToPackage: new Map([['apps/services/demo', '@example/demo-service']]),
+		pathToPackage: new Map([['services/demo', '@fixture/demo-service']]),
 	};
 	const taskPlan = {
 		slices: [{ sliceId: 's1', goal: 'Preserve', acceptanceCriteria: ['AC-01'] }],
@@ -110,16 +110,16 @@ test('buildTaskPromptContexts attaches contract commands only on the preserving 
 			{
 				taskId: 'foundation-task',
 				sliceId: 's1',
-				targetPackage: 'apps/services/demo',
+				targetPackage: 'services/demo',
 				dependsOn: [],
-				authoredPaths: ['apps/services/demo/src/helper.ts'],
+				authoredPaths: ['services/demo/src/helper.ts'],
 			},
 			{
 				taskId: 'sink-task',
 				sliceId: 's1',
-				targetPackage: 'apps/services/demo',
+				targetPackage: 'services/demo',
 				dependsOn: ['foundation-task'],
-				authoredPaths: ['apps/services/demo/src'],
+				authoredPaths: ['services/demo/src'],
 			},
 		],
 	};
@@ -133,9 +133,9 @@ test('buildTaskPromptContexts attaches contract commands only on the preserving 
 	});
 	assert.equal(contexts['foundation-task'].contractVerificationCommands, undefined);
 	assert.deepEqual(contexts['sink-task'].contractVerificationCommands, [
-		['pnpm', '--filter', '@example/demo-service', 'run', 'build:contracts'],
-		['pnpm', '--filter', '@example/demo-service', 'run', 'check:contract-drift'],
-		['pnpm', 'run', 'quality:changed'],
+		['pnpm', '--filter', '@fixture/demo-service', 'run', 'build:contracts'],
+		['pnpm', '--filter', '@fixture/demo-service', 'run', 'check:contract-drift'],
+		['pnpm', 'run', 'quality:affected'],
 	]);
 	const plain = buildTaskPromptContexts({
 		draft: { goal: 'g', acceptanceCriteria: ['AC-01: OpenAPI lists the new field.'] },
@@ -382,8 +382,8 @@ function prepareVerifierSnapshot(fixture, state) {
 		runId: fixture.runId,
 		approvedSpecHash,
 		baseCommitSha,
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing'],
 	}));
 	return { snapshot, baseCommitSha, targetTreeSha };
 }
@@ -450,7 +450,7 @@ test('@ac AC-05 @case AC-05.4 a non-repairable preflight FAIL stays VERIFICATION
 		fixture.runtime.execCli = () => {
 			const error = new Error('preflight failed');
 			error.status = 1;
-			error.stdout = 'failed in packages/ddd-base/src/domain/value-object.class.ts\n';
+			error.stdout = 'failed in packages/shared-base/src/domain/value-object.class.ts\n';
 			error.stderr = '';
 			throw error;
 		};

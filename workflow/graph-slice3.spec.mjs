@@ -14,7 +14,7 @@ import {
 	seedWorkspacePackageManifest,
 } from '../testing/test-support.mjs';
 import {
-	conditioningProposal,
+	billingProposal,
 	implementerScript,
 	makeGraphFixture,
 	reachSpecApproved,
@@ -28,8 +28,8 @@ test('Slice 3 authorized local commits complete through DONE', async () => {
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -69,8 +69,8 @@ test('Slice 3 without local commits still halts at READY_FOR_GIT_APPROVAL', asyn
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			createBranch: true,
 			createLocalCommits: false,
 		});
@@ -89,9 +89,9 @@ test('Slice 3 without local commits still halts at READY_FOR_GIT_APPROVAL', asyn
 
 test('@ac AC-05 uncovered acceptance criteria do not block approval or burn a repair and proceed with advisory coverage artifact', async () => {
 	const fixture = makeGraphFixture('slice3-ac-uncovered',  [
-		conditioningProposal(),
+		billingProposal(),
 		leanWriteAction(
-			'apps/services/conditioning/src/feature.ts',
+			'services/billing/src/feature.ts',
 			'export const feature = true;\n',
 		),
 		{
@@ -114,8 +114,8 @@ test('@ac AC-05 uncovered acceptance criteria do not block approval or burn a re
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 0,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
@@ -163,8 +163,8 @@ test('Slice 3 empty staged diff with createLocalCommits halts at READY_FOR_GIT_A
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -243,8 +243,8 @@ test('@ac AC-03 @case AC-03.2 Slice 3 extended-role fixture inserts optional rol
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -265,7 +265,7 @@ test('@ac AC-03 @case AC-03.2 Slice 3 extended-role fixture inserts optional rol
 const QA_P1_FINDING = {
 	severity: 'P1',
 	category: 'testing',
-	file: 'apps/services/conditioning/src/main.ts',
+	file: 'services/billing/src/main.ts',
 	evidence: 'Acceptance criteria are not covered by assertions',
 	impact: 'Green preflight can ship unproven behavior',
 	remediation: 'Add shadow-path tests for the changed feature',
@@ -281,8 +281,8 @@ test('@ac AC-05 @case AC-05.1 repairable verifier FAIL escalates without a repai
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 1,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);

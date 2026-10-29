@@ -4,8 +4,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 const DECOUPLED_PACKAGE_SPECS = Object.freeze([
@@ -23,7 +23,7 @@ function readPackageJson() {
 	return JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'));
 }
 
-test('@ac AC-02 @case AC-02.1 packages/agent-sdlc/package.json typecheck script runs tsc --noEmit -p tsconfig.json', () => {
+test('@ac AC-02 @case AC-02.1 packages/engine/package.json typecheck script runs tsc --noEmit -p tsconfig.json', () => {
 	const pkg = readPackageJson();
 	assert.equal(pkg.scripts?.typecheck, 'tsc --noEmit -p tsconfig.json');
 });

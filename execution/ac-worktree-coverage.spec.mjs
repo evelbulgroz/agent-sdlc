@@ -52,7 +52,7 @@ test('evaluateAcCoverageFromWorktree fails closed on nil draft, missing worktree
 test('evaluateAcCoverageFromWorktree reads worktree files and scans leftover oracles', () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-coverage-'));
 	try {
-		const specDir = path.join(root, 'apps/services/conditioning/src');
+		const specDir = path.join(root, 'services/billing/src');
 		fs.mkdirSync(specDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(specDir, 'feature.spec.ts'),
@@ -65,8 +65,8 @@ test('evaluateAcCoverageFromWorktree reads worktree files and scans leftover ora
 		const result = evaluateAcCoverageFromWorktree({
 			draft: { acceptanceCriteria: [AC01] },
 			worktreeDir: root,
-			touchedTestFiles: ['apps/services/conditioning/src/feature.spec.ts'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			touchedTestFiles: ['services/billing/src/feature.spec.ts'],
+			allowedPathPrefixes: ['services/billing'],
 		});
 		assert.equal(result.pass, true);
 		assert.equal(result.staleOracleCitations[0].id, 'AC-99');

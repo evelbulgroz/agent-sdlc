@@ -10,13 +10,13 @@ import {
 	completeProposal,
 	leanWriteAction,
 } from '../testing/test-support.mjs';
-import { conditioningProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
+import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
 
 test('Slice 2 graph end-to-end execution completes through READY_FOR_GIT_APPROVAL', async () => {
 	const script = [
-		conditioningProposal(), // for spec drafting
+		billingProposal(), // for spec drafting
 		leanWriteAction(
-			'apps/services/conditioning/src/feature.ts',
+			'services/billing/src/feature.ts',
 			'export const feature = true;\n',
 		),
 		citingSpecWriteAction(),
@@ -38,8 +38,8 @@ test('Slice 2 graph end-to-end execution completes through READY_FOR_GIT_APPROVA
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 
@@ -102,7 +102,7 @@ test('Slice 2 graph end-to-end execution completes through READY_FOR_GIT_APPROVA
 
 		const featurePath = path.join(
 			terminal.worktreePath,
-			'apps/services/conditioning/src/feature.ts',
+			'services/billing/src/feature.ts',
 		);
 		assert.equal(fs.readFileSync(featurePath, 'utf8'), 'export const feature = true;\n');
 	} finally {
@@ -112,9 +112,9 @@ test('Slice 2 graph end-to-end execution completes through READY_FOR_GIT_APPROVA
 
 test('@ac AC-02 reviewer P1 findings remain evidence-assessed advisories without repair authority', async () => {
 	const script = [
-		conditioningProposal(), // for spec drafting
+		billingProposal(), // for spec drafting
 		leanWriteAction(
-			'apps/services/conditioning/src/feature.ts',
+			'services/billing/src/feature.ts',
 			'export const bad = true;\n',
 		),
 		citingSpecWriteAction(),
@@ -129,7 +129,7 @@ test('@ac AC-02 reviewer P1 findings remain evidence-assessed advisories without
 					findingId: 'f-1',
 					severity: 'P1',
 					category: 'correctness',
-					path: 'apps/services/conditioning/src/feature.ts',
+					path: 'services/billing/src/feature.ts',
 					lineRange: [1, 1],
 					evidence: 'export const bad = true;',
 					failureMechanism: 'The state might be accessing an incorrect variable.',
@@ -139,7 +139,7 @@ test('@ac AC-02 reviewer P1 findings remain evidence-assessed advisories without
 					findingId: 'f-2',
 					severity: 'P1',
 					category: 'test-coverage',
-					path: 'apps/services/conditioning/src/feature.spec.ts',
+					path: 'services/billing/src/feature.spec.ts',
 					lineRange: [1, 1],
 					evidence: 'expect(feature).toBe(true)',
 					failureMechanism: 'The enabled state has no assertion.',
@@ -157,8 +157,8 @@ test('@ac AC-02 reviewer P1 findings remain evidence-assessed advisories without
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 
@@ -211,12 +211,12 @@ test('@ac AC-02 reviewer P1 findings remain evidence-assessed advisories without
 test('Slice 2 graph interrupts for high-risk review without repair retries', async () => {
 	let preflightCounter = 0;
 	const customExecCli = (cmd, args = [], opts = {}) => {
-		if (cmd === 'pnpm' && args.includes('agent:preflight')) {
+		if (cmd === 'pnpm' && args.includes('agent:verify')) {
 			preflightCounter++;
-			// Fail preflight indicating failure in packages/ddd-base (high-risk)
+			// Fail preflight indicating failure in packages/shared-base (high-risk)
 			const error = new Error('Preflight failed');
 			error.status = 1;
-			error.stdout = 'FAIL packages/ddd-base/src/entity.ts: invariant violation\n';
+			error.stdout = 'FAIL packages/shared-base/src/entity.ts: invariant violation\n';
 			error.stderr = '';
 			throw error;
 		}
@@ -240,13 +240,13 @@ test('Slice 2 graph interrupts for high-risk review without repair retries', asy
 			if (implementerStep === 1) {
 				return respond(
 					leanWriteAction(
-						'packages/ddd-base/src/feature.ts',
+						'packages/shared-base/src/feature.ts',
 						'export const feature = true;\n',
 					),
 				);
 			}
 			if (implementerStep === 2) {
-				return respond(citingSpecWriteAction('packages/ddd-base/src/feature.spec.ts'));
+				return respond(citingSpecWriteAction('packages/shared-base/src/feature.spec.ts'));
 			}
 			if (implementerStep === 3) {
 				return respond({
@@ -255,23 +255,23 @@ test('Slice 2 graph interrupts for high-risk review without repair retries', asy
 						toolName: 'run_allowlisted_command',
 						parameters: {
 							command: 'pnpm',
-							args: ['--filter', '@example/ddd-base', 'test'],
+							args: ['--filter', '@fixture/shared-base', 'test'],
 						},
 					},
 				});
 			}
 			return respond({
-				action: { kind: 'complete', summary: 'Implemented conditioning feature' },
+				action: { kind: 'complete', summary: 'Implemented billing feature' },
 			});
 		}
 		return respond({ status: 'PASS', summary: 'Review passes', findings: [] });
 	};
 	const script = [
 		completeProposal({
-			owningContext: 'Conditioning',
+			owningContext: 'Billing',
 			touchedSurfaces: [
-				'packages/ddd-base/src/feature.ts',
-				'packages/ddd-base/src/feature.spec.ts',
+				'packages/shared-base/src/feature.ts',
+				'packages/shared-base/src/feature.spec.ts',
 			],
 		}),
 		...Array(20).fill(roleHandler),
@@ -288,8 +288,8 @@ test('Slice 2 graph interrupts for high-risk review without repair retries', asy
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base'],
 			maxSemanticRepairs: 2,
 		});
 

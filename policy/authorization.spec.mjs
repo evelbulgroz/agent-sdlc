@@ -15,8 +15,8 @@ test('createDefaultAuthorizationEnvelope creates valid, bounded default envelope
 	const runId = '2026-09-04-auth-envelope-test';
 	const approvedSpecHash = 'a'.repeat(64);
 	const baseCommitSha = 'b'.repeat(40);
-	const allowedPackages = ['apps/services/conditioning'];
-	const allowedPathPrefixes = ['apps/services/conditioning/src/'];
+	const allowedPackages = ['services/billing'];
+	const allowedPathPrefixes = ['services/billing/src/'];
 
 	const envelope = createDefaultAuthorizationEnvelope({
 		runId,
@@ -65,8 +65,8 @@ test('validateAuthorizationEnvelope enforces SHA equality, expiration, and path 
 		runId,
 		approvedSpecHash: specHash,
 		baseCommitSha: commitSha,
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning/src/'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing/src/'],
 		now,
 	});
 
@@ -154,7 +154,7 @@ test('validateAuthorizationEnvelope enforces SHA equality, expiration, and path 
 			validateAuthorizationEnvelope(
 				{
 					...valid,
-					allowedPathPrefixes: ['apps/services/conditioning/../../etc/'],
+					allowedPathPrefixes: ['services/billing/../../etc/'],
 				},
 				{ now },
 			),
@@ -169,8 +169,8 @@ test('validateAuthorizationEnvelope enforces SHA equality, expiration, and path 
 			validateAuthorizationEnvelope(
 				{
 					...valid,
-					allowedPackages: ['apps/services/conditioning'],
-					allowedPathPrefixes: ['apps/services/user/src/'],
+					allowedPackages: ['services/billing'],
+					allowedPathPrefixes: ['services/user/src/'],
 				},
 				{ now },
 			),
@@ -183,13 +183,13 @@ test('validateAuthorizationEnvelope enforces SHA equality, expiration, and path 
 		runId,
 		approvedSpecHash: specHash,
 		baseCommitSha: commitSha,
-		allowedPackages: ['packages/ddd-base'],
-		allowedPathPrefixes: ['packages/ddd-base/package.json', 'pnpm-lock.yaml'],
+		allowedPackages: ['packages/shared-base'],
+		allowedPathPrefixes: ['packages/shared-base/package.json', 'pnpm-lock.yaml'],
 		now,
 	});
 	assert.deepEqual(
 		validateAuthorizationEnvelope(lockfileScoped, { now }).allowedPathPrefixes,
-		['packages/ddd-base/package.json', 'pnpm-lock.yaml'],
+		['packages/shared-base/package.json', 'pnpm-lock.yaml'],
 	);
 
 	assert.throws(
@@ -229,8 +229,8 @@ test('HITL authorization interrupt creates payload and validates affirmative hum
 		runId,
 		approvedSpecHash: specHash,
 		baseCommitSha: commitSha,
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning/src/'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing/src/'],
 	});
 
 	const interrupt = createAuthorizationInterrupt({
@@ -289,11 +289,11 @@ test('HITL authorization interrupt creates payload and validates affirmative hum
 
 test('@ac AC-01 @case AC-01.1 deriveScopeFromDraft includes packages implied by touchedSurfaces beyond owningContext', () => {
 	const draft = {
-		owningContext: 'apps/services/conditioning',
+		owningContext: 'services/billing',
 		touchedSurfaces: [
-			'apps/services/conditioning/src/conditioning/domain/conditioning-log.entity.ts',
-			'apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
-			'docs/specs/artifacts/conditioning-log-property-rule-matrix.md',
+			'services/billing/src/billing/domain/billing-log.entity.ts',
+			'frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
+			'docs/specs/artifacts/billing-log-property-rule-matrix.md',
 		],
 	};
 
@@ -301,39 +301,39 @@ test('@ac AC-01 @case AC-01.1 deriveScopeFromDraft includes packages implied by 
 
 	assert.deepEqual(
 		[...allowedPackages].sort(),
-		['apps/frontends/example-pwa-frontend', 'apps/services/conditioning', 'docs'],
+		['docs', 'frontends/example-pwa-frontend', 'services/billing'],
 	);
 	assert.deepEqual(allowedPathPrefixes, [
-		'apps/services/conditioning/src/conditioning/domain/conditioning-log.entity.ts',
-		'apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
-		'docs/specs/artifacts/conditioning-log-property-rule-matrix.md',
+		'services/billing/src/billing/domain/billing-log.entity.ts',
+		'frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
+		'docs/specs/artifacts/billing-log-property-rule-matrix.md',
 	]);
 });
 
 test('@ac AC-01 @case AC-01.2 deriveScopeFromDraft falls back to owningContext package when touchedSurfaces is empty', () => {
-	const draft = { owningContext: 'apps/services/conditioning', touchedSurfaces: [] };
+	const draft = { owningContext: 'services/billing', touchedSurfaces: [] };
 
 	const { allowedPackages, allowedPathPrefixes } = deriveScopeFromDraft(draft);
 
-	assert.deepEqual(allowedPackages, ['apps/services/conditioning']);
-	assert.deepEqual(allowedPathPrefixes, ['apps/services/conditioning']);
+	assert.deepEqual(allowedPackages, ['services/billing']);
+	assert.deepEqual(allowedPathPrefixes, ['services/billing']);
 });
 
 test('@ac AC-01 @case AC-01.3 deriveScopeFromDraft incorporates taskManifest pathPrefixes and targetPackage', () => {
 	const draft = {
-		owningContext: 'apps/frontends/example-pwa-frontend',
+		owningContext: 'frontends/example-pwa-frontend',
 		touchedSurfaces: [
-			'apps/frontends/example-pwa-frontend/src/domain/summary.ts',
+			'frontends/example-pwa-frontend/src/domain/summary.ts',
 		],
 	};
 	const taskManifest = {
 		tasks: [
 			{
 				taskId: 'task-1',
-				targetPackage: 'apps/frontends/example-pwa-frontend',
+				targetPackage: 'frontends/example-pwa-frontend',
 				pathPrefixes: [
-					'apps/frontends/example-pwa-frontend/src/domain',
-					'apps/frontends/example-pwa-frontend/src/ui',
+					'frontends/example-pwa-frontend/src/domain',
+					'frontends/example-pwa-frontend/src/ui',
 				],
 			},
 		],
@@ -341,28 +341,28 @@ test('@ac AC-01 @case AC-01.3 deriveScopeFromDraft incorporates taskManifest pat
 
 	const { allowedPackages, allowedPathPrefixes } = deriveScopeFromDraft(draft, taskManifest);
 
-	assert.deepEqual(allowedPackages, ['apps/frontends/example-pwa-frontend']);
+	assert.deepEqual(allowedPackages, ['frontends/example-pwa-frontend']);
 	assert.deepEqual(allowedPathPrefixes, [
-		'apps/frontends/example-pwa-frontend/src/domain/summary.ts',
-		'apps/frontends/example-pwa-frontend/src/domain',
-		'apps/frontends/example-pwa-frontend/src/ui',
+		'frontends/example-pwa-frontend/src/domain/summary.ts',
+		'frontends/example-pwa-frontend/src/domain',
+		'frontends/example-pwa-frontend/src/ui',
 	]);
 });
 
 test('deriveScopeFromDraft remains the sole authorization scope deriver for a cross-package touched surface', () => {
 	const draft = {
-		owningContext: 'apps/services/conditioning',
-		touchedSurfaces: ['apps/frontends/example-pwa-frontend/src/ui/SessionDetailPage.tsx'],
+		owningContext: 'services/billing',
+		touchedSurfaces: ['frontends/example-pwa-frontend/src/ui/SessionDetailPage.tsx'],
 	};
 
 	const { allowedPackages, allowedPathPrefixes } = deriveScopeFromDraft(draft);
 
 	assert.deepEqual(
 		[...allowedPackages].sort(),
-		['apps/frontends/example-pwa-frontend', 'apps/services/conditioning'],
+		['frontends/example-pwa-frontend', 'services/billing'],
 	);
 	assert.deepEqual(allowedPathPrefixes, [
-		'apps/frontends/example-pwa-frontend/src/ui/SessionDetailPage.tsx',
+		'frontends/example-pwa-frontend/src/ui/SessionDetailPage.tsx',
 	]);
 });
 

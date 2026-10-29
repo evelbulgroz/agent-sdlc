@@ -94,16 +94,16 @@ const FROZEN_CONTRACT_EXPORTS = [
 ];
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'))
+const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/engine'))
 	? PACKAGE_ROOT
 	: path.resolve(PACKAGE_ROOT, '../../..');
-const SDLC = fs.existsSync(path.join(ROOT, 'packages/agent-sdlc'))
-	? path.join(ROOT, 'packages/agent-sdlc')
+const SDLC = fs.existsSync(path.join(ROOT, 'packages/engine'))
+	? path.join(ROOT, 'packages/engine')
 	: PACKAGE_ROOT;
 
 function resolvePath(rel) {
 	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
-	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+	return path.join(SDLC, rel.replace(/^packages\/engine\//, ''));
 }
 
 function measure(rel) {
@@ -126,14 +126,14 @@ function scopePaths() {
 	const contractsDir = path.join(SDLC, 'policy/contracts');
 	const capabilitiesDir = path.join(SDLC, 'roles/capabilities');
 	return [
-		'packages/agent-sdlc/policy/contracts.ts',
-		'packages/agent-sdlc/policy/contracts.spec.mjs',
-		...fs.readdirSync(contractsDir).sort().map((name) => `packages/agent-sdlc/policy/contracts/${name}`),
-		'packages/agent-sdlc/roles/capability-registry.ts',
-		...fs.readdirSync(capabilitiesDir).sort().map((name) => `packages/agent-sdlc/roles/capabilities/${name}`),
-		'packages/agent-sdlc/roles/role-registry.spec.mjs',
-		'packages/agent-sdlc/roles/role-executor.spec.mjs',
-		'packages/agent-sdlc/roles/role-executor-governance.spec.mjs',
+		'packages/engine/policy/contracts.ts',
+		'packages/engine/policy/contracts.spec.mjs',
+		...fs.readdirSync(contractsDir).sort().map((name) => `packages/engine/policy/contracts/${name}`),
+		'packages/engine/roles/capability-registry.ts',
+		...fs.readdirSync(capabilitiesDir).sort().map((name) => `packages/engine/roles/capabilities/${name}`),
+		'packages/engine/roles/role-registry.spec.mjs',
+		'packages/engine/roles/role-executor.spec.mjs',
+		'packages/engine/roles/role-executor-governance.spec.mjs',
 	];
 }
 
@@ -151,15 +151,15 @@ test('@ac AC-05 @case AC-05.2 in-scope paths are absent from the exceptions file
 });
 
 test('@ac AC-05 @case AC-05.3 moved contract and capability tests are not duplicated', () => {
-	const contractTitles = new Set(titles('packages/agent-sdlc/policy/contracts.spec.mjs'));
+	const contractTitles = new Set(titles('packages/engine/policy/contracts.spec.mjs'));
 	for (const name of fs.readdirSync(path.join(SDLC, 'policy/contracts')).filter((entry) => entry.endsWith('.spec.mjs'))) {
-		for (const title of titles(`packages/agent-sdlc/policy/contracts/${name}`)) {
+		for (const title of titles(`packages/engine/policy/contracts/${name}`)) {
 			assert.equal(contractTitles.has(title), false, title);
 		}
 	}
-	const roleTitles = new Set(titles('packages/agent-sdlc/roles/role-registry.spec.mjs'));
+	const roleTitles = new Set(titles('packages/engine/roles/role-registry.spec.mjs'));
 	for (const name of fs.readdirSync(path.join(SDLC, 'roles/capabilities')).filter((entry) => entry.endsWith('.spec.mjs'))) {
-		for (const title of titles(`packages/agent-sdlc/roles/capabilities/${name}`)) {
+		for (const title of titles(`packages/engine/roles/capabilities/${name}`)) {
 			assert.equal(roleTitles.has(title), false, title);
 		}
 	}

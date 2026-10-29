@@ -168,7 +168,7 @@ test('Slice 3 git and commit crash boundaries resume without duplicate commits',
 });
 
 test('Slice 4 multi-task execution and reconciliation crash boundaries resume cleanly', async (t) => {
-	const surfaces = ['packages/ddd-base', 'apps/services/conditioning'];
+	const surfaces = ['packages/shared-base', 'services/billing'];
 
 	await t.test('parent completed before child worktree add - child dir absent and resumes cleanly', async () => {
 		const proposal = multiPackageProposal(surfaces);
@@ -194,14 +194,14 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 			);
 			const marker = await waitForBoundary(child);
 			assert.equal(marker.name, 'task_completed_transition_recorded');
-			assert.equal(marker.taskId, 'ddd-base-task');
+			assert.equal(marker.taskId, 'shared-base-task');
 
 			// Child worktree dir must be absent before child worktree add
 			const childWorktreeDir = path.join(
 				REPOSITORY_ROOT,
 				'tools/.agent-sdlc',
 				runId,
-				'worktrees/conditioning-task',
+				'worktrees/billing-task',
 			);
 			assert.equal(
 				fs.existsSync(childWorktreeDir),
@@ -232,8 +232,8 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 			try {
 				const plan = store.getTaskPlan(runId);
 				assert.ok(plan);
-				const task0 = plan.tasks.find((task) => task.taskId === 'ddd-base-task');
-				const task1 = plan.tasks.find((task) => task.taskId === 'conditioning-task');
+				const task0 = plan.tasks.find((task) => task.taskId === 'shared-base-task');
+				const task1 = plan.tasks.find((task) => task.taskId === 'billing-task');
 				assert.equal(task0.status, 'completed');
 				assert.equal(task1.status, 'completed');
 				assert.ok(task0.targetTreeSha);
@@ -264,19 +264,19 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 					'--boundary',
 					'worktree-prepared-transition-recorded',
 					'--task-id',
-					'conditioning-task',
+					'billing-task',
 				],
 				{ cwd: REPOSITORY_ROOT, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] },
 			);
 			const marker = await waitForBoundary(child);
 			assert.equal(marker.name, 'worktree-prepared-transition-recorded');
-			assert.equal(marker.taskId, 'conditioning-task');
+			assert.equal(marker.taskId, 'billing-task');
 
 			const childWorktreeDir = path.join(
 				REPOSITORY_ROOT,
 				'tools/.agent-sdlc',
 				runId,
-				'worktrees/conditioning-task',
+				'worktrees/billing-task',
 			);
 			assert.equal(
 				fs.existsSync(childWorktreeDir),
@@ -291,7 +291,7 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 			);
 			try {
 				const plan = preStore.getTaskPlan(runId);
-				const task1 = plan.tasks.find((task) => task.taskId === 'conditioning-task');
+				const task1 = plan.tasks.find((task) => task.taskId === 'billing-task');
 				assert.ok(task1.parentCommitSha, 'parentCommitSha must be stored in dag_tasks');
 				storedParentCommitSha = task1.parentCommitSha;
 			} finally {
@@ -320,7 +320,7 @@ test('Slice 4 multi-task execution and reconciliation crash boundaries resume cl
 			);
 			try {
 				const plan = postStore.getTaskPlan(runId);
-				const task1 = plan.tasks.find((task) => task.taskId === 'conditioning-task');
+				const task1 = plan.tasks.find((task) => task.taskId === 'billing-task');
 				assert.equal(task1.status, 'completed');
 				assert.equal(
 					task1.parentCommitSha,

@@ -74,16 +74,16 @@ test('@ac AC-06 @case AC-06.2 createDefaultAuthorizationEnvelope reads repositor
 			runId: '2026-10-24-repo-id-test',
 			approvedSpecHash: 'a'.repeat(64),
 			baseCommitSha: 'b'.repeat(40),
-			allowedPackages: ['packages/agent-sdlc'],
-			allowedPathPrefixes: ['packages/agent-sdlc'],
+			allowedPackages: ['packages/engine'],
+			allowedPathPrefixes: ['packages/engine'],
 			rootDir: dir,
 		});
 		assert.equal(envelope.repositoryId, 'example-repo');
 	});
 });
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 test('@ac AC-06 @case AC-06.3 committed .agents/sdlc-host.json and fixture-host/profile.json carry expected schemaVersion and repositoryId', () => {

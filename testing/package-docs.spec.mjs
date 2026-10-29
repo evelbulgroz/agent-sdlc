@@ -4,8 +4,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 const SUBDIRECTORY_READMES = Object.freeze([
@@ -38,18 +38,18 @@ test('@ac AC-02 @case AC-02.1 all 14 package markdown files exist and contain ze
 	assert.equal(PACKAGE_MARKDOWN_FILES.length, 14);
 	for (const relPath of PACKAGE_MARKDOWN_FILES) {
 		const absPath = path.join(PACKAGE_ROOT, relPath);
-		assert.equal(fs.existsSync(absPath), true, `missing packages/agent-sdlc/${relPath}`);
+		assert.equal(fs.existsSync(absPath), true, `missing packages/engine/${relPath}`);
 		const text = fs.readFileSync(absPath, 'utf8');
 		assert.equal(
 			upwardLinkPattern.test(text),
 			false,
-			`packages/agent-sdlc/${relPath} contains upward monorepo link`,
+			`packages/engine/${relPath} contains upward monorepo link`,
 		);
 	}
 });
 
 test('@ac AC-02 @case AC-02.2 none of the 14 package markdown files contains host-specific service or shared-kernel examples', () => {
-	const domainExamplePattern = /apps\/services\/|packages\/ddd-base|example-base/;
+	const domainExamplePattern = /services\/|packages\/shared-base|example-base/;
 	for (const relPath of PACKAGE_MARKDOWN_FILES) {
 		const text = readPackageDoc(relPath);
 		assert.equal(

@@ -42,12 +42,12 @@ test('manifest planning supports serial overlapping tasks in one package', () =>
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
 		taskManifestHash: 'f'.repeat(64),
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing'],
 	};
 	const plan = planTaskDag({
 		draft: readinessDraft({
-			touchedSurfaces: ['apps/services/conditioning/src/conditioning/domain'],
+			touchedSurfaces: ['services/billing/src/billing/domain'],
 		}),
 		taskManifest: manifest,
 		authorization,
@@ -69,14 +69,14 @@ test('planTaskDag produces an executable manifest-less task with legacy worktree
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning/src/conditioning/'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing/src/billing/'],
 	};
 
 	const plan = planTaskDag({
 		draft: readinessDraft({
-			goal: 'Update conditioning domain',
-			touchedSurfaces: ['apps/services/conditioning/src/conditioning/domain'],
+			goal: 'Update billing domain',
+			touchedSurfaces: ['services/billing/src/billing/domain'],
 		}),
 		authorization: auth,
 		now: () => '2026-09-07T09:00:00.000Z',
@@ -89,7 +89,7 @@ test('planTaskDag produces an executable manifest-less task with legacy worktree
 
 	const task = plan.tasks[0];
 	assert.equal(task.taskId, 'task-0');
-	assert.equal(task.targetPackage, 'apps/services/conditioning');
+	assert.equal(task.targetPackage, 'services/billing');
 	assert.equal(task.worktreeSubdir, 'worktree');
 	assert.equal(task.integrationOrder, 0);
 	assert.deepEqual(task.dependsOn, []);
@@ -99,7 +99,7 @@ test('planTaskDag produces an executable manifest-less task with legacy worktree
 	assert.deepEqual(task.verificationCommand, [
 		'pnpm',
 		'--filter',
-		'@example/conditioning-service',
+		'@fixture/billing-service',
 		'test',
 	]);
 	assert.deepEqual(plan.slices?.[0].acceptanceCriteria, ['AC-01']);
@@ -110,10 +110,10 @@ test('planTaskDag produces a multi-task plan with lexicographical order for inde
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
+		allowedPackages: ['services/billing', 'services/assessment'],
 		allowedPathPrefixes: [
-			'apps/services/conditioning/src/',
-			'apps/services/assessment/src/',
+			'services/billing/src/',
+			'services/assessment/src/',
 		],
 	};
 
@@ -126,8 +126,8 @@ test('planTaskDag produces a multi-task plan with lexicographical order for inde
 	assert.equal(plan.isParallel, true);
 	assert.equal(plan.tasks.length, 2);
 
-	// Lexicographical tie-break: assessment-task comes before conditioning-task
-	assert.deepEqual(plan.integrationOrder, ['assessment-task', 'conditioning-task']);
+	// Lexicographical tie-break: assessment-task comes before billing-task
+	assert.deepEqual(plan.integrationOrder, ['assessment-task', 'billing-task']);
 
 	const task0 = plan.tasks[0];
 	assert.equal(task0.taskId, 'assessment-task');
@@ -136,9 +136,9 @@ test('planTaskDag produces a multi-task plan with lexicographical order for inde
 	assert.deepEqual(task0.dependsOn, []);
 
 	const task1 = plan.tasks[1];
-	assert.equal(task1.taskId, 'conditioning-task');
+	assert.equal(task1.taskId, 'billing-task');
 	assert.equal(task1.integrationOrder, 1);
-	assert.equal(task1.worktreeSubdir, 'worktrees/conditioning-task');
+	assert.equal(task1.worktreeSubdir, 'worktrees/billing-task');
 	assert.deepEqual(task1.dependsOn, []);
 });
 
@@ -146,15 +146,15 @@ test('planTaskDag serializes shared packages under packages/* before consumers',
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/conditioning', 'packages/ddd-base'],
+		allowedPackages: ['services/billing', 'packages/shared-base'],
 		allowedPathPrefixes: [
-			'apps/services/conditioning/src/',
-			'packages/ddd-base/src/',
+			'services/billing/src/',
+			'packages/shared-base/src/',
 		],
 	};
 
 	const plan = planTaskDag({
-		draft: { title: 'Update ddd-base and conditioning' },
+		draft: { title: 'Update shared-base and billing' },
 		authorization: auth,
 		now: () => '2026-09-07T09:00:00.000Z',
 	});
@@ -162,55 +162,55 @@ test('planTaskDag serializes shared packages under packages/* before consumers',
 	assert.equal(plan.isParallel, false);
 	assert.equal(plan.tasks.length, 2);
 
-	// ddd-base-task must be serialized before conditioning-task
-	assert.deepEqual(plan.integrationOrder, ['ddd-base-task', 'conditioning-task']);
+	// shared-base-task must be serialized before billing-task
+	assert.deepEqual(plan.integrationOrder, ['shared-base-task', 'billing-task']);
 
-	const dddTask = plan.tasks.find((t) => t.taskId === 'ddd-base-task');
-	const condTask = plan.tasks.find((t) => t.taskId === 'conditioning-task');
+	const dddTask = plan.tasks.find((t) => t.taskId === 'shared-base-task');
+	const condTask = plan.tasks.find((t) => t.taskId === 'billing-task');
 
 	assert.equal(dddTask.integrationOrder, 0);
 	assert.deepEqual(dddTask.dependsOn, []);
 
 	assert.equal(condTask.integrationOrder, 1);
-	assert.deepEqual(condTask.dependsOn, ['ddd-base-task']);
+	assert.deepEqual(condTask.dependsOn, ['shared-base-task']);
 });
 
 test('planTaskDag serializes contract producers before consumer services', () => {
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/conditioning', 'apps/services/api-gateway'],
+		allowedPackages: ['services/billing', 'services/api-gateway'],
 		allowedPathPrefixes: [
-			'apps/services/conditioning/contracts/index.ts',
-			'apps/services/api-gateway/src/',
+			'services/billing/contracts/index.ts',
+			'services/api-gateway/src/',
 		],
 	};
 
 	const plan = planTaskDag({
-		draft: { title: 'Contract change in conditioning and gateway update' },
+		draft: { title: 'Contract change in billing and gateway update' },
 		authorization: auth,
 		now: () => '2026-09-07T09:00:00.000Z',
 	});
 
 	assert.equal(plan.isParallel, false);
-	assert.deepEqual(plan.integrationOrder, ['conditioning-task', 'api-gateway-task']);
+	assert.deepEqual(plan.integrationOrder, ['billing-task', 'api-gateway-task']);
 
-	const condTask = plan.tasks.find((t) => t.taskId === 'conditioning-task');
+	const condTask = plan.tasks.find((t) => t.taskId === 'billing-task');
 	const gwTask = plan.tasks.find((t) => t.taskId === 'api-gateway-task');
 
 	assert.equal(condTask.integrationOrder, 0);
 	assert.equal(gwTask.integrationOrder, 1);
-	assert.deepEqual(gwTask.dependsOn, ['conditioning-task']);
+	assert.deepEqual(gwTask.dependsOn, ['billing-task']);
 });
 
 test('planTaskDag serializes contract producers with package-root prefixes before consumers', () => {
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/registry', 'apps/services/api-gateway'],
+		allowedPackages: ['services/registry', 'services/api-gateway'],
 		allowedPathPrefixes: [
-			'apps/services/registry',
-			'apps/services/api-gateway',
+			'services/registry',
+			'services/api-gateway',
 		],
 	};
 
@@ -235,11 +235,11 @@ test('planTaskDag is strictly deterministic across multiple invocations', () => 
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/conditioning', 'packages/ddd-base', 'apps/services/assessment'],
+		allowedPackages: ['services/billing', 'packages/shared-base', 'services/assessment'],
 		allowedPathPrefixes: [
-			'apps/services/conditioning/src/',
-			'packages/ddd-base/src/',
-			'apps/services/assessment/src/',
+			'services/billing/src/',
+			'packages/shared-base/src/',
+			'services/assessment/src/',
 		],
 	};
 
@@ -255,23 +255,23 @@ test('planTaskDag assigns pnpm-lock.yaml to the task targeting package.json when
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['packages/ddd-base', 'apps/services/authentication'],
+		allowedPackages: ['packages/shared-base', 'services/authentication'],
 		allowedPathPrefixes: [
-			'packages/ddd-base/package.json',
+			'packages/shared-base/package.json',
 			'pnpm-lock.yaml',
-			'packages/ddd-base/src/',
-			'apps/services/authentication/src/',
+			'packages/shared-base/src/',
+			'services/authentication/src/',
 		],
 	};
 
 	const plan = planTaskDag({
-		draft: { title: 'Update ddd-base manifest and authentication' },
+		draft: { title: 'Update shared-base manifest and authentication' },
 		authorization: auth,
 		now: () => '2026-09-07T09:00:00.000Z',
 	});
 
-	const dddTask = plan.tasks.find((t) => t.targetPackage === 'packages/ddd-base');
-	const authTask = plan.tasks.find((t) => t.targetPackage === 'apps/services/authentication');
+	const dddTask = plan.tasks.find((t) => t.targetPackage === 'packages/shared-base');
+	const authTask = plan.tasks.find((t) => t.targetPackage === 'services/authentication');
 	assert.ok(dddTask);
 	assert.ok(authTask);
 	assert.ok(dddTask.pathPrefixes.includes('pnpm-lock.yaml'));
@@ -283,14 +283,14 @@ test('planTaskDag serializes independent package manifest tasks that share pnpm-
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
 		allowedPackages: [
-			'apps/services/strength',
-			'apps/services/assessment',
-			'apps/services/journal',
+			'services/strength',
+			'services/assessment',
+			'services/journal',
 		],
 		allowedPathPrefixes: [
-			'apps/services/strength/package.json',
-			'apps/services/assessment/package.json',
-			'apps/services/journal/package.json',
+			'services/strength/package.json',
+			'services/assessment/package.json',
+			'services/journal/package.json',
 			'pnpm-lock.yaml',
 		],
 	};
@@ -330,22 +330,22 @@ test('planTaskDag grants lockfile ownership to a package-root task that can modi
 	const auth = {
 		runId: RUN_ID,
 		baseCommitSha: BASE_COMMIT_SHA,
-		allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
+		allowedPackages: ['services/billing', 'services/assessment'],
 		allowedPathPrefixes: [
-			'apps/services/conditioning',
-			'apps/services/assessment/package.json',
+			'services/billing',
+			'services/assessment/package.json',
 			'pnpm-lock.yaml',
 		],
 	};
 
 	const plan = planTaskDag({
-		draft: { title: 'Upgrade conditioning and assessment dependencies' },
+		draft: { title: 'Upgrade billing and assessment dependencies' },
 		authorization: auth,
 		now: () => '2026-09-07T09:00:00.000Z',
 	});
 
-	const conditioningTask = plan.tasks.find((task) => task.taskId === 'conditioning-task');
-	assert.ok(conditioningTask.pathPrefixes.includes('pnpm-lock.yaml'));
+	const billingTask = plan.tasks.find((task) => task.taskId === 'billing-task');
+	assert.ok(billingTask.pathPrefixes.includes('pnpm-lock.yaml'));
 	assert.doesNotThrow(() =>
 		evaluatePolicyGate({
 			taskPlan: plan,
@@ -381,12 +381,12 @@ test('@ac AC-05 @case AC-05.3 the multi-package branch returns the pinned planPo
 	const plan = planTaskDag(pinnedMultiPlanInput());
 	assert.equal(
 		plan.planPolicyHash,
-		'5d4788c44ac4d2e3597dab7185253c779e08a8e86e95eadae7fb5fba6440c7cf',
+		'6f32887f0e684fa9364dfdb0049596bf4bcd29a1f19da96e6fa2757dfac2d6b1',
 	);
 });
 
 test('@ac AC-05 @case AC-05.4 the multi-package fixture returns the pinned integrationOrder and isParallel', () => {
 	const plan = planTaskDag(pinnedMultiPlanInput());
 	assert.equal(plan.isParallel, true);
-	assert.deepEqual(plan.integrationOrder, ['assessment-task', 'conditioning-task']);
+	assert.deepEqual(plan.integrationOrder, ['assessment-task', 'billing-task']);
 });

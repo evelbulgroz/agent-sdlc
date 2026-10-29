@@ -83,7 +83,7 @@ test('@ac AC-04 @case AC-04.2 packSpecDocument progressively narrows assumptions
 	const baseDraft = {
 		goal: 'Test spec packing',
 		nonGoals: ['None'],
-		owningContext: 'apps/frontends/example-pwa-frontend',
+		owningContext: 'frontends/example-pwa-frontend',
 		touchedSurfaces: ['src/ui/App.tsx'],
 		invariantsAndConstraints: ['Strict invariants'],
 		publicContractImpact: 'None',

@@ -33,10 +33,10 @@ test('readFileTool and writeFileTool create, read, and hash file content', () =>
 	const tempDir = createTempDir();
 	try {
 		const worktreeDir = tempDir;
-		const allowedPathPrefixes = ['apps/services/conditioning'];
+		const allowedPathPrefixes = ['services/billing'];
 		// Write file
 		const writeRes = writeFileTool(
-			{ path: 'apps/services/conditioning/test.txt', content: 'hello world' },
+			{ path: 'services/billing/test.txt', content: 'hello world' },
 			{ worktreeDir, allowedPathPrefixes },
 		);
 		assert.equal(writeRes.written, true);
@@ -44,7 +44,7 @@ test('readFileTool and writeFileTool create, read, and hash file content', () =>
 		assert.ok(typeof writeRes.hash === 'string' && writeRes.hash.length === 64);
 		// Read file
 		const readRes = readFileTool(
-			{ path: 'apps/services/conditioning/test.txt' },
+			{ path: 'services/billing/test.txt' },
 			{ worktreeDir },
 		);
 		assert.equal(readRes.content, 'hello world');
@@ -55,7 +55,7 @@ test('readFileTool and writeFileTool create, read, and hash file content', () =>
 		);
 		// Read non-existent
 		assert.throws(
-			() => readFileTool({ path: 'apps/services/conditioning/missing.txt' }, { worktreeDir }),
+			() => readFileTool({ path: 'services/billing/missing.txt' }, { worktreeDir }),
 			(err) => err.code === 'INVALID_INPUT',
 		);
 		assert.equal(readRes.truncated, false);
@@ -68,7 +68,7 @@ test('readFileTool and writeFileTool create, read, and hash file content', () =>
 test('readFileTool returns a bounded window and a later window keeps the whole-file hash', () => {
 	const tempDir = createTempDir();
 	try {
-		const relPath = 'apps/services/conditioning/src/long.ts';
+		const relPath = 'services/billing/src/long.ts';
 		fs.mkdirSync(path.dirname(path.join(tempDir, relPath)), { recursive: true });
 		const lines = Array.from({ length: 400 }, (_, index) => `export const value${index} = ${index};`);
 		const full = `${lines.join('\n')}\n`;
@@ -113,25 +113,25 @@ test('readFileTool resolves a unique same-stem TypeScript source correction', ()
 	try {
 		const domainDir = path.join(
 			tempDir,
-			'apps/frontends/example-pwa-frontend/src/domain',
+			'frontends/example-pwa-frontend/src/domain',
 		);
 		fs.mkdirSync(domainDir, { recursive: true });
-		fs.writeFileSync(path.join(domainDir, 'conditioning-log.ts'), 'export const log = true;\n');
+		fs.writeFileSync(path.join(domainDir, 'billing-log.ts'), 'export const log = true;\n');
 
 		const result = readFileTool(
 			{
-				path: 'apps/frontends/example-pwa-frontend/src/domain/ConditioningLog.js',
+				path: 'frontends/example-pwa-frontend/src/domain/BillingLog.js',
 			},
 			{ worktreeDir: tempDir },
 		);
 		assert.equal(result.content, 'export const log = true;\n');
 		assert.equal(
 			result.requestedPath,
-			'apps/frontends/example-pwa-frontend/src/domain/ConditioningLog.js',
+			'frontends/example-pwa-frontend/src/domain/BillingLog.js',
 		);
 		assert.equal(
 			result.resolvedPath,
-			'apps/frontends/example-pwa-frontend/src/domain/conditioning-log.ts',
+			'frontends/example-pwa-frontend/src/domain/billing-log.ts',
 		);
 	} finally {
 		fs.rmSync(tempDir, { recursive: true, force: true });
@@ -143,17 +143,17 @@ test('readFileTool rejects ambiguous same-stem source corrections', () => {
 	try {
 		const domainDir = path.join(
 			tempDir,
-			'apps/frontends/example-pwa-frontend/src/domain',
+			'frontends/example-pwa-frontend/src/domain',
 		);
 		fs.mkdirSync(domainDir, { recursive: true });
-		fs.writeFileSync(path.join(domainDir, 'conditioning-log.ts'), 'export const ts = true;\n');
-		fs.writeFileSync(path.join(domainDir, 'conditioning_log.tsx'), 'export const tsx = true;\n');
+		fs.writeFileSync(path.join(domainDir, 'billing-log.ts'), 'export const ts = true;\n');
+		fs.writeFileSync(path.join(domainDir, 'billing_log.tsx'), 'export const tsx = true;\n');
 
 		assert.throws(
 			() =>
 				readFileTool(
 					{
-						path: 'apps/frontends/example-pwa-frontend/src/domain/ConditioningLog.js',
+						path: 'frontends/example-pwa-frontend/src/domain/BillingLog.js',
 					},
 					{ worktreeDir: tempDir },
 				),
@@ -329,7 +329,7 @@ test('@ac AC-03 @case AC-03.3 grep returns a matching line and an empty list whe
 test('readFileTool wholeFile still returns a file larger than the lean cap', () => {
 	const tempDir = createTempDir();
 	try {
-		const relPath = 'apps/services/demo/src/big.ts';
+		const relPath = 'services/demo/src/big.ts';
 		fs.mkdirSync(path.dirname(path.join(tempDir, relPath)), { recursive: true });
 		const content = 'x'.repeat(WHOLE_FILE_READ_BYTE_CAP + 1);
 		fs.writeFileSync(path.join(tempDir, relPath), content);
@@ -345,7 +345,7 @@ test('readFileTool wholeFile still returns a file larger than the lean cap', () 
 test('readFileTool returns a unique worktree candidate when the parent directory is missing', () => {
 	const tempDir = createTempDir();
 	try {
-		const realPath = 'apps/services/authentication/src/authentication.service.ts';
+		const realPath = 'services/authentication/src/authentication.service.ts';
 		fs.mkdirSync(path.dirname(path.join(tempDir, realPath)), { recursive: true });
 		fs.writeFileSync(path.join(tempDir, realPath), 'export class AuthenticationService {}\n');
 		const decoy = 'node_modules/pkg/authentication.service.ts';
@@ -354,7 +354,7 @@ test('readFileTool returns a unique worktree candidate when the parent directory
 		assert.throws(
 			() =>
 				readFileTool(
-					{ path: 'apps/services/authentication/src/tokens/authentication.service.ts' },
+					{ path: 'services/authentication/src/tokens/authentication.service.ts' },
 					{ worktreeDir: tempDir },
 				),
 			(error) => {
@@ -379,7 +379,7 @@ test('readFileTool reports no candidate when nothing in the worktree matches', (
 		assert.throws(
 			() =>
 				readFileTool(
-					{ path: 'apps/services/authentication/src/missing/no-such-service.ts' },
+					{ path: 'services/authentication/src/missing/no-such-service.ts' },
 					{ worktreeDir: tempDir },
 				),
 			(error) => {
@@ -397,8 +397,8 @@ test('readFileTool reports no candidate when nothing in the worktree matches', (
 test('readFileTool lists several worktree candidates and does not pick one', () => {
 	const tempDir = createTempDir();
 	try {
-		const first = 'apps/services/authentication/src/a/authentication.service.ts';
-		const second = 'apps/services/authentication/src/b/authentication.service.ts';
+		const first = 'services/authentication/src/a/authentication.service.ts';
+		const second = 'services/authentication/src/b/authentication.service.ts';
 		for (const relPath of [first, second]) {
 			fs.mkdirSync(path.dirname(path.join(tempDir, relPath)), { recursive: true });
 			fs.writeFileSync(path.join(tempDir, relPath), 'export const value = 1;\n');
@@ -406,7 +406,7 @@ test('readFileTool lists several worktree candidates and does not pick one', () 
 		assert.throws(
 			() =>
 				readFileTool(
-					{ path: 'apps/services/authentication/src/missing/authentication.service.ts' },
+					{ path: 'services/authentication/src/missing/authentication.service.ts' },
 					{ worktreeDir: tempDir },
 				),
 			(error) => {
@@ -427,7 +427,7 @@ test('readFileTool does not claim a unique candidate when more than five stems m
 	try {
 		const paths = [];
 		for (let index = 0; index < 6; index += 1) {
-			const relPath = `apps/services/authentication/src/dir-${index}/authentication.service.ts`;
+			const relPath = `services/authentication/src/dir-${index}/authentication.service.ts`;
 			paths.push(relPath);
 			fs.mkdirSync(path.dirname(path.join(tempDir, relPath)), { recursive: true });
 			fs.writeFileSync(path.join(tempDir, relPath), 'export const value = 1;\n');
@@ -435,7 +435,7 @@ test('readFileTool does not claim a unique candidate when more than five stems m
 		assert.throws(
 			() =>
 				readFileTool(
-					{ path: 'apps/services/authentication/src/missing/authentication.service.ts' },
+					{ path: 'services/authentication/src/missing/authentication.service.ts' },
 					{ worktreeDir: tempDir },
 				),
 			(error) => {
@@ -453,22 +453,22 @@ test('readFileTool does not claim a unique candidate when more than five stems m
 test('readFileTool keeps an ambiguous same-directory correction local', () => {
 	const tempDir = createTempDir();
 	try {
-		const domainDir = path.join(tempDir, 'apps/services/demo/src/domain');
-		const elsewhere = path.join(tempDir, 'apps/services/demo/src/elsewhere');
+		const domainDir = path.join(tempDir, 'services/demo/src/domain');
+		const elsewhere = path.join(tempDir, 'services/demo/src/elsewhere');
 		fs.mkdirSync(domainDir, { recursive: true });
 		fs.mkdirSync(elsewhere, { recursive: true });
-		fs.writeFileSync(path.join(domainDir, 'conditioning-log.ts'), 'export const ts = true;\n');
-		fs.writeFileSync(path.join(domainDir, 'conditioning_log.tsx'), 'export const tsx = true;\n');
-		fs.writeFileSync(path.join(elsewhere, 'conditioning-log.mjs'), 'export const other = true;\n');
+		fs.writeFileSync(path.join(domainDir, 'billing-log.ts'), 'export const ts = true;\n');
+		fs.writeFileSync(path.join(domainDir, 'billing_log.tsx'), 'export const tsx = true;\n');
+		fs.writeFileSync(path.join(elsewhere, 'billing-log.mjs'), 'export const other = true;\n');
 		assert.throws(
 			() =>
 				readFileTool(
-					{ path: 'apps/services/demo/src/domain/ConditioningLog.js' },
+					{ path: 'services/demo/src/domain/BillingLog.js' },
 					{ worktreeDir: tempDir },
 				),
 			(error) => {
 				assert.match(error.message, /Did you mean/);
-				assert.match(error.message, /domain\/conditioning-log\.ts/);
+				assert.match(error.message, /domain\/billing-log\.ts/);
 				assert.doesNotMatch(error.message, /elsewhere/);
 				assert.equal(error.metadata.candidatePath, undefined);
 				return true;
@@ -482,18 +482,18 @@ test('readFileTool keeps an ambiguous same-directory correction local', () => {
 test('readFileTool still auto-reads the same-directory source when another stem match exists', () => {
 	const tempDir = createTempDir();
 	try {
-		const domainDir = path.join(tempDir, 'apps/services/demo/src/domain');
-		const elsewhere = path.join(tempDir, 'apps/services/demo/src/elsewhere');
+		const domainDir = path.join(tempDir, 'services/demo/src/domain');
+		const elsewhere = path.join(tempDir, 'services/demo/src/elsewhere');
 		fs.mkdirSync(domainDir, { recursive: true });
 		fs.mkdirSync(elsewhere, { recursive: true });
-		fs.writeFileSync(path.join(domainDir, 'conditioning-log.ts'), 'export const local = true;\n');
-		fs.writeFileSync(path.join(elsewhere, 'conditioning-log.ts'), 'export const other = true;\n');
+		fs.writeFileSync(path.join(domainDir, 'billing-log.ts'), 'export const local = true;\n');
+		fs.writeFileSync(path.join(elsewhere, 'billing-log.ts'), 'export const other = true;\n');
 		const result = readFileTool(
-			{ path: 'apps/services/demo/src/domain/ConditioningLog.js' },
+			{ path: 'services/demo/src/domain/BillingLog.js' },
 			{ worktreeDir: tempDir },
 		);
 		assert.equal(result.content, 'export const local = true;\n');
-		assert.equal(result.resolvedPath, 'apps/services/demo/src/domain/conditioning-log.ts');
+		assert.equal(result.resolvedPath, 'services/demo/src/domain/billing-log.ts');
 	} finally {
 		fs.rmSync(tempDir, { recursive: true, force: true });
 	}

@@ -8,8 +8,8 @@ import {
 	NAVIGABILITY_LINE_CEILING,
 } from './navigability-support.mjs';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const PACKAGE_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const PACKAGE_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 const PACKAGE_AGENTS_DOC = `${'AGENTS'}.md`;
 
 const MODULE_README_FOLDERS = Object.freeze([
@@ -49,7 +49,7 @@ const TESTING_SPEC_FILES = Object.freeze([
 	'review-living-docs.spec.mjs',
 ]);
 
-const MODULE_PATH = /packages\/agent-sdlc\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.(?:mjs|ts)/g;
+const MODULE_PATH = /packages\/engine\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.(?:mjs|ts)/g;
 
 function missingModulePaths(packageRelPath) {
 	const text = fs.readFileSync(path.join(PACKAGE_ROOT, packageRelPath), 'utf8');
@@ -60,7 +60,7 @@ function missingModulePaths(packageRelPath) {
 				fs.existsSync(path.join(REPOSITORY_ROOT, modulePath)) ||
 				(IS_STANDALONE &&
 					fs.existsSync(
-						path.join(PACKAGE_ROOT, modulePath.replace(/^packages\/agent-sdlc\//, '')),
+						path.join(PACKAGE_ROOT, modulePath.replace(/^packages\/engine\//, '')),
 					));
 			if (resolved) continue;
 			missing.push(modulePath);
@@ -77,7 +77,7 @@ function countNewlines(buffer) {
 	return count;
 }
 
-test('@ac AC-03 @case AC-03.1 none of the 5 spec files in packages/agent-sdlc/testing/ contains monorepo handbook, retired spec, or root AGENTS.md references', () => {
+test('@ac AC-03 @case AC-03.1 none of the 5 spec files in packages/engine/testing/ contains monorepo handbook, retired spec, or root AGENTS.md references', () => {
 	const forbiddenTokens = [
 		`${'docs'}/${'handbook'}/`,
 		`${'docs'}/${'specs'}/${'retired'}/`,
@@ -89,13 +89,13 @@ test('@ac AC-03 @case AC-03.1 none of the 5 spec files in packages/agent-sdlc/te
 			assert.equal(
 				text.includes(token),
 				false,
-				`packages/agent-sdlc/testing/${specFile} must not contain ${token}`,
+				`packages/engine/testing/${specFile} must not contain ${token}`,
 			);
 		}
 	}
 });
 
-test('@ac AC-03 @case AC-03.2 package README, ARCHITECTURE.md, and AGENTS.md module paths exist inside packages/agent-sdlc', () => {
+test('@ac AC-03 @case AC-03.2 package README, ARCHITECTURE.md, and AGENTS.md module paths exist inside packages/engine', () => {
 	assert.deepEqual(missingModulePaths('README.md'), []);
 	assert.deepEqual(missingModulePaths('ARCHITECTURE.md'), []);
 	assert.deepEqual(missingModulePaths(PACKAGE_AGENTS_DOC), []);
@@ -126,16 +126,16 @@ test('AC-09: package README describes run retention, prune-runs, index.jsonl, an
 	}
 });
 
-test('@ac AC-01 root packages/agent-sdlc/README.md and ARCHITECTURE.md stay within navigability ceilings and README links all module READMEs', () => {
+test('@ac AC-01 root packages/engine/README.md and ARCHITECTURE.md stay within navigability ceilings and README links all module READMEs', () => {
 	for (const docName of ['README.md', 'ARCHITECTURE.md']) {
 		const docRaw = fs.readFileSync(path.join(PACKAGE_ROOT, docName));
 		assert.ok(
 			countNewlines(docRaw) <= NAVIGABILITY_LINE_CEILING,
-			`packages/agent-sdlc/${docName} exceeds line ceiling: ${countNewlines(docRaw)}`,
+			`packages/engine/${docName} exceeds line ceiling: ${countNewlines(docRaw)}`,
 		);
 		assert.ok(
 			docRaw.length <= NAVIGABILITY_BYTE_CEILING,
-			`packages/agent-sdlc/${docName} exceeds byte ceiling: ${docRaw.length}`,
+			`packages/engine/${docName} exceeds byte ceiling: ${docRaw.length}`,
 		);
 	}
 	const raw = fs.readFileSync(path.join(PACKAGE_ROOT, 'README.md'));
@@ -154,25 +154,25 @@ test('@ac AC-01 root packages/agent-sdlc/README.md and ARCHITECTURE.md stay with
 	}
 });
 
-test('@ac AC-02 feature module READMEs exist within navigability limits and are indexed in packages/agent-sdlc/AGENTS.md', () => {
+test('@ac AC-02 feature module READMEs exist within navigability limits and are indexed in packages/engine/AGENTS.md', () => {
 	const agentsMd = fs.readFileSync(path.join(PACKAGE_ROOT, PACKAGE_AGENTS_DOC), 'utf8');
 	for (const folder of MODULE_README_FOLDERS) {
 		const relPath = `${folder}/README.md`;
 		const absPath = path.join(PACKAGE_ROOT, relPath);
-		assert.equal(fs.existsSync(absPath), true, `missing packages/agent-sdlc/${relPath}`);
+		assert.equal(fs.existsSync(absPath), true, `missing packages/engine/${relPath}`);
 		const raw = fs.readFileSync(absPath);
 		assert.ok(
 			countNewlines(raw) <= NAVIGABILITY_LINE_CEILING,
-			`packages/agent-sdlc/${relPath} exceeds line ceiling: ${countNewlines(raw)}`,
+			`packages/engine/${relPath} exceeds line ceiling: ${countNewlines(raw)}`,
 		);
 		assert.ok(
 			raw.length <= NAVIGABILITY_BYTE_CEILING,
-			`packages/agent-sdlc/${relPath} exceeds byte ceiling: ${raw.length}`,
+			`packages/engine/${relPath} exceeds byte ceiling: ${raw.length}`,
 		);
 		assert.equal(
 			agentsMd.includes(`./${folder}/README.md`),
 			true,
-			`packages/agent-sdlc/AGENTS.md missing ./${folder}/README.md`,
+			`packages/engine/AGENTS.md missing ./${folder}/README.md`,
 		);
 	}
 });
@@ -182,12 +182,12 @@ test('@ac AC-03 module READMEs contain no missing module paths or legacy tools/a
 	for (const folder of MODULE_README_FOLDERS) {
 		const relPath = `${folder}/README.md`;
 		const missing = missingModulePaths(relPath);
-		assert.deepEqual(missing, [], `packages/agent-sdlc/${relPath}`);
+		assert.deepEqual(missing, [], `packages/engine/${relPath}`);
 		const text = fs.readFileSync(path.join(PACKAGE_ROOT, relPath), 'utf8');
 		assert.equal(
 			legacyPathPattern.test(text),
 			false,
-			`packages/agent-sdlc/${relPath} contains legacy tools/agent-sdlc or tools/model-usage path`,
+			`packages/engine/${relPath} contains legacy tools/agent-sdlc or tools/model-usage path`,
 		);
 	}
 });

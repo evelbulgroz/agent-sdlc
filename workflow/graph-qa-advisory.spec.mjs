@@ -8,7 +8,7 @@ import {
 	leanWriteAction,
 } from '../testing/test-support.mjs';
 import {
-	conditioningProposal,
+	billingProposal,
 	implementerScript,
 	makeGraphFixture,
 	reachSpecApproved,
@@ -31,8 +31,8 @@ test('QA critic runs once after task verification PASS', async () => {
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
 		assert.equal(terminal.state, 'READY_FOR_GIT_APPROVAL');
@@ -63,8 +63,8 @@ test('verifier FAIL does not invoke QA critic', async () => {
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 0,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
@@ -89,9 +89,9 @@ test('verifier FAIL does not invoke QA critic', async () => {
 
 test('@ac AC-02 reviewer advisory reaches one QA critic without creating a repair generation', async () => {
 	const script = [
-		conditioningProposal(),
+		billingProposal(),
 		leanWriteAction(
-			'apps/services/conditioning/src/feature.ts',
+			'services/billing/src/feature.ts',
 			'export const bad = true;\n',
 		),
 		citingSpecWriteAction(),
@@ -105,7 +105,7 @@ test('@ac AC-02 reviewer advisory reaches one QA critic without creating a repai
 					findingId: 'f-1',
 					severity: 'P1',
 					category: 'correctness',
-					path: 'apps/services/conditioning/src/feature.ts',
+					path: 'services/billing/src/feature.ts',
 					lineRange: [1, 1],
 					evidence: 'export const bad = true;',
 					failureMechanism: 'Missing invariant guardrail',
@@ -121,8 +121,8 @@ test('@ac AC-02 reviewer advisory reaches one QA critic without creating a repai
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
@@ -153,8 +153,8 @@ test('@ac AC-02 QA critic P1 is advisory and does not rewrite green preflight', 
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
@@ -192,7 +192,7 @@ test('@ac AC-02 QA critic P1 on an out-of-scope high-risk path remains advisory'
 			findings: [
 				{
 					...QA_P1_FINDING,
-					file: 'packages/ddd-base/src/index.ts',
+					file: 'packages/shared-base/src/index.ts',
 				},
 			],
 		},
@@ -203,8 +203,8 @@ test('@ac AC-02 QA critic P1 on an out-of-scope high-risk path remains advisory'
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
@@ -235,7 +235,7 @@ test('@ac AC-02 QA critic P1 on an out-of-scope high-risk path remains advisory'
 const QA_P1_FINDING = {
 	severity: 'P1',
 	category: 'testing',
-	file: 'apps/services/conditioning/src/main.ts',
+	file: 'services/billing/src/main.ts',
 	evidence: 'Acceptance criteria are not covered by assertions',
 	impact: 'Green preflight can ship unproven behavior',
 	remediation: 'Add shadow-path tests for the changed feature',
@@ -256,8 +256,8 @@ test('@ac AC-02 QA P1 advisory does not dispatch a second model critic or repair
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
@@ -295,7 +295,7 @@ test('@ac AC-02 out-of-scope QA P1 is advisory and cannot trigger high-risk repa
 			findings: [
 				{
 					...QA_P1_FINDING,
-					file: 'packages/ddd-base/src/index.ts',
+					file: 'packages/shared-base/src/index.ts',
 				},
 			],
 		},
@@ -306,8 +306,8 @@ test('@ac AC-02 out-of-scope QA P1 is advisory and cannot trigger high-risk repa
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			maxSemanticRepairs: 2,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);

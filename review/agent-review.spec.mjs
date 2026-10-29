@@ -35,8 +35,8 @@ test('isSecretOrExcludedPath identifies secrets, certificates, and build artifac
 	assert.equal(isSecretOrExcludedPath('.env.local'), true);
 	assert.equal(isSecretOrExcludedPath('.envrc'), true);
 	assert.equal(isSecretOrExcludedPath('.env.example'), true);
-	assert.equal(isSecretOrExcludedPath('apps/frontends/example-pwa-frontend/.env.example'), true);
-	assert.equal(isSecretOrExcludedPath('apps/services/auth/.env.test'), true);
+	assert.equal(isSecretOrExcludedPath('frontends/example-pwa-frontend/.env.example'), true);
+	assert.equal(isSecretOrExcludedPath('services/auth/.env.test'), true);
 
 	// Key and cert files
 	assert.equal(isSecretOrExcludedPath('keys/server.key'), true);
@@ -46,7 +46,7 @@ test('isSecretOrExcludedPath identifies secrets, certificates, and build artifac
 
 	// Build and cache dirs
 	assert.equal(isSecretOrExcludedPath('dist/index.js'), true);
-	assert.equal(isSecretOrExcludedPath('apps/services/registry/dist/main.js'), true);
+	assert.equal(isSecretOrExcludedPath('services/registry/dist/main.js'), true);
 	assert.equal(isSecretOrExcludedPath('.cache/turbo/hash.tar.zst'), true);
 	assert.equal(isSecretOrExcludedPath('coverage/lcov.info'), true);
 	assert.equal(isSecretOrExcludedPath('node_modules/uuid/index.js'), true);
@@ -55,7 +55,7 @@ test('isSecretOrExcludedPath identifies secrets, certificates, and build artifac
 	assert.equal(isSecretOrExcludedPath('src/main.ts'), false);
 	assert.equal(isSecretOrExcludedPath('tools/agent-sdlc/review/agent-review.mjs'), false);
 	assert.equal(isSecretOrExcludedPath('docs/specs/my-spec.md'), false);
-	assert.equal(isSecretOrExcludedPath('packages/ddd-base/package.json'), false);
+	assert.equal(isSecretOrExcludedPath('packages/shared-base/package.json'), false);
 
 	// Non-string or malformed
 	assert.equal(isSecretOrExcludedPath(null), true);
@@ -215,13 +215,13 @@ test('collectCodeDiff forwards scope to both git diff and git ls-files', () => {
 
 	collectCodeDiff({
 		rootDir: REPOSITORY_ROOT,
-		scope: 'packages/ddd-base',
+		scope: 'packages/shared-base',
 		gitCli: mockGitCli,
 	});
 
 	assert.equal(calls.length, 2);
-	assert.ok(calls[0].args.includes('packages/ddd-base'));
-	assert.ok(calls[1].args.includes('packages/ddd-base'));
+	assert.ok(calls[0].args.includes('packages/shared-base'));
+	assert.ok(calls[1].args.includes('packages/shared-base'));
 });
 
 test('resolveContainedPath rejects path escapes, sibling prefixes, symlinks, and secrets', () => {

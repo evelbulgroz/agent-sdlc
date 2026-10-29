@@ -135,8 +135,8 @@ test('@ac AC-10 @ac AC-14 HEAD drift maintains envelope baseCommitSha for detach
 			approvedPlanPolicyHash: 'b'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,

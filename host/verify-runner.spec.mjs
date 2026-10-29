@@ -34,7 +34,7 @@ const PREFLIGHT_PROFILE = {
 	reviewDir: 'tools/.review',
 	specDraftDir: 'docs/specs/drafts',
 	verify: {
-		argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
+		argv: ['pnpm', 'run', 'agent:verify', '--', '--base', '{baseSha}'],
 		resultPath: 'tools/.agent-preflight-last.json',
 	},
 };
@@ -81,7 +81,7 @@ test('@ac AC-03 @case AC-03.1 executePreflightVerifier substitutes baseSha, read
 
 		assert.equal(result.status, 'PASS');
 		assert.deepEqual(recorded, [
-			['pnpm', 'run', 'agent:preflight', '--', '--base', baseCommitSha],
+			['pnpm', 'run', 'agent:verify', '--', '--base', baseCommitSha],
 		]);
 		assert.ok(result.preflightResultHash);
 	} finally {
@@ -303,7 +303,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile defaults require and headField whe
 			{
 				...base12,
 				verify: {
-					argv: ['pnpm', 'run', 'agent:preflight'],
+					argv: ['pnpm', 'run', 'agent:verify'],
 					resultPath: 'tools/.agent-preflight-last.json',
 					require: { status: 'OK', canonical: true },
 					headField: 'gitHeadSha',
@@ -312,7 +312,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile defaults require and headField whe
 			{
 				...base12,
 				verify: {
-					argv: ['pnpm', 'run', 'agent:preflight', '{baseSha}'],
+					argv: ['pnpm', 'run', 'agent:verify', '{baseSha}'],
 				},
 			},
 			{

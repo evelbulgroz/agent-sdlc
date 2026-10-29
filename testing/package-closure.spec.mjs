@@ -6,11 +6,11 @@ import test from 'node:test';
 import ts from 'typescript';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const AGENT_SDLC_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const AGENT_SDLC_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 const MODEL_USAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/model-usage');
-const IS_MONOREPO = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const IS_MONOREPO = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
 const LEARN_FILENAME = `${'learn'}.${'mjs'}`;
 
 function walkCodeFiles(dir) {
@@ -66,7 +66,7 @@ function collectSpecifiers(filePath) {
 }
 
 test('@ac AC-03 @case AC-03.1 no file under agent-sdlc resolves an import outside its package root', () => {
-	const allowedOutsideRel = 'packages/agent-sdlc/host/legacy-learnings.ts';
+	const allowedOutsideRel = 'packages/engine/host/legacy-learnings.ts';
 	const expectedDynamicTarget = path
 		.resolve(REPOSITORY_ROOT, `tools/lib/${LEARN_FILENAME}`)
 		.split(path.sep)
@@ -110,7 +110,7 @@ test('@ac AC-03 @case AC-03.2 searching agent-sdlc for legacy learnings module f
 		}
 	}
 	if (IS_MONOREPO) {
-		assert.deepEqual(matches, ['packages/agent-sdlc/host/legacy-learnings.ts']);
+		assert.deepEqual(matches, ['packages/engine/host/legacy-learnings.ts']);
 	} else {
 		assert.deepEqual(matches, []);
 	}
@@ -130,7 +130,7 @@ test('@ac AC-03 @case AC-03.3 importing cli/cli.ts succeeds in a subprocess when
 		'}',
 	].join('\n');
 	const loaderDataUrl = `data:text/javascript;base64,${Buffer.from(loaderCode, 'utf8').toString('base64')}`;
-	const cliRel = IS_MONOREPO ? './packages/agent-sdlc/cli/cli.ts' : './cli/cli.ts';
+	const cliRel = IS_MONOREPO ? './packages/engine/cli/cli.ts' : './cli/cli.ts';
 	const evalScript = [
 		'import { register } from "node:module";',
 		`register(${JSON.stringify(loaderDataUrl)});`,
@@ -149,7 +149,7 @@ test('@ac AC-03 @case AC-03.3 importing cli/cli.ts succeeds in a subprocess when
 	assert.deepEqual(parsed, { loaded: true });
 });
 
-test('@ac AC-03 @case AC-03.4 neither packages/agent-sdlc nor packages/model-usage imports from @langchain/core/runnables', () => {
+test('@ac AC-03 @case AC-03.4 neither packages/engine nor packages/model-usage imports from @langchain/core/runnables', () => {
 	const roots = [AGENT_SDLC_ROOT, MODEL_USAGE_ROOT].filter((r) => fs.existsSync(r));
 	for (const pkgRoot of roots) {
 		for (const file of walkCodeFiles(pkgRoot)) {
@@ -170,7 +170,7 @@ test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 @case AC-04.4 shared h
 		for (const rel of [
 			'packages/model-usage/atomic-file-state.ts',
 			'packages/model-usage/sanitize-failure-text.ts',
-			'packages/agent-sdlc/agent-status-validate.ts',
+			'packages/engine/agent-status-validate.ts',
 		]) {
 			assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, rel)), true, rel);
 		}

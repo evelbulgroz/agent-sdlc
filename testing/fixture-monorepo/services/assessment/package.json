@@ -1,5 +1,5 @@
 {
-  "name": "@example/assessment-service",
+  "name": "@fixture/assessment-service",
   "scripts": {
     "test": "node --test"
   },

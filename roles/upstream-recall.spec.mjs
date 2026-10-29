@@ -32,33 +32,33 @@ describe('Upstream Recall & Scope Mapping', () => {
 
   describe('resolveTargetScope', () => {
     it('maps service paths to their service scope', () => {
-      assert.equal(resolveTargetScope(['apps/services/conditioning/src/foo.ts']), 'conditioning');
-      assert.equal(resolveTargetScope(['apps/services/authentication/src/tokens.ts']), 'authentication');
+      assert.equal(resolveTargetScope(['services/billing/src/foo.ts']), 'billing');
+      assert.equal(resolveTargetScope(['services/authentication/src/tokens.ts']), 'authentication');
     });
 
     it('maps package paths to their package scope', () => {
-      assert.equal(resolveTargetScope(['packages/ddd-base/src/aggregate.ts']), 'ddd-base');
+      assert.equal(resolveTargetScope(['packages/shared-base/src/aggregate.ts']), 'shared-base');
       assert.equal(resolveTargetScope(['packages/service-auth-core/src/auth.ts']), 'service-auth-core');
     });
 
     it('maps frontend and e2e paths to their scopes', () => {
       assert.equal(
-        resolveTargetScope(['apps/frontends/example-pwa-frontend/src/index.tsx']),
+        resolveTargetScope(['frontends/example-pwa-frontend/src/index.tsx']),
         'example-pwa-frontend'
       );
-      assert.equal(resolveTargetScope(['apps/e2e/product/smoke.spec.ts']), 'product-e2e');
+      assert.equal(resolveTargetScope(['e2e/product/smoke.spec.ts']), 'product-e2e');
     });
 
     it('maps raw scope names', () => {
-      assert.equal(resolveTargetScope(['conditioning']), 'conditioning');
+      assert.equal(resolveTargetScope(['billing']), 'billing');
     });
 
     it('returns global for empty, cross-scope, or unknown paths', () => {
       assert.equal(resolveTargetScope([]), 'global');
       assert.equal(
         resolveTargetScope([
-          'apps/services/conditioning/src/foo.ts',
-          'apps/services/strength/src/bar.ts',
+          'services/billing/src/foo.ts',
+          'services/strength/src/bar.ts',
         ]),
         'global'
       );
@@ -86,17 +86,17 @@ describe('Upstream Recall & Scope Mapping', () => {
     it('formats learnings up to 3 entries and caps insight length at 300 chars', () => {
       const longInsight = 'X'.repeat(350);
       const items = [
-        { type: 'pitfall', scope: 'conditioning', key: 'k1', insight: 'i1' },
-        { type: 'pattern', scope: 'conditioning', key: 'k2', insight: longInsight },
-        { type: 'architecture', scope: 'conditioning', key: 'k3', insight: 'i3' },
-        { type: 'preference', scope: 'conditioning', key: 'k4', insight: 'i4' },
+        { type: 'pitfall', scope: 'billing', key: 'k1', insight: 'i1' },
+        { type: 'pattern', scope: 'billing', key: 'k2', insight: longInsight },
+        { type: 'architecture', scope: 'billing', key: 'k3', insight: 'i3' },
+        { type: 'preference', scope: 'billing', key: 'k4', insight: 'i4' },
       ];
 
       const formatted = formatScopeLearnings(items);
       assert.ok(formatted.startsWith('## Institutional Memory & Scope Pitfalls'));
-      assert.ok(formatted.includes('- [pitfall] (conditioning) k1: i1'));
-      assert.ok(formatted.includes(`- [pattern] (conditioning) k2: ${'X'.repeat(300)}`));
-      assert.ok(formatted.includes('- [architecture] (conditioning) k3: i3'));
+      assert.ok(formatted.includes('- [pitfall] (billing) k1: i1'));
+      assert.ok(formatted.includes(`- [pattern] (billing) k2: ${'X'.repeat(300)}`));
+      assert.ok(formatted.includes('- [architecture] (billing) k3: i3'));
       // 4th item omitted
       assert.ok(!formatted.includes('k4'));
     });
@@ -131,21 +131,21 @@ describe('Upstream Recall & Scope Mapping', () => {
       await addLearningBatch(tmpStorePath, [
         {
           type: 'architecture',
-          scope: 'conditioning',
+          scope: 'billing',
           key: 'cond-arch-rule',
           query: 'service boundary workout plan',
-          insight: 'Conditioning must not cross boundary to strength service directly.',
+          insight: 'Billing must not cross boundary to strength service directly.',
         },
         {
           type: 'pitfall',
-          scope: 'conditioning',
+          scope: 'billing',
           key: 'cond-pitfall-rule',
           query: 'race condition lock workout',
-          insight: 'Conditioning workout increment requires optimistic lock.',
+          insight: 'Billing workout increment requires optimistic lock.',
         },
         {
           type: 'operational',
-          scope: 'conditioning',
+          scope: 'billing',
           key: 'cond-ops-rule',
           query: 'deploy migrate database',
           insight: 'Deploy migrations before service start.',
@@ -154,7 +154,7 @@ describe('Upstream Recall & Scope Mapping', () => {
 
       // Architect role: matches ['architecture', 'preference']
       const archRecall = await resolveScopeLearnings({
-        targetPaths: ['apps/services/conditioning/src/foo.ts'],
+        targetPaths: ['services/billing/src/foo.ts'],
         roleId: 'architect',
         modelProfile: 'agent-sdlc-llm',
         storePath: tmpStorePath,
@@ -166,7 +166,7 @@ describe('Upstream Recall & Scope Mapping', () => {
 
       // Hardener role: matches ['pitfall', 'pattern']
       const hardenerRecall = await resolveScopeLearnings({
-        targetPaths: ['apps/services/conditioning/src/foo.ts'],
+        targetPaths: ['services/billing/src/foo.ts'],
         roleId: 'hardener',
         modelProfile: 'agent-sdlc-llm',
         storePath: tmpStorePath,
@@ -178,7 +178,7 @@ describe('Upstream Recall & Scope Mapping', () => {
 
     it('merges candidate learnings into recall pool', async () => {
       const recall = await resolveScopeLearnings({
-        targetPaths: ['apps/services/conditioning/src/foo.ts'],
+        targetPaths: ['services/billing/src/foo.ts'],
         roleId: 'implementer',
         modelProfile: 'agent-sdlc-llm',
         storePath: tmpStorePath,
@@ -186,7 +186,7 @@ describe('Upstream Recall & Scope Mapping', () => {
         candidateLearnings: [
           {
             learning_type: 'pitfall',
-            scope: 'conditioning',
+            scope: 'billing',
             learning_key: 'cond-candidate-rule',
             query: 'candidate test',
             insight: 'Candidate learning from operator insight.',

@@ -9,7 +9,7 @@ import {
 	createMockGitCli,
 } from '../testing/test-support.mjs';
 import {
-	conditioningProposal,
+	billingProposal,
 	makeGraphFixture,
 	reachSpecApproved,
 	seedSlice4Worktree,
@@ -19,8 +19,8 @@ import {
 
 test('Slice 4 disjoint parallel tasks execute, reconcile, and reach DONE with authorized commits', async () => {
 	const surfaces = [
-		'apps/services/conditioning/src/feat1.ts',
-		'apps/services/assessment/src/feat2.ts',
+		'services/billing/src/feat1.ts',
+		'services/assessment/src/feat2.ts',
 	];
 	const fixture = makeGraphFixture('s4-disjoint-done', twoTaskScript(surfaces), { profile: 'slice4' });
 	try {
@@ -29,8 +29,8 @@ test('Slice 4 disjoint parallel tasks execute, reconcile, and reach DONE with au
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
-			allowedPathPrefixes: ['apps/services/conditioning', 'apps/services/assessment'],
+			allowedPackages: ['services/billing', 'services/assessment'],
+			allowedPathPrefixes: ['services/billing', 'services/assessment'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -103,8 +103,8 @@ test('Slice 4 disjoint parallel tasks execute, reconcile, and reach DONE with au
 
 test('Slice 4 disjoint parallel tasks without local commits halt at READY_FOR_GIT_APPROVAL', async () => {
 	const surfaces = [
-		'apps/services/conditioning/src/feat1.ts',
-		'apps/services/assessment/src/feat2.ts',
+		'services/billing/src/feat1.ts',
+		'services/assessment/src/feat2.ts',
 	];
 	const fixture = makeGraphFixture('s4-disjoint-ready', twoTaskScript(surfaces), { profile: 'slice4' });
 	try {
@@ -113,8 +113,8 @@ test('Slice 4 disjoint parallel tasks without local commits halt at READY_FOR_GI
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
-			allowedPathPrefixes: ['apps/services/conditioning', 'apps/services/assessment'],
+			allowedPackages: ['services/billing', 'services/assessment'],
+			allowedPathPrefixes: ['services/billing', 'services/assessment'],
 			createBranch: true,
 			createLocalCommits: false,
 		});
@@ -134,8 +134,8 @@ test('Slice 4 disjoint parallel tasks without local commits halt at READY_FOR_GI
 
 test('Slice 4 shared package serialization serializes kernel before consumer (AC 16)', async () => {
 	const surfaces = [
-		'packages/ddd-base/src/feat.ts',
-		'apps/services/conditioning/src/feat.ts',
+		'packages/shared-base/src/feat.ts',
+		'services/billing/src/feat.ts',
 	];
 	const fixture = makeGraphFixture('s4-shared-kernel', twoTaskScript(surfaces), { profile: 'slice4' });
 	try {
@@ -144,8 +144,8 @@ test('Slice 4 shared package serialization serializes kernel before consumer (AC
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['packages/ddd-base', 'apps/services/conditioning'],
-			allowedPathPrefixes: ['packages/ddd-base', 'apps/services/conditioning'],
+			allowedPackages: ['packages/shared-base', 'services/billing'],
+			allowedPathPrefixes: ['packages/shared-base', 'services/billing'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -162,14 +162,14 @@ test('Slice 4 shared package serialization serializes kernel before consumer (AC
 		const plan = fixture.store.getTaskPlan(fixture.runId);
 		assert.ok(plan);
 
-		// ddd-base must be serialized before conditioning
-		const dddTask = plan.tasks.find((t) => t.targetPackage === 'packages/ddd-base');
-		const conditioningTask = plan.tasks.find((t) => t.targetPackage === 'apps/services/conditioning');
+		// shared-base must be serialized before billing
+		const dddTask = plan.tasks.find((t) => t.targetPackage === 'packages/shared-base');
+		const billingTask = plan.tasks.find((t) => t.targetPackage === 'services/billing');
 		assert.ok(dddTask);
-		assert.ok(conditioningTask);
+		assert.ok(billingTask);
 		assert.equal(dddTask.integrationOrder, 0);
-		assert.equal(conditioningTask.integrationOrder, 1);
-		assert.ok(conditioningTask.dependsOn.includes(dddTask.taskId));
+		assert.equal(billingTask.integrationOrder, 1);
+		assert.ok(billingTask.dependsOn.includes(dddTask.taskId));
 	} finally {
 		fixture.close();
 	}
@@ -177,8 +177,8 @@ test('Slice 4 shared package serialization serializes kernel before consumer (AC
 
 test('Slice 4 contract producer serialization orders producer before consumer (AC 15, 16)', async () => {
 	const surfaces = [
-		'apps/services/registry/src/contracts.ts',
-		'apps/services/authentication/src/auth.ts',
+		'services/registry/src/contracts.ts',
+		'services/authentication/src/auth.ts',
 	];
 	const fixture = makeGraphFixture('s4-contract-producer', twoTaskScript(surfaces), { profile: 'slice4' });
 	try {
@@ -187,8 +187,8 @@ test('Slice 4 contract producer serialization orders producer before consumer (A
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/registry', 'apps/services/authentication'],
-			allowedPathPrefixes: ['apps/services/registry', 'apps/services/authentication'],
+			allowedPackages: ['services/registry', 'services/authentication'],
+			allowedPathPrefixes: ['services/registry', 'services/authentication'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -199,8 +199,8 @@ test('Slice 4 contract producer serialization orders producer before consumer (A
 		const plan = fixture.store.getTaskPlan(fixture.runId);
 		assert.ok(plan);
 
-		const registryTask = plan.tasks.find((t) => t.targetPackage === 'apps/services/registry');
-		const authTask = plan.tasks.find((t) => t.targetPackage === 'apps/services/authentication');
+		const registryTask = plan.tasks.find((t) => t.targetPackage === 'services/registry');
+		const authTask = plan.tasks.find((t) => t.targetPackage === 'services/authentication');
 		assert.ok(registryTask);
 		assert.ok(authTask);
 		assert.ok(registryTask.integrationOrder < authTask.integrationOrder);
@@ -211,9 +211,9 @@ test('Slice 4 contract producer serialization orders producer before consumer (A
 
 test('Slice 4 single-task backward compatibility reuses legacy worktree and identity reconcile', async () => {
 	const script = [
-		conditioningProposal(),
+		billingProposal(),
 		leanWriteAction(
-			'apps/services/conditioning/src/file.ts',
+			'services/billing/src/file.ts',
 			'export const legacy = true;\n',
 		),
 		citingSpecWriteAction(),
@@ -234,8 +234,8 @@ test('Slice 4 single-task backward compatibility reuses legacy worktree and iden
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -268,8 +268,8 @@ test('@ac AC-03 @case AC-03.2 execute_reviewer under default workflow does not d
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
 		assert.equal(terminal.state, 'READY_FOR_GIT_APPROVAL');
@@ -293,8 +293,8 @@ test('@ac AC-03 @case AC-03.2 execute_reviewer under default workflow does not d
 
 test('Slice 4 failing task verification ends FAILED without a repairer', async () => {
 	const surfaces = [
-		'apps/services/conditioning/src/feat1.ts',
-		'apps/services/assessment/src/feat2.ts',
+		'services/billing/src/feat1.ts',
+		'services/assessment/src/feat2.ts',
 	];
 	const baseCommitSha = 'a'.repeat(40);
 	const targetTreeSha = 'b'.repeat(40);
@@ -311,7 +311,7 @@ test('Slice 4 failing task verification ends FAILED without a repairer', async (
 		if (args.includes('test')) {
 			const err = new Error('Unit tests failed');
 			err.status = 1;
-			err.stdout = 'FAIL apps/services/conditioning/src/feat1.spec.ts';
+			err.stdout = 'FAIL services/billing/src/feat1.spec.ts';
 			err.stderr = '';
 			throw err;
 		}
@@ -323,8 +323,8 @@ test('Slice 4 failing task verification ends FAILED without a repairer', async (
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
-			allowedPathPrefixes: ['apps/services/conditioning', 'apps/services/assessment'],
+			allowedPackages: ['services/billing', 'services/assessment'],
+			allowedPathPrefixes: ['services/billing', 'services/assessment'],
 			maxSemanticRepairs: 0,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);

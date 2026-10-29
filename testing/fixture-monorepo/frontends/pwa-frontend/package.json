@@ -1,5 +1,5 @@
 {
-  "name": "@example/pwa-frontend",
+  "name": "@fixture/pwa-frontend",
   "scripts": {
     "build": "vite build",
     "test": "vitest run"

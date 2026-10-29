@@ -26,8 +26,8 @@ const DENYLIST = new RegExp(
 );
 
 const EXEMPT = [
-	/^testing\//,
-	/\.spec\.mjs$/,
+	// This guard names the denylist itself.
+	/^testing\/host-neutrality\.spec\.mjs$/,
 	/^docs\/specs\//,
 	/^pnpm-lock\.yaml$/,
 	/^reflections\.md$/,

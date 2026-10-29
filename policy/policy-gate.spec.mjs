@@ -15,9 +15,9 @@ test('evaluatePolicyGate passes a valid 1-task plan', () => {
 		tasks: [
 			{
 				taskId: 'task-0',
-				title: 'Conditioning refactor',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/'],
+				title: 'Billing refactor',
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 0,
@@ -37,8 +37,8 @@ test('evaluatePolicyGate passes a valid 1-task plan', () => {
 
 	const auth = {
 		runId: RUN_ID,
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning/src/'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing/src/'],
 		baseCommitSha: BASE_COMMIT_SHA,
 	};
 
@@ -57,8 +57,8 @@ test('evaluatePolicyGate passes independent multi-task plan with disjoint packag
 			{
 				taskId: 'assessment-task',
 				title: 'Assessment update',
-				targetPackage: 'apps/services/assessment',
-				pathPrefixes: ['apps/services/assessment/src/'],
+				targetPackage: 'services/assessment',
+				pathPrefixes: ['services/assessment/src/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 0,
@@ -71,14 +71,14 @@ test('evaluatePolicyGate passes independent multi-task plan with disjoint packag
 				repairCount: 0,
 			},
 			{
-				taskId: 'conditioning-task',
-				title: 'Conditioning update',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/'],
+				taskId: 'billing-task',
+				title: 'Billing update',
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 1,
-				worktreeSubdir: 'worktrees/conditioning-task',
+				worktreeSubdir: 'worktrees/billing-task',
 				baseCommitSha: BASE_COMMIT_SHA,
 				parentTreeSha: null,
 				targetTreeSha: null,
@@ -87,15 +87,15 @@ test('evaluatePolicyGate passes independent multi-task plan with disjoint packag
 				repairCount: 0,
 			},
 		],
-		integrationOrder: ['assessment-task', 'conditioning-task'],
+		integrationOrder: ['assessment-task', 'billing-task'],
 		isParallel: true,
 		createdAt: '2026-09-07T00:00:00.000Z',
 	};
 
 	const auth = {
 		runId: RUN_ID,
-		allowedPackages: ['apps/services/assessment', 'apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/assessment/src/', 'apps/services/conditioning/src/'],
+		allowedPackages: ['services/assessment', 'services/billing'],
+		allowedPathPrefixes: ['services/assessment/src/', 'services/billing/src/'],
 		baseCommitSha: BASE_COMMIT_SHA,
 	};
 
@@ -113,8 +113,8 @@ test('evaluatePolicyGate rejects cyclic task dependencies', () => {
 			{
 				taskId: 'task-a',
 				title: 'Task A',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/'],
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/'],
 				dependsOn: ['task-b'],
 				status: 'pending',
 				integrationOrder: 0,
@@ -129,8 +129,8 @@ test('evaluatePolicyGate rejects cyclic task dependencies', () => {
 			{
 				taskId: 'task-b',
 				title: 'Task B',
-				targetPackage: 'apps/services/assessment',
-				pathPrefixes: ['apps/services/assessment/src/'],
+				targetPackage: 'services/assessment',
+				pathPrefixes: ['services/assessment/src/'],
 				dependsOn: ['task-a'],
 				status: 'pending',
 				integrationOrder: 1,
@@ -164,8 +164,8 @@ test('@ac AC-05 concurrent same-package tasks return TASK_PLAN_INVALID', () => {
 			{
 				taskId: 'cond-task-1',
 				title: 'Part 1',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/feature-a/'],
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/feature-a/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 0,
@@ -180,8 +180,8 @@ test('@ac AC-05 concurrent same-package tasks return TASK_PLAN_INVALID', () => {
 			{
 				taskId: 'cond-task-2',
 				title: 'Part 2',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/feature-b/'],
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/feature-b/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 1,
@@ -208,10 +208,10 @@ test('@ac AC-05 concurrent same-package tasks return TASK_PLAN_INVALID', () => {
 
 	for (const field of ['authoredPaths', 'generatedOutputs']) {
 		const crossPackagePlan = structuredClone(samePkgPlan);
-		crossPackagePlan.tasks[1].targetPackage = 'apps/services/assessment';
-		crossPackagePlan.tasks[1].pathPrefixes = ['apps/services/assessment/src/feature-b/'];
-		crossPackagePlan.tasks[0].authoredPaths = ['apps/services/conditioning/src/feature-a.ts'];
-		crossPackagePlan.tasks[1].authoredPaths = ['apps/services/assessment/src/feature-b.ts'];
+		crossPackagePlan.tasks[1].targetPackage = 'services/assessment';
+		crossPackagePlan.tasks[1].pathPrefixes = ['services/assessment/src/feature-b/'];
+		crossPackagePlan.tasks[0].authoredPaths = ['services/billing/src/feature-a.ts'];
+		crossPackagePlan.tasks[1].authoredPaths = ['services/assessment/src/feature-b.ts'];
 		crossPackagePlan.tasks[0].generatedOutputs = [];
 		crossPackagePlan.tasks[1].generatedOutputs = [];
 		crossPackagePlan.tasks[0][field] = ['pnpm-lock.yaml'];
@@ -235,8 +235,8 @@ test('concurrent overlapping paths return TASK_PLAN_INVALID', () => {
 			{
 				taskId: 'task-parent',
 				title: 'Parent path',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/'],
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 0,
@@ -251,9 +251,9 @@ test('concurrent overlapping paths return TASK_PLAN_INVALID', () => {
 			{
 				taskId: 'task-child',
 				title: 'Child path',
-				targetPackage: 'apps/services/assessment',
+				targetPackage: 'services/assessment',
 				// Artificial overlap to test detection
-				pathPrefixes: ['apps/services/conditioning/src/sub/'],
+				pathPrefixes: ['services/billing/src/sub/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 1,
@@ -280,7 +280,7 @@ test('concurrent overlapping paths return TASK_PLAN_INVALID', () => {
 });
 
 test('evaluatePolicyGate enforces shared package serialization (AC 16)', () => {
-	// conditioning depends on ddd-base, but plan does not declare dependency
+	// billing depends on shared-base, but plan does not declare dependency
 	const unsharedPlan = {
 		schemaVersion: '1.0.0',
 		runId: RUN_ID,
@@ -288,14 +288,14 @@ test('evaluatePolicyGate enforces shared package serialization (AC 16)', () => {
 		baseCommitSha: BASE_COMMIT_SHA,
 		tasks: [
 			{
-				taskId: 'conditioning-task',
-				title: 'Conditioning',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/'],
-				dependsOn: [], // Missing dependency on ddd-base-task!
+				taskId: 'billing-task',
+				title: 'Billing',
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/'],
+				dependsOn: [], // Missing dependency on shared-base-task!
 				status: 'pending',
 				integrationOrder: 0,
-				worktreeSubdir: 'worktrees/conditioning-task',
+				worktreeSubdir: 'worktrees/billing-task',
 				baseCommitSha: BASE_COMMIT_SHA,
 				parentTreeSha: null,
 				targetTreeSha: null,
@@ -304,14 +304,14 @@ test('evaluatePolicyGate enforces shared package serialization (AC 16)', () => {
 				repairCount: 0,
 			},
 			{
-				taskId: 'ddd-base-task',
+				taskId: 'shared-base-task',
 				title: 'DDD Base',
-				targetPackage: 'packages/ddd-base',
-				pathPrefixes: ['packages/ddd-base/src/'],
+				targetPackage: 'packages/shared-base',
+				pathPrefixes: ['packages/shared-base/src/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 1,
-				worktreeSubdir: 'worktrees/ddd-base-task',
+				worktreeSubdir: 'worktrees/shared-base-task',
 				baseCommitSha: BASE_COMMIT_SHA,
 				parentTreeSha: null,
 				targetTreeSha: null,
@@ -320,7 +320,7 @@ test('evaluatePolicyGate enforces shared package serialization (AC 16)', () => {
 				repairCount: 0,
 			},
 		],
-		integrationOrder: ['conditioning-task', 'ddd-base-task'],
+		integrationOrder: ['billing-task', 'shared-base-task'],
 		isParallel: true,
 		createdAt: '2026-09-07T00:00:00.000Z',
 	};
@@ -334,7 +334,7 @@ test('evaluatePolicyGate enforces shared package serialization (AC 16)', () => {
 });
 
 test('evaluatePolicyGate enforces contract producer/consumer serialization (AC 15, 16)', () => {
-	// conditioning touches contracts, gateway consumes contracts, but gateway does not depend on conditioning
+	// billing touches contracts, gateway consumes contracts, but gateway does not depend on billing
 	const uncontractedPlan = {
 		schemaVersion: '1.0.0',
 		runId: RUN_ID,
@@ -344,8 +344,8 @@ test('evaluatePolicyGate enforces contract producer/consumer serialization (AC 1
 			{
 				taskId: 'api-gateway-task',
 				title: 'Gateway',
-				targetPackage: 'apps/services/api-gateway',
-				pathPrefixes: ['apps/services/api-gateway/src/'],
+				targetPackage: 'services/api-gateway',
+				pathPrefixes: ['services/api-gateway/src/'],
 				dependsOn: [], // Missing dependency on producer!
 				status: 'pending',
 				integrationOrder: 0,
@@ -358,14 +358,14 @@ test('evaluatePolicyGate enforces contract producer/consumer serialization (AC 1
 				repairCount: 0,
 			},
 			{
-				taskId: 'conditioning-task',
-				title: 'Conditioning contracts',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/contracts/index.ts'],
+				taskId: 'billing-task',
+				title: 'Billing contracts',
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/contracts/index.ts'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 1,
-				worktreeSubdir: 'worktrees/conditioning-task',
+				worktreeSubdir: 'worktrees/billing-task',
 				baseCommitSha: BASE_COMMIT_SHA,
 				parentTreeSha: null,
 				targetTreeSha: null,
@@ -374,7 +374,7 @@ test('evaluatePolicyGate enforces contract producer/consumer serialization (AC 1
 				repairCount: 0,
 			},
 		],
-		integrationOrder: ['api-gateway-task', 'conditioning-task'],
+		integrationOrder: ['api-gateway-task', 'billing-task'],
 		isParallel: true,
 		createdAt: '2026-09-07T00:00:00.000Z',
 	};
@@ -435,8 +435,8 @@ test('evaluatePolicyGate verifies topological consistency in integrationOrder', 
 			{
 				taskId: 'task-a',
 				title: 'Task A',
-				targetPackage: 'apps/services/conditioning',
-				pathPrefixes: ['apps/services/conditioning/src/'],
+				targetPackage: 'services/billing',
+				pathPrefixes: ['services/billing/src/'],
 				dependsOn: [],
 				status: 'pending',
 				integrationOrder: 1, // Bad order
@@ -451,8 +451,8 @@ test('evaluatePolicyGate verifies topological consistency in integrationOrder', 
 			{
 				taskId: 'task-b',
 				title: 'Task B',
-				targetPackage: 'apps/services/assessment',
-				pathPrefixes: ['apps/services/assessment/src/'],
+				targetPackage: 'services/assessment',
+				pathPrefixes: ['services/assessment/src/'],
 				dependsOn: ['task-a'],
 				status: 'pending',
 				integrationOrder: 0, // Bad order

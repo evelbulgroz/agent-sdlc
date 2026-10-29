@@ -20,7 +20,7 @@ export function cleanupRun(runId) {
 
 export function seedSlice4CrashWorktree(dir) {
 	seedCitingSpecs(dir);
-	for (const packagePath of ['packages/ddd-base', 'apps/services/conditioning']) {
+	for (const packagePath of ['packages/shared-base', 'services/billing']) {
 		seedWorkspacePackageManifest(dir, packagePath);
 	}
 }

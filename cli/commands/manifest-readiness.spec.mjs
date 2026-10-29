@@ -120,16 +120,16 @@ test('@ac AC-01 oversized readiness fails before run creation or model dispatch'
 
 test('@ac AC-16 manifest-less planning preserves executable verification and draft criteria', () => {
 	const draft = completeSpecJson({
-		goal: 'Update the conditioning domain.',
-		touchedSurfaces: ['apps/services/conditioning/src/conditioning/domain'],
+		goal: 'Update the billing domain.',
+		touchedSurfaces: ['services/billing/src/billing/domain'],
 	});
 	const plan = planTaskDag({
 		draft,
 		authorization: {
 			runId: `2026-09-29-manifestless-${crypto.randomUUID().slice(0, 8)}`,
 			baseCommitSha: 'a'.repeat(40),
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning/src/conditioning/domain'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing/src/billing/domain'],
 		},
 		now: () => '2026-09-29T00:00:00.000Z',
 	});
@@ -144,7 +144,7 @@ test('@ac AC-16 manifest-less planning preserves executable verification and dra
 	assert.deepEqual(context.verificationCommand, [
 		'pnpm',
 		'--filter',
-		'@example/conditioning-service',
+		'@fixture/billing-service',
 		'test',
 	]);
 });

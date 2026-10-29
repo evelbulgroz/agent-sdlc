@@ -63,7 +63,7 @@ const failPreflight = args.has('--fail-preflight') || failPreflightCalls > 0;
 const failReview = args.has('--fail-review');
 
 const surfaces = isSlice4
-	? ['packages/ddd-base', 'apps/services/conditioning']
+	? ['packages/shared-base', 'services/billing']
 	: undefined;
 
 const governor = governorError
@@ -78,7 +78,7 @@ const gitCli = isSlice4
 	? createMockGitCli({
 			onWorktreeAdd: (dir) => {
 				seedCitingSpecs(dir);
-				for (const packagePath of ['packages/ddd-base', 'apps/services/conditioning']) {
+				for (const packagePath of ['packages/shared-base', 'services/billing']) {
 					seedWorkspacePackageManifest(dir, packagePath);
 				}
 			},

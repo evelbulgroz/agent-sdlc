@@ -4,14 +4,14 @@ import { validateDagTask, validateReconciliationRecord, validateTaskPlan } from 
 
 test('DAG task, task plan, and reconciliation record contracts validate strictly', () => {
 	const validTask = {
-		taskId: 'conditioning-task',
-		title: 'Update conditioning service log model',
-		targetPackage: 'apps/services/conditioning',
-		pathPrefixes: ['apps/services/conditioning/src/'],
+		taskId: 'billing-task',
+		title: 'Update billing service log model',
+		targetPackage: 'services/billing',
+		pathPrefixes: ['services/billing/src/'],
 		dependsOn: [],
 		status: 'pending',
 		integrationOrder: 0,
-		worktreeSubdir: 'worktrees/conditioning-task',
+		worktreeSubdir: 'worktrees/billing-task',
 		baseCommitSha: 'a'.repeat(40),
 		parentTreeSha: null,
 		targetTreeSha: null,
@@ -20,7 +20,7 @@ test('DAG task, task plan, and reconciliation record contracts validate strictly
 		repairCount: 0,
 	};
 	const parsedTask = validateDagTask(validTask);
-	assert.equal(parsedTask.taskId, 'conditioning-task');
+	assert.equal(parsedTask.taskId, 'billing-task');
 	assert.equal(parsedTask.status, 'pending');
 
 	assert.throws(() => validateDagTask(null), /Invalid DagTask/);
@@ -35,7 +35,7 @@ test('DAG task, task plan, and reconciliation record contracts validate strictly
 		planPolicyHash: 'b'.repeat(64),
 		baseCommitSha: 'a'.repeat(40),
 		tasks: [validTask],
-		integrationOrder: ['conditioning-task'],
+		integrationOrder: ['billing-task'],
 		isParallel: false,
 		createdAt: new Date().toISOString(),
 	};
@@ -51,7 +51,7 @@ test('DAG task, task plan, and reconciliation record contracts validate strictly
 	const validReconcile = {
 		reconciliationId: 'rec-12345678',
 		runId: '2026-09-07-cross-service',
-		integrationOrder: ['conditioning-task'],
+		integrationOrder: ['billing-task'],
 		reconciledTreeSha: 'c'.repeat(40),
 		status: 'RECONCILIATION_COMPLETED',
 		conflictDetails: null,

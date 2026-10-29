@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/billing-service",
+  "scripts": {
+    "test": "pnpm test"
+  },
+  "dependencies": {
+    "@fixture/shared-base": "workspace:*"
+  }
+}

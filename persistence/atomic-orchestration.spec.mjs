@@ -241,7 +241,7 @@ test('high-risk review must be explicitly approved before reconciliation continu
 				taskId: 'auth-task',
 				sliceId: 'auth-slice',
 				targetTreeSha: 'a'.repeat(40),
-				pathPrefixes: ['apps/services/authentication'],
+				pathPrefixes: ['services/authentication'],
 			},
 		],
 	});

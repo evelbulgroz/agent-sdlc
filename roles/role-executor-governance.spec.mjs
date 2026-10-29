@@ -281,7 +281,7 @@ test('AC-12 / AC-21: role executor resolves phase strategies, tier floors, and f
 	}
 });
 
-test('@ac AC-03 @case AC-03.1 example:conditioning-specifier-synthesis-tier1-churn invariant graduation test', () => {
+test('@ac AC-03 @case AC-03.1 example:billing-specifier-synthesis-tier1-churn invariant graduation test', () => {
 	const { role: specifierRole } = new RoleRegistry({ rootDir: REPOSITORY_ROOT }).loadRole(
 		'specifier',
 	);

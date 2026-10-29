@@ -28,21 +28,21 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 
 		// Task 1 model governor responses, then Task 2 responses
 		const governor = new FakeModelGovernor([
-			leanWriteAction('packages/ddd-base/src/entity.ts', 'export class BaseEntity {}'),
+			leanWriteAction('packages/shared-base/src/entity.ts', 'export class BaseEntity {}'),
 			{
 				action: {
 					kind: 'complete',
-					summary: 'Done packages/ddd-base',
+					summary: 'Done packages/shared-base',
 				},
 			},
 			leanWriteAction(
-				'apps/services/conditioning/src/service.ts',
+				'services/billing/src/service.ts',
 				'export class Service {}',
 			),
 			{
 				action: {
 					kind: 'complete',
-					summary: 'Done conditioning',
+					summary: 'Done billing',
 				},
 			},
 		]);
@@ -66,9 +66,9 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 			}
 			if (args[0] === 'diff-index') {
 				if (args[3] === baseTreeSha) {
-					return 'packages/ddd-base/src/entity.ts\n';
+					return 'packages/shared-base/src/entity.ts\n';
 				}
-				return 'apps/services/conditioning/src/service.ts\n';
+				return 'services/billing/src/service.ts\n';
 			}
 			if (args[0] === 'write-tree') {
 				if (gitCalls.filter((c) => c.args[0] === 'write-tree').length === 1) {
@@ -89,9 +89,9 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 			tasks: [
 				{
 					taskId: 'task-ddd',
-					title: 'Update ddd-base',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base'],
+					title: 'Update shared-base',
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -106,9 +106,9 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 				},
 				{
 					taskId: 'task-cond',
-					title: 'Update conditioning service',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Update billing service',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: ['task-ddd'],
 					status: 'pending',
 					integrationOrder: 1,
@@ -141,8 +141,8 @@ test('TaskExecutor executes multi-task DAG with dependent tasks and synthetic co
 		const result = await executor.executeTaskPlan({
 			taskPlan,
 			authorization: {
-				allowedPackages: ['packages/ddd-base', 'apps/services/conditioning'],
-				allowedPathPrefixes: ['packages/ddd-base', 'apps/services/conditioning'],
+				allowedPackages: ['packages/shared-base', 'services/billing'],
+				allowedPathPrefixes: ['packages/shared-base', 'services/billing'],
 			},
 			snapshot: { taskPlanFrozen: true },
 			specSummary: 'Test multi-task DAG',

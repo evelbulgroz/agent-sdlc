@@ -8,11 +8,11 @@ import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { cleanupRun, collectLocalImportGraph } from '../testing/recovery-fixtures.mjs';
 import { trackTestRun } from '../testing/test-support.mjs';
 
-const IS_MONOREPO = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const IS_MONOREPO = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
 const PRELOAD_REL = IS_MONOREPO
-	? './packages/agent-sdlc/testing/no-network-preload.mjs'
+	? './packages/engine/testing/no-network-preload.mjs'
 	: './testing/no-network-preload.mjs';
-const CLI_REL = IS_MONOREPO ? 'packages/agent-sdlc/cli/cli.ts' : 'cli/cli.ts';
+const CLI_REL = IS_MONOREPO ? 'packages/engine/cli/cli.ts' : 'cli/cli.ts';
 
 test('production CLI blocks with valid JSON and zero network when no route is enabled', async () => {
 	const testSlug = `sdlc-no-network-${trackTestRun(crypto.randomUUID().slice(0, 8))}`;
@@ -88,7 +88,7 @@ test('production CLI import graph excludes testing adapters and limits providers
 		false,
 	);
 	for (const file of relative.filter((item) => /adapter|provider/i.test(item))) {
-		const normalized = file.replace(/^packages\/agent-sdlc\//, '');
+		const normalized = file.replace(/^packages\/engine\//, '');
 		assert.ok(
 			file.startsWith('packages/model-usage/') ||
 				normalized === 'adapters/model-governor.ts' ||

@@ -7,8 +7,8 @@ import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { listBoundedPlanningFiles } from '../policy/canary-planning-files.ts';
 import { currentCanaryBindings } from '../policy/reliability/canary.ts';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 
 const PILOT_MODULES = Object.freeze([
 	{
@@ -58,7 +58,7 @@ test('pnpm --filter @evelbulgroz/agent-sdlc run typecheck and the pilot test sui
 
 	const env = { ...process.env };
 	delete env.NODE_TEST_CONTEXT;
-	const specPrefix = IS_STANDALONE ? '' : 'packages/agent-sdlc/';
+	const specPrefix = IS_STANDALONE ? '' : 'packages/engine/';
 	const testSuite = spawnSync(
 		process.execPath,
 		[
@@ -85,7 +85,7 @@ test('pnpm --filter @evelbulgroz/agent-sdlc run typecheck and the pilot test sui
 test('the computed canary bindings include policy/contracts/dag-schema.ts', () => {
 	const bounded = listBoundedPlanningFiles(REPOSITORY_ROOT);
 	assert.equal(
-		bounded.includes('packages/agent-sdlc/policy/contracts/dag-schema.ts') ||
+		bounded.includes('packages/engine/policy/contracts/dag-schema.ts') ||
 		bounded.includes('policy/contracts/dag-schema.ts'),
 		true,
 	);

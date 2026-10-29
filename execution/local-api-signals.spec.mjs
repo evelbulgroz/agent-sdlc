@@ -47,9 +47,9 @@ test('Quantity local API analysis ignores unrelated value and unit properties', 
 
 test('Quantity local API analysis rejects named imports from noncanonical modules', () => {
 	for (const moduleSpecifier of [
-		'@example/quantity',
+		'@fixture/quantity',
 		'../../libraries/quantity/quantity.js',
-		'@example/ddd-base',
+		'@fixture/shared-base',
 	]) {
 		const result = analyzeLocalQuantityApi(`
 			import { Quantity } from '${moduleSpecifier}';
@@ -84,11 +84,11 @@ test('Quantity local API analysis accepts an aliased canonical named import', ()
 
 test('Quantity local API analysis checks default sources and accepts type-only canonical imports', () => {
 	const invalid = analyzeLocalQuantityApi(`
-		import Quantity from '@example/ddd-base';
+		import Quantity from '@fixture/shared-base';
 		const ascent = Quantity.create(5, 'm');
 	`);
 	assert.equal(invalid.violations[0]?.kind, 'quantity-import-source');
-	assert.equal(invalid.violations[0]?.moduleSpecifier, '@example/ddd-base');
+	assert.equal(invalid.violations[0]?.moduleSpecifier, '@fixture/shared-base');
 
 	const typeOnly = analyzeLocalQuantityApi(`
 		import type { Quantity } from '@evelbulgroz/quantity-class';

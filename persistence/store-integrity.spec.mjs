@@ -25,8 +25,8 @@ test('@ac AC-03 @case AC-03.2 runtime store reconciliation validates v3 authoriz
 			generation: 0,
 			baseCommitSha: 'a'.repeat(40),
 			targetTreeSha: 'b'.repeat(40),
-			scopeFingerprints: { 'apps/services/conditioning': 'c'.repeat(64) },
-			taskOwnedPaths: ['apps/services/conditioning/**'],
+			scopeFingerprints: { 'services/billing': 'c'.repeat(64) },
+			taskOwnedPaths: ['services/billing/**'],
 			materializedAt: new Date().toISOString(),
 		});
 
@@ -41,8 +41,8 @@ test('@ac AC-03 @case AC-03.2 runtime store reconciliation validates v3 authoriz
 			generation: 2,
 			baseCommitSha: 'a'.repeat(40),
 			targetTreeSha: 'b'.repeat(40),
-			scopeFingerprints: { 'apps/services/conditioning': 'c'.repeat(64) },
-			taskOwnedPaths: ['apps/services/conditioning/**'],
+			scopeFingerprints: { 'services/billing': 'c'.repeat(64) },
+			taskOwnedPaths: ['services/billing/**'],
 			materializedAt: new Date().toISOString(),
 		});
 		assert.throws(
@@ -96,8 +96,8 @@ test('@ac AC-03 @case AC-03.3 runtime store accepts a contiguous generation suff
 				generation,
 				baseCommitSha: 'a'.repeat(40),
 				targetTreeSha: 'b'.repeat(40),
-				scopeFingerprints: { 'apps/services/conditioning': 'c'.repeat(64) },
-				taskOwnedPaths: ['apps/services/conditioning/**'],
+				scopeFingerprints: { 'services/billing': 'c'.repeat(64) },
+				taskOwnedPaths: ['services/billing/**'],
 				materializedAt: new Date().toISOString(),
 			});
 		}
@@ -109,8 +109,8 @@ test('@ac AC-03 @case AC-03.3 runtime store accepts a contiguous generation suff
 			generation: 4,
 			baseCommitSha: 'a'.repeat(40),
 			targetTreeSha: 'b'.repeat(40),
-			scopeFingerprints: { 'apps/services/conditioning': 'c'.repeat(64) },
-			taskOwnedPaths: ['apps/services/conditioning/**'],
+			scopeFingerprints: { 'services/billing': 'c'.repeat(64) },
+			taskOwnedPaths: ['services/billing/**'],
 			materializedAt: new Date().toISOString(),
 		});
 		assert.throws(

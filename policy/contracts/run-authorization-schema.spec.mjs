@@ -10,8 +10,8 @@ test('run authorization contracts validate permissions, path boundaries, and imm
 		approvedPlanPolicyHash: 'b'.repeat(64),
 		repositoryId: 'agent-sdlc',
 		baseCommitSha: 'c'.repeat(40),
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning/src/'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing/src/'],
 		allowedOperations: {
 			editIsolatedWorktree: true,
 			runAllowlistedCommands: true,

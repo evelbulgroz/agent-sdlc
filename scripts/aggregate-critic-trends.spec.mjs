@@ -107,7 +107,7 @@ test('aggregateCriticTrends proposes a graduation after three distinct runs', ()
 				violations: [
 					{
 						boundary: 'service-boundary-internal-import',
-						file: 'apps/services/example/src/example.ts',
+						file: 'services/example/src/example.ts',
 						description: 'Use the contracts entrypoint.',
 						severity: 'P1',
 					},

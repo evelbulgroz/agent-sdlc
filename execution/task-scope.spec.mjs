@@ -10,13 +10,13 @@ import {
 
 test('task read scope permits package prior art while writes remain task-authored', () => {
 	const task = {
-		targetPackage: 'apps/services/conditioning',
+		targetPackage: 'services/billing',
 		pathPrefixes: [
-			'apps/services/conditioning/src/conditioning/domain/elevation-summary.value-object.ts',
+			'services/billing/src/billing/domain/elevation-summary.value-object.ts',
 		],
 	};
 
-	assert.deepEqual(taskReadPathPrefixes(task), ['apps/services/conditioning']);
+	assert.deepEqual(taskReadPathPrefixes(task), ['services/billing']);
 	assert.deepEqual(taskAuthoredWritePaths({
 		...task,
 		authoredPaths: task.pathPrefixes,
@@ -26,31 +26,31 @@ test('task read scope permits package prior art while writes remain task-authore
 test('collectCumulativeTaskPackages resolves targetPackage, upstream task dependencies, and run authorization', () => {
 	const taskPlan = {
 		tasks: [
-			{ taskId: 'task-1', targetPackage: 'apps/services/conditioning' },
+			{ taskId: 'task-1', targetPackage: 'services/billing' },
 			{ taskId: 'task-2', targetPackage: 'packages/managed-stateful-component', dependsOn: ['task-1'] },
-			{ taskId: 'task-3', targetPackage: 'apps/frontends/example-pwa-frontend', dependsOn: ['task-2'] },
+			{ taskId: 'task-3', targetPackage: 'frontends/example-pwa-frontend', dependsOn: ['task-2'] },
 		],
 	};
 	const authorization = {
 		allowedPackages: [
-			'apps/frontends/example-pwa-frontend',
-			'apps/services/conditioning',
+			'frontends/example-pwa-frontend',
+			'services/billing',
 			'packages/managed-stateful-component',
 		],
 	};
 
 	const packages = collectCumulativeTaskPackages(taskPlan.tasks[2], taskPlan, authorization);
 	assert.deepEqual(packages, [
-		'apps/frontends/example-pwa-frontend',
-		'apps/services/conditioning',
+		'frontends/example-pwa-frontend',
 		'packages/managed-stateful-component',
+		'services/billing',
 	]);
 
 	// Without authorization, upstream dependsOn are still collected
 	const upstreamOnly = collectCumulativeTaskPackages(taskPlan.tasks[1], taskPlan, null);
 	assert.deepEqual(upstreamOnly, [
-		'apps/services/conditioning',
 		'packages/managed-stateful-component',
+		'services/billing',
 	]);
 });
 
@@ -82,18 +82,18 @@ test('scopeSpecSummaryForTask scopes touched surfaces to task pathPrefixes and p
 	const task = {
 		taskId: 'example-pwa-frontend-task',
 		title: 'PWA Frontend distance display',
-		targetPackage: 'apps/frontends/example-pwa-frontend',
-		pathPrefixes: ['apps/frontends/example-pwa-frontend'],
+		targetPackage: 'frontends/example-pwa-frontend',
+		pathPrefixes: ['frontends/example-pwa-frontend'],
 	};
 
 	const specSummary = [
 		'Goal: Add distance source indicators',
 		'',
 		'Touched Surfaces:',
-		'apps/services/conditioning/src/derive-effective-distance.helper.ts',
-		'apps/services/conditioning/src/conditioning.entity.ts',
-		'apps/frontends/example-pwa-frontend/src/domain/conditioning-log.ts',
-		'apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
+		'services/billing/src/derive-effective-distance.helper.ts',
+		'services/billing/src/billing.entity.ts',
+		'frontends/example-pwa-frontend/src/domain/billing-log.ts',
+		'frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx',
 		'',
 		'Invariants & Constraints:',
 		'Preserve bounded context separation',
@@ -102,18 +102,18 @@ test('scopeSpecSummaryForTask scopes touched surfaces to task pathPrefixes and p
 	const scoped = scopeSpecSummaryForTask({ specSummary, task });
 
 	assert.match(scoped, /### Current Task Scope: example-pwa-frontend-task/);
-	assert.match(scoped, /Target Package: apps\/frontends\/example-pwa-frontend/);
-	assert.match(scoped, /- apps\/frontends\/example-pwa-frontend/);
+	assert.match(scoped, /Target Package: frontends\/example-pwa-frontend/);
+	assert.match(scoped, /- frontends\/example-pwa-frontend/);
 	assert.match(scoped, /Package-local files may be inspected for prior art/);
 	assert.match(scoped, /do NOT modify files outside the authorized mutation path prefixes/);
 
 	// Must include frontend touched surfaces
-	assert.ok(scoped.includes('apps/frontends/example-pwa-frontend/src/domain/conditioning-log.ts'));
-	assert.ok(scoped.includes('apps/frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx'));
+	assert.ok(scoped.includes('frontends/example-pwa-frontend/src/domain/billing-log.ts'));
+	assert.ok(scoped.includes('frontends/example-pwa-frontend/src/ui/SessionMetadata.tsx'));
 
-	// Must NOT include conditioning service surfaces in touched surfaces
-	assert.ok(!scoped.includes('apps/services/conditioning/src/derive-effective-distance.helper.ts'));
-	assert.ok(!scoped.includes('apps/services/conditioning/src/conditioning.entity.ts'));
+	// Must NOT include billing service surfaces in touched surfaces
+	assert.ok(!scoped.includes('services/billing/src/derive-effective-distance.helper.ts'));
+	assert.ok(!scoped.includes('services/billing/src/billing.entity.ts'));
 
 	// Preserves other sections
 	assert.ok(scoped.includes('Goal: Add distance source indicators'));

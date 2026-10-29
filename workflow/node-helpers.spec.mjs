@@ -19,8 +19,8 @@ test('@ac AC-03 @case AC-03.1 graph getAndValidateAuthorization allows in-flight
 			runId: fixture.runId,
 			approvedSpecHash,
 			baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning/'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing/'],
 		});
 		fixture.store.saveAuthorization(auth);
 

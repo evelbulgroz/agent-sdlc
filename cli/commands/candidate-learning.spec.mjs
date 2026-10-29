@@ -76,7 +76,7 @@ test('CLI post-mortem command records candidate learning and drains outbox', asy
 				'--learning-insight',
 				'TypeORM rollback requires queryRunner release in finally block',
 				'--learning-scope',
-				'conditioning',
+				'billing',
 				'--json',
 			],
 			{ rootDir: REPOSITORY_ROOT },
@@ -84,7 +84,7 @@ test('CLI post-mortem command records candidate learning and drains outbox', asy
 
 		assert.equal(result.exitCode, 0, JSON.stringify(result.result));
 		assert.equal(result.result.ok, true);
-		assert.match(result.result.learning.key, /^conditioning-/);
+		assert.match(result.result.learning.key, /^billing-/);
 		assert.equal(result.result.learning.confidence, 9);
 
 		const checkStore = new RuntimeStore(paths.databasePath);

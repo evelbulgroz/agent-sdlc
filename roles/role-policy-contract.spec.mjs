@@ -27,9 +27,9 @@ test('live role policies retain architecture prevention and independent detectio
 	const permanentArchitectureContracts = [
 		/UI -> application use case -> port -> gateway adapter/i,
 		/generated gateway client/i,
-		/PWA must never import @example\/\*-service packages or service \/contracts/i,
+		/PWA must never import @fixture\/\*-service packages or service \/contracts/i,
 		/controller -> application use case -> domain aggregate -> adapter/i,
-		/@example\/<service>-service\/contracts/i,
+		/@fixture\/<service>-service\/contracts/i,
 	];
 
 	assertContainsAll(implementer, permanentArchitectureContracts, 'implementer policy');
@@ -41,7 +41,7 @@ test('@ac AC-03 @case AC-03.1 live implementer and backend-scoped reviewer polic
 	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
 	const implementer = registry.loadRole('implementer').promptPolicy;
 	const backendReviewer = registry.loadRole('reviewer', {
-		authoredPaths: ['apps/services/conditioning/src/main.ts'],
+		authoredPaths: ['services/billing/src/main.ts'],
 	}).promptPolicy;
 
 	const dualEnforcementContracts = [

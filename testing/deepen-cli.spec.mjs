@@ -11,8 +11,8 @@ import {
 } from './navigability-support.mjs';
 import { findLeakedTestRunArtifacts } from './test-support.mjs';
 
-const AGENT_SDLC_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const AGENT_SDLC_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 function filesUnder(directory) {
@@ -110,7 +110,7 @@ test('@ac AC-05 @case AC-05.2 the exceptions file names no CLI-area path', () =>
 		'cli/host-invocation.spec.mjs',
 		'cli/progress.spec.mjs',
 	]) {
-		banned.add(path.join('packages/agent-sdlc', name));
+		banned.add(path.join('packages/engine', name));
 	}
 	for (const rel of banned) {
 		assert.equal(Object.hasOwn(exceptions, rel), false, rel);

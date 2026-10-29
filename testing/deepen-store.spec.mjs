@@ -8,14 +8,14 @@ import { fileURLToPath } from 'node:url';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'))
+const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/engine'))
 	? PACKAGE_ROOT
 	: path.resolve(PACKAGE_ROOT, '../../..');
 const PERSISTENCE = path.join(PACKAGE_ROOT, 'persistence');
 
 function resolvePath(rel) {
 	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
-	return path.join(PACKAGE_ROOT, rel.replace(/^packages\/agent-sdlc\//, ''));
+	return path.join(PACKAGE_ROOT, rel.replace(/^packages\/engine\//, ''));
 }
 
 const FROZEN_PROTOTYPE_NAMES = [
@@ -117,52 +117,52 @@ const FROZEN_PROTOTYPE_NAMES = [
 ];
 
 const PRODUCTION = [
-	'packages/agent-sdlc/persistence/runtime-store.ts',
-	'packages/agent-sdlc/persistence/store-migrations.ts',
-	'packages/agent-sdlc/persistence/store-integrity.ts',
-	'packages/agent-sdlc/persistence/run-ledger.ts',
-	'packages/agent-sdlc/persistence/checkpoint-records.ts',
-	'packages/agent-sdlc/persistence/delivery-records.ts',
-	'packages/agent-sdlc/persistence/review-records.ts',
-	'packages/agent-sdlc/persistence/generation-records.ts',
-	'packages/agent-sdlc/persistence/task-plan-records.ts',
-	'packages/agent-sdlc/persistence/interrupt-records.ts',
-	'packages/agent-sdlc/persistence/model-operation-records.ts',
-	'packages/agent-sdlc/persistence/projection-records.ts',
-	'packages/agent-sdlc/persistence/learning-records.ts',
-	'packages/agent-sdlc/persistence/friction-records.ts',
-	'packages/agent-sdlc/persistence/migrations/baseline-schema.ts',
-	'packages/agent-sdlc/persistence/migrations/upgrades-v1-v7.ts',
-	'packages/agent-sdlc/persistence/migrations/upgrades-v8-v13.ts',
+	'packages/engine/persistence/runtime-store.ts',
+	'packages/engine/persistence/store-migrations.ts',
+	'packages/engine/persistence/store-integrity.ts',
+	'packages/engine/persistence/run-ledger.ts',
+	'packages/engine/persistence/checkpoint-records.ts',
+	'packages/engine/persistence/delivery-records.ts',
+	'packages/engine/persistence/review-records.ts',
+	'packages/engine/persistence/generation-records.ts',
+	'packages/engine/persistence/task-plan-records.ts',
+	'packages/engine/persistence/interrupt-records.ts',
+	'packages/engine/persistence/model-operation-records.ts',
+	'packages/engine/persistence/projection-records.ts',
+	'packages/engine/persistence/learning-records.ts',
+	'packages/engine/persistence/friction-records.ts',
+	'packages/engine/persistence/migrations/baseline-schema.ts',
+	'packages/engine/persistence/migrations/upgrades-v1-v7.ts',
+	'packages/engine/persistence/migrations/upgrades-v8-v13.ts',
 ];
 
 const SPECS = [
-	'packages/agent-sdlc/persistence/runtime-store.spec.mjs',
-	'packages/agent-sdlc/persistence/store-migrations.spec.mjs',
-	'packages/agent-sdlc/persistence/store-integrity.spec.mjs',
-	'packages/agent-sdlc/persistence/run-ledger.spec.mjs',
-	'packages/agent-sdlc/persistence/checkpoint-records.spec.mjs',
-	'packages/agent-sdlc/persistence/delivery-records.spec.mjs',
-	'packages/agent-sdlc/persistence/review-records.spec.mjs',
-	'packages/agent-sdlc/persistence/generation-records.spec.mjs',
-	'packages/agent-sdlc/persistence/task-plan-records.spec.mjs',
-	'packages/agent-sdlc/persistence/interrupt-records.spec.mjs',
-	'packages/agent-sdlc/persistence/model-operation-records.spec.mjs',
-	'packages/agent-sdlc/persistence/projection-records.spec.mjs',
-	'packages/agent-sdlc/persistence/learning-records.spec.mjs',
-	'packages/agent-sdlc/persistence/friction-records.spec.mjs',
-	'packages/agent-sdlc/persistence/migrations/baseline-schema.spec.mjs',
-	'packages/agent-sdlc/persistence/migrations/upgrades-v1-v7.spec.mjs',
-	'packages/agent-sdlc/persistence/migrations/upgrades-v8-v13.spec.mjs',
-	'packages/agent-sdlc/workflow/fleet.spec.mjs',
-	'packages/agent-sdlc/testing/deepen-store.spec.mjs',
+	'packages/engine/persistence/runtime-store.spec.mjs',
+	'packages/engine/persistence/store-migrations.spec.mjs',
+	'packages/engine/persistence/store-integrity.spec.mjs',
+	'packages/engine/persistence/run-ledger.spec.mjs',
+	'packages/engine/persistence/checkpoint-records.spec.mjs',
+	'packages/engine/persistence/delivery-records.spec.mjs',
+	'packages/engine/persistence/review-records.spec.mjs',
+	'packages/engine/persistence/generation-records.spec.mjs',
+	'packages/engine/persistence/task-plan-records.spec.mjs',
+	'packages/engine/persistence/interrupt-records.spec.mjs',
+	'packages/engine/persistence/model-operation-records.spec.mjs',
+	'packages/engine/persistence/projection-records.spec.mjs',
+	'packages/engine/persistence/learning-records.spec.mjs',
+	'packages/engine/persistence/friction-records.spec.mjs',
+	'packages/engine/persistence/migrations/baseline-schema.spec.mjs',
+	'packages/engine/persistence/migrations/upgrades-v1-v7.spec.mjs',
+	'packages/engine/persistence/migrations/upgrades-v8-v13.spec.mjs',
+	'packages/engine/workflow/fleet.spec.mjs',
+	'packages/engine/testing/deepen-store.spec.mjs',
 ];
 
 const EXCEPTION_PATHS = [
 	...PRODUCTION,
 	...SPECS,
-	'packages/agent-sdlc/testing/legacy-store-schemas.mjs',
-	'packages/agent-sdlc/testing/navigability-exceptions.json',
+	'packages/engine/testing/legacy-store-schemas.mjs',
+	'packages/engine/testing/navigability-exceptions.json',
 ];
 
 const SQL_OWNERS = PRODUCTION.filter((rel) => !rel.endsWith('/runtime-store.ts'));
@@ -196,9 +196,9 @@ test('@ac AC-05 @case AC-05.2 production persistence modules do not import the s
 	// Specs under persistence/ open RuntimeStore, including the pre-existing
 	// langgraph checkpointer spec and the migration specs. The import ban is
 	// the production module boundary.
-	const sources = productionSources(PERSISTENCE, 'packages/agent-sdlc/persistence', []);
+	const sources = productionSources(PERSISTENCE, 'packages/engine/persistence', []);
 	for (const rel of sources) {
-		if (rel === 'packages/agent-sdlc/persistence/runtime-store.ts') continue;
+		if (rel === 'packages/engine/persistence/runtime-store.ts') continue;
 		const source = fs.readFileSync(resolvePath(rel), 'utf8');
 		assert.equal(/from\s+['"][^'"]*runtime-store\.(?:mjs|ts)['"]/.test(source), false, rel);
 	}
@@ -246,6 +246,6 @@ test('@ac AC-06 @case AC-06.2 store spec files are within the ceiling', () => {
 });
 
 test('@ac AC-06 @case AC-06.3 store paths are absent from the navigability exceptions', () => {
-	const exceptions = JSON.parse(fs.readFileSync(resolvePath('packages/agent-sdlc/testing/navigability-exceptions.json'), 'utf8'));
+	const exceptions = JSON.parse(fs.readFileSync(resolvePath('packages/engine/testing/navigability-exceptions.json'), 'utf8'));
 	for (const rel of EXCEPTION_PATHS) assert.equal(Object.hasOwn(exceptions, rel), false, rel);
 });

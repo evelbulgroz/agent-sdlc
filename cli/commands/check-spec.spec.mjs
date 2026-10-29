@@ -176,7 +176,7 @@ test('@ac AC-07 check-spec rejects conflicting goal flags', async () => {
 		'--goal',
 		'Ship the slice',
 		'--goal-file',
-		'docs/specs/retired/recent-conditioning-sessions-list.md',
+		'docs/specs/retired/recent-billing-sessions-list.md',
 	]);
 	assert.equal(outcome.exitCode, 64);
 	assert.equal(outcome.result.ok, false);

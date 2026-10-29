@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const IS_STANDALONE = !fs.existsSync(new URL('../../../packages/agent-sdlc', import.meta.url));
+const IS_STANDALONE = !fs.existsSync(new URL('../../../packages/engine', import.meta.url));
 
 test('@ac AC-04 @case AC-04.3 @ac AC-05 @case AC-05.1 the model-usage suite exits 0', async (t) => {
 	if (IS_STANDALONE) {
@@ -61,9 +61,9 @@ test('@ac AC-05 @case AC-05.2 the agent-sdlc test script discovers the model-usa
 		return;
 	}
 	const packageJson = JSON.parse(fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'));
-	const script = packageJson.scripts['agent:test-sdlc'];
+	const script = packageJson.scripts['agent:test-engine'];
 	assert.equal(fs.existsSync(new URL('../agent-sdlc.spec.mjs', import.meta.url)), false);
-	assert.match(script, /packages\/agent-sdlc\/\*\*\/\*\.spec\.mjs/);
+	assert.match(script, /packages\/engine\/\*\*\/\*\.spec\.mjs/);
 	assert.equal(script.includes('--test-concurrency=1'), true);
 	assert.equal(script.includes('model-usage'), false);
 });

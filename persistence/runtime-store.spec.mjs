@@ -70,7 +70,7 @@ test('RuntimeStore executes saveResumeFromEscalation atomically', () => {
 			sourceRole: 'operator',
 			type: 'pitfall',
 			key: 'operator-fix-rule',
-			scope: 'conditioning',
+			scope: 'billing',
 			query: 'human fix rule',
 			insight: 'Human operator intervention fixed schema conflict.',
 			confidence: 10,

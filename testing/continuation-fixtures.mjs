@@ -42,7 +42,7 @@ export function sampleEnvelope(runId, approvedSpecHash, baseCommitSha, allowedPa
 		approvedPlanPolicyHash: 'b'.repeat(64),
 		repositoryId: 'agent-sdlc',
 		baseCommitSha,
-		allowedPackages: ['packages/ddd-base'],
+		allowedPackages: ['packages/shared-base'],
 		allowedPathPrefixes,
 		allowedOperations: {
 			editIsolatedWorktree: true,

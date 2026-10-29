@@ -35,7 +35,7 @@ test('@ac AC-07 Task completion is gated by deterministic verification in TaskEx
 					toolName: 'write_file',
 					summary: 'Write completed file',
 					parameters: {
-						path: 'apps/services/conditioning/src/completed.ts',
+						path: 'services/billing/src/completed.ts',
 						content: 'export const completed = true;\n',
 					},
 				},
@@ -56,7 +56,7 @@ test('@ac AC-07 Task completion is gated by deterministic verification in TaskEx
 				return '';
 			}
 			if (args[0] === 'diff-index') {
-				return 'apps/services/conditioning/src/completed.ts\n';
+				return 'services/billing/src/completed.ts\n';
 			}
 			if (args[0] === 'write-tree') {
 				return 'c'.repeat(40) + '\n';
@@ -73,10 +73,10 @@ test('@ac AC-07 Task completion is gated by deterministic verification in TaskEx
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
-					verificationCommand: ['pnpm', '--filter', '@example/conditioning-service', 'test'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
+					verificationCommand: ['pnpm', '--filter', '@fixture/billing-service', 'test'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -113,8 +113,8 @@ test('@ac AC-07 Task completion is gated by deterministic verification in TaskEx
 		await executor.executeTaskPlan({
 			taskPlan,
 			authorization: {
-				allowedPackages: ['apps/services/conditioning'],
-				allowedPathPrefixes: ['apps/services/conditioning'],
+				allowedPackages: ['services/billing'],
+				allowedPathPrefixes: ['services/billing'],
 			},
 			snapshot: { taskPlanFrozen: true },
 			specSummary: 'Test goal',
@@ -146,7 +146,7 @@ test('@ac AC-08 Over-budget task halts with CAPACITY_LIMIT_EXCEEDED leaving root
 					toolName: 'write_file',
 					summary: 'Write incomplete file',
 					parameters: {
-						path: 'apps/services/conditioning/src/incomplete.ts',
+						path: 'services/billing/src/incomplete.ts',
 						content: 'export const incomplete = true;\n',
 					},
 				},
@@ -161,7 +161,7 @@ test('@ac AC-08 Over-budget task halts with CAPACITY_LIMIT_EXCEEDED leaving root
 				return '';
 			}
 			if (args[0] === 'diff-index') {
-				return 'apps/services/conditioning/src/incomplete.ts\n';
+				return 'services/billing/src/incomplete.ts\n';
 			}
 			return '';
 		};
@@ -175,9 +175,9 @@ test('@ac AC-08 Over-budget task halts with CAPACITY_LIMIT_EXCEEDED leaving root
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -218,8 +218,8 @@ test('@ac AC-08 Over-budget task halts with CAPACITY_LIMIT_EXCEEDED leaving root
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 					},
 					snapshot: { taskPlanFrozen: true },
 					specSummary: 'Test goal',
@@ -265,8 +265,8 @@ test('@ac AC-08 Exhausted repair budget halts with REPAIR_BUDGET_EXCEEDED leavin
 				{
 					taskId: 't-repair-exhausted',
 					title: 'Task with exhausted repairs',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -306,7 +306,7 @@ test('@ac AC-08 Exhausted repair budget halts with REPAIR_BUDGET_EXCEEDED leavin
 								toolName: 'write_file',
 								summary: 'Write initial code',
 								parameters: {
-									path: 'apps/services/conditioning/src/code.ts',
+									path: 'services/billing/src/code.ts',
 									content: 'export const x = 1;\n',
 								},
 							},
@@ -357,19 +357,19 @@ test('@ac AC-08 Exhausted repair budget halts with REPAIR_BUDGET_EXCEEDED leavin
 				if (args?.[0] === 'rev-parse') return baseTreeSha + '\n';
 				if (args?.[0] === 'worktree' && args?.[1] === 'add') {
 					fs.mkdirSync(args[3], { recursive: true });
-					const pkgDir = path.join(args[3], 'apps/services/conditioning');
+					const pkgDir = path.join(args[3], 'services/billing');
 					fs.mkdirSync(pkgDir, { recursive: true });
 					fs.writeFileSync(
 						path.join(pkgDir, 'package.json'),
 						JSON.stringify({
-							name: '@example/conditioning-service',
+							name: '@fixture/billing-service',
 							scripts: { test: 'node --test' },
 						}),
 					);
 					return '';
 				}
-				if (args?.[0] === 'diff') return 'diff --git a/apps/services/conditioning/src/code.ts';
-				if (args?.[0] === 'diff-index') return 'apps/services/conditioning/src/code.ts\n';
+				if (args?.[0] === 'diff') return 'diff --git a/services/billing/src/code.ts';
+				if (args?.[0] === 'diff-index') return 'services/billing/src/code.ts\n';
 				if (args?.[0] === 'diff-tree') return 'diff --git a/code.ts\n';
 				if (args?.[0] === 'write-tree') return targetTreeSha + '\n';
 				return '';
@@ -397,8 +397,8 @@ test('@ac AC-08 Exhausted repair budget halts with REPAIR_BUDGET_EXCEEDED leavin
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 					},
 					snapshot: { taskPlanFrozen: true },
 					specSummary: 'Test repair exhaustion',

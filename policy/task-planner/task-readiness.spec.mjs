@@ -89,22 +89,22 @@ test('@ac AC-04 a set of paths spanning more than 5 distinct directories still r
 test('manifest readiness rejects cross-package authored paths and lockfile ownership without a dependency mutation', () => {
 	const crossPackage = serialManifest();
 	crossPackage.tasks[0].authoredPaths.push(
-		'apps/services/assessment/src/assessment/application/use-case.ts',
+		'services/assessment/src/assessment/application/use-case.ts',
 	);
 	assert.throws(
 		() =>
 			evaluateTaskReadiness({
 				draft: readinessDraft({
 					touchedSurfaces: [
-						'apps/services/conditioning/src/conditioning/domain',
-						'apps/services/assessment/src/assessment/application/use-case.ts',
+						'services/billing/src/billing/domain',
+						'services/assessment/src/assessment/application/use-case.ts',
 					],
 				}),
 				taskManifest: crossPackage,
 			}),
 		(error) =>
 			error.code === 'TASK_PLAN_INVALID' &&
-			error.message.includes("does not own 'apps/services/assessment"),
+			error.message.includes("does not own 'services/assessment"),
 	);
 
 	const undeclaredLockfile = serialManifest();
@@ -114,7 +114,7 @@ test('manifest readiness rejects cross-package authored paths and lockfile owner
 			evaluateTaskReadiness({
 				draft: readinessDraft({
 					touchedSurfaces: [
-						'apps/services/conditioning/src/conditioning/domain',
+						'services/billing/src/billing/domain',
 						'pnpm-lock.yaml',
 					],
 				}),
@@ -130,10 +130,10 @@ test('dependency mutation manifests must be owned by the task authored paths', (
 	const base = serialManifest();
 	const task = {
 		...base.tasks[0],
-		pathPrefixes: ['apps/services/conditioning'],
+		pathPrefixes: ['services/billing'],
 		dependencyMutations: [
 			{
-				manifestPath: 'apps/services/conditioning/package.json',
+				manifestPath: 'services/billing/package.json',
 				dependencyName: 'example',
 				fromRange: '^1.0.0',
 				toRange: '^1.1.0',
@@ -144,7 +144,7 @@ test('dependency mutation manifests must be owned by the task authored paths', (
 		() =>
 			evaluateTaskReadiness({
 				draft: readinessDraft({
-					touchedSurfaces: ['apps/services/conditioning'],
+					touchedSurfaces: ['services/billing'],
 				}),
 				taskManifest: {
 					...base,
@@ -185,7 +185,7 @@ test('@ac AC-08 orphan enabling slices fail task readiness', () => {
 		() =>
 			evaluateTaskReadiness({
 				draft: readinessDraft({
-					touchedSurfaces: ['apps/services/conditioning/src/conditioning/domain'],
+					touchedSurfaces: ['services/billing/src/billing/domain'],
 				}),
 				taskManifest: manifest,
 			}),
@@ -224,7 +224,7 @@ test('slice dependencies require executable task reachability', () => {
 		() =>
 			evaluateTaskReadiness({
 				draft: readinessDraft({
-					touchedSurfaces: ['apps/services/conditioning/src/conditioning/domain'],
+					touchedSurfaces: ['services/billing/src/billing/domain'],
 				}),
 				taskManifest: manifest,
 			}),
@@ -262,14 +262,14 @@ test('validateExecutableSliceDag rejects concurrent tasks with overlapping paths
 				taskId: 'task-a',
 				sliceId: 'slice-a',
 				dependsOn: [],
-				pathPrefixes: ['apps/services/conditioning/src'],
+				pathPrefixes: ['services/billing/src'],
 			},
 			{
 				...base.tasks[1],
 				taskId: 'task-b',
 				sliceId: 'slice-b',
 				dependsOn: [],
-				pathPrefixes: ['apps/services/conditioning/src/helpers'],
+				pathPrefixes: ['services/billing/src/helpers'],
 			},
 		],
 	};
@@ -278,7 +278,7 @@ test('validateExecutableSliceDag rejects concurrent tasks with overlapping paths
 			evaluateTaskReadiness({
 				draft: readinessDraft({
 					acceptanceCriteria: ['AC-01: first', 'AC-02: second'],
-					touchedSurfaces: ['apps/services/conditioning/src'],
+					touchedSurfaces: ['services/billing/src'],
 				}),
 				taskManifest: manifest,
 			}),
@@ -295,13 +295,13 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 		tasks: [
 			{
 				...base.tasks[0],
-				targetPackage: 'apps/services/authentication',
-				authoredPaths: ['apps/services/authentication/src/authentication.service.ts'],
-				pathPrefixes: ['apps/services/authentication/src'],
+				targetPackage: 'services/authentication',
+				authoredPaths: ['services/authentication/src/authentication.service.ts'],
+				pathPrefixes: ['services/authentication/src'],
 				verificationCommand: [
 					'pnpm',
 					'--filter',
-					'@example/authentication-service',
+					'@fixture/authentication-service',
 					'test',
 				],
 			},
@@ -309,24 +309,24 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 	};
 	const readiness = evaluateTaskReadiness({
 		draft: readinessDraft({
-			touchedSurfaces: ['apps/services/authentication/src'],
+			touchedSurfaces: ['services/authentication/src'],
 		}),
 		taskManifest,
 		workspacePackages: {
 			packageMap: new Map([
 				[
-					'@example/authentication-service',
+					'@fixture/authentication-service',
 					{
-						dir: 'apps/services/authentication',
+						dir: 'services/authentication',
 						pkgJson: {
-							name: '@example/authentication-service',
+							name: '@fixture/authentication-service',
 							scripts: { test: 'node --test' },
 						},
 					},
 				],
 			]),
 			pathToPackage: new Map([
-				['apps/services/authentication', '@example/authentication-service'],
+				['services/authentication', '@fixture/authentication-service'],
 			]),
 		},
 	});
@@ -339,7 +339,7 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 		() =>
 			evaluateTaskReadiness({
 				draft: readinessDraft({
-					touchedSurfaces: ['apps/services/authentication/src'],
+					touchedSurfaces: ['services/authentication/src'],
 				}),
 				taskManifest: {
 					...taskManifest,
@@ -351,14 +351,14 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 });
 
 test('deriveTaskId produces valid, secret-safe task IDs', () => {
-	assert.equal(deriveTaskId('apps/services/conditioning'), 'conditioning-task');
-	assert.equal(deriveTaskId('packages/ddd-base'), 'ddd-base-task');
-	assert.equal(deriveTaskId('apps/frontends/example-pwa-frontend'), 'example-pwa-frontend-task');
+	assert.equal(deriveTaskId('services/billing'), 'billing-task');
+	assert.equal(deriveTaskId('packages/shared-base'), 'shared-base-task');
+	assert.equal(deriveTaskId('frontends/example-pwa-frontend'), 'example-pwa-frontend-task');
 
 	// Regex format compliance
 
 	// Regex format compliance
-	const taskId = deriveTaskId('apps/services/conditioning');
+	const taskId = deriveTaskId('services/billing');
 	assert.match(taskId, /^[a-z0-9][a-z0-9-]{0,63}$/);
 });
 

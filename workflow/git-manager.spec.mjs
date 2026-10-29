@@ -25,9 +25,9 @@ function setupRepoWithWorktree(testDir, runId = '2026-09-06-commit-test') {
 	execFileSync('git', ['config', 'user.name', 'test'], { cwd: repoDir });
 
 	fs.writeFileSync(path.join(repoDir, 'README.md'), '# Test Repo\n');
-	fs.mkdirSync(path.join(repoDir, 'apps/services/conditioning/src'), { recursive: true });
+	fs.mkdirSync(path.join(repoDir, 'services/billing/src'), { recursive: true });
 	fs.writeFileSync(
-		path.join(repoDir, 'apps/services/conditioning/src/index.ts'),
+		path.join(repoDir, 'services/billing/src/index.ts'),
 		'export const v = 1;\n',
 	);
 	execFileSync('git', ['add', '-A'], { cwd: repoDir });
@@ -154,14 +154,14 @@ test('createLocalCommit stages changes, verifies containment, and commits', () =
 		const emptyCommit = createLocalCommit({
 			worktreeDir,
 			message: 'feat: empty change',
-			allowedPackages: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
 		});
 		assert.equal(emptyCommit.committed, false);
 		assert.equal(emptyCommit.reason, 'NO_CHANGES_STAGED');
 
 		// 2. Modify authorized file and unauthorized file
 		fs.writeFileSync(
-			path.join(worktreeDir, 'apps/services/conditioning/src/index.ts'),
+			path.join(worktreeDir, 'services/billing/src/index.ts'),
 			'export const v = 2;\n',
 		);
 		fs.writeFileSync(path.join(worktreeDir, 'unauthorized.txt'), 'leaked');
@@ -173,8 +173,8 @@ test('createLocalCommit stages changes, verifies containment, and commits', () =
 				createLocalCommit({
 					worktreeDir,
 					message: 'feat: illegal stage',
-					allowedPathPrefixes: ['apps/services/conditioning'],
-					allowedPackages: ['apps/services/conditioning'],
+					allowedPathPrefixes: ['services/billing'],
+					allowedPackages: ['services/billing'],
 				}),
 			/outside allowed paths/,
 		);
@@ -182,8 +182,8 @@ test('createLocalCommit stages changes, verifies containment, and commits', () =
 		// 4. Successful commit with authorized changes only
 		const commitResult = createLocalCommit({
 			worktreeDir,
-			message: 'feat(conditioning): update version',
-			allowedPackages: ['apps/services/conditioning'],
+			message: 'feat(billing): update version',
+			allowedPackages: ['services/billing'],
 			authorName: 'sdlc-agent',
 			authorEmail: 'agent@sdlc.local',
 		});
@@ -193,7 +193,7 @@ test('createLocalCommit stages changes, verifies containment, and commits', () =
 		assert.match(commitResult.treeSha, /^[a-f0-9]{40}$/);
 		assert.notEqual(commitResult.commitSha, baseCommitSha);
 		assert.equal(commitResult.branchName, 'agent-sdlc/commit-test');
-		assert.deepEqual(commitResult.stagedFiles, ['apps/services/conditioning/src/index.ts']);
+		assert.deepEqual(commitResult.stagedFiles, ['services/billing/src/index.ts']);
 
 		// Verify author attribution
 		const authorLog = execFileSync('git', ['log', '-1', '--format=%an <%ae>'], {

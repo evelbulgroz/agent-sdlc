@@ -14,17 +14,17 @@
 	"workspace": {
 		"packageRoots": [
 			"packages",
-			"apps/services",
-			"apps/frontends"
+			"services",
+			"frontends"
 		],
 		"singlePackages": [
-			"apps/e2e"
+			"e2e"
 		],
 		"allowedPathRoots": [
 			"packages",
-			"apps/services",
-			"apps/frontends",
-			"apps/e2e",
+			"services",
+			"frontends",
+			"e2e",
 			"tools",
 			"docs",
 			".agents"
@@ -56,15 +56,15 @@
 		],
 		"secretPaths": ["vault", "*.vault.config.ts"],
 		"highRiskPaths": [
-			"apps/services/authentication",
-			"apps/services/registry",
+			"services/authentication",
+			"services/registry",
 			"packages/service-auth-core",
 			"packages/nest-service-auth",
-			"packages/ddd-base",
+			"packages/shared-base",
 			"packages/base",
 			".github/workflows",
 			"tools/quality",
-			"security-config"
+			"secrets-config"
 		],
 		"protectedBaselinePaths": [
 			"tools/quality/baselines",
@@ -76,23 +76,23 @@
 		],
 		"contractProducerRules": {
 			"producerPrefixes": [
-				"apps/services/"
+				"services/"
 			],
 			"excludedProducerPackages": [
-				"apps/services/api-gateway"
+				"services/api-gateway"
 			],
 			"excludedProducerPrefixes": [
-				"apps/frontends/"
+				"frontends/"
 			],
 			"consumerPackages": [
-				"apps/services/api-gateway"
+				"services/api-gateway"
 			],
 			"consumerPrefixes": [
-				"apps/frontends/"
+				"frontends/"
 			],
 			"downstreamPrefixes": [
-				"apps/frontends/",
-				"apps/e2e/"
+				"frontends/",
+				"e2e/"
 			],
 			"sharedPackagePrefixes": [
 				"packages/"
@@ -108,7 +108,7 @@
 			]
 		},
 		"irreversiblePatterns": [
-			"packages/ddd-base",
+			"packages/shared-base",
 			"packages/base"
 		]
 	},
@@ -119,15 +119,15 @@
 				"id": "service-boundary-internal-import",
 				"boundary": "service-boundary-internal-import",
 				"severity": "P1",
-				"forbiddenSpecifierPattern": "^@example/[a-z0-9-]+-service/(?!contracts(?:/|$))",
+				"forbiddenSpecifierPattern": "^@fixture/[a-z0-9-]+-service/(?!contracts(?:/|$))",
 				"description": "Forbidden inter-service internal import: \"{specifier}\". Inter-service communication must use /contracts."
 			},
 			{
 				"id": "frontend-backend-import",
 				"boundary": "frontend-backend-import",
 				"severity": "P1",
-				"sourcePathPattern": "^apps/frontends/",
-				"forbiddenSpecifierPattern": "^@example/(?:api-gateway|[a-z0-9-]+-service)(?:/|$)",
+				"sourcePathPattern": "^frontends/",
+				"forbiddenSpecifierPattern": "^@fixture/(?:api-gateway|[a-z0-9-]+-service)(?:/|$)",
 				"description": "Frontend code must use the generated gateway client instead of importing \"{specifier}\"."
 			}
 		]
@@ -145,12 +145,12 @@
 			"registry",
 			"user",
 			"authentication",
-			"conditioning",
+			"billing",
 			"import",
 			"strength",
 			"journal",
 			"assessment",
-			"ddd-base",
+			"shared-base",
 			"base",
 			"service-auth-core",
 			"nest-service-auth",
@@ -166,7 +166,7 @@
 		],
 		"scopeInference": [
 			{
-				"prefix": "apps/services/",
+				"prefix": "services/",
 				"extractSegment": true
 			},
 			{
@@ -174,7 +174,7 @@
 				"extractSegment": true
 			},
 			{
-				"prefix": "apps/frontends/example-pwa-frontend",
+				"prefix": "frontends/example-pwa-frontend",
 				"scope": "example-pwa-frontend"
 			},
 			{
@@ -182,7 +182,7 @@
 				"scope": "example-pwa-frontend"
 			},
 			{
-				"prefix": "apps/frontends/pwa-frontend",
+				"prefix": "frontends/pwa-frontend",
 				"scope": "pwa-frontend"
 			},
 			{
@@ -190,7 +190,7 @@
 				"scope": "pwa-frontend"
 			},
 			{
-				"prefix": "apps/e2e",
+				"prefix": "e2e",
 				"scope": "product-e2e"
 			},
 			{
@@ -203,7 +203,7 @@
 		"argv": [
 			"pnpm",
 			"run",
-			"agent:preflight",
+			"agent:verify",
 			"--",
 			"--base",
 			"{baseSha}"
@@ -218,7 +218,7 @@
 			{
 				"id": "frontend-pwa",
 				"pathPrefixes": [
-					"apps/frontends"
+					"frontends"
 				],
 				"addendaFile": ".agents/workflows/scoped/frontend-pwa.md",
 				"roles": [
@@ -235,7 +235,7 @@
 			{
 				"id": "backend-services",
 				"pathPrefixes": [
-					"apps/services"
+					"services"
 				],
 				"addendaFile": ".agents/workflows/scoped/backend-services.md",
 				"roles": [
@@ -256,7 +256,7 @@
 			[
 				"pnpm",
 				"run",
-				"quality:changed"
+				"quality:affected"
 			]
 		]
 	}

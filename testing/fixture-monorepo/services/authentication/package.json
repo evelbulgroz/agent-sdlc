@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/authentication-service",
+  "scripts": {
+    "test": "pnpm test"
+  },
+  "dependencies": {
+    "@fixture/registry-service": "workspace:*"
+  }
+}

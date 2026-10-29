@@ -5,13 +5,13 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const IS_STANDALONE = !fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'));
+const IS_STANDALONE = !fs.existsSync(path.join(PACKAGE_ROOT, 'packages/engine'));
 const ROOT = IS_STANDALONE ? PACKAGE_ROOT : path.resolve(PACKAGE_ROOT, '../../..');
-const SDLC = IS_STANDALONE ? PACKAGE_ROOT : path.join(ROOT, 'packages/agent-sdlc');
+const SDLC = IS_STANDALONE ? PACKAGE_ROOT : path.join(ROOT, 'packages/engine');
 
 function resolvePath(rel) {
 	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
-	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+	return path.join(SDLC, rel.replace(/^packages\/engine\//, ''));
 }
 
 function measure(rel) {
@@ -59,48 +59,48 @@ function productionFilesUnder(directory, found = []) {
 			continue;
 		}
 		const rel = path.relative(SDLC, path.join(directory, entry.name)).split(path.sep).join('/');
-		found.push(IS_STANDALONE ? `packages/agent-sdlc/${rel}` : path.relative(ROOT, path.join(directory, entry.name)).split(path.sep).join('/'));
+		found.push(IS_STANDALONE ? `packages/engine/${rel}` : path.relative(ROOT, path.join(directory, entry.name)).split(path.sep).join('/'));
 	}
 	return found;
 }
 
 const NEW_MODULES = [
-	'packages/agent-sdlc/review/author-vendor.ts',
-	'packages/agent-sdlc/review/critic-prompt.ts',
-	'packages/agent-sdlc/review/critic-report-store.ts',
-	'packages/agent-sdlc/review/critic-budget.ts',
-	'packages/agent-sdlc/review/critic-input-packing.ts',
-	'packages/agent-sdlc/review/failure-packet.ts',
-	'packages/agent-sdlc/scripts/critic-trends-sources.ts',
+	'packages/engine/review/author-vendor.ts',
+	'packages/engine/review/critic-prompt.ts',
+	'packages/engine/review/critic-report-store.ts',
+	'packages/engine/review/critic-budget.ts',
+	'packages/engine/review/critic-input-packing.ts',
+	'packages/engine/review/failure-packet.ts',
+	'packages/engine/scripts/critic-trends-sources.ts',
 ];
 
 const SPLIT_PRODUCTION = [
 	...NEW_MODULES,
-	'packages/agent-sdlc/review/critic-review.ts',
-	'packages/agent-sdlc/review/critic-gate.ts',
-	'packages/agent-sdlc/review/verifier.ts',
-	'packages/agent-sdlc/scripts/aggregate-critic-trends.ts',
+	'packages/engine/review/critic-review.ts',
+	'packages/engine/review/critic-gate.ts',
+	'packages/engine/review/verifier.ts',
+	'packages/engine/scripts/aggregate-critic-trends.ts',
 ];
 
 const SPLIT_SPECS = [
-	'packages/agent-sdlc/review/critic-review.spec.mjs',
-	'packages/agent-sdlc/review/critic-review.qa.spec.mjs',
-	'packages/agent-sdlc/review/critic-review.grounding.spec.mjs',
-	'packages/agent-sdlc/review/critic-review.generation.spec.mjs',
-	'packages/agent-sdlc/review/author-vendor.spec.mjs',
-	'packages/agent-sdlc/review/critic-prompt.spec.mjs',
-	'packages/agent-sdlc/review/critic-report-store.spec.mjs',
-	'packages/agent-sdlc/review/critic-gate.spec.mjs',
-	'packages/agent-sdlc/review/critic-budget.spec.mjs',
-	'packages/agent-sdlc/review/critic-input-packing.spec.mjs',
-	'packages/agent-sdlc/review/verifier.spec.mjs',
-	'packages/agent-sdlc/review/failure-packet.spec.mjs',
-	'packages/agent-sdlc/scripts/critic-trends-sources.spec.mjs',
+	'packages/engine/review/critic-review.spec.mjs',
+	'packages/engine/review/critic-review.qa.spec.mjs',
+	'packages/engine/review/critic-review.grounding.spec.mjs',
+	'packages/engine/review/critic-review.generation.spec.mjs',
+	'packages/engine/review/author-vendor.spec.mjs',
+	'packages/engine/review/critic-prompt.spec.mjs',
+	'packages/engine/review/critic-report-store.spec.mjs',
+	'packages/engine/review/critic-gate.spec.mjs',
+	'packages/engine/review/critic-budget.spec.mjs',
+	'packages/engine/review/critic-input-packing.spec.mjs',
+	'packages/engine/review/verifier.spec.mjs',
+	'packages/engine/review/failure-packet.spec.mjs',
+	'packages/engine/scripts/critic-trends-sources.spec.mjs',
 ];
 
 // A moved name may only be imported from the module that now owns it.
 const MOVED = {
-	'packages/agent-sdlc/review/critic-review.ts': [
+	'packages/engine/review/critic-review.ts': [
 		'canonicalizeAuthorVendor',
 		'canonicalizeAuthorVendors',
 		'CRITIC_FINDINGS_SCHEMA',
@@ -108,7 +108,7 @@ const MOVED = {
 		'sliceSafe',
 		'truncatePromptToTokenCeiling',
 	],
-	'packages/agent-sdlc/review/critic-gate.ts': [
+	'packages/engine/review/critic-gate.ts': [
 		'SPEC_CRITIC_CAP',
 		'PLAN_CRITIC_CAP',
 		'QA_CRITIC_CAP',
@@ -129,7 +129,7 @@ const MOVED = {
 		'resolveAuthorVendor',
 		'resolveCodeAuthorVendors',
 	],
-	'packages/agent-sdlc/review/verifier.ts': [
+	'packages/engine/review/verifier.ts': [
 		'isEnvironmentFailure',
 		'classifyFailure',
 		'failureReferencesAuthorizedPackage',
@@ -147,7 +147,7 @@ test('@ac AC-07 @case AC-07.1 the split modules and spec files are within 500 li
 });
 
 test('@ac AC-07 @case AC-07.2 no split module or spec file is listed in the navigability exceptions', () => {
-	const exceptions = JSON.parse(read('packages/agent-sdlc/testing/navigability-exceptions.json'));
+	const exceptions = JSON.parse(read('packages/engine/testing/navigability-exceptions.json'));
 	for (const rel of [...SPLIT_PRODUCTION, ...SPLIT_SPECS]) {
 		assert.equal(rel in exceptions, false, rel);
 	}
@@ -155,13 +155,13 @@ test('@ac AC-07 @case AC-07.2 no split module or spec file is listed in the navi
 
 test('@ac AC-07 @case AC-07.3 new modules never import their former parent', () => {
 	const forbidden = {
-		'packages/agent-sdlc/review/author-vendor.ts': ['critic-review', 'critic-gate'],
-		'packages/agent-sdlc/review/critic-prompt.ts': ['critic-review', 'critic-gate'],
-		'packages/agent-sdlc/review/critic-report-store.ts': ['critic-review', 'critic-gate'],
-		'packages/agent-sdlc/review/critic-budget.ts': ['critic-gate'],
-		'packages/agent-sdlc/review/critic-input-packing.ts': ['critic-gate'],
-		'packages/agent-sdlc/review/failure-packet.ts': ['verifier'],
-		'packages/agent-sdlc/scripts/critic-trends-sources.ts': ['aggregate-critic-trends'],
+		'packages/engine/review/author-vendor.ts': ['critic-review', 'critic-gate'],
+		'packages/engine/review/critic-prompt.ts': ['critic-review', 'critic-gate'],
+		'packages/engine/review/critic-report-store.ts': ['critic-review', 'critic-gate'],
+		'packages/engine/review/critic-budget.ts': ['critic-gate'],
+		'packages/engine/review/critic-input-packing.ts': ['critic-gate'],
+		'packages/engine/review/failure-packet.ts': ['verifier'],
+		'packages/engine/scripts/critic-trends-sources.ts': ['aggregate-critic-trends'],
 	};
 	for (const [rel, parents] of Object.entries(forbidden)) {
 		const imports = relativeImports(rel).map((item) => path.posix.basename(item, '.ts'));

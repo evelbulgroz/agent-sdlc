@@ -64,9 +64,9 @@ test('TaskExecutor completes an empty delta when post-hoc verification passed', 
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -101,8 +101,8 @@ test('TaskExecutor completes an empty delta when post-hoc verification passed', 
 		const result = await executor.executeTaskPlan({
 			taskPlan,
 			authorization: {
-				allowedPackages: ['apps/services/conditioning'],
-				allowedPathPrefixes: ['apps/services/conditioning'],
+				allowedPackages: ['services/billing'],
+				allowedPathPrefixes: ['services/billing'],
 			},
 			snapshot: { taskPlanFrozen: true },
 			specSummary: 'Test goal',
@@ -139,8 +139,8 @@ test('governor budget denial fails the attempt and does not start a repairer', a
 				{
 					taskId: 'task-blocked',
 					title: 'Blocked Task',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -198,8 +198,8 @@ test('governor budget denial fails the attempt and does not start a repairer', a
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 						allowedOperations: { createDetachedWorktree: true },
 					},
 					snapshot: { taskPlanFrozen: true },
@@ -242,8 +242,8 @@ test('@ac AC-04 @case AC-04.1 a failing verification raises TASK_EXECUTION_FAILE
 				{
 					taskId: 'task-test-fail',
 					title: 'Task with test failure',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -272,7 +272,7 @@ test('@ac AC-04 @case AC-04.1 a failing verification raises TASK_EXECUTION_FAILE
 				governorCalls += 1;
 				governor.calls.push(req);
 				const output = governorCalls === 1
-					? leanWriteAction('apps/services/conditioning/src/code.ts', 'export const x = 1;')
+					? leanWriteAction('services/billing/src/code.ts', 'export const x = 1;')
 					: { action: { kind: 'complete', summary: 'Implemented code' } };
 				return {
 					schemaVersion: '1.0.0',
@@ -297,19 +297,19 @@ test('@ac AC-04 @case AC-04.1 a failing verification raises TASK_EXECUTION_FAILE
 				if (args?.[0] === 'rev-parse') return baseTreeSha + '\n';
 				if (args?.[0] === 'worktree' && args?.[1] === 'add') {
 					fs.mkdirSync(args[3], { recursive: true });
-					const pkgDir = path.join(args[3], 'apps/services/conditioning');
+					const pkgDir = path.join(args[3], 'services/billing');
 					fs.mkdirSync(pkgDir, { recursive: true });
 					fs.writeFileSync(
 						path.join(pkgDir, 'package.json'),
 						JSON.stringify({
-							name: '@example/conditioning-service',
+							name: '@fixture/billing-service',
 							scripts: { test: 'node --test' },
 						}),
 					);
 					return '';
 				}
-				if (args?.[0] === 'diff') return 'diff --git a/apps/services/conditioning/src/code.ts';
-				if (args?.[0] === 'diff-index') return 'apps/services/conditioning/src/code.ts\n';
+				if (args?.[0] === 'diff') return 'diff --git a/services/billing/src/code.ts';
+				if (args?.[0] === 'diff-index') return 'services/billing/src/code.ts\n';
 				if (args?.[0] === 'diff-tree') return 'diff --git a/code.ts\n';
 				if (args?.[0] === 'write-tree') return targetTreeSha + '\n';
 				return '';
@@ -332,8 +332,8 @@ test('@ac AC-04 @case AC-04.1 a failing verification raises TASK_EXECUTION_FAILE
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 						allowedOperations: { createDetachedWorktree: true },
 						maxSemanticRepairs: 2,
 					},
@@ -455,7 +455,7 @@ test('@ac AC-09 @case AC-09.2 a diff outside the authored paths is not completed
 		executor: 'minimal',
 		runtime: POST_IMPLEMENT_RUNTIME,
 		verificationCommand: ['pnpm', 'run', 'test:unit'],
-		authoredPaths: ['apps/services/conditioning/src/locked.ts'],
+		authoredPaths: ['services/billing/src/locked.ts'],
 		diffFile: 'outside.txt',
 		script: [{ action: { kind: 'complete', summary: 'done' } }],
 	});

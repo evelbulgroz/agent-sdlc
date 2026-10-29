@@ -36,20 +36,20 @@ test('@ac AC-08 @ac AC-14 authorized manifest change refreshes lockfile via pnpm
 		assert.equal(recordedCommands[0], 'pnpm install');
 		assert.equal(recordedCommands[1], 'pnpm install --frozen-lockfile');
 
-		const pkgDir = path.join(tempDir, 'packages', 'ddd-base');
+		const pkgDir = path.join(tempDir, 'packages', 'shared-base');
 		fs.mkdirSync(pkgDir, { recursive: true });
 		fs.mkdirSync(path.join(tempDir, 'node_modules'), { recursive: true });
 		const manifestPath = path.join(pkgDir, 'package.json');
-		fs.writeFileSync(manifestPath, '{"name":"@example/ddd-base"}\n');
+		fs.writeFileSync(manifestPath, '{"name":"@fixture/shared-base"}\n');
 		fs.writeFileSync(path.join(tempDir, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
-		const packages = ['packages/ddd-base'];
+		const packages = ['packages/shared-base'];
 		const markerPath = path.join(path.dirname(tempDir), `hydration-${path.basename(tempDir)}.json`);
 		fs.writeFileSync(
 			markerPath,
 			JSON.stringify({ fingerprint: computeHydrationFingerprint(tempDir, packages) }),
 		);
 		assert.equal(isWorktreeHydrated(tempDir, packages), true);
-		fs.writeFileSync(manifestPath, '{"name":"@example/ddd-base","version":"0.0.1"}\n');
+		fs.writeFileSync(manifestPath, '{"name":"@fixture/shared-base","version":"0.0.1"}\n');
 		assert.equal(isWorktreeHydrated(tempDir, packages), false);
 
 		const hydrated = await hydrateWorktree({
@@ -103,8 +103,8 @@ test('@ac AC-03 @ac AC-09 @ac AC-10 @ac AC-14 hydration failure continues once w
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -133,8 +133,8 @@ test('@ac AC-03 @ac AC-09 @ac AC-10 @ac AC-14 hydration failure continues once w
 				{
 					taskId: 'task-a',
 					title: 'Task A',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base/'],
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base/'],
 					dependsOn: [],
 					status: 'completed',
 					integrationOrder: 0,
@@ -144,8 +144,8 @@ test('@ac AC-03 @ac AC-09 @ac AC-10 @ac AC-14 hydration failure continues once w
 				{
 					taskId: 'task-b',
 					title: 'Task B',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base/'],
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base/'],
 					dependsOn: ['task-a'],
 					status: 'blocked',
 					integrationOrder: 1,

@@ -172,7 +172,7 @@ test('replayReliabilityCorpus rejects a corpus whose only fixture is a symbolic 
 	}
 });
 
-test('@ac AC-02 @case AC-02.2 replayReliabilityCorpus falls back to package-bundled testing/reliability-corpus when host repo has no packages/agent-sdlc directory', () => {
+test('@ac AC-02 @case AC-02.2 replayReliabilityCorpus falls back to package-bundled testing/reliability-corpus when host repo has no packages/engine directory', () => {
 	const externalHost = fs.mkdtempSync(path.join(os.tmpdir(), 'reliability-corpus-ext-host-'));
 	try {
 		const replayed = replayReliabilityCorpus({ rootDir: externalHost });

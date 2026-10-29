@@ -37,7 +37,7 @@ test('@ac AC-04 TaskExecutor.executeMinimalTask wires targetedVerificationComman
 		sameTree: true,
 		sliceId: 'slice-1',
 		runtime: POST_IMPLEMENT_RUNTIME,
-		verificationCommand: ['pnpm', '--filter', 'apps/services/conditioning', 'test'],
+		verificationCommand: ['pnpm', '--filter', 'services/billing', 'test'],
 		authoredPaths: [PRODUCT_IMPLEMENTER_PATH],
 		execCli: () => '',
 		script: [
@@ -49,7 +49,7 @@ test('@ac AC-04 TaskExecutor.executeMinimalTask wires targetedVerificationComman
 	assert.equal(task?.status, 'completed');
 	assert.equal(governor.calls.length, 2);
 	assert.match(governor.calls[0].prompt, /Allowlisted commands:/);
-	assert.match(governor.calls[0].prompt, /pnpm --filter apps\/services\/conditioning test/);
+	assert.match(governor.calls[0].prompt, /pnpm --filter services\/billing test/);
 	assert.match(governor.calls[0].prompt, /### Working set/);
 	assert.match(governor.calls[1].prompt, /AUDIT_REQUIRED/);
 });
@@ -68,13 +68,13 @@ test('TaskExecutor executes 1-task plan and captures delta', async () => {
 		});
 		const governor = new FakeModelGovernor([
 			leanWriteAction(
-				'apps/services/conditioning/src/task.ts',
+				'services/billing/src/task.ts',
 				'export const val = 42;',
 			),
 			{
 				action: {
 					kind: 'complete',
-					summary: 'Done conditioning task',
+					summary: 'Done billing task',
 				},
 			},
 		]);
@@ -89,7 +89,7 @@ test('TaskExecutor executes 1-task plan and captures delta', async () => {
 				return '';
 			}
 			if (args[0] === 'diff-index') {
-				return 'apps/services/conditioning/src/task.ts\n';
+				return 'services/billing/src/task.ts\n';
 			}
 			if (args[0] === 'write-tree') return newTreeSha + '\n';
 			if (args[0] === 'diff-tree') return 'diff --git a/task.ts ...\n';
@@ -105,9 +105,9 @@ test('TaskExecutor executes 1-task plan and captures delta', async () => {
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -121,7 +121,7 @@ test('TaskExecutor executes 1-task plan and captures delta', async () => {
 					verificationCommand: [
 						'pnpm',
 						'--filter',
-						'@example/conditioning-service',
+						'@fixture/billing-service',
 						'test',
 					],
 				},
@@ -145,8 +145,8 @@ test('TaskExecutor executes 1-task plan and captures delta', async () => {
 		const result = await executor.executeTaskPlan({
 			taskPlan,
 			authorization: {
-				allowedPackages: ['apps/services/conditioning'],
-				allowedPathPrefixes: ['apps/services/conditioning'],
+				allowedPackages: ['services/billing'],
+				allowedPathPrefixes: ['services/billing'],
 			},
 			snapshot: { taskPlanFrozen: true },
 			specSummary: 'Test goal',
@@ -182,7 +182,7 @@ test('TaskExecutor fails closed when implementer reaches its step limit', async 
 
 		const governor = new FakeModelGovernor([
 			leanWriteAction(
-				'apps/services/conditioning/src/incomplete.ts',
+				'services/billing/src/incomplete.ts',
 				'export const incomplete = true;\n',
 			),
 		]);
@@ -196,7 +196,7 @@ test('TaskExecutor fails closed when implementer reaches its step limit', async 
 			}
 			if (args[0] === 'diff-index') {
 				diffInspected = true;
-				return 'apps/services/conditioning/src/incomplete.ts\n';
+				return 'services/billing/src/incomplete.ts\n';
 			}
 			return '';
 		};
@@ -210,9 +210,9 @@ test('TaskExecutor fails closed when implementer reaches its step limit', async 
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -247,8 +247,8 @@ test('TaskExecutor fails closed when implementer reaches its step limit', async 
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 					},
 					snapshot: { taskPlanFrozen: true },
 					specSummary: 'Test goal',
@@ -287,8 +287,8 @@ test('TaskExecutor enforces model run budget limit', async () => {
 				{
 					taskId: 'task-0',
 					title: 'Test budget task',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -322,8 +322,8 @@ test('TaskExecutor enforces model run budget limit', async () => {
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 					},
 					snapshot: { taskPlanFrozen: true },
 				}),
@@ -348,7 +348,7 @@ test('AC-01 & AC-02: TaskExecutor rejects task exceeding 100 steps with CAPACITY
 		});
 
 		// 50 path prefixes -> 50 * 2 + 4 = 104 > 100
-		const pathPrefixes = Array.from({ length: 50 }, (_, i) => `apps/services/conditioning/src/file-${i}.ts`);
+		const pathPrefixes = Array.from({ length: 50 }, (_, i) => `services/billing/src/file-${i}.ts`);
 		const taskPlan = {
 			schemaVersion: '1.0.0',
 			runId: fixture.runId,
@@ -359,7 +359,7 @@ test('AC-01 & AC-02: TaskExecutor rejects task exceeding 100 steps with CAPACITY
 				{
 					taskId: 'task-oversized',
 					title: 'Oversized Task',
-					targetPackage: 'apps/services/conditioning',
+					targetPackage: 'services/billing',
 					pathPrefixes,
 					dependsOn: [],
 					status: 'pending',
@@ -397,7 +397,7 @@ test('AC-01 & AC-02: TaskExecutor rejects task exceeding 100 steps with CAPACITY
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
 						allowedPathPrefixes: pathPrefixes,
 						allowedOperations: { createDetachedWorktree: true },
 					},

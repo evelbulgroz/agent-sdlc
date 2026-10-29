@@ -31,9 +31,9 @@ test('qaArtifactHash binds the approved spec to the preflight result', () => {
 });
 
 test('isTouchedTestFile recognizes spec files and rejects blanks and production paths', () => {
-	assert.equal(isTouchedTestFile('apps/services/conditioning/src/feature.spec.ts'), true);
-	assert.equal(isTouchedTestFile('apps\\services\\conditioning\\test\\feature.ts'), true);
-	assert.equal(isTouchedTestFile('apps/services/conditioning/src/feature.ts'), false);
+	assert.equal(isTouchedTestFile('services/billing/src/feature.spec.ts'), true);
+	assert.equal(isTouchedTestFile('apps\\services\\billing\\test\\feature.ts'), true);
+	assert.equal(isTouchedTestFile('services/billing/src/feature.ts'), false);
 	assert.equal(isTouchedTestFile(''), false);
 	assert.equal(isTouchedTestFile(null), false);
 });

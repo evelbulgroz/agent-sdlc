@@ -63,7 +63,7 @@ test('citationRule names listed cases and forbids invented cases on a parent', (
 });
 
 test('verificationBlock keeps a missing-file failure until that path is written', () => {
-	const pathName = 'src/conditioning-log-weather.dto.spec.ts';
+	const pathName = 'src/billing-log-weather.dto.spec.ts';
 	const feedback =
 		`ac-coverage failed\n[execution-evidence] Touched test file is missing from the worktree: '${pathName}'`;
 	const original = `### Verification\n${feedback}`;

@@ -1,5 +1,5 @@
 {
-  "name": "@example/demo-service",
+  "name": "@fixture/demo-service",
   "scripts": {
     "test": "node --test",
     "build:contracts": "node build.mjs",

@@ -6,8 +6,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 const MODEL_USAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/model-usage');
 
@@ -113,7 +113,7 @@ test('@ac AC-01 @case AC-01.2 package.json declares package-local scripts, build
 	assert.equal(pkg.dependencies?.zod, '4.5.4');
 });
 
-test('@ac AC-02 @case AC-02.1 packages/agent-sdlc CLI entrypoint help exits 0', () => {
+test('@ac AC-02 @case AC-02.1 packages/engine CLI entrypoint help exits 0', () => {
 	const res = spawnSync(process.execPath, [path.join(PACKAGE_ROOT, 'cli/cli.ts'), 'help'], {
 		cwd: REPOSITORY_ROOT,
 		encoding: 'utf8',

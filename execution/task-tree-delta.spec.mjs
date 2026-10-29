@@ -208,7 +208,7 @@ test('captureTaskDelta materializes target tree and throws on path containment e
 	const binaryDiff = 'diff --git a/test.ts b/test.ts\n+hello';
 
 	const calls = [];
-	let stagedFiles = ['apps/services/conditioning/src/file.ts'];
+	let stagedFiles = ['services/billing/src/file.ts'];
 
 	const mockGitCli = (cmd, args, opts) => {
 		calls.push({ args, env: opts?.env });
@@ -228,7 +228,7 @@ test('captureTaskDelta materializes target tree and throws on path containment e
 		const task = {
 			taskId: 'task-1',
 			parentTreeSha,
-			pathPrefixes: ['apps/services/conditioning'],
+			pathPrefixes: ['services/billing'],
 		};
 
 		// 1. Success case: modified files within pathPrefixes
@@ -241,10 +241,10 @@ test('captureTaskDelta materializes target tree and throws on path containment e
 		assert.equal(delta.targetTreeSha, newTreeSha);
 		assert.equal(delta.patch.trim(), binaryDiff);
 		assert.equal(delta.patchHash, sha256(delta.patch));
-		assert.deepEqual(delta.changedFiles, ['apps/services/conditioning/src/file.ts']);
+		assert.deepEqual(delta.changedFiles, ['services/billing/src/file.ts']);
 
 		// 2. Escape case: file modified outside pathPrefixes
-		stagedFiles = ['packages/ddd-base/src/leak.ts'];
+		stagedFiles = ['packages/shared-base/src/leak.ts'];
 		assert.throws(
 			() =>
 				captureTaskDelta({

@@ -34,9 +34,9 @@ export function serialManifest(overrides = {}) {
 			{
 				taskId: 'behavior-foundation',
 				sliceId: 'behavior',
-				targetPackage: 'apps/services/conditioning',
-				authoredPaths: ['apps/services/conditioning/src/conditioning/domain'],
-				pathPrefixes: ['apps/services/conditioning/src/conditioning/domain'],
+				targetPackage: 'services/billing',
+				authoredPaths: ['services/billing/src/billing/domain'],
+				pathPrefixes: ['services/billing/src/billing/domain'],
 				generatedOutputs: [],
 				dependsOn: [],
 				deliveryLayers: ['domain'],
@@ -50,7 +50,7 @@ export function serialManifest(overrides = {}) {
 				verificationCommand: [
 					'pnpm',
 					'--filter',
-					'@example/conditioning-service',
+					'@fixture/billing-service',
 					'test',
 				],
 				generatorCommand: null,
@@ -58,9 +58,9 @@ export function serialManifest(overrides = {}) {
 			{
 				taskId: 'behavior-activation',
 				sliceId: 'behavior',
-				targetPackage: 'apps/services/conditioning',
-				authoredPaths: ['apps/services/conditioning/src/conditioning/domain'],
-				pathPrefixes: ['apps/services/conditioning/src/conditioning/domain'],
+				targetPackage: 'services/billing',
+				authoredPaths: ['services/billing/src/billing/domain'],
+				pathPrefixes: ['services/billing/src/billing/domain'],
 				generatedOutputs: [],
 				dependsOn: ['behavior-foundation'],
 				deliveryLayers: ['domain'],
@@ -74,7 +74,7 @@ export function serialManifest(overrides = {}) {
 				verificationCommand: [
 					'pnpm',
 					'--filter',
-					'@example/conditioning-service',
+					'@fixture/billing-service',
 					'test',
 				],
 				generatorCommand: null,
@@ -85,7 +85,7 @@ export function serialManifest(overrides = {}) {
 }
 
 export const DEMO_DRIFT_SCRIPT =
-	'bash ../../../tools/check-contract-drift.sh apps/services/demo openapi/demo.openapi.json contracts/generated-api.ts';
+	'bash ../../../tools/check-contract-drift.sh services/demo openapi/demo.openapi.json contracts/generated-api.ts';
 
 export const DEMO_CONTRACT_SCRIPTS = {
 	test: 'node --test',
@@ -97,17 +97,17 @@ export function demoPackages(scripts) {
 	return {
 		packageMap: new Map([
 			[
-				'@example/demo-service',
+				'@fixture/demo-service',
 				{
-					packagePath: 'apps/services/demo',
+					packagePath: 'services/demo',
 					pkgJson: {
-						name: '@example/demo-service',
+						name: '@fixture/demo-service',
 						scripts,
 					},
 				},
 			],
 		]),
-		pathToPackage: new Map([['apps/services/demo', '@example/demo-service']]),
+		pathToPackage: new Map([['services/demo', '@fixture/demo-service']]),
 	};
 }
 
@@ -115,9 +115,9 @@ export function demoTask(overrides = {}) {
 	return {
 		taskId: 'sink-task',
 		sliceId: 'behavior',
-		targetPackage: 'apps/services/demo',
-		authoredPaths: ['apps/services/demo/src'],
-		pathPrefixes: ['apps/services/demo/src'],
+		targetPackage: 'services/demo',
+		authoredPaths: ['services/demo/src'],
+		pathPrefixes: ['services/demo/src'],
 		generatedOutputs: [],
 		dependsOn: [],
 		deliveryLayers: ['contracts'],
@@ -128,7 +128,7 @@ export function demoTask(overrides = {}) {
 			empty: 'no delta',
 			boundary: 'scope escape',
 		},
-		verificationCommand: ['pnpm', '--filter', '@example/demo-service', 'test'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/demo-service', 'test'],
 		generatorCommand: null,
 		...overrides,
 	};
@@ -151,7 +151,7 @@ export function demoManifest(tasks) {
 }
 
 export function writeDemoControllers(rootDir) {
-	const src = path.join(rootDir, 'apps/services/demo/src');
+	const src = path.join(rootDir, 'services/demo/src');
 	fs.mkdirSync(src, { recursive: true });
 	fs.writeFileSync(path.join(src, 'a.controller.ts'), 'export class A {}\n');
 	fs.writeFileSync(path.join(src, 'b.controller.ts'), 'export class B {}\n');
@@ -173,7 +173,7 @@ export function evaluateDemo({ criteria, scripts = DEMO_CONTRACT_SCRIPTS, tasks,
 	return evaluateTaskReadiness({
 		draft: {
 			goal: 'Keep the public contract',
-			touchedSurfaces: ['apps/services/demo'],
+			touchedSurfaces: ['services/demo'],
 			acceptanceCriteria: criteria,
 		},
 		taskManifest: {
@@ -268,16 +268,16 @@ export function pinnedSinglePlanInput() {
 
 export function pinnedMultiPlanInput() {
 	const assessment = {
-		packagePath: 'apps/services/assessment',
+		packagePath: 'services/assessment',
 		pkgJson: {
-			name: '@example/assessment-service',
+			name: '@fixture/assessment-service',
 			scripts: { test: 'node --test' },
 		},
 	};
-	const conditioning = {
-		packagePath: 'apps/services/conditioning',
+	const billing = {
+		packagePath: 'services/billing',
 		pkgJson: {
-			name: '@example/conditioning-service',
+			name: '@fixture/billing-service',
 			scripts: { test: 'node --test' },
 			dependencies: {},
 		},
@@ -287,20 +287,20 @@ export function pinnedMultiPlanInput() {
 		authorization: {
 			runId: RUN_ID,
 			baseCommitSha: BASE_COMMIT_SHA,
-			allowedPackages: ['apps/services/assessment', 'apps/services/conditioning'],
+			allowedPackages: ['services/assessment', 'services/billing'],
 			allowedPathPrefixes: [
-				'apps/services/assessment/src/',
-				'apps/services/conditioning/src/',
+				'services/assessment/src/',
+				'services/billing/src/',
 			],
 		},
 		workspacePackages: {
 			packageMap: new Map([
 				[assessment.pkgJson.name, assessment],
-				[conditioning.pkgJson.name, conditioning],
+				[billing.pkgJson.name, billing],
 			]),
 			pathToPackage: new Map([
 				[assessment.packagePath, assessment.pkgJson.name],
-				[conditioning.packagePath, conditioning.pkgJson.name],
+				[billing.packagePath, billing.pkgJson.name],
 			]),
 		},
 		now: () => pinnedClock(),

@@ -28,7 +28,7 @@ test('@ac AC-02 @ac AC-14 a stored envelope admits planning and a plan-critic re
 			fixture.runId,
 			fixture.draftHash,
 			'1'.repeat(40),
-			['packages/ddd-base/'],
+			['packages/shared-base/'],
 		);
 		const envelopePath = path.join(fixture.paths.runtimeDir, 'envelope.json');
 		fs.writeFileSync(envelopePath, JSON.stringify(envelope));

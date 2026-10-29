@@ -4,10 +4,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const README = IS_STANDALONE ? 'README.md' : 'packages/agent-sdlc/README.md';
-const REVIEW_README = IS_STANDALONE ? 'review/README.md' : 'packages/agent-sdlc/review/README.md';
-const PACKAGE_AGENTS = IS_STANDALONE ? `${'AGENTS'}.md` : `packages/agent-sdlc/${'AGENTS'}.md`;
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const README = IS_STANDALONE ? 'README.md' : 'packages/engine/README.md';
+const REVIEW_README = IS_STANDALONE ? 'review/README.md' : 'packages/engine/review/README.md';
+const PACKAGE_AGENTS = IS_STANDALONE ? `${'AGENTS'}.md` : `packages/engine/${'AGENTS'}.md`;
 const CODE_PHASE_COMMAND = 'agent-review --phase code';
 const RESIDUAL_CLAIM = /residual[\s`-]*(?:`?phase=code`?|phase[\s`-]*code|code[\s-]*critic)/i;
 

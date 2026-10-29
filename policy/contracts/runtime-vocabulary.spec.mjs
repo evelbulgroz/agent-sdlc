@@ -37,13 +37,13 @@ test('runtime state with closed keys for Slice 4 validates strictly', () => {
 		authorVendor: null,
 		taskPlanHash: '5'.repeat(64),
 		integrationWorktreePath: 'tools/.agent-sdlc/2026-09-07-state-test/worktrees/integration',
-		activeTaskId: 'conditioning-task',
+		activeTaskId: 'billing-task',
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	};
 	const parsedState = validateRuntimeState(validRuntimeState);
 	assert.equal(parsedState.taskPlanHash, '5'.repeat(64));
-	assert.equal(parsedState.activeTaskId, 'conditioning-task');
+	assert.equal(parsedState.activeTaskId, 'billing-task');
 	assert.equal(Object.hasOwn(parsedState, 'executor'), false);
 });
 
@@ -81,7 +81,7 @@ test('@ac AC-03 @case AC-03.1 @case AC-03.2 stored executor must be minimal or o
 		authorVendor: null,
 		taskPlanHash: '5'.repeat(64),
 		integrationWorktreePath: 'tools/.agent-sdlc/2026-09-07-state-test/worktrees/integration',
-		activeTaskId: 'conditioning-task',
+		activeTaskId: 'billing-task',
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	};

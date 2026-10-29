@@ -29,20 +29,20 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 	const tempDir = createTempDir();
 	try {
 		const worktreeDir = tempDir;
-		const allowedPackages = ['apps/services/conditioning'];
+		const allowedPackages = ['services/billing'];
 
 		// Allowed command
 		assert.ok(
 			validateCommandAllowlist(
 				'pnpm',
-				['--filter', 'apps/services/conditioning', 'test'],
+				['--filter', 'services/billing', 'test'],
 				allowedPackages,
 			),
 		);
 		assert.ok(
 			validateCommandAllowlist(
 				'pnpm',
-				['--filter', 'apps/services/conditioning', 'run', 'build:contracts'],
+				['--filter', 'services/billing', 'run', 'build:contracts'],
 				allowedPackages,
 			),
 		);
@@ -51,7 +51,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 				'pnpm',
 				[
 					'--filter',
-					'apps/services/conditioning',
+					'services/billing',
 					'test',
 					'--',
 					'src/feature.spec.ts',
@@ -63,7 +63,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 			validateCommandAllowlist('pnpm', ['run', 'test:unit'], allowedPackages),
 		);
 		// Removed engine-baked verbs are rejected unless the host declares them.
-		for (const legacy of [['run', 'agent:test-sdlc'], ['run', 'agent:preflight', '--', '--base', '6c277953d732ed447f89035d51716ec0bab56b3f']]) {
+		for (const legacy of [['run', 'agent:test-engine'], ['run', 'agent:verify', '--', '--base', '6c277953d732ed447f89035d51716ec0bab56b3f']]) {
 			assert.throws(
 				() => validateCommandAllowlist('pnpm', legacy, allowedPackages),
 				(err) => err.code === 'INVALID_INPUT',
@@ -74,7 +74,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 				'pnpm',
 				[
 					'--filter',
-					'apps/services/conditioning',
+					'services/billing',
 					'test',
 					'--',
 					'src/feature.spec.ts',
@@ -88,7 +88,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 				'pnpm',
 				[
 					'--filter',
-					'apps/services/conditioning',
+					'services/billing',
 					'run',
 					'test:unit',
 					'src/feature.spec.ts',
@@ -100,7 +100,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 			() =>
 				validateCommandAllowlist(
 					'pnpm',
-					['--filter', 'apps/services/conditioning', 'test', '--watch'],
+					['--filter', 'services/billing', 'test', '--watch'],
 					allowedPackages,
 				),
 			(err) => err.code === 'INVALID_INPUT',
@@ -111,7 +111,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 					'pnpm',
 					[
 						'--filter',
-						'apps/services/conditioning',
+						'services/billing',
 						'test',
 						'--',
 						'../outside.spec.ts',
@@ -135,7 +135,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 			() =>
 				validateCommandAllowlist(
 					'pnpm',
-					['--filter', 'apps/services/auth', 'test'],
+					['--filter', 'services/auth', 'test'],
 					allowedPackages,
 				),
 			(err) => err.code === 'INVALID_INPUT',
@@ -144,7 +144,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 			() =>
 				validateCommandAllowlist(
 					'pnpm',
-					['--filter', 'apps/services/conditioning', 'test; rm -rf /'],
+					['--filter', 'services/billing', 'test; rm -rf /'],
 					allowedPackages,
 				),
 			(err) => err.code === 'INVALID_INPUT',
@@ -158,14 +158,14 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 		};
 
 		const res = runCommandTool(
-			{ command: 'pnpm', args: ['--filter', 'apps/services/conditioning', 'test'] },
+			{ command: 'pnpm', args: ['--filter', 'services/billing', 'test'] },
 			{ worktreeDir, allowedPackages, execCli: mockExec },
 		);
 
 		assert.equal(res.exitCode, 0);
 		assert.equal(res.stdout, 'mock stdout');
 		assert.equal(executed.cmd, 'pnpm');
-		assert.deepEqual(executed.args, ['--filter', 'apps/services/conditioning', 'test']);
+		assert.deepEqual(executed.args, ['--filter', 'services/billing', 'test']);
 
 		// Failing execution
 		const failingExec = () => {
@@ -177,7 +177,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 		};
 
 		const failRes = runCommandTool(
-			{ command: 'pnpm', args: ['--filter', 'apps/services/conditioning', 'test'] },
+			{ command: 'pnpm', args: ['--filter', 'services/billing', 'test'] },
 			{ worktreeDir, allowedPackages, execCli: failingExec },
 		);
 		assert.equal(failRes.exitCode, 1);
@@ -187,7 +187,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 		const hugeStdout = 'START_MARKER\n' + 'x'.repeat(250_000) + '\nEND_MARKER';
 		const hugeExec = () => hugeStdout;
 		const truncatedRes = runCommandTool(
-			{ command: 'pnpm', args: ['--filter', 'apps/services/conditioning', 'test'] },
+			{ command: 'pnpm', args: ['--filter', 'services/billing', 'test'] },
 			{ worktreeDir, allowedPackages, execCli: hugeExec },
 		);
 		assert.equal(truncatedRes.exitCode, 0);
@@ -240,14 +240,14 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 	const tempDir = createTempDir();
 	try {
 		const worktreeDir = tempDir;
-		const allowedPackages = ['apps/services/conditioning'];
+		const allowedPackages = ['services/billing'];
 
 		// Create package.json in worktree to test package name resolution
-		const pkgDir = path.join(worktreeDir, 'apps/services/conditioning');
+		const pkgDir = path.join(worktreeDir, 'services/billing');
 		fs.mkdirSync(pkgDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(pkgDir, 'package.json'),
-			JSON.stringify({ name: '@example/conditioning-service' }),
+			JSON.stringify({ name: '@fixture/billing-service' }),
 		);
 
 		// The repository-level unit suite is the only unfiltered role command by default.
@@ -275,7 +275,7 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 			() =>
 				validateCommandAllowlist(
 					'pnpm',
-					['--filter', 'apps/services/conditioning...', 'test'],
+					['--filter', 'services/billing...', 'test'],
 					allowedPackages,
 					worktreeDir,
 				),
@@ -297,7 +297,7 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 			() =>
 				validateCommandAllowlist(
 					'pnpm',
-					['--filter', 'apps/services', 'test'],
+					['--filter', 'services', 'test'],
 					allowedPackages,
 					worktreeDir,
 				),
@@ -308,7 +308,7 @@ test('validateCommandAllowlist enforces exact package match, no dependency expan
 		assert.ok(
 			validateCommandAllowlist(
 				'pnpm',
-				['--filter', '@example/conditioning-service', 'test'],
+				['--filter', '@fixture/billing-service', 'test'],
 				allowedPackages,
 				worktreeDir,
 			),
@@ -368,11 +368,11 @@ test('@ac AC-08 @case AC-08.1 @case AC-08.2 @case AC-08.3 @case AC-08.4 @case AC
 });
 
 test('validateCommandAllowlist accepts contract verbs by default and unfiltered scripts only when the host declares them', () => {
-	const allowedPackages = ['apps/services/authentication'];
+	const allowedPackages = ['services/authentication'];
 	assert.equal(
 		validateCommandAllowlist(
 			'pnpm',
-			['--filter', 'apps/services/authentication', 'run', 'check:contract-drift'],
+			['--filter', 'services/authentication', 'run', 'check:contract-drift'],
 			allowedPackages,
 		),
 		true,
@@ -380,28 +380,28 @@ test('validateCommandAllowlist accepts contract verbs by default and unfiltered 
 	assert.equal(
 		validateCommandAllowlist(
 			'pnpm',
-			['--filter', 'apps/services/authentication', 'run', 'build:contracts'],
+			['--filter', 'services/authentication', 'run', 'build:contracts'],
 			allowedPackages,
 		),
 		true,
 	);
 	assert.throws(
-		() => validateCommandAllowlist('pnpm', ['run', 'quality:changed'], allowedPackages),
+		() => validateCommandAllowlist('pnpm', ['run', 'quality:affected'], allowedPackages),
 		(error) => error.code === 'INVALID_INPUT' && /commandPolicy/.test(error.message),
 	);
-	const declared = resolveCommandPolicy({ commandPolicy: { repositoryScripts: [['pnpm', 'run', 'quality:changed']] } });
-	assert.equal(validateCommandAllowlist('pnpm', ['run', 'quality:changed'], allowedPackages, null, declared), true);
+	const declared = resolveCommandPolicy({ commandPolicy: { repositoryScripts: [['pnpm', 'run', 'quality:affected']] } });
+	assert.equal(validateCommandAllowlist('pnpm', ['run', 'quality:affected'], allowedPackages, null, declared), true);
 	assert.throws(
-		() => validateCommandAllowlist('pnpm', ['run', 'quality:changed', '--', 'x'], allowedPackages, null, declared),
+		() => validateCommandAllowlist('pnpm', ['run', 'quality:affected', '--', 'x'], allowedPackages, null, declared),
 		(error) => error.code === 'INVALID_INPUT',
 	);
 	assert.throws(
-		() => validateCommandAllowlist('pnpm', ['run', 'quality:changed;rm'], allowedPackages, null, declared),
+		() => validateCommandAllowlist('pnpm', ['run', 'quality:affected;rm'], allowedPackages, null, declared),
 		(error) => error.code === 'INVALID_INPUT',
 	);
 	const narrowed = resolveCommandPolicy({ commandPolicy: { allowedVerbs: ['test'] } });
 	assert.throws(
-		() => validateCommandAllowlist('pnpm', ['--filter', 'apps/services/authentication', 'run', 'build:contracts'], allowedPackages, null, narrowed),
+		() => validateCommandAllowlist('pnpm', ['--filter', 'services/authentication', 'run', 'build:contracts'], allowedPackages, null, narrowed),
 		(error) => error.code === 'INVALID_INPUT' && /not allowlisted/.test(error.message),
 	);
 	assert.throws(
@@ -416,7 +416,7 @@ test('validateCommandAllowlist accepts contract verbs by default and unfiltered 
 		() =>
 			validateCommandAllowlist(
 				'pnpm',
-				['--filter', 'apps/services/authentication', 'run', 'quality:changed'],
+				['--filter', 'services/authentication', 'run', 'quality:affected'],
 				allowedPackages,
 			),
 		(error) => error.code === 'INVALID_INPUT' && /not allowlisted/.test(error.message),
@@ -457,7 +457,7 @@ test('@ac AC-04 @case AC-04.1 @case AC-04.2 @case AC-04.3 validateHostCommand di
 		);
 	}
 	assert.equal(
-		validateHostCommand('pnpm', ['--filter', '@example/conditioning-service', 'test']),
+		validateHostCommand('pnpm', ['--filter', '@fixture/billing-service', 'test']),
 		true,
 	);
 	assert.throws(

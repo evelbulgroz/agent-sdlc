@@ -15,8 +15,8 @@ import {
 } from '../execution/minimal-executor.ts';
 
 const SCHEMA_HASH = '14d564b67fb4aa412d9ac774a7f2fb23aa10e51431fd9605fd2524a2ef3cafd9';
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const SDLC_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const SDLC_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 const executionDir = path.join(SDLC_ROOT, 'execution');
 
 function readSource(name) {
@@ -143,7 +143,7 @@ test('@ac AC-06 @case AC-06.1 @case AC-06.2 @case AC-06.3 @case AC-06.4 task mod
 	for (const name of names) {
 		assert.equal(readSource(name).includes('task-executor.ts'), false, name);
 		assert.ok(
-			bounded.includes(`packages/agent-sdlc/execution/${name}`) || bounded.includes(`execution/${name}`),
+			bounded.includes(`packages/engine/execution/${name}`) || bounded.includes(`execution/${name}`),
 			name,
 		);
 	}
@@ -154,7 +154,7 @@ test('@ac AC-06 @case AC-06.1 @case AC-06.2 @case AC-06.3 @case AC-06.4 task mod
 test('@ac AC-07 @case AC-07.1 @case AC-07.2 @case AC-07.3 execution files are within the ceiling', () => {
 	const exceptions = JSON.parse(fs.readFileSync(path.join(SDLC_ROOT, 'testing/navigability-exceptions.json'), 'utf8'));
 	for (const key of Object.keys(exceptions)) {
-		assert.equal(key.startsWith('packages/agent-sdlc/execution/'), false, key);
+		assert.equal(key.startsWith('packages/engine/execution/'), false, key);
 	}
 	const files = [
 		...fs.readdirSync(executionDir).filter((name) => name.endsWith('.ts') || name.endsWith('.mjs')).map((name) => path.join(executionDir, name)),

@@ -52,11 +52,11 @@ test('review findings, failure packet, and preflight binding contracts validate 
 		schemaVersion: '1.0.0',
 		runId: '2026-09-04-failure-test',
 		generation: 0,
-		failedCommand: 'pnpm run agent:preflight -- --base ' + 'a'.repeat(40),
+		failedCommand: 'pnpm run agent:verify -- --base ' + 'a'.repeat(40),
 		exitCode: 1,
 		sanitizedOutput: 'Test failure output',
 		classification: 'test_failure',
-		targetPaths: ['apps/services/conditioning/**'],
+		targetPaths: ['services/billing/**'],
 		baseCommitSha: 'a'.repeat(40),
 		timestamp: new Date().toISOString(),
 	};
@@ -70,7 +70,7 @@ test('review findings, failure packet, and preflight binding contracts validate 
 	const validBinding = {
 		baseCommitSha: 'a'.repeat(40),
 		targetTreeSha: 'b'.repeat(40),
-		command: 'pnpm run agent:preflight -- --base ' + 'a'.repeat(40),
+		command: 'pnpm run agent:verify -- --base ' + 'a'.repeat(40),
 		preflightResultHash: 'c'.repeat(64),
 		status: 'OK',
 		canonical: true,

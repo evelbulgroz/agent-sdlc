@@ -4,11 +4,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
-test('@ac AC-09 @case AC-09.1 README.md mentions .agents/sdlc-host.json, host/, default, and script, and does not call packages/agent-sdlc an npm package', () => {
+test('@ac AC-09 @case AC-09.1 README.md mentions .agents/sdlc-host.json, host/, default, and script, and does not call packages/engine an npm package', () => {
 	const readme = fs.readFileSync(path.join(PACKAGE_ROOT, 'README.md'), 'utf8');
 	assert.match(readme, /\.agents\/sdlc-host\.json/);
 	assert.match(readme, /host\//);
@@ -27,7 +27,7 @@ test('@ac AC-09 @case AC-09.2 host/README.md documents schemaVersion 1.3.0, decl
 	assert.equal(/npm package/i.test(hostReadme), false);
 });
 
-test('@ac AC-05 @case AC-05.1 packages/agent-sdlc/README.md and packages/agent-sdlc/host/README.md document .agent-sdlc default single-directory state, optional runsDir projection, and adding .agent-sdlc/ to .gitignore', () => {
+test('@ac AC-05 @case AC-05.1 packages/engine/README.md and packages/engine/host/README.md document .agent-sdlc default single-directory state, optional runsDir projection, and adding .agent-sdlc/ to .gitignore', () => {
 	const readme = fs.readFileSync(path.join(PACKAGE_ROOT, 'README.md'), 'utf8');
 	const hostReadme = fs.readFileSync(path.join(PACKAGE_ROOT, 'host/README.md'), 'utf8');
 	for (const doc of [readme, hostReadme]) {

@@ -1,9 +1,0 @@
-{
-  "name": "@example/conditioning-service",
-  "scripts": {
-    "test": "pnpm test"
-  },
-  "dependencies": {
-    "@example/ddd-base": "workspace:*"
-  }
-}

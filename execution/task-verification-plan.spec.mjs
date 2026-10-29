@@ -34,12 +34,12 @@ test('Vitest task guidance requires explicit API imports', () => {
 
 test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests', () => {
 	const task = {
-		targetPackage: 'apps/frontends/example',
+		targetPackage: 'frontends/example',
 		authoredPaths: [
-			'apps/frontends/example/src/ui/Page.tsx',
-			'apps/frontends/example/src/ui/Page.spec.tsx',
+			'frontends/example/src/ui/Page.tsx',
+			'frontends/example/src/ui/Page.spec.tsx',
 		],
-		verificationCommand: ['pnpm', '--filter', '@example/example', 'test'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/example', 'test'],
 	};
 	assert.deepEqual(
 		resolveTargetedVerificationCommand(task, {
@@ -48,7 +48,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -56,7 +56,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 	);
 	assert.equal(
 		resolveTargetedVerificationCommand(
-			{ ...task, authoredPaths: ['apps/frontends/example/src/ui/Page.tsx'] },
+			{ ...task, authoredPaths: ['frontends/example/src/ui/Page.tsx'] },
 			{ scripts: { test: 'vitest run' } },
 		),
 		null,
@@ -68,7 +68,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -76,7 +76,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 	);
 	assert.deepEqual(
 		resolveTargetedVerificationCommand(task, {
-			name: '@example/example',
+			name: '@fixture/example',
 			scripts: {
 				test: 'pnpm run test:unit && pnpm run test:integration',
 				'test:unit': 'cross-env NODE_ENV=test vitest run --config vitest.config.ts',
@@ -87,7 +87,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'run',
 			'test:unit',
 			'src/ui/Page.spec.tsx',
@@ -97,10 +97,10 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		resolveTargetedVerificationCommand(
 			{
 				...task,
-				verificationCommand: ['pnpm', '--filter', '@example/example', 'run', 'test:unit'],
+				verificationCommand: ['pnpm', '--filter', '@fixture/example', 'run', 'test:unit'],
 			},
 			{
-				name: '@example/example',
+				name: '@fixture/example',
 				scripts: {
 					test: 'pnpm run test:unit && pnpm run test:integration',
 					'test:unit': 'cross-env NODE_ENV=test vitest run --config vitest.config.ts',
@@ -110,7 +110,7 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'run',
 			'test:unit',
 			'src/ui/Page.spec.tsx',
@@ -120,9 +120,9 @@ test('@ac AC-04 derives targeted Jest or Vitest verification from authored tests
 
 test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test runners', () => {
 	const task = {
-		targetPackage: 'apps/frontends/example',
-		authoredPaths: ['apps/frontends/example/src/ui/Page.spec.tsx'],
-		verificationCommand: ['pnpm', '--filter', '@example/example', 'test'],
+		targetPackage: 'frontends/example',
+		authoredPaths: ['frontends/example/src/ui/Page.spec.tsx'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/example', 'test'],
 	};
 	assert.deepEqual(
 		resolveAcceptanceEvidenceCommand(task, {
@@ -131,7 +131,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -140,7 +140,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 	);
 	assert.deepEqual(
 		resolveAcceptanceEvidenceCommand(task, {
-			name: '@example/example',
+			name: '@fixture/example',
 			scripts: {
 				test: 'pnpm run test:unit && pnpm run test:integration',
 				'test:unit': 'cross-env NODE_ENV=test vitest run --config vitest.config.ts',
@@ -151,7 +151,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'run',
 			'test:unit',
 			'src/ui/Page.spec.tsx',
@@ -165,7 +165,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -179,7 +179,7 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 		[
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/ui/Page.spec.tsx',
@@ -217,12 +217,12 @@ test('verification sequence runs the declared generator before the verification 
 });
 
 test('verification sequence appends the package build when the package defines one', () => {
-	const verificationCommand = ['pnpm', '--filter', '@example/conditioning-service', 'test'];
+	const verificationCommand = ['pnpm', '--filter', '@fixture/billing-service', 'test'];
 	const packageJson = {
-		name: '@example/conditioning-service',
+		name: '@fixture/billing-service',
 		scripts: { build: 'nest build', test: 'vitest run' },
 	};
-	const build = ['pnpm', '--filter', '@example/conditioning-service', 'run', 'build'];
+	const build = ['pnpm', '--filter', '@fixture/billing-service', 'run', 'build'];
 	assert.deepEqual(resolveTaskVerificationSequence({ verificationCommand }, packageJson), [
 		verificationCommand,
 		build,
@@ -231,7 +231,7 @@ test('verification sequence appends the package build when the package defines o
 		resolveTaskVerificationSequence(
 			{
 				verificationCommand,
-				generatorCommand: ['pnpm', '--filter', '@example/conditioning-service', 'run', 'build:contracts'],
+				generatorCommand: ['pnpm', '--filter', '@fixture/billing-service', 'run', 'build:contracts'],
 			},
 			packageJson,
 		).at(-1),
@@ -245,14 +245,14 @@ test('verification sequence appends the package build when the package defines o
 });
 
 test('withContractPreservationCommands appends sink checks and leaves a plain sequence unchanged', () => {
-	const verificationCommand = ['pnpm', '--filter', '@example/demo-service', 'test'];
+	const verificationCommand = ['pnpm', '--filter', '@fixture/demo-service', 'test'];
 	const base = resolveTaskVerificationSequence({ verificationCommand });
 	assert.deepEqual(withContractPreservationCommands(base, null), base);
 	assert.deepEqual(withContractPreservationCommands(base, {}), base);
 	const extra = [
-		['pnpm', '--filter', '@example/demo-service', 'run', 'build:contracts'],
-		['pnpm', '--filter', '@example/demo-service', 'run', 'check:contract-drift'],
-		['pnpm', 'run', 'quality:changed'],
+		['pnpm', '--filter', '@fixture/demo-service', 'run', 'build:contracts'],
+		['pnpm', '--filter', '@fixture/demo-service', 'run', 'check:contract-drift'],
+		['pnpm', 'run', 'quality:affected'],
 	];
 	assert.deepEqual(
 		withContractPreservationCommands(base, { contractVerificationCommands: extra }),

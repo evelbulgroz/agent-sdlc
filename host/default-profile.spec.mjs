@@ -44,7 +44,7 @@ test('@ac AC-04 @case AC-04.1 a synthetic 1.3.0 host profile in a temporary dire
 		assert.deepEqual(profile.verify.argv, [
 			'pnpm',
 			'run',
-			'agent:preflight',
+			'agent:verify',
 			'--',
 			'--base',
 			'{baseSha}',
@@ -67,25 +67,25 @@ test('@ac AC-04 @case AC-04.1 a synthetic 1.3.0 host profile in a temporary dire
 	});
 });
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 test('@ac AC-04 @case AC-04.2 none of the 6 host and CLI test support/spec files contains forbidden service names', () => {
 	const files = [
-		'packages/agent-sdlc/testing/cli-test-support.mjs',
-		'packages/agent-sdlc/testing/shell-driver-support.mjs',
-		'packages/agent-sdlc/host/default-profile.spec.mjs',
-		'packages/agent-sdlc/host/command-policy.spec.mjs',
-		'packages/agent-sdlc/host/workspace.spec.mjs',
-		'packages/agent-sdlc/host/hydration.spec.mjs',
+		'packages/engine/testing/cli-test-support.mjs',
+		'packages/engine/testing/shell-driver-support.mjs',
+		'packages/engine/host/default-profile.spec.mjs',
+		'packages/engine/host/command-policy.spec.mjs',
+		'packages/engine/host/workspace.spec.mjs',
+		'packages/engine/host/hydration.spec.mjs',
 	];
-	const forbiddenServicePath = `${'apps/services'}/${'conditioning'}`;
-	const forbiddenServicePkg = `${'@' + 'conditioning'}/${'service'}`;
+	const forbiddenServicePath = `${'services'}/${'billing'}`;
+	const forbiddenServicePkg = `${'@' + 'billing'}/${'service'}`;
 	for (const relPath of files) {
 		const targetPath = fs.existsSync(path.join(REPOSITORY_ROOT, relPath))
 			? path.join(REPOSITORY_ROOT, relPath)
-			: path.join(PACKAGE_ROOT, relPath.replace(/^packages\/agent-sdlc\//, ''));
+			: path.join(PACKAGE_ROOT, relPath.replace(/^packages\/engine\//, ''));
 		const text = fs.readFileSync(targetPath, 'utf8');
 		assert.equal(
 			text.includes(forbiddenServicePath),
@@ -106,7 +106,7 @@ test('@ac AC-05 @case AC-05.1 engine default prompts and rubrics contain zero ho
 		path.join(PACKAGE_ROOT, 'review/defaults'),
 	];
 	const forbidden = new RegExp(
-		`${'conditioning'}|NestJS|${'docs'}/${'handbook'}/`,
+		`${'billing'}|NestJS|${'docs'}/${'handbook'}/`,
 		'i',
 	);
 	function scan(dir) {

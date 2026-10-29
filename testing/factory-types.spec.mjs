@@ -8,8 +8,8 @@ import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { listBoundedPlanningFiles } from '../policy/canary-planning-files.ts';
 import { currentCanaryBindings } from '../policy/reliability/canary.ts';
 
-const FACTORY_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const FACTORY_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 const MODEL_USAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/model-usage');
 
@@ -133,7 +133,7 @@ test('@ac AC-05 @case AC-05.3 every boundedPlanningFiles path ends in .ts and ca
 			`expected bounded planning file to end with .ts: ${relPath}`,
 		);
 		assert.equal(
-			fs.existsSync(path.join(REPOSITORY_ROOT, relPath.replace(/^packages\/agent-sdlc\//, ''))),
+			fs.existsSync(path.join(REPOSITORY_ROOT, relPath.replace(/^packages\/engine\//, ''))),
 			true,
 			`missing bounded planning file: ${relPath}`,
 		);
@@ -149,8 +149,8 @@ test('@ac AC-05 @case AC-05.3 every boundedPlanningFiles path ends in .ts and ca
 });
 
 test('@ac AC-05 @case AC-05.4 tsconfig sets allowJs to false and pnpm run typecheck exits 0', () => {
-	const tsconfigPaths = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/tsconfig.json'))
-		? ['packages/agent-sdlc/tsconfig.json', 'packages/model-usage/tsconfig.json'].filter((p) =>
+	const tsconfigPaths = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine/tsconfig.json'))
+		? ['packages/engine/tsconfig.json', 'packages/model-usage/tsconfig.json'].filter((p) =>
 				fs.existsSync(path.join(REPOSITORY_ROOT, p)),
 			)
 		: ['tsconfig.json'];

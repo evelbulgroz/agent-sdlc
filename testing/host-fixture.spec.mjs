@@ -11,10 +11,10 @@ import { runHostVerify } from '../host/verify-runner.ts';
 import { discoverWorkspace } from '../host/workspace.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
 const FIXTURE_HOST_DIR = IS_STANDALONE
 	? path.join(REPOSITORY_ROOT, 'testing/fixture-host')
-	: path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/fixture-host');
+	: path.join(REPOSITORY_ROOT, 'packages/engine/testing/fixture-host');
 
 function withTempFixtureRepo(fn) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-fixture-host-'));
@@ -55,8 +55,8 @@ function withTempFixtureRepo(fn) {
 test('@ac AC-08 @case AC-08.1 host check --root <dir> --json reports profileId fixture-host and adapter script', async () => {
 	await withTempFixtureRepo(async (dir) => {
 		assert.equal(fs.existsSync(path.join(dir, 'pnpm-workspace.yaml')), false);
-		assert.equal(fs.existsSync(path.join(dir, 'apps/services')), false);
-		assert.equal(fs.existsSync(path.join(dir, 'security-config')), false);
+		assert.equal(fs.existsSync(path.join(dir, 'services')), false);
+		assert.equal(fs.existsSync(path.join(dir, 'secrets-config')), false);
 
 		const outcome = await runCli(
 			['host', 'check', '--root', dir, '--json'],

@@ -14,7 +14,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 
 		// 1. Task Plan and Tasks
 		assert.equal(fixture.store.getTaskPlan(fixture.runId), null);
-		assert.equal(fixture.store.getTask(fixture.runId, 'conditioning-task'), null);
+		assert.equal(fixture.store.getTask(fixture.runId, 'billing-task'), null);
 		assert.equal(fixture.store.listTasks(fixture.runId).length, 0);
 
 		const taskPlan = {
@@ -24,14 +24,14 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 			baseCommitSha: 'b'.repeat(40),
 			tasks: [
 				{
-					taskId: 'conditioning-task',
-					title: 'Implement conditioning domain logic',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning/'],
+					taskId: 'billing-task',
+					title: 'Implement billing domain logic',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing/'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
-					worktreeSubdir: 'worktrees/conditioning-task',
+					worktreeSubdir: 'worktrees/billing-task',
 					baseCommitSha: 'b'.repeat(40),
 					parentTreeSha: null,
 					targetTreeSha: null,
@@ -42,9 +42,9 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 				{
 					taskId: 'assessment-task',
 					title: 'Implement assessment domain logic',
-					targetPackage: 'apps/services/assessment',
-					pathPrefixes: ['apps/services/assessment/'],
-					dependsOn: ['conditioning-task'],
+					targetPackage: 'services/assessment',
+					pathPrefixes: ['services/assessment/'],
+					dependsOn: ['billing-task'],
 					status: 'pending',
 					integrationOrder: 1,
 					worktreeSubdir: 'worktrees/assessment-task',
@@ -56,7 +56,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 					repairCount: 0,
 				},
 			],
-			integrationOrder: ['conditioning-task', 'assessment-task'],
+			integrationOrder: ['billing-task', 'assessment-task'],
 			isParallel: true,
 			createdAt: '2026-09-07T00:00:00.000Z',
 		};
@@ -65,13 +65,13 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 
 		const retrievedPlan = fixture.store.getTaskPlan(fixture.runId);
 		assert.equal(retrievedPlan.tasks.length, 2);
-		assert.equal(retrievedPlan.tasks[0].taskId, 'conditioning-task');
+		assert.equal(retrievedPlan.tasks[0].taskId, 'billing-task');
 		assert.equal(retrievedPlan.tasks[1].taskId, 'assessment-task');
 
-		const conditioningTask = fixture.store.getTask(fixture.runId, 'conditioning-task');
-		assert.equal(conditioningTask.targetPackage, 'apps/services/conditioning');
-		assert.equal(conditioningTask.status, 'pending');
-		assert.deepEqual(conditioningTask.dependsOn, []);
+		const billingTask = fixture.store.getTask(fixture.runId, 'billing-task');
+		assert.equal(billingTask.targetPackage, 'services/billing');
+		assert.equal(billingTask.status, 'pending');
+		assert.deepEqual(billingTask.dependsOn, []);
 
 		// Register a fake patch artifact for task-0 to test artifact references
 		const patchContent = 'diff --git a/foo b/foo\n';
@@ -80,7 +80,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 		});
 
 		// Update task status
-		const updatedTask = fixture.store.updateTaskStatus(fixture.runId, 'conditioning-task', {
+		const updatedTask = fixture.store.updateTaskStatus(fixture.runId, 'billing-task', {
 			status: 'completed',
 			parentTreeSha: 'c'.repeat(40),
 			targetTreeSha: 'd'.repeat(40),
@@ -91,7 +91,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 		assert.equal(updatedTask.targetTreeSha, 'd'.repeat(40));
 		assert.equal(updatedTask.patchHash, patchHash);
 
-		const retrievedUpdated = fixture.store.getTask(fixture.runId, 'conditioning-task');
+		const retrievedUpdated = fixture.store.getTask(fixture.runId, 'billing-task');
 		assert.equal(retrievedUpdated.status, 'completed');
 		assert.equal(retrievedUpdated.patchHash, patchHash);
 
@@ -102,7 +102,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 		const recRecord = {
 			reconciliationId: 'rec-0',
 			runId: fixture.runId,
-			integrationOrder: ['conditioning-task', 'assessment-task'],
+			integrationOrder: ['billing-task', 'assessment-task'],
 			reconciledTreeSha: 'e'.repeat(40),
 			status: 'RECONCILIATION_COMPLETED',
 			conflictDetails: null,
@@ -114,7 +114,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 		const retrievedRec = fixture.store.getReconciliation('rec-0');
 		assert.equal(retrievedRec.reconciliationId, 'rec-0');
 		assert.equal(retrievedRec.status, 'RECONCILIATION_COMPLETED');
-		assert.deepEqual(retrievedRec.integrationOrder, ['conditioning-task', 'assessment-task']);
+		assert.deepEqual(retrievedRec.integrationOrder, ['billing-task', 'assessment-task']);
 
 		const latestRec = fixture.store.getLatestReconciliation(fixture.runId);
 		assert.equal(latestRec.reconciliationId, 'rec-0');
@@ -124,7 +124,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 			schemaVersion: '1.0.0',
 			executionId: 'exec-task-0',
 			runId: fixture.runId,
-			taskId: 'conditioning-task',
+			taskId: 'billing-task',
 			roleId: 'implementer',
 			generation: 0,
 			stepIndex: 0,
@@ -150,13 +150,13 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 			createdAt: new Date().toISOString(),
 		});
 
-		const conditioningExecs = fixture.store.listToolExecutions(
+		const billingExecs = fixture.store.listToolExecutions(
 			fixture.runId,
 			0,
-			'conditioning-task',
+			'billing-task',
 		);
-		assert.equal(conditioningExecs.length, 1);
-		assert.equal(conditioningExecs[0].executionId, 'exec-task-0');
+		assert.equal(billingExecs.length, 1);
+		assert.equal(billingExecs[0].executionId, 'exec-task-0');
 
 		const assessmentExecs = fixture.store.listToolExecutions(
 			fixture.runId,
@@ -170,7 +170,7 @@ test('runtime store persists and retrieves DAG task plans, individual tasks, and
 		const reconciled = fixture.store.reconcile(fixture.runId);
 		assert.equal(reconciled.tasks.length, 2);
 		assert.equal(
-			reconciled.tasks.find((t) => t.taskId === 'conditioning-task')?.patchHash,
+			reconciled.tasks.find((t) => t.taskId === 'billing-task')?.patchHash,
 			patchHash,
 		);
 	} finally {

@@ -71,9 +71,9 @@ test('@ac AC-02 @case AC-02.5 runCli installs the progress sink only for the fiv
 	}
 });
 
-test('@ac AC-02 @case AC-02.1 @case AC-02.6 node packages/agent-sdlc/cli/cli.ts help exits 0 and prints Usage: agent-sdlc', () => {
-	const cliPath = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts'))
-		? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts')
+test('@ac AC-02 @case AC-02.1 @case AC-02.6 node packages/engine/cli/cli.ts help exits 0 and prints Usage: agent-sdlc', () => {
+	const cliPath = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine/cli/cli.ts'))
+		? path.join(REPOSITORY_ROOT, 'packages/engine/cli/cli.ts')
 		: path.join(REPOSITORY_ROOT, 'cli/cli.ts');
 	const help = spawnSync(
 		process.execPath,

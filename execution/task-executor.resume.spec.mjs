@@ -67,8 +67,8 @@ test('TaskExecutor reuses parentCommitSha on resume without minting new syntheti
 				{
 					taskId: 'task-0',
 					title: 'Task 0',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'completed',
 					integrationOrder: 0,
@@ -84,8 +84,8 @@ test('TaskExecutor reuses parentCommitSha on resume without minting new syntheti
 				{
 					taskId: 'task-1',
 					title: 'Task 1',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: ['task-0'],
 					status: 'pending',
 					integrationOrder: 1,
@@ -109,7 +109,7 @@ test('TaskExecutor reuses parentCommitSha on resume without minting new syntheti
 		const executor = new TaskExecutor({
 			governor: new FakeModelGovernor([
 				leanWriteAction(
-					'apps/services/conditioning/src/task-1.ts',
+					'services/billing/src/task-1.ts',
 					'export const val = 1;',
 				),
 				{
@@ -130,8 +130,8 @@ test('TaskExecutor reuses parentCommitSha on resume without minting new syntheti
 		await executor.executeTaskPlan({
 			taskPlan,
 			authorization: {
-				allowedPackages: ['apps/services/conditioning'],
-				allowedPathPrefixes: ['apps/services/conditioning'],
+				allowedPackages: ['services/billing'],
+				allowedPathPrefixes: ['services/billing'],
 				allowedOperations: {
 					createDetachedWorktree: true,
 					editIsolatedWorktree: true,

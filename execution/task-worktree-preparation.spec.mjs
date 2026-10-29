@@ -27,9 +27,9 @@ test('TaskExecutor rejects execution when the task plan is not frozen', async ()
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -61,8 +61,8 @@ test('TaskExecutor rejects execution when the task plan is not frozen', async ()
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 						allowedOperations: {
 							createDetachedWorktree: true,
 							editIsolatedWorktree: true,
@@ -102,8 +102,8 @@ test('TaskExecutor rejects execution when createDetachedWorktree is not permitte
 				{
 					taskId: 'task-0',
 					title: 'Task 0',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -136,8 +136,8 @@ test('TaskExecutor rejects execution when createDetachedWorktree is not permitte
 				executor.executeTaskPlan({
 					taskPlan,
 					authorization: {
-						allowedPackages: ['apps/services/conditioning'],
-						allowedPathPrefixes: ['apps/services/conditioning'],
+						allowedPackages: ['services/billing'],
+						allowedPathPrefixes: ['services/billing'],
 						allowedOperations: { createDetachedWorktree: false },
 					},
 					snapshot: { taskPlanFrozen: true },

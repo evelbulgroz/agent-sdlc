@@ -119,7 +119,7 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 	const worktreeDir = path.join(paths.runtimeDir, 'worktree');
 	const baseCommitSha = '1'.repeat(40);
 	const targetTreeSha = '2'.repeat(40);
-	const oracleRelPath = 'apps/services/conditioning/test.oracle.spec.ts';
+	const oracleRelPath = 'services/billing/test.oracle.spec.ts';
 	const oracleContent = '// oracle test spec\n';
 	const oracleHash = crypto.createHash('sha256').update(oracleContent, 'utf8').digest('hex');
 
@@ -131,7 +131,7 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 	let store;
 	try {
 		fs.mkdirSync(paths.artifactsDir, { recursive: true });
-		fs.mkdirSync(path.join(worktreeDir, 'apps/services/conditioning'), { recursive: true });
+		fs.mkdirSync(path.join(worktreeDir, 'services/billing'), { recursive: true });
 		fs.writeFileSync(path.join(worktreeDir, oracleRelPath), oracleContent);
 
 		store = new RuntimeStore(paths.databasePath);
@@ -184,8 +184,8 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning/'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -208,8 +208,8 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 			generation: 0,
 			baseCommitSha,
 			targetTreeSha,
-			scopeFingerprints: { 'apps/services/conditioning/': 'd'.repeat(64) },
-			taskOwnedPaths: ['apps/services/conditioning/**'],
+			scopeFingerprints: { 'services/billing/': 'd'.repeat(64) },
+			taskOwnedPaths: ['services/billing/**'],
 			materializedAt: new Date().toISOString(),
 			oracleSnapshot: [{ path: oracleRelPath, sha256: oracleHash }],
 		});
@@ -227,7 +227,7 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 		]);
 
 		// 1. Violation A: Containment Violation
-		const leakDir = path.join(worktreeDir, 'packages/ddd-base/src');
+		const leakDir = path.join(worktreeDir, 'packages/shared-base/src');
 		fs.mkdirSync(leakDir, { recursive: true });
 		fs.writeFileSync(path.join(leakDir, 'leak.ts'), '// uncontained file');
 
@@ -258,7 +258,7 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 
 		// Legitimate human edit
 		fs.writeFileSync(
-			path.join(worktreeDir, 'apps/services/conditioning/fix.ts'),
+			path.join(worktreeDir, 'services/billing/fix.ts'),
 			'export const fixed = true;',
 		);
 
@@ -269,9 +269,9 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 			runId,
 			'--retry',
 			'--learning-insight',
-			'Explicit queryRunner release prevents connection pool exhaustion in conditioning',
+			'Explicit queryRunner release prevents connection pool exhaustion in billing',
 			'--learning-scope',
-			'conditioning',
+			'billing',
 			'--json',
 		];
 		const interruptedResult = await runCli(
@@ -327,7 +327,7 @@ test('CLI resume on ESCALATED run enforces containment, protects oracles, and re
 			assert.equal(candidates[0].sourceRole, 'operator');
 			assert.equal(candidates[0].confidence, 9);
 			assert.equal(candidates[0].generation, 1);
-			assert.match(candidates[0].key, /^conditioning-/);
+			assert.match(candidates[0].key, /^billing-/);
 
 			const pendingOutbox = checkStore.listPendingLearningOutbox(runId);
 			assert.equal(pendingOutbox.length, 0);

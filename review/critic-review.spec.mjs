@@ -300,7 +300,7 @@ test('executeReview trips circuit breaker on P1 findings and enforces repair lim
 	fs.mkdirSync(rubricsDir, { recursive: true });
 	fs.writeFileSync(path.join(rubricsDir, 'code.md'), '# Code Rubric', 'utf8');
 
-	const citedFileDir = path.join(fixture.runtimeDir, 'packages', 'ddd-base', 'src');
+	const citedFileDir = path.join(fixture.runtimeDir, 'packages', 'shared-base', 'src');
 	fs.mkdirSync(citedFileDir, { recursive: true });
 	fs.writeFileSync(path.join(citedFileDir, 'auth.ts'), 'export function auth() {}\n', 'utf8');
 
@@ -308,8 +308,8 @@ test('executeReview trips circuit breaker on P1 findings and enforces repair lim
 		runId: fixture.runId,
 		approvedSpecHash: 'b'.repeat(64),
 		baseCommitSha: 'd'.repeat(40),
-		allowedPackages: ['packages/ddd-base'],
-		allowedPathPrefixes: ['packages/ddd-base'],
+		allowedPackages: ['packages/shared-base'],
+		allowedPathPrefixes: ['packages/shared-base'],
 		maxSemanticRepairs: 2,
 		createBranch: true,
 		createLocalCommits: true,
@@ -330,7 +330,7 @@ test('executeReview trips circuit breaker on P1 findings and enforces repair lim
 				{
 					severity: 'P1',
 					category: 'security',
-					file: 'packages/ddd-base/src/auth.ts',
+					file: 'packages/shared-base/src/auth.ts',
 					evidence: 'Critical boundary bypass',
 					impact: 'High',
 					remediation: 'Enforce boundary',
@@ -352,7 +352,7 @@ test('executeReview trips circuit breaker on P1 findings and enforces repair lim
 			runId: fixture.runId,
 			generation: 0,
 			phase: 'code',
-			scope: ['packages/ddd-base'],
+			scope: ['packages/shared-base'],
 			authorVendor: 'google',
 		});
 

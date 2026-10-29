@@ -22,8 +22,8 @@ test('reconcileTasks rejects patch modifying files outside task pathPrefixes', a
 		const task1 = {
 			taskId: 'task-leak',
 			title: 'Task Leak',
-			targetPackage: 'apps/services/conditioning',
-			pathPrefixes: ['apps/services/conditioning'],
+			targetPackage: 'services/billing',
+			pathPrefixes: ['services/billing'],
 			dependsOn: [],
 			status: 'completed',
 			integrationOrder: 0,
@@ -58,7 +58,7 @@ test('reconcileTasks rejects patch modifying files outside task pathPrefixes', a
 			}
 			if (args[0] === 'diff-tree' && args[1] === '--name-only') {
 				// Leak outside pathPrefixes
-				return 'packages/ddd-base/src/leak.ts\n';
+				return 'packages/shared-base/src/leak.ts\n';
 			}
 			return '';
 		};
@@ -68,7 +68,7 @@ test('reconcileTasks rejects patch modifying files outside task pathPrefixes', a
 				reconcileTasks({
 					runId: fixture.runId,
 					taskPlan,
-					authorization: { allowedPackages: ['apps/services/conditioning', 'docs'], allowedPathPrefixes: ['apps/services/conditioning', 'docs'] },
+					authorization: { allowedPackages: ['services/billing', 'docs'], allowedPathPrefixes: ['services/billing', 'docs'] },
 					runtimeStore: fixture.store,
 					gitCli: mockGitCli,
 					taskPlanFrozen: true,

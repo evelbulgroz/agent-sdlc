@@ -6,8 +6,8 @@ import test from 'node:test';
 import * as movedContracts from '../policy/contracts.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 
 test('@ac AC-02 @case AC-02.1 capability modules exist', () => {
 	for (const relative of [
@@ -36,7 +36,7 @@ test('@ac AC-02 @case AC-02.3 agent-sdlc help exits 0 and prints usage', () => {
 	assert.match(output, /Usage:/);
 });
 
-test('@ac AC-02 @case AC-02.4 packages/agent-sdlc contains its package.json', () => {
+test('@ac AC-02 @case AC-02.4 packages/engine contains its package.json', () => {
 	assert.equal(fs.existsSync(path.join(ROOT, 'package.json')), true);
 });
 

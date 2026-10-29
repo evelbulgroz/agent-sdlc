@@ -50,28 +50,28 @@ const FROZEN_CONTINUATION_TITLES = Object.freeze(
 	].sort(),
 );
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const SDLC_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const SDLC_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 
 function resolveRepo(rel) {
 	if (fs.existsSync(path.join(REPOSITORY_ROOT, rel))) return path.join(REPOSITORY_ROOT, rel);
-	return path.join(SDLC_ROOT, rel.replace(/^packages\/agent-sdlc\//, ''));
+	return path.join(SDLC_ROOT, rel.replace(/^packages\/engine\//, ''));
 }
 
 const RECOVERY_FILES = Object.freeze([
-	'packages/agent-sdlc/workflow/recovery-answer-boundaries.spec.mjs',
-	'packages/agent-sdlc/workflow/recovery-production-isolation.spec.mjs',
-	'packages/agent-sdlc/workflow/recovery-graph-boundaries.spec.mjs',
-	'packages/agent-sdlc/workflow/recovery-reconciliation.spec.mjs',
-	'packages/agent-sdlc/workflow/recovery-execution-boundaries.spec.mjs',
-	'packages/agent-sdlc/workflow/recovery-delivery-boundaries.spec.mjs',
+	'packages/engine/workflow/recovery-answer-boundaries.spec.mjs',
+	'packages/engine/workflow/recovery-production-isolation.spec.mjs',
+	'packages/engine/workflow/recovery-graph-boundaries.spec.mjs',
+	'packages/engine/workflow/recovery-reconciliation.spec.mjs',
+	'packages/engine/workflow/recovery-execution-boundaries.spec.mjs',
+	'packages/engine/workflow/recovery-delivery-boundaries.spec.mjs',
 ]);
 
 const CONTINUATION_FILES = Object.freeze([
-	'packages/agent-sdlc/workflow/continuation-authorization.spec.mjs',
-	'packages/agent-sdlc/workflow/continuation-hydration.spec.mjs',
-	'packages/agent-sdlc/workflow/continuation-interruption.spec.mjs',
-	'packages/agent-sdlc/workflow/continuation-planning.spec.mjs',
+	'packages/engine/workflow/continuation-authorization.spec.mjs',
+	'packages/engine/workflow/continuation-hydration.spec.mjs',
+	'packages/engine/workflow/continuation-interruption.spec.mjs',
+	'packages/engine/workflow/continuation-planning.spec.mjs',
 ]);
 
 function measure(rel) {
@@ -101,7 +101,7 @@ function definedNames(rel) {
 
 test('@ac AC-01 @case AC-01.1 recovery.spec.mjs is absent and the six recovery spec files are within the ceiling', () => {
 	assert.equal(
-		fs.existsSync(resolveRepo('packages/agent-sdlc/workflow/recovery.spec.mjs')),
+		fs.existsSync(resolveRepo('packages/engine/workflow/recovery.spec.mjs')),
 		false,
 	);
 	for (const rel of RECOVERY_FILES) {
@@ -116,7 +116,7 @@ test('@ac AC-01 @case AC-01.2 each frozen recovery title appears in exactly one 
 	const matching = fs
 		.readdirSync(workflowDir)
 		.filter((name) => /^recovery.*\.spec\.mjs$/.test(name))
-		.map((name) => `packages/agent-sdlc/workflow/${name}`)
+		.map((name) => `packages/engine/workflow/${name}`)
 		.sort();
 	assert.deepEqual(matching, [...RECOVERY_FILES].sort());
 	const allTitles = matching.flatMap((rel) => topLevelTestTitles(rel));
@@ -137,7 +137,7 @@ test('@ac AC-01 @case AC-01.3 no recovery spec file defines a helper that testin
 
 test('@ac AC-02 @case AC-02.1 continuation.spec.mjs is absent and the four continuation spec files are within the ceiling', () => {
 	assert.equal(
-		fs.existsSync(resolveRepo('packages/agent-sdlc/workflow/continuation.spec.mjs')),
+		fs.existsSync(resolveRepo('packages/engine/workflow/continuation.spec.mjs')),
 		false,
 	);
 	for (const rel of CONTINUATION_FILES) {
@@ -152,7 +152,7 @@ test('@ac AC-02 @case AC-02.2 each frozen continuation title appears in exactly 
 	const matching = fs
 		.readdirSync(workflowDir)
 		.filter((name) => /^continuation.*\.spec\.mjs$/.test(name))
-		.map((name) => `packages/agent-sdlc/workflow/${name}`)
+		.map((name) => `packages/engine/workflow/${name}`)
 		.sort();
 	assert.deepEqual(matching, [...CONTINUATION_FILES].sort());
 	const allTitles = matching.flatMap((rel) => topLevelTestTitles(rel));
@@ -190,7 +190,7 @@ test('@ac AC-03 @case AC-03.2 the navigability gate passes on the repository tre
 test('@ac AC-03 @case AC-03.3 in a temporary root a 501-line *.spec.mjs file makes the gate fail and name that file', () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deepen-test-suites-'));
 	try {
-		const rel = 'packages/agent-sdlc/workflow/oversized.spec.mjs';
+		const rel = 'packages/engine/workflow/oversized.spec.mjs';
 		const full = path.join(root, rel);
 		fs.mkdirSync(path.dirname(full), { recursive: true });
 		fs.writeFileSync(full, 'x\n'.repeat(501));
@@ -204,7 +204,7 @@ test('@ac AC-03 @case AC-03.3 in a temporary root a 501-line *.spec.mjs file mak
 	}
 });
 
-test('@ac AC-04 packages/agent-sdlc/README.md names no recovery.spec.mjs or continuation.spec.mjs path and every spec path it names exists', () => {
+test('@ac AC-04 packages/engine/README.md names no recovery.spec.mjs or continuation.spec.mjs path and every spec path it names exists', () => {
 	const readme = fs.readFileSync(path.join(SDLC_ROOT, 'README.md'), 'utf8');
 	assert.doesNotMatch(readme, /\brecovery\.spec\.mjs\b/);
 	assert.doesNotMatch(readme, /\bcontinuation\.spec\.mjs\b/);

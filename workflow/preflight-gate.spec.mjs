@@ -32,8 +32,8 @@ function prepareVerifierSnapshot(fixture, state) {
 		runId: fixture.runId,
 		approvedSpecHash,
 		baseCommitSha,
-		allowedPackages: ['apps/services/conditioning'],
-		allowedPathPrefixes: ['apps/services/conditioning'],
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing'],
 	}));
 	return { snapshot, baseCommitSha, targetTreeSha };
 }
@@ -69,7 +69,7 @@ test('@ac AC-03 @case AC-03.3 @ac AC-05 applyAcCoverageGate does not block compl
 			.run('VERIFYING_PREFLIGHT', canonicalJson(snapshot), sha256(snapshot), fixture.runId);
 		const auth = {
 			baseCommitSha: '0123456789abcdef0123456789abcdef01234567',
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPathPrefixes: ['services/billing'],
 		};
 
 		const { snapshot: next } = applyAcCoverageGate(

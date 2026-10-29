@@ -1,9 +1,0 @@
-{
-  "name": "@example/authentication-service",
-  "scripts": {
-    "test": "pnpm test"
-  },
-  "dependencies": {
-    "@example/registry-service": "workspace:*"
-  }
-}

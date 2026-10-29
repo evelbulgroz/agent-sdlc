@@ -39,8 +39,8 @@ test('@ac AC-04 @ac AC-14 proven provider interruption continues task from check
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -69,8 +69,8 @@ test('@ac AC-04 @ac AC-14 proven provider interruption continues task from check
 				{
 					taskId: 'task-a',
 					title: 'Task A',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base/'],
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base/'],
 					dependsOn: [],
 					status: 'completed',
 					integrationOrder: 0,
@@ -80,8 +80,8 @@ test('@ac AC-04 @ac AC-14 proven provider interruption continues task from check
 				{
 					taskId: 'task-b',
 					title: 'Task B',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base/'],
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base/'],
 					dependsOn: ['task-a'],
 					status: 'blocked',
 					integrationOrder: 1,
@@ -152,8 +152,8 @@ test('@ac AC-05 @ac AC-06 @ac AC-07 @ac AC-14 exhausted repair halts on resume a
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -182,8 +182,8 @@ test('@ac AC-05 @ac AC-06 @ac AC-07 @ac AC-14 exhausted repair halts on resume a
 				{
 					taskId: 'task-a',
 					title: 'Task A',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base/'],
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base/'],
 					dependsOn: [],
 					status: 'failed',
 					integrationOrder: 0,
@@ -239,8 +239,8 @@ test('@ac AC-05 @ac AC-06 @ac AC-07 @ac AC-14 exhausted repair halts on resume a
 			generation: 0,
 			baseCommitSha,
 			targetTreeSha: '2'.repeat(40),
-			scopeFingerprints: { 'packages/ddd-base': 'd'.repeat(64) },
-			taskOwnedPaths: ['packages/ddd-base/**'],
+			scopeFingerprints: { 'packages/shared-base': 'd'.repeat(64) },
+			taskOwnedPaths: ['packages/shared-base/**'],
 			materializedAt: new Date().toISOString(),
 		});
 
@@ -340,8 +340,8 @@ test('@ac AC-12 READY_FOR_GIT_APPROVAL exits 0 with stop and GIT_APPROVAL', asyn
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,

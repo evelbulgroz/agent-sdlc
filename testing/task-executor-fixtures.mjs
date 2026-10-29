@@ -4,7 +4,7 @@ import { FakeModelGovernor } from './fake-model-governor.mjs';
 import { makeFixture } from './test-support.mjs';
 import { TaskExecutor } from '../execution/task-executor.ts';
 
-export const PRODUCT_IMPLEMENTER_PATH = 'apps/services/conditioning/src/locked.ts';
+export const PRODUCT_IMPLEMENTER_PATH = 'services/billing/src/locked.ts';
 export const PRODUCT_IMPLEMENTER_ORIGINAL = 'export const value = "before";\n';
 
 export async function runProductImplementer({
@@ -39,9 +39,9 @@ export async function runProductImplementer({
 			tasks: [
 				{
 					taskId: 'task-0',
-					title: 'Implement conditioning',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					title: 'Implement billing',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'pending',
 					integrationOrder: 0,
@@ -101,8 +101,8 @@ export async function runProductImplementer({
 			planResult = await taskExecutor.executeTaskPlan({
 				taskPlan,
 				authorization: {
-					allowedPackages: ['apps/services/conditioning'],
-					allowedPathPrefixes: ['apps/services/conditioning'],
+					allowedPackages: ['services/billing'],
+					allowedPathPrefixes: ['services/billing'],
 				},
 				snapshot: { taskPlanFrozen: true },
 				specSummary: 'Product implementer',

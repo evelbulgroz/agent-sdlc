@@ -82,7 +82,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Compatibility note: hosts that relied on the default must set `stateDir` (this repo and fitness-app already do).
 - Tests: custom `stateDir` honoured by shell scratch dirs, resume worktree paths, PR-body message, trace auditor.
 
-### Slice 6: Reversible-decision and preflight wording (E) — DONE (config block is `policy.reversibleDecisions`; PR fallback text now `verification: RESULT ...`; test-fixture preflight strings remain under Slice 0b)
+### Slice 6: Reversible-decision and preflight wording (E) — DONE (config block is `policy.reversibleDecisions`; PR fallback text now `verification: RESULT ...`; test-fixture preflight strings were cleaned up in Slice 0b)
 - Move preflight/handbook references into `policy.reversibleDecisions`; defaults reference only the profile's `verify.argv`.
 - Critic done-bar text is composed from `verify.argv` (partially done).
 - Tests: default decision text contains no file paths; override applied.
@@ -92,7 +92,7 @@ Each slice is independently mergeable, leaves `pnpm run build && pnpm run typech
 - Update READMEs, `ARCHITECTURE.md`, `host/README.md` (new fields, migration table), and `docs/operator-shell-and-authorization.md`.
 - Tests: existing living-docs and `host-docs` specs updated to the new fields; docs-drift check passes.
 
-### Slice 8: Leak guard and canary qualification (guard and canary fixture DONE and `CANARY_ELIGIBLE`; hosted run pending)
+### Slice 8: Leak guard and canary qualification (DONE; hosted run `2026-10-29-canary-probe-3` qualified `PASSED`; Slice 0b removed fixture literals so the guard now exempts only itself, `docs/specs/`, the lockfile, `reflections.md` and the `host/README.md` migration table; contract verbs `build:contracts` and `check:contract-drift` remain engine defaults)
 - Add `testing/host-neutrality.spec.mjs`: fails if any non-fixture source, prompt, rubric, doc, or profile matches a denylist (`fitness`, `@example/`, `apps/services`, `apps/frontends`, `apps/e2e`, `security-config`, `agent:preflight`, `agent:test-sdlc`, `quality:changed`, `ddd-base`, `conditioning`, `packages/agent-sdlc`). Allowlist: this spec and the migration table in `host/README.md`.
 - Draft the canary fixture (`docs/specs/drafts/canary.md` + `canary.tasks.json`: 1 vertical slice, 1 task, <= 2 ACs, <= 3 files under `scripts/` or `testing/`, `verificationCommand: ["pnpm","run","test:unit"]`), run `canary check`, then the hosted run to `READY_FOR_GIT_APPROVAL`; never merge the canary worktree. Requires operator approval for live model calls.
 

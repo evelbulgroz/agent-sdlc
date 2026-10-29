@@ -8,19 +8,19 @@ import {
 } from './github-pr.ts';
 
 test('isHighRiskPath correctly identifies high risk directories and normal directories', () => {
-	assert.equal(isHighRiskPath('apps/services/authentication/src/auth.ts'), true);
-	assert.equal(isHighRiskPath('apps/services/registry/src/index.ts'), true);
+	assert.equal(isHighRiskPath('services/authentication/src/auth.ts'), true);
+	assert.equal(isHighRiskPath('services/registry/src/index.ts'), true);
 	assert.equal(isHighRiskPath('packages/service-auth-core/src/index.ts'), true);
 	assert.equal(isHighRiskPath('packages/nest-service-auth/src/index.ts'), true);
-	assert.equal(isHighRiskPath('packages/ddd-base/src/index.ts'), true);
+	assert.equal(isHighRiskPath('packages/shared-base/src/index.ts'), true);
 	assert.equal(isHighRiskPath('packages/base/src/index.ts'), true);
 	assert.equal(isHighRiskPath('.github/workflows/verify.yml'), true);
 	assert.equal(isHighRiskPath('tools/quality/rules.json'), true);
-	assert.equal(isHighRiskPath('security-config/keys.json'), true);
+	assert.equal(isHighRiskPath('secrets-config/keys.json'), true);
 
 	// Normal paths
-	assert.equal(isHighRiskPath('apps/services/conditioning/src/index.ts'), false);
-	assert.equal(isHighRiskPath('apps/frontends/pwa-frontend/src/App.tsx'), false);
+	assert.equal(isHighRiskPath('services/billing/src/index.ts'), false);
+	assert.equal(isHighRiskPath('frontends/pwa-frontend/src/App.tsx'), false);
 	assert.equal(isHighRiskPath('tools/agent-sdlc/workflow/graph.mjs'), false);
 
 	// Shadow paths: nil, empty, non-string
@@ -33,9 +33,9 @@ test('formatPullRequestBody formats PR body matching monorepo template and shado
 	// 1. Happy path: standard run with decisions, preflight, normal risk
 	const body = formatPullRequestBody({
 		spec: {
-			goal: 'Add GPS speed smoothing to conditioning service',
-			owningContext: 'Conditioning',
-			touchedSurfaces: ['apps/services/conditioning/src/gps.ts'],
+			goal: 'Add GPS speed smoothing to billing service',
+			owningContext: 'Billing',
+			touchedSurfaces: ['services/billing/src/gps.ts'],
 		},
 		decisions: [
 			{ topic: 'Algorithm', chosen: 'Kalman filter' },
@@ -47,17 +47,17 @@ test('formatPullRequestBody formats PR body matching monorepo template and shado
 			changeClass: 'A',
 			resultLine: 'agent-preflight: RESULT status=OK class=A canonical=true exitCode=0',
 		},
-		allowedPackages: ['apps/services/conditioning'],
+		allowedPackages: ['services/billing'],
 		runId: '2026-09-08-gps-smoothing',
 		branchName: 'agent-sdlc/2026-09-08-gps-smoothing',
 	});
 
 	assert.ok(body.includes('## Summary'));
-	assert.ok(body.includes('Add GPS speed smoothing to conditioning service'));
-	assert.ok(body.includes('**Owning Context:** Conditioning'));
+	assert.ok(body.includes('Add GPS speed smoothing to billing service'));
+	assert.ok(body.includes('**Owning Context:** Billing'));
 	assert.ok(body.includes('- [x] `lane:agent`'));
 	assert.ok(body.includes('- [x] Normal'));
-	assert.ok(body.includes('`apps/services/conditioning`'));
+	assert.ok(body.includes('`services/billing`'));
 	assert.ok(body.includes('agent-preflight: RESULT status=OK class=A canonical=true exitCode=0'));
 	assert.ok(body.includes('- **Algorithm**: Kalman filter'));
 	assert.ok(body.includes('- Initial implementation passed local preflight'));
@@ -70,8 +70,8 @@ test('formatPullRequestBody formats PR body matching monorepo template and shado
 			goal: 'Update authentication token validation',
 			owningContext: 'Authentication',
 		},
-		touchedSurfaces: ['apps/services/authentication/src/tokens.ts'],
-		allowedPackages: ['apps/services/authentication'],
+		touchedSurfaces: ['services/authentication/src/tokens.ts'],
+		allowedPackages: ['services/authentication'],
 		runId: '2026-09-08-auth-update',
 	});
 	assert.ok(highRiskBody.includes('- [x] `risk:high`'));
@@ -80,7 +80,7 @@ test('formatPullRequestBody formats PR body matching monorepo template and shado
 	const escalatedBody = formatPullRequestBody({
 		spec: { goal: 'Bugfix requiring multiple repairs' },
 		repairs: 2,
-		allowedPackages: ['apps/services/conditioning'],
+		allowedPackages: ['services/billing'],
 		runId: '2026-09-08-repair-test',
 	});
 	assert.ok(escalatedBody.includes('- [x] `lane:escalate`'));
@@ -119,7 +119,7 @@ test('createDraftPullRequest handles happy path, shadow paths, and CLI failures'
 
 	const result = createDraftPullRequest({
 		worktreeDir: '/tmp/worktree',
-		title: 'feat(conditioning): add GPS smoothing',
+		title: 'feat(billing): add GPS smoothing',
 		body: '## Summary\nAdds GPS smoothing',
 		branchName: 'agent-sdlc/feat-gps',
 		baseBranch: 'main',
@@ -225,9 +225,9 @@ test('formatPullRequestBody includes QA Divergence Brief and Test Linkage Adviso
 			{ severity: 'P1', ruleId: 'QA_SPEC', message: 'Asserts forbidden field', evidence: 'OVERSPEC: test.spec.ts:30' },
 		],
 		coverageAdvisories: {
-			emptyAssertFiles: ['apps/services/conditioning/src/empty.spec.ts'],
-			uncitedTouchedTests: [{ file: 'apps/services/conditioning/src/uncited.spec.ts', line: 12, title: 'does something' }],
-			staleOracleCitations: [{ file: 'apps/services/conditioning/src/legacy.oracle.spec.ts', line: 10, id: 'AC-99' }],
+			emptyAssertFiles: ['services/billing/src/empty.spec.ts'],
+			uncitedTouchedTests: [{ file: 'services/billing/src/uncited.spec.ts', line: 12, title: 'does something' }],
+			staleOracleCitations: [{ file: 'services/billing/src/legacy.oracle.spec.ts', line: 10, id: 'AC-99' }],
 		},
 	});
 
@@ -236,9 +236,9 @@ test('formatPullRequestBody includes QA Divergence Brief and Test Linkage Adviso
 	assert.ok(body.includes('- [P1] **QA_SPEC**: Asserts forbidden field (OVERSPEC: test.spec.ts:30)'));
 
 	assert.ok(body.includes('## Test Linkage Advisories'));
-	assert.ok(body.includes('- **Empty assertions**: `apps/services/conditioning/src/empty.spec.ts`'));
-	assert.ok(body.includes('- **Uncited touched test**: `apps/services/conditioning/src/uncited.spec.ts:12` "does something"'));
-	assert.ok(body.includes('- **Stale oracle citation**: `apps/services/conditioning/src/legacy.oracle.spec.ts:10` (`AC-99`)'));
+	assert.ok(body.includes('- **Empty assertions**: `services/billing/src/empty.spec.ts`'));
+	assert.ok(body.includes('- **Uncited touched test**: `services/billing/src/uncited.spec.ts:12` "does something"'));
+	assert.ok(body.includes('- **Stale oracle citation**: `services/billing/src/legacy.oracle.spec.ts:10` (`AC-99`)'));
 
 	const missed = formatPullRequestBody({
 		spec: { goal: 'Test divergence formatting' },
@@ -258,7 +258,7 @@ test('formatPullRequestBody renders the secrets checklist from policy.secretPath
 	const spec = { goal: 'Checklist wording' };
 	const plain = formatPullRequestBody({ spec, profile: { version: '1.3.0' } });
 	assert.match(plain, /- \[x\] No secrets committed/);
-	assert.doesNotMatch(plain, /security-config/);
+	assert.doesNotMatch(plain, /secrets-config/);
 	const configured = formatPullRequestBody({
 		spec,
 		profile: { version: '1.3.0', policy: { secretPaths: ['vault/', '*.keys.ts'] } },

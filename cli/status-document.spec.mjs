@@ -105,13 +105,13 @@ test('@ac AC-02 @case AC-02.2 buildStatusDocument in READY_FOR_GIT_APPROVAL with
 		},
 		auth: { baseCommitSha: 'abc1234' },
 		verify: {
-			argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
+			argv: ['pnpm', 'run', 'agent:verify', '--', '--base', '{baseSha}'],
 			resultPath: 'tools/.agent-preflight-last.json',
 		},
 	});
 	assert.equal(
 		status.verification.lastCommand,
-		'pnpm run agent:preflight -- --base abc1234',
+		'pnpm run agent:verify -- --base abc1234',
 	);
 	assert.equal(
 		status.verification.preflight.resultFile,

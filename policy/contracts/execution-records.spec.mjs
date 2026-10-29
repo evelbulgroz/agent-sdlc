@@ -10,8 +10,8 @@ test('generation and tool execution contracts validate strictly', () => {
 		generation: 0,
 		baseCommitSha: 'a'.repeat(40),
 		targetTreeSha: 'b'.repeat(40),
-		scopeFingerprints: { 'apps/services/conditioning': 'c'.repeat(64) },
-		taskOwnedPaths: ['apps/services/conditioning/**'],
+		scopeFingerprints: { 'services/billing': 'c'.repeat(64) },
+		taskOwnedPaths: ['services/billing/**'],
 		materializedAt: new Date().toISOString(),
 	};
 	const parsedGen = validateGeneration(validGen);

@@ -111,7 +111,7 @@ export function syntheticHostProfile(overrides = {}) {
 		reviewDir: 'tools/.review',
 		specDraftDir: 'docs/specs/drafts',
 		verify: {
-			argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
+			argv: ['pnpm', 'run', 'agent:verify', '--', '--base', '{baseSha}'],
 			resultPath: 'tools/.agent-preflight-last.json',
 		},
 		hydration: {

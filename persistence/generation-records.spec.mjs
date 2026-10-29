@@ -24,8 +24,8 @@ test('runtime store persists and retrieves authorizations, generations, tool exe
 			approvedPlanPolicyHash: 'b'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha: 'c'.repeat(40),
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning/src/'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing/src/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -46,7 +46,7 @@ test('runtime store persists and retrieves authorizations, generations, tool exe
 		const savedAuth = fixture.store.getAuthorization(fixture.runId);
 		assert.equal(savedAuth.runId, fixture.runId);
 		assert.equal(savedAuth.maxSemanticRepairs, 2);
-		assert.deepEqual(savedAuth.allowedPackages, ['apps/services/conditioning']);
+		assert.deepEqual(savedAuth.allowedPackages, ['services/billing']);
 
 		// 2. Generations
 		assert.equal(fixture.store.getGeneration(fixture.runId, 0), null);
@@ -58,8 +58,8 @@ test('runtime store persists and retrieves authorizations, generations, tool exe
 			generation: 0,
 			baseCommitSha: 'c'.repeat(40),
 			targetTreeSha: 'd'.repeat(40),
-			scopeFingerprints: { 'apps/services/conditioning': 'e'.repeat(64) },
-			taskOwnedPaths: ['apps/services/conditioning/**'],
+			scopeFingerprints: { 'services/billing': 'e'.repeat(64) },
+			taskOwnedPaths: ['services/billing/**'],
 			materializedAt: new Date().toISOString(),
 		};
 		fixture.store.saveGeneration(gen0);
@@ -75,8 +75,8 @@ test('runtime store persists and retrieves authorizations, generations, tool exe
 			generation: 1,
 			baseCommitSha: 'c'.repeat(40),
 			targetTreeSha: 'f'.repeat(40),
-			scopeFingerprints: { 'apps/services/conditioning': '1'.repeat(64) },
-			taskOwnedPaths: ['apps/services/conditioning/**'],
+			scopeFingerprints: { 'services/billing': '1'.repeat(64) },
+			taskOwnedPaths: ['services/billing/**'],
 			materializedAt: new Date().toISOString(),
 		};
 		fixture.store.saveGeneration(gen1);

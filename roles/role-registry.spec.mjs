@@ -333,7 +333,7 @@ test('architect evaluator validates boundary analysis and detects P1 violations'
 		violations: [
 			{
 				boundary: 'bounded-context',
-				file: 'apps/services/conditioning/src/foo.ts',
+				file: 'services/billing/src/foo.ts',
 				description: 'Cross-service deep import into registry',
 				severity: 'P1',
 			},
@@ -395,15 +395,15 @@ test('@ac AC-02 @case AC-02.1 @case AC-02.2 @case AC-02.3 @ac AC-03 @case AC-03.
 
 test('@ac AC-03 @case AC-03.1 @case AC-03.2 @case AC-03.3 @case AC-03.4 pathScopedRules attach matching addenda and reject missing or executable files', () => {
 	const registry = new RoleRegistry({ rootDir: FIXTURE_MONOREPO_ROOT });
-	const pwaImp = registry.loadRole('implementer', { authoredPaths: ['apps/frontends/example-pwa-frontend/src/App.tsx'] });
+	const pwaImp = registry.loadRole('implementer', { authoredPaths: ['frontends/example-pwa-frontend/src/App.tsx'] });
 	assert.ok(pwaImp.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'));
 	assert.equal(pwaImp.promptPolicy.includes('Path-Scoped Rules: Backend Services'), false);
 
-	const backendImp = registry.loadRole('implementer', { authoredPaths: ['apps/services/conditioning/src/main.ts'] });
+	const backendImp = registry.loadRole('implementer', { authoredPaths: ['services/billing/src/main.ts'] });
 	assert.ok(backendImp.promptPolicy.includes('Path-Scoped Rules: Backend Services'));
 	assert.equal(backendImp.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'), false);
 
-	const criticPwa = registry.loadRole('critic-reviewer', { authoredPaths: ['apps/frontends/example-pwa-frontend/src/App.tsx'] });
+	const criticPwa = registry.loadRole('critic-reviewer', { authoredPaths: ['frontends/example-pwa-frontend/src/App.tsx'] });
 	assert.equal(criticPwa.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'), false);
 
 	const root = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `reg-scoped-inv-${crypto.randomUUID()}`);

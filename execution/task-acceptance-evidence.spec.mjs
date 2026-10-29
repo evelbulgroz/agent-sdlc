@@ -9,7 +9,7 @@ import {
 
 test('@ac AC-01 AC-03 AC-04 validates current source citations against executed JSON evidence', () => {
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-execution-validator-'));
-	const testPath = 'apps/frontends/example/src/Page.spec.tsx';
+	const testPath = 'frontends/example/src/Page.spec.tsx';
 	const absolutePath = path.join(worktreeDir, testPath);
 	fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
 	fs.writeFileSync(
@@ -20,7 +20,7 @@ test('@ac AC-01 AC-03 AC-04 validates current source citations against executed 
 		const command = [
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/Page.spec.tsx',
@@ -32,7 +32,7 @@ test('@ac AC-01 AC-03 AC-04 validates current source citations against executed 
 			],
 			worktreeDir,
 			authoredTestPaths: [testPath],
-			allowedPathPrefixes: ['apps/frontends/example'],
+			allowedPathPrefixes: ['frontends/example'],
 			acceptanceEvidenceCommand: command,
 		});
 
@@ -87,7 +87,7 @@ test('@ac AC-02 bypasses AC-citation evidence for enabling slices with no accept
 	// requirement; completion is still governed by the separate
 	// "declared verification must pass" gate in controlled-executor.mjs.
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-enabling-validator-'));
-	const testPath = 'apps/services/example/src/value.spec.ts';
+	const testPath = 'services/example/src/value.spec.ts';
 	const absolutePath = path.join(worktreeDir, testPath);
 	fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
 	fs.writeFileSync(
@@ -99,11 +99,11 @@ test('@ac AC-02 bypasses AC-citation evidence for enabling slices with no accept
 			acceptanceCriteria: [],
 			worktreeDir,
 			authoredTestPaths: [testPath],
-			allowedPathPrefixes: ['apps/services/example'],
+			allowedPathPrefixes: ['services/example'],
 			acceptanceEvidenceCommand: [
 				'pnpm',
 				'--filter',
-				'@example/example',
+				'@fixture/example',
 				'test',
 			],
 		});
@@ -115,7 +115,7 @@ test('@ac AC-02 bypasses AC-citation evidence for enabling slices with no accept
 
 test('@ac AC-03 AC-05 keeps a missing oracle branch in implementer convergence', () => {
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-case-validator-'));
-	const testPath = 'apps/frontends/example/src/Page.spec.tsx';
+	const testPath = 'frontends/example/src/Page.spec.tsx';
 	const absolutePath = path.join(worktreeDir, testPath);
 	fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
 	fs.writeFileSync(
@@ -126,7 +126,7 @@ test('@ac AC-03 AC-05 keeps a missing oracle branch in implementer convergence',
 		const command = [
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/Page.spec.tsx',
@@ -138,7 +138,7 @@ test('@ac AC-03 AC-05 keeps a missing oracle branch in implementer convergence',
 			],
 			worktreeDir,
 			authoredTestPaths: [testPath],
-			allowedPathPrefixes: ['apps/frontends/example'],
+			allowedPathPrefixes: ['frontends/example'],
 			acceptanceEvidenceCommand: command,
 		});
 		const result = validator({
@@ -179,8 +179,8 @@ test('@ac AC-03 AC-05 keeps a missing oracle branch in implementer convergence',
 
 test('createAcceptanceEvidenceValidator recognizes other spec criteria via knownAcceptanceCriteria and does not flag them as unknown in multi-task slices', () => {
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-multi-validator-'));
-	const existingTestPath = 'apps/services/example/src/upstream.spec.ts';
-	const newTestPath = 'apps/services/example/src/downstream.spec.ts';
+	const existingTestPath = 'services/example/src/upstream.spec.ts';
+	const newTestPath = 'services/example/src/downstream.spec.ts';
 	const absExisting = path.join(worktreeDir, existingTestPath);
 	const absNew = path.join(worktreeDir, newTestPath);
 	fs.mkdirSync(path.dirname(absExisting), { recursive: true });
@@ -196,7 +196,7 @@ test('createAcceptanceEvidenceValidator recognizes other spec criteria via known
 		const command = [
 			'pnpm',
 			'--filter',
-			'@example/example',
+			'@fixture/example',
 			'test',
 			'--',
 			'src/upstream.spec.ts',
@@ -214,7 +214,7 @@ test('createAcceptanceEvidenceValidator recognizes other spec criteria via known
 			],
 			worktreeDir,
 			authoredTestPaths: [existingTestPath, newTestPath],
-			allowedPathPrefixes: ['apps/services/example'],
+			allowedPathPrefixes: ['services/example'],
 			acceptanceEvidenceCommand: command,
 		});
 		const result = validator({
@@ -258,7 +258,7 @@ test('createAcceptanceEvidenceValidator recognizes other spec criteria via known
 
 test('createAcceptanceEvidenceValidator recognizes baseline citations via baseCommitSha and gitCli', () => {
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ac-baseline-validator-'));
-	const testPath = 'apps/frontends/example-pwa-frontend/src/ui/SignInPage.spec.tsx';
+	const testPath = 'frontends/example-pwa-frontend/src/ui/SignInPage.spec.tsx';
 	const absPath = path.join(worktreeDir, testPath);
 	fs.mkdirSync(path.dirname(absPath), { recursive: true });
 	fs.writeFileSync(
@@ -278,7 +278,7 @@ test('createAcceptanceEvidenceValidator recognizes baseline citations via baseCo
 		const command = [
 			'pnpm',
 			'--filter',
-			'@example/pwa-frontend',
+			'@fixture/pwa-frontend',
 			'test',
 			'--',
 			'src/ui/SignInPage.spec.tsx',
@@ -292,7 +292,7 @@ test('createAcceptanceEvidenceValidator recognizes baseline citations via baseCo
 			gitCli,
 			worktreeDir,
 			authoredTestPaths: [testPath],
-			allowedPathPrefixes: ['apps/frontends/example-pwa-frontend'],
+			allowedPathPrefixes: ['frontends/example-pwa-frontend'],
 			acceptanceEvidenceCommand: command,
 		});
 		const result = validator({

@@ -169,12 +169,12 @@ test('a page write failure stops the attempt and is not retried', async () => {
 
 test('acceptance evidence binds the evidence command JSON when verification output is paged', async () => {
 	const title = 'observable behavior @ac AC-21';
-	const testPath = 'apps/services/example/src/anchor.spec.ts';
-	const verification = ['pnpm', '--filter', '@example/example', 'test'];
+	const testPath = 'services/example/src/anchor.spec.ts';
+	const verification = ['pnpm', '--filter', '@fixture/example', 'test'];
 	const evidence = [
 		'pnpm',
 		'--filter',
-		'@example/example',
+		'@fixture/example',
 		'run',
 		'test:unit',
 		'src/anchor.spec.ts',
@@ -205,7 +205,7 @@ test('acceptance evidence binds the evidence command JSON when verification outp
 		],
 		worktreeDir: loop.worktreeDir,
 		authoredTestPaths: [testPath],
-		allowedPathPrefixes: ['apps/services/example'],
+		allowedPathPrefixes: ['services/example'],
 		acceptanceEvidenceCommand: evidence,
 	});
 	try {
@@ -236,7 +236,7 @@ test('acceptance evidence binds the evidence command JSON when verification outp
 });
 
 test('a failed evidence command retries as verification-failed', async () => {
-	const evidence = ['pnpm', '--filter', '@example/example', 'run', 'test:unit', '--reporter=json'];
+	const evidence = ['pnpm', '--filter', '@fixture/example', 'run', 'test:unit', '--reporter=json'];
 	const loop = openLoop({
 		label: 'evidence-fail',
 		script: [
@@ -263,7 +263,7 @@ test('a failed evidence command retries as verification-failed', async () => {
 
 test('empty evidence stdout fails the acceptance check', async () => {
 	const title = 'observable behavior @ac AC-21';
-	const testPath = 'apps/services/example/src/anchor.spec.ts';
+	const testPath = 'services/example/src/anchor.spec.ts';
 	const evidence = ['pnpm', 'run', 'test:unit', '--reporter=json'];
 	const loop = openLoop({
 		label: 'evidence-empty',
@@ -283,7 +283,7 @@ test('empty evidence stdout fails the acceptance check', async () => {
 		],
 		worktreeDir: loop.worktreeDir,
 		authoredTestPaths: [testPath],
-		allowedPathPrefixes: ['apps/services/example'],
+		allowedPathPrefixes: ['services/example'],
 		acceptanceEvidenceCommand: evidence,
 	});
 	try {

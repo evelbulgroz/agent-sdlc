@@ -13,14 +13,14 @@ test('worktree snapshot preserves ignored tracked files while recording allowed 
 		execFileSync('git', ['config', 'user.email', 'test@example.local'], { cwd: repoDir });
 		execFileSync('git', ['config', 'user.name', 'test'], { cwd: repoDir });
 
-		fs.mkdirSync(path.join(repoDir, 'packages/ddd-base'), { recursive: true });
+		fs.mkdirSync(path.join(repoDir, 'packages/shared-base'), { recursive: true });
 		fs.mkdirSync(path.join(repoDir, 'coverage.root-owned.bak'), { recursive: true });
 		fs.writeFileSync(path.join(repoDir, '.env.example'), 'VITE_GATEWAY_BASE_URL=/gateway/api/v1\n');
 		fs.writeFileSync(
 			path.join(repoDir, 'coverage.root-owned.bak/coverage-summary.json'),
 			'{}\n',
 		);
-		fs.writeFileSync(path.join(repoDir, 'packages/ddd-base/fixture.ts'), 'export const value = 1;\n');
+		fs.writeFileSync(path.join(repoDir, 'packages/shared-base/fixture.ts'), 'export const value = 1;\n');
 		execFileSync('git', ['add', '-A'], { cwd: repoDir });
 		execFileSync('git', ['commit', '-m', 'track fixture files'], {
 			cwd: repoDir,
@@ -42,7 +42,7 @@ test('worktree snapshot preserves ignored tracked files while recording allowed 
 		}).trim();
 
 		fs.writeFileSync(
-			path.join(repoDir, 'packages/ddd-base/fixture.ts'),
+			path.join(repoDir, 'packages/shared-base/fixture.ts'),
 			'export const value = 2;\n',
 		);
 		const snapshot = snapshotWorktreeTree({ worktreeDir: repoDir, baseTreeSha: baseline });
@@ -54,7 +54,7 @@ test('worktree snapshot preserves ignored tracked files while recording allowed 
 			.trim()
 			.split('\n');
 
-		assert.deepEqual(changedFiles, ['M\tpackages/ddd-base/fixture.ts']);
+		assert.deepEqual(changedFiles, ['M\tpackages/shared-base/fixture.ts']);
 	} finally {
 		fs.rmSync(repoDir, { recursive: true, force: true });
 	}

@@ -30,8 +30,8 @@ test('reconcileTasks performs identity reconcile for single-task runs without se
 				{
 					taskId: 'task-0',
 					title: 'Single task',
-					targetPackage: 'apps/services/conditioning',
-					pathPrefixes: ['apps/services/conditioning'],
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
 					dependsOn: [],
 					status: 'completed',
 					integrationOrder: 0,
@@ -57,7 +57,7 @@ test('reconcileTasks performs identity reconcile for single-task runs without se
 		const result = await reconcileTasks({
 			runId: fixture.runId,
 			taskPlan,
-			authorization: { allowedPackages: ['apps/services/conditioning'], allowedPathPrefixes: ['apps/services/conditioning'] },
+			authorization: { allowedPackages: ['services/billing'], allowedPathPrefixes: ['services/billing'] },
 			runtimeStore: fixture.store,
 			gitCli: mockGitCli,
 			taskPlanFrozen: true,
@@ -90,9 +90,9 @@ test('reconcileTasks reconciles multi-task patches in integrationOrder', async (
 
 		const task1 = {
 			taskId: 'task-ddd',
-			title: 'Update ddd-base',
-			targetPackage: 'packages/ddd-base',
-			pathPrefixes: ['packages/ddd-base'],
+			title: 'Update shared-base',
+			targetPackage: 'packages/shared-base',
+			pathPrefixes: ['packages/shared-base'],
 			dependsOn: [],
 			status: 'completed',
 			integrationOrder: 0,
@@ -107,9 +107,9 @@ test('reconcileTasks reconciles multi-task patches in integrationOrder', async (
 
 		const task2 = {
 			taskId: 'task-cond',
-			title: 'Update conditioning',
-			targetPackage: 'apps/services/conditioning',
-			pathPrefixes: ['apps/services/conditioning'],
+			title: 'Update billing',
+			targetPackage: 'services/billing',
+			pathPrefixes: ['services/billing'],
 			dependsOn: ['task-ddd'],
 			status: 'completed',
 			integrationOrder: 1,
@@ -145,8 +145,8 @@ test('reconcileTasks reconciles multi-task patches in integrationOrder', async (
 				return 'diff --git a/test.ts b/test.ts\n+patch';
 			}
 			if (args[0] === 'diff-tree' && args[1] === '--name-only') {
-				if (args[3] === task1.parentTreeSha) return 'packages/ddd-base/src/entity.ts\n';
-				return 'apps/services/conditioning/src/service.ts\n';
+				if (args[3] === task1.parentTreeSha) return 'packages/shared-base/src/entity.ts\n';
+				return 'services/billing/src/service.ts\n';
 			}
 			if (args[0] === 'apply') {
 				return '';
@@ -161,8 +161,8 @@ test('reconcileTasks reconciles multi-task patches in integrationOrder', async (
 			runId: fixture.runId,
 			taskPlan,
 			authorization: {
-				allowedPackages: ['packages/ddd-base', 'apps/services/conditioning'],
-				allowedPathPrefixes: ['packages/ddd-base', 'apps/services/conditioning'],
+				allowedPackages: ['packages/shared-base', 'services/billing'],
+				allowedPathPrefixes: ['packages/shared-base', 'services/billing'],
 			},
 			runtimeStore: fixture.store,
 			gitCli: mockGitCli,
@@ -202,8 +202,8 @@ test('reconcileTasks detects conflicts during dry-run and records RECONCILIATION
 		const task1 = {
 			taskId: 'task-1',
 			title: 'Task 1',
-			targetPackage: 'apps/services/conditioning',
-			pathPrefixes: ['apps/services/conditioning'],
+			targetPackage: 'services/billing',
+			pathPrefixes: ['services/billing'],
 			dependsOn: [],
 			status: 'completed',
 			integrationOrder: 0,
@@ -237,11 +237,11 @@ test('reconcileTasks detects conflicts during dry-run and records RECONCILIATION
 				return 'diff --git a/test.ts b/test.ts\n+collision';
 			}
 			if (args[0] === 'diff-tree' && args[1] === '--name-only') {
-				return 'apps/services/conditioning/src/file.ts\n';
+				return 'services/billing/src/file.ts\n';
 			}
 			if (args[0] === 'apply' && args[1] === '--check') {
 				// Simulate patch conflict
-				throw new Error('error: patch failed: apps/services/conditioning/src/file.ts:1');
+				throw new Error('error: patch failed: services/billing/src/file.ts:1');
 			}
 			return '';
 		};
@@ -249,7 +249,7 @@ test('reconcileTasks detects conflicts during dry-run and records RECONCILIATION
 		const result = await reconcileTasks({
 			runId: fixture.runId,
 			taskPlan,
-			authorization: { allowedPackages: ['apps/services/conditioning'], allowedPathPrefixes: ['apps/services/conditioning'] },
+			authorization: { allowedPackages: ['services/billing'], allowedPathPrefixes: ['services/billing'] },
 			runtimeStore: fixture.store,
 			gitCli: mockGitCli,
 			taskPlanFrozen: true,
@@ -280,8 +280,8 @@ test('reconcileTasks detects conflicts when git apply throws after successful dr
 		const task1 = {
 			taskId: 'task-1',
 			title: 'Task 1',
-			targetPackage: 'apps/services/conditioning',
-			pathPrefixes: ['apps/services/conditioning'],
+			targetPackage: 'services/billing',
+			pathPrefixes: ['services/billing'],
 			dependsOn: [],
 			status: 'completed',
 			integrationOrder: 0,
@@ -317,7 +317,7 @@ test('reconcileTasks detects conflicts when git apply throws after successful dr
 				return 'diff --git a/test.ts b/test.ts\n+content';
 			}
 			if (args[0] === 'diff-tree' && args[1] === '--name-only') {
-				return 'apps/services/conditioning/src/file.ts\n';
+				return 'services/billing/src/file.ts\n';
 			}
 			if (args[0] === 'apply' && args[1] === '--check') {
 				// dry-run check succeeds
@@ -333,7 +333,7 @@ test('reconcileTasks detects conflicts when git apply throws after successful dr
 		const result = await reconcileTasks({
 			runId: fixture.runId,
 			taskPlan,
-			authorization: { allowedPackages: ['apps/services/conditioning'], allowedPathPrefixes: ['apps/services/conditioning'] },
+			authorization: { allowedPackages: ['services/billing'], allowedPathPrefixes: ['services/billing'] },
 			runtimeStore: fixture.store,
 			gitCli: mockGitCli,
 			taskPlanFrozen: true,
@@ -366,9 +366,9 @@ test('reconcileTasks permits files listed in task generatedOutputs even if outsi
 		const task1 = {
 			taskId: 'task-gen',
 			title: 'Task with generated output',
-			targetPackage: 'apps/services/conditioning',
-			pathPrefixes: ['apps/services/conditioning/src'],
-			generatedOutputs: ['apps/services/conditioning/openapi/conditioning.openapi.json'],
+			targetPackage: 'services/billing',
+			pathPrefixes: ['services/billing/src'],
+			generatedOutputs: ['services/billing/openapi/billing.openapi.json'],
 			dependsOn: [],
 			status: 'completed',
 			integrationOrder: 0,
@@ -411,10 +411,10 @@ test('reconcileTasks permits files listed in task generatedOutputs even if outsi
 				return '';
 			}
 			if (args[0] === 'diff-tree' && args[1] === '-p') {
-				return 'diff --git a/openapi/conditioning.openapi.json b/openapi/conditioning.openapi.json\n+openapi';
+				return 'diff --git a/openapi/billing.openapi.json b/openapi/billing.openapi.json\n+openapi';
 			}
 			if (args[0] === 'diff-tree' && args[1] === '--name-only') {
-				return 'apps/services/conditioning/openapi/conditioning.openapi.json\n';
+				return 'services/billing/openapi/billing.openapi.json\n';
 			}
 			if (args[0] === 'write-tree') {
 				return treeSha1 + '\n';
@@ -426,8 +426,8 @@ test('reconcileTasks permits files listed in task generatedOutputs even if outsi
 			runId: fixture.runId,
 			taskPlan,
 			authorization: {
-				allowedPackages: ['apps/services/conditioning', 'docs'],
-				allowedPathPrefixes: ['apps/services/conditioning', 'docs'],
+				allowedPackages: ['services/billing', 'docs'],
+				allowedPathPrefixes: ['services/billing', 'docs'],
 			},
 			runtimeStore: fixture.store,
 			gitCli: mockGitCli,

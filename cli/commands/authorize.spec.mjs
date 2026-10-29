@@ -23,7 +23,7 @@ test('CLI authorize command, status projection of worktree, and READY_FOR_GIT_AP
 				return '';
 			}
 			if (sub === 'write-tree') return `${targetTreeSha}\n`;
-			if (sub === 'ls-tree') return '100644 blob cccc\tapps/services/conditioning/src/file.ts\n';
+			if (sub === 'ls-tree') return '100644 blob cccc\tservices/billing/src/file.ts\n';
 			if (sub === 'diff' && args.includes('--name-only')) {
 				const names = [];
 				const cwd = opts.cwd;
@@ -55,7 +55,7 @@ test('CLI authorize command, status projection of worktree, and READY_FOR_GIT_AP
 	};
 
 	const execCli = (cmd, args = [], opts = {}) => {
-		if (cmd === 'pnpm' && args.includes('agent:preflight')) {
+		if (cmd === 'pnpm' && args.includes('agent:verify')) {
 			const preflightDir = path.join(opts.cwd || REPOSITORY_ROOT, 'tools');
 			fs.mkdirSync(preflightDir, { recursive: true });
 			fs.writeFileSync(

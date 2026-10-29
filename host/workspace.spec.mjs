@@ -10,8 +10,8 @@ import { loadHostProfile } from './host-profile.ts';
 import * as scriptAdapter from './script.ts';
 import { discoverWorkspace } from './workspace.ts';
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 function withTempRoot(fn) {
@@ -52,7 +52,7 @@ test('@ac AC-06 @case AC-06.1 the default adapter reports packages/a when a synt
 		fs.mkdirSync(path.join(rootDir, 'packages/a'), { recursive: true });
 		fs.writeFileSync(
 			path.join(rootDir, 'packages/a/package.json'),
-			JSON.stringify({ name: '@example/pkg-a' }),
+			JSON.stringify({ name: '@fixture/pkg-a' }),
 		);
 		const profile = loadHostProfile(rootDir);
 		const result = discoverWorkspace(rootDir, profile);

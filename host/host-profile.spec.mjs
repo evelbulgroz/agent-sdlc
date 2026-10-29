@@ -12,8 +12,8 @@ import { anyHighRiskPaths, hasHighRiskPaths } from '../review/review-generation.
 import { HOST_PROFILE_RELATIVE_PATH, loadHostProfile } from './host-profile.ts';
 import { inferRecallScopes } from './learnings.ts';
 
-const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'))
-	? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')
+const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'))
+	? path.join(REPOSITORY_ROOT, 'packages/engine')
 	: REPOSITORY_ROOT;
 
 function makeTempRoot() {
@@ -25,7 +25,7 @@ function validDefaultProfile(overrides = {}) {
 		schemaVersion: '1.2.0', profileId: 'default-host', repositoryId: 'default-host', adapter: 'default',
 		stateDir: 'tools/.agent-sdlc', reviewDir: 'tools/.review', specDraftDir: 'docs/specs/drafts',
 		verify: {
-			argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
+			argv: ['pnpm', 'run', 'agent:verify', '--', '--base', '{baseSha}'],
 			resultPath: 'tools/.agent-preflight-last.json', require: { status: 'OK', canonical: true }, headField: 'gitHeadSha',
 		},
 		...overrides,
@@ -94,7 +94,7 @@ test('@ac AC-01 @case AC-01.4 a verify argv that omits the {baseSha} element thr
 			rootDir,
 			validDefaultProfile({
 				verify: {
-					argv: ['pnpm', 'run', 'agent:preflight'],
+					argv: ['pnpm', 'run', 'agent:verify'],
 					resultPath: 'tools/.agent-preflight-last.json',
 					require: { status: 'OK', canonical: true },
 					headField: 'gitHeadSha',
@@ -161,7 +161,7 @@ test('@ac AC-01 @case AC-01.1 loadHostProfile parses schemaVersion 1.2.0 with op
 			prompts: {
 				preset: 'default', roleAddendaDir: '.agents/workflows/prompts', rubricAddendaDir: '.agents/review-rubrics',
 				pathScopedRules: [{
-					id: 'frontend-pwa', pathPrefixes: ['apps/frontends/pwa-frontend'],
+					id: 'frontend-pwa', pathPrefixes: ['frontends/pwa-frontend'],
 					addendaFile: '.agents/workflows/scoped/frontend-pwa.md', roles: ['implementer', 'reviewer'], phases: ['code', 'qa'],
 				}],
 			},
@@ -195,7 +195,7 @@ test('@ac AC-01 @case AC-01.3 loadHostProfile rejects escaping paths in prompts 
 		writeProfile(rootDir, validDefaultProfile({ prompts: { roleAddendaDir: '../escape' } }));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 		writeProfile(rootDir, validDefaultProfile({
-			prompts: { pathScopedRules: [{ id: 'bad-rule', pathPrefixes: ['packages/agent-sdlc'], addendaFile: '../escape/rule.md' }] },
+			prompts: { pathScopedRules: [{ id: 'bad-rule', pathPrefixes: ['packages/engine'], addendaFile: '../escape/rule.md' }] },
 		}));
 		assert.throws(() => loadHostProfile(rootDir), isHostProfileError);
 	} finally {
@@ -260,7 +260,7 @@ test('@ac AC-01 @case AC-01.2 loadHostProfile rejects escaping paths in 1.3.0 re
 	}
 });
 
-test('@ac AC-02 @case AC-02.1 no .ts file under packages/agent-sdlc/ contains legacy tools/lib learnings script path', () => {
+test('@ac AC-02 @case AC-02.1 no .ts file under packages/engine/ contains legacy tools/lib learnings script path', () => {
 	const legacyLearnPath = `tools/lib/${'learn'}.${'mjs'}`;
 	const tsFiles = collectTsFiles(PACKAGE_ROOT);
 	for (const file of tsFiles) {
@@ -298,7 +298,7 @@ test('@ac AC-02 @case AC-02.2 inferRecallScopes resolves scopes from synthetic h
 	}
 });
 
-test('@ac AC-03 @case AC-03.1 scanWorkspacePackages discovers packages from custom workspace.packageRoots without apps/services or apps/frontends', () => {
+test('@ac AC-03 @case AC-03.1 scanWorkspacePackages discovers packages from custom workspace.packageRoots without services or frontends', () => {
 	const rootDir = makeTempRoot();
 	try {
 		writeProfile(rootDir, { ...validDefaultProfile(), schemaVersion: '1.3.0', workspace: { packageRoots: ['modules'] } });
@@ -315,16 +315,16 @@ test('@ac AC-03 @case AC-03.1 scanWorkspacePackages discovers packages from cust
 	}
 });
 
-test('@ac AC-03 @case AC-03.2 workspace-packages.ts, authorization.ts, policy-gate.ts, and task-planner.ts contain no hardcoded apps/services, apps/frontends, or apps/e2e strings', () => {
+test('@ac AC-03 @case AC-03.2 workspace-packages.ts, authorization.ts, policy-gate.ts, and task-planner.ts contain no hardcoded services, frontends, or e2e strings', () => {
 	const files = [
-		'packages/agent-sdlc/policy/task-planner/workspace-packages.ts',
-		'packages/agent-sdlc/policy/authorization.ts',
-		'packages/agent-sdlc/policy/policy-gate.ts',
-		'packages/agent-sdlc/policy/task-planner.ts',
+		'packages/engine/policy/task-planner/workspace-packages.ts',
+		'packages/engine/policy/authorization.ts',
+		'packages/engine/policy/policy-gate.ts',
+		'packages/engine/policy/task-planner.ts',
 	];
-	const forbidden = /apps\/services|apps\/frontends|apps\/e2e/;
+	const forbidden = /services|frontends|e2e/;
 	for (const rel of files) {
-		const targetPath = path.join(PACKAGE_ROOT, rel.replace(/^packages\/agent-sdlc\//, ''));
+		const targetPath = path.join(PACKAGE_ROOT, rel.replace(/^packages\/engine\//, ''));
 		assert.equal(forbidden.test(fs.readFileSync(targetPath, 'utf8')), false, `Forbidden path literal in ${rel}`);
 	}
 });
@@ -342,13 +342,13 @@ test('@ac AC-04 @case AC-04.1 anyHighRiskPaths and hasHighRiskPaths respect cust
 	}
 });
 
-test('@ac AC-04 @case AC-04.2 review-generation.ts, citation-verifier.ts, failure-packet.ts, github-pr.ts, and reversible-decisions.ts contain no hardcoded ddd-base, example-base, or apps/** strings', () => {
+test('@ac AC-04 @case AC-04.2 review-generation.ts, citation-verifier.ts, failure-packet.ts, github-pr.ts, and reversible-decisions.ts contain no hardcoded shared-base, example-base, or apps/** strings', () => {
 	const files = [
 		'review/review-generation.ts', 'review/citation-verifier.ts',
 		'review/failure-packet.ts', 'adapters/github-pr.ts',
 		'policy/reversible-decisions.ts',
 	];
-	const forbidden = /ddd-base|example-base|apps\/\*\*/;
+	const forbidden = /shared-base|example-base|apps\/\*\*/;
 	for (const rel of files) {
 		assert.equal(forbidden.test(fs.readFileSync(path.join(PACKAGE_ROOT, rel), 'utf8')), false, `Forbidden literal in ${rel}`);
 	}
@@ -393,7 +393,7 @@ test('@ac AC-05 @case AC-05.2 pipeline-deterministic-roles.ts and task-quality-g
 	}
 });
 
-test('@ac AC-06 @case AC-06.1 no production .ts file under packages/agent-sdlc/ contains forbidden host-specific literals', () => {
+test('@ac AC-06 @case AC-06.1 no production .ts file under packages/engine/ contains forbidden host-specific literals', () => {
 	const forbidden =
 		/example-agent|example\.local|agent-run-init\.sh|example-base/;
 	const tsFiles = collectTsFiles(PACKAGE_ROOT);

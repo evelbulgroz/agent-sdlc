@@ -33,8 +33,8 @@ test('assertPathContained allows contained files and rejects path traversal and 
 
 	try {
 		// Valid inside
-		const filePath = path.join(worktreeDir, 'apps/services/conditioning/src/file.ts');
-		assert.equal(assertPathContained(worktreeDir, 'apps/services/conditioning/src/file.ts'), filePath);
+		const filePath = path.join(worktreeDir, 'services/billing/src/file.ts');
+		assert.equal(assertPathContained(worktreeDir, 'services/billing/src/file.ts'), filePath);
 
 		// Escape via relative ..
 		assert.throws(
@@ -149,7 +149,7 @@ test('isWorktreeClean and removeWorktree respect dirty state and force flags', (
 		assert.equal(isWorktreeClean(worktreeDir, { gitCli: mockGitCli }), true);
 
 		// Dirty worktree
-		statusOutput = ' M apps/services/conditioning/src/file.ts\n';
+		statusOutput = ' M services/billing/src/file.ts\n';
 		assert.equal(isWorktreeClean(worktreeDir, { gitCli: mockGitCli }), false);
 
 		// Remove without force on dirty worktree throws WORKTREE_DIRTY
@@ -170,8 +170,8 @@ test('isWorktreeClean and removeWorktree respect dirty state and force flags', (
 
 test('resolveTaskWorktreeDir and resolveIntegrationWorktreeDir compute correct paths and validate inputs', () => {
 	const runId = '2026-09-04-wt-path-test';
-	const taskDir = resolveTaskWorktreeDir(runId, 'conditioning-task');
-	assert.ok(taskDir.endsWith(path.join('tools/.agent-sdlc', runId, 'worktrees', 'conditioning-task')));
+	const taskDir = resolveTaskWorktreeDir(runId, 'billing-task');
+	assert.ok(taskDir.endsWith(path.join('tools/.agent-sdlc', runId, 'worktrees', 'billing-task')));
 
 	const integrationDir = resolveIntegrationWorktreeDir(runId);
 	assert.ok(integrationDir.endsWith(path.join('tools/.agent-sdlc', runId, 'worktrees', 'integration')));

@@ -94,7 +94,7 @@ test('task manifest rejects verification and generator argv outside the closed c
 	unitManifest.tasks[1].verificationCommand = [
 		'pnpm',
 		'--filter',
-		'@example/conditioning-service',
+		'@fixture/billing-service',
 		'run',
 		'test:unit',
 	];
@@ -104,7 +104,7 @@ test('task manifest rejects verification and generator argv outside the closed c
 	intManifest.tasks[1].verificationCommand = [
 		'pnpm',
 		'--filter',
-		'@example/conditioning-service',
+		'@fixture/billing-service',
 		'run',
 		'test:integration',
 	];
@@ -114,12 +114,12 @@ test('task manifest rejects verification and generator argv outside the closed c
 	generatorManifest.tasks[1].generatorCommand = [
 		'pnpm',
 		'--filter',
-		'@example/conditioning-service',
+		'@fixture/billing-service',
 		'run',
 		'build:contracts',
 	];
 	generatorManifest.tasks[1].generatedOutputs = [
-		'apps/services/conditioning/openapi/conditioning-service.openapi.json',
+		'services/billing/openapi/billing-service.openapi.json',
 	];
 	assert.doesNotThrow(() => validateTaskManifest(generatorManifest));
 

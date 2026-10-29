@@ -1,5 +1,5 @@
 {
-  "name": "@example/ddd-base",
+  "name": "@fixture/shared-base",
   "scripts": {
     "test": "pnpm test"
   },

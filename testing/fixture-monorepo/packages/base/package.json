@@ -1,5 +1,5 @@
 {
-  "name": "@example/base",
+  "name": "@fixture/base",
   "scripts": {
     "test": "pnpm test"
   },

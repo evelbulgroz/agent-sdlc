@@ -163,7 +163,7 @@ test('retainedReadWindowEntries keeps distinct windows and drops them after a mu
 });
 
 test('leanWholeFileRequested returns an authored head read at the byte cap and windows the rest', () => {
-	const file = 'apps/services/authentication/src/user-auth.controller.ts';
+	const file = 'services/authentication/src/user-auth.controller.ts';
 	const base = {
 		capabilityIsLean: true,
 		authoredPaths: [file],
@@ -213,8 +213,8 @@ test('leanWholeFileRequested returns an authored head read at the byte cap and w
 	assert.equal(
 		leanWholeFileRequested({
 			...base,
-			authoredPaths: ['apps/services/authentication/src'],
-			path: 'apps/services/authentication/src/nested/user-auth.controller.ts',
+			authoredPaths: ['services/authentication/src'],
+			path: 'services/authentication/src/nested/user-auth.controller.ts',
 			parameters: { start_line: 1 },
 			byteLength: 10,
 		}),
@@ -318,7 +318,7 @@ test('retainedMissingPathEntries keeps a candidate until it is read or the missi
 		parameters: { path: 'apps/wrong/authentication.service.ts' },
 		result: {
 			error: 'missing',
-			candidatePath: 'apps/services/authentication/src/authentication.service.ts',
+			candidatePath: 'services/authentication/src/authentication.service.ts',
 		},
 	};
 	assert.equal(retainedMissingPathEntries([miss])[0], miss);
@@ -329,7 +329,7 @@ test('retainedMissingPathEntries keeps a candidate until it is read or the missi
 	);
 	const read = {
 		toolName: 'read_file',
-		parameters: { path: 'apps/services/authentication/src/authentication.service.ts' },
+		parameters: { path: 'services/authentication/src/authentication.service.ts' },
 		result: { content: 'class', shownStartLine: 1, shownEndLine: 2 },
 	};
 	assert.deepEqual(retainedMissingPathEntries([miss, read]), []);
@@ -344,7 +344,7 @@ test('retainedMissingPathEntries keeps a candidate until it is read or the missi
 test('retainedPassingCommandEntries keeps the latest of each argv including a failure', () => {
 	const pass = {
 		toolName: 'run_allowlisted_command',
-		parameters: { command: 'pnpm', args: ['run', 'quality:changed'] },
+		parameters: { command: 'pnpm', args: ['run', 'quality:affected'] },
 		result: { exitCode: 0 },
 	};
 	const fail = {

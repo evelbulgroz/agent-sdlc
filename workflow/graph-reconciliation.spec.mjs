@@ -11,8 +11,8 @@ import {
 
 test('Slice 4 reconciliation conflict halts at interrupt and handles escalation response (AC 39)', async () => {
 	const surfaces = [
-		'apps/services/conditioning/src/feat1.ts',
-		'apps/services/assessment/src/feat2.ts',
+		'services/billing/src/feat1.ts',
+		'services/assessment/src/feat2.ts',
 	];
 	const baseCommitSha = 'a'.repeat(40);
 	const targetTreeSha = 'b'.repeat(40);
@@ -48,21 +48,21 @@ test('Slice 4 reconciliation conflict halts at interrupt and handles escalation 
 					}
 					if (reconcileTaskIndex <= 1) {
 						if (args.includes('--name-only')) {
-							return 'apps/services/assessment/src/feat2.ts\n';
+							return 'services/assessment/src/feat2.ts\n';
 						}
-						return 'diff --git a/apps/services/assessment/src/feat2.ts b/apps/services/assessment/src/feat2.ts\n--- a/apps/services/assessment/src/feat2.ts\n+++ b/apps/services/assessment/src/feat2.ts\n@@ -0,0 +1 @@\n+assessment\n';
+						return 'diff --git a/services/assessment/src/feat2.ts b/services/assessment/src/feat2.ts\n--- a/services/assessment/src/feat2.ts\n+++ b/services/assessment/src/feat2.ts\n@@ -0,0 +1 @@\n+assessment\n';
 					}
 					if (args.includes('--name-only')) {
-						return 'apps/services/conditioning/src/feat1.ts\n';
+						return 'services/billing/src/feat1.ts\n';
 					}
-					return 'diff --git a/apps/services/conditioning/src/feat1.ts b/apps/services/conditioning/src/feat1.ts\n--- a/apps/services/conditioning/src/feat1.ts\n+++ b/apps/services/conditioning/src/feat1.ts\n@@ -0,0 +1 @@\n+conditioning\n';
+					return 'diff --git a/services/billing/src/feat1.ts b/services/billing/src/feat1.ts\n--- a/services/billing/src/feat1.ts\n+++ b/services/billing/src/feat1.ts\n@@ -0,0 +1 @@\n+billing\n';
 				}
 				return 'diff --git a/dummy b/dummy\n';
 			}
 			if (args[0] === 'apply' && args.includes('--check')) {
 				applyCheckCalls++;
 				if (applyCheckCalls >= 2) {
-					const error = new Error('error: patch failed: apps/services/conditioning/src/feat1.ts:1\nerror: apps/services/conditioning/src/feat1.ts: patch does not apply');
+					const error = new Error('error: patch failed: services/billing/src/feat1.ts:1\nerror: services/billing/src/feat1.ts: patch does not apply');
 					error.status = 1;
 					throw error;
 				}
@@ -81,8 +81,8 @@ test('Slice 4 reconciliation conflict halts at interrupt and handles escalation 
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
-			allowedPathPrefixes: ['apps/services/conditioning', 'apps/services/assessment'],
+			allowedPackages: ['services/billing', 'services/assessment'],
+			allowedPathPrefixes: ['services/billing', 'services/assessment'],
 			createBranch: true,
 			createLocalCommits: true,
 		});
@@ -136,8 +136,8 @@ test('Slice 4 reconciliation conflict halts at interrupt and handles escalation 
 
 test('Slice 4 reconciliation conflict handles cancellation response', async () => {
 	const surfaces = [
-		'apps/services/conditioning/src/feat1.ts',
-		'apps/services/assessment/src/feat2.ts',
+		'services/billing/src/feat1.ts',
+		'services/assessment/src/feat2.ts',
 	];
 	const baseCommitSha = 'a'.repeat(40);
 	const targetTreeSha = 'b'.repeat(40);
@@ -172,14 +172,14 @@ test('Slice 4 reconciliation conflict handles cancellation response', async () =
 					}
 					if (reconcileTaskIndex <= 1) {
 						if (args.includes('--name-only')) {
-							return 'apps/services/assessment/src/feat2.ts\n';
+							return 'services/assessment/src/feat2.ts\n';
 						}
-						return 'diff --git a/apps/services/assessment/src/feat2.ts b/apps/services/assessment/src/feat2.ts\n--- a/apps/services/assessment/src/feat2.ts\n+++ b/apps/services/assessment/src/feat2.ts\n@@ -0,0 +1 @@\n+assessment\n';
+						return 'diff --git a/services/assessment/src/feat2.ts b/services/assessment/src/feat2.ts\n--- a/services/assessment/src/feat2.ts\n+++ b/services/assessment/src/feat2.ts\n@@ -0,0 +1 @@\n+assessment\n';
 					}
 					if (args.includes('--name-only')) {
-						return 'apps/services/conditioning/src/feat1.ts\n';
+						return 'services/billing/src/feat1.ts\n';
 					}
-					return 'diff --git a/apps/services/conditioning/src/feat1.ts b/apps/services/conditioning/src/feat1.ts\n--- a/apps/services/conditioning/src/feat1.ts\n+++ b/apps/services/conditioning/src/feat1.ts\n@@ -0,0 +1 @@\n+conditioning\n';
+					return 'diff --git a/services/billing/src/feat1.ts b/services/billing/src/feat1.ts\n--- a/services/billing/src/feat1.ts\n+++ b/services/billing/src/feat1.ts\n@@ -0,0 +1 @@\n+billing\n';
 				}
 				return 'diff --git a/dummy b/dummy\n';
 			}
@@ -205,8 +205,8 @@ test('Slice 4 reconciliation conflict handles cancellation response', async () =
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning', 'apps/services/assessment'],
-			allowedPathPrefixes: ['apps/services/conditioning', 'apps/services/assessment'],
+			allowedPackages: ['services/billing', 'services/assessment'],
+			allowedPathPrefixes: ['services/billing', 'services/assessment'],
 			createBranch: true,
 			createLocalCommits: true,
 		});

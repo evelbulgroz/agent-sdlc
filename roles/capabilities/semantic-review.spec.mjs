@@ -33,7 +33,7 @@ test('semantic reviewer packs approved context below the governed prompt limit',
 		promptPolicy: reviewer.promptPolicy,
 		maxPromptTokens: reviewer.role.requestedLimits.maxPromptTokens,
 		specSummary: [
-			'As a domain engineer, I want a generic ValueObject abstract base class in packages/ddd-base so that domain entities across the monorepo can encapsulate immutable attribute bags with structural equality, completing the core Domain-Driven Design building block triad alongside Entity and DomainEvent.',
+			'As a domain engineer, I want a generic ValueObject abstract base class in packages/shared-base so that domain entities across the monorepo can encapsulate immutable attribute bags with structural equality, completing the core Domain-Driven Design building block triad alongside Entity and DomainEvent.',
 			'The base class also provides deep-copy serialization where Dates become ISO strings and nested ValueObjects invoke toDTO().',
 		].join('\n\n'),
 		acceptanceCriteria: [
@@ -41,13 +41,13 @@ test('semantic reviewer packs approved context below the governed prompt limit',
 			'AC-09: Serialization produces deep-copied plain snapshots. Given an instance with a Date and nested object. Then toDTO() and toJSON() return a plain object with the Date serialized as an ISO 8601 string, primitives and arrays deep-copied, and mutating the returned object does not alter the ValueObject.',
 		],
 		touchedFiles: [
-			'packages/ddd-base/',
-			'packages/ddd-base/src/domain/value-object.class.ts',
-			'packages/ddd-base/src/domain/value-object.class.spec.ts',
+			'packages/shared-base/',
+			'packages/shared-base/src/domain/value-object.class.ts',
+			'packages/shared-base/src/domain/value-object.class.spec.ts',
 			'pnpm-lock.yaml',
-			'apps/services/authentication/',
+			'services/authentication/',
 		],
-		diff: `${'diff --git a/packages/ddd-base/src/domain/value-object.class.ts b/file\n+export class ValueObject {}\n'.repeat(400)}`,
+		diff: `${'diff --git a/packages/shared-base/src/domain/value-object.class.ts b/file\n+export class ValueObject {}\n'.repeat(400)}`,
 	});
 	const estimate = estimatePromptTokens({
 		prompt,
@@ -56,8 +56,8 @@ test('semantic reviewer packs approved context below the governed prompt limit',
 	});
 	assert.ok(estimate.promptTokens <= reviewer.role.requestedLimits.maxPromptTokens - 200);
 	assert.match(prompt, /ISO 8601/);
-	assert.match(prompt, /packages\/ddd-base/);
-	assert.match(prompt, /apps\/services\/authentication/);
+	assert.match(prompt, /packages\/shared-base/);
+	assert.match(prompt, /services\/authentication/);
 	assert.ok(prompt.includes('diff --git'));
 
 	assert.throws(

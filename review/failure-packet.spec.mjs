@@ -48,7 +48,7 @@ test('@ac AC-03 failure context includes only authorized bounded excerpts', () =
 });
 
 test('classifyFailure correctly detects error categories', () => {
-	assert.equal(classifyFailure('Error: Test failed in conditioning.spec.ts'), 'test_failure');
+	assert.equal(classifyFailure('Error: Test failed in billing.spec.ts'), 'test_failure');
 	assert.equal(classifyFailure('biome check found lint errors'), 'quality_failure');
 	assert.equal(classifyFailure('TS2322: Type number is not assignable to string'), 'build_failure');
 	assert.equal(classifyFailure('spawn ENOENT: command not found'), 'infrastructure_failure');
@@ -68,9 +68,9 @@ test('preflight failures outside authorized packages are not semantic-repair tar
 	assert.equal(
 		failureReferencesAuthorizedPackage({
 			output:
-				'[coverage] collection-failed — test:cov failed for apps/services/import',
+				'[coverage] collection-failed — test:cov failed for services/import',
 			targetPaths: [
-				'apps/services/conditioning/src/conditioning/domain/helpers/derive-elevation-totals.helper.ts',
+				'services/billing/src/billing/domain/helpers/derive-elevation-totals.helper.ts',
 			],
 		}),
 		false,
@@ -78,15 +78,15 @@ test('preflight failures outside authorized packages are not semantic-repair tar
 	assert.equal(
 		failureReferencesAuthorizedPackage({
 			output:
-				'FAIL apps/services/conditioning/src/conditioning/domain/helpers/example.spec.ts',
-			targetPaths: ['apps/services/conditioning/src/conditioning/domain/helpers'],
+				'FAIL services/billing/src/billing/domain/helpers/example.spec.ts',
+			targetPaths: ['services/billing/src/billing/domain/helpers'],
 		}),
 		true,
 	);
 	assert.equal(
 		failureReferencesAuthorizedPackage({
 			output: 'generic preflight failure without a repository package path',
-			targetPaths: ['apps/services/conditioning'],
+			targetPaths: ['services/billing'],
 		}),
 		true,
 	);
@@ -98,7 +98,7 @@ test('buildFailurePacket sanitizes output and extracts key failure snippets', ()
 	const rawOutput = `
 		Running tests...
 		Authorization: Bearer my-secret-api-token-123456789
-		FAIL apps/services/conditioning/src/file.spec.ts
+		FAIL services/billing/src/file.spec.ts
 		  ✖ test case 1 failed: expected 1 to equal 2
 		    at Object.<anonymous> (file.spec.ts:12:5)
 	`;
@@ -106,10 +106,10 @@ test('buildFailurePacket sanitizes output and extracts key failure snippets', ()
 	const packet = buildFailurePacket({
 		runId,
 		generation: 0,
-		failedCommand: 'pnpm run agent:preflight',
+		failedCommand: 'pnpm run agent:verify',
 		exitCode: 1,
 		output: rawOutput,
-		targetPaths: ['apps/services/conditioning/**'],
+		targetPaths: ['services/billing/**'],
 		baseCommitSha,
 	});
 
@@ -124,46 +124,46 @@ test('buildFailurePacket ignores stack trace frames, node_modules, and scripts i
 	const runId = '2026-09-05-verifier-stack-test';
 	const baseCommitSha = '1111111111111111111111111111111111111111';
 	const rawOutput = `
-		❯ src/conditioning/domain/conditioning-log.entity.spec.ts (23 tests | 20 failed)
+		❯ src/billing/domain/billing-log.entity.spec.ts (23 tests | 20 failed)
 		  ✖ expected to not throw but TypeError was thrown
-		    at ConditioningLogEntity.create (/home/ulrik/apps/services/conditioning/src/conditioning/domain/conditioning-log.entity.ts:123:4)
+		    at BillingLogEntity.create (/home/ulrik/services/billing/src/billing/domain/billing-log.entity.ts:123:4)
 		    at Object.toPlainObject (/home/ulrik/packages/example-base/src/dtos/recording/plain-object.util.ts:45:6)
-		    at BaseEntity.constructor (/home/ulrik/packages/ddd-base/src/domain/entity.class.ts:12:3)
-		    at Module._compile (/home/ulrik/tools/.agent-sdlc/test-run/worktrees/conditioning-task/node_modules/.pnpm/some-dep/index.js:1:1)
-		 ❯ Function.validateDTO ../../../packages/ddd-base/src/domain/entity.class.ts:452:11
+		    at BaseEntity.constructor (/home/ulrik/packages/shared-base/src/domain/entity.class.ts:12:3)
+		    at Module._compile (/home/ulrik/tools/.agent-sdlc/test-run/worktrees/billing-task/node_modules/.pnpm/some-dep/index.js:1:1)
+		 ❯ Function.validateDTO ../../../packages/shared-base/src/domain/entity.class.ts:452:11
 		 ❯ requireKey ../../../packages/example-base/src/dtos/recording/plain-object.util.ts:64:7
-		> tools/clean-security-config-js.sh
+		> tools/clean-secrets-config-js.sh
 	`;
 
 	const packet = buildFailurePacket({
 		runId,
 		generation: 0,
-		failedCommand: 'pnpm --filter @example/conditioning-service test',
+		failedCommand: 'pnpm --filter @fixture/billing-service test',
 		exitCode: 1,
 		output: rawOutput,
-		targetPaths: ['apps/services/conditioning/'],
+		targetPaths: ['services/billing/'],
 		baseCommitSha,
 	});
 
 	assert.equal(packet.runId, runId);
-	assert.deepEqual(packet.targetPaths, ['apps/services/conditioning/']);
-	assert.ok(!packet.targetPaths.includes('packages/ddd-base/src/domain/entity.class.ts'));
+	assert.deepEqual(packet.targetPaths, ['services/billing/']);
+	assert.ok(!packet.targetPaths.includes('packages/shared-base/src/domain/entity.class.ts'));
 	assert.ok(!packet.targetPaths.includes('packages/example-base/src/dtos/recording/plain-object.util.ts'));
-	assert.ok(!packet.targetPaths.includes('tools/clean-security-config-js.sh'));
+	assert.ok(!packet.targetPaths.includes('tools/clean-secrets-config-js.sh'));
 });
 
 test('@ac AC-01 output paths stay out of the failure packet', () => {
 	const packet = buildFailurePacket({
 		runId: '2026-09-27-verifier-ac01',
 		generation: 0,
-		failedCommand: 'pnpm --filter @example/conditioning-service test',
+		failedCommand: 'pnpm --filter @fixture/billing-service test',
 		exitCode: 1,
 		output: 'FAIL packages/example-base/src/index.ts\nFAIL tools/quality/check.mjs\n',
-		targetPaths: ['apps/services/conditioning/'],
+		targetPaths: ['services/billing/'],
 		baseCommitSha: '1111111111111111111111111111111111111111',
 	});
 
-	assert.deepEqual(packet.targetPaths, ['apps/services/conditioning/']);
+	assert.deepEqual(packet.targetPaths, ['services/billing/']);
 	assert.ok(packet.sanitizedOutput.includes('packages/example-base/src/index.ts'));
 });
 
@@ -174,24 +174,24 @@ test('empty output leaves the caller targetPaths unchanged', () => {
 		failedCommand: 'pnpm test',
 		exitCode: 1,
 		output: '',
-		targetPaths: ['apps/services/conditioning/'],
+		targetPaths: ['services/billing/'],
 		baseCommitSha: '1111111111111111111111111111111111111111',
 	});
 
-	assert.deepEqual(packet.targetPaths, ['apps/services/conditioning/']);
+	assert.deepEqual(packet.targetPaths, ['services/billing/']);
 });
 
 test('a caller list of 64 paths is stored as those 64 paths', () => {
 	const targetPaths = Array.from(
 		{ length: 64 },
-		(_, index) => `apps/services/conditioning/src/file-${index}.ts`,
+		(_, index) => `services/billing/src/file-${index}.ts`,
 	);
 	const packet = buildFailurePacket({
 		runId: '2026-09-27-verifier-sixty-four-paths',
 		generation: 0,
 		failedCommand: 'pnpm test',
 		exitCode: 1,
-		output: 'FAIL packages/ddd-base/src/domain/value-object.class.ts\n',
+		output: 'FAIL packages/shared-base/src/domain/value-object.class.ts\n',
 		targetPaths,
 		baseCommitSha: '1111111111111111111111111111111111111111',
 	});
@@ -202,13 +202,13 @@ test('a caller list of 64 paths is stored as those 64 paths', () => {
 test('@ac AC-05 @case AC-05.3 buildFailurePacket classifies EADDRINUSE as infrastructure_failure and keeps the caller target paths', () => {
 	const packet = buildFailurePacket({
 		runId: '2026-10-24-failure-packet',
-		failedCommand: 'pnpm run agent:preflight',
+		failedCommand: 'pnpm run agent:verify',
 		exitCode: 1,
 		output: 'Error: listen EADDRINUSE: address already in use :::3000',
-		targetPaths: ['apps/services/conditioning/src/a.ts'],
+		targetPaths: ['services/billing/src/a.ts'],
 		baseCommitSha: '2'.repeat(40),
 	});
 	assert.equal(packet.classification, 'infrastructure_failure');
-	assert.deepEqual(packet.targetPaths, ['apps/services/conditioning/src/a.ts']);
+	assert.deepEqual(packet.targetPaths, ['services/billing/src/a.ts']);
 	assert.equal(isEnvironmentFailure(packet.sanitizedOutput), true);
 });

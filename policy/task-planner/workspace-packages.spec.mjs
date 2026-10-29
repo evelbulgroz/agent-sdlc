@@ -104,12 +104,12 @@ test('readiness reports every exceeded task dimension and aggregate score', () =
 });
 
 test('isContractProducerSurface accurately detects contract paths', () => {
-	assert.equal(isContractProducerSurface(['apps/services/conditioning/contracts/overview.dto.ts']), true);
-	assert.equal(isContractProducerSurface(['apps/services/conditioning/src/contracts/index.ts']), true);
-	assert.equal(isContractProducerSurface(['apps/services/conditioning/src/conditioning/entity.ts']), false);
+	assert.equal(isContractProducerSurface(['services/billing/contracts/overview.dto.ts']), true);
+	assert.equal(isContractProducerSurface(['services/billing/src/contracts/index.ts']), true);
+	assert.equal(isContractProducerSurface(['services/billing/src/billing/entity.ts']), false);
 
 	// With (pathPrefixes, targetPackage, pkgData) shape:
-	const conditioningPkgData = {
+	const billingPkgData = {
 		pkgJson: { scripts: { 'build:contracts': 'node build-contracts.mjs' } },
 	};
 	const registryPkgData = {
@@ -122,9 +122,9 @@ test('isContractProducerSurface accurately detects contract paths', () => {
 	// 1. Non-contract service src task does NOT produce contracts
 	assert.equal(
 		isContractProducerSurface(
-			['apps/services/conditioning/src/conditioning/entity.ts'],
-			'apps/services/conditioning',
-			conditioningPkgData,
+			['services/billing/src/billing/entity.ts'],
+			'services/billing',
+			billingPkgData,
 		),
 		false,
 	);
@@ -132,8 +132,8 @@ test('isContractProducerSurface accurately detects contract paths', () => {
 	// 2. Package root prefix on contract-producing service produces contracts
 	assert.equal(
 		isContractProducerSurface(
-			['apps/services/registry'],
-			'apps/services/registry',
+			['services/registry'],
+			'services/registry',
 			registryPkgData,
 		),
 		true,
@@ -142,8 +142,8 @@ test('isContractProducerSurface accurately detects contract paths', () => {
 	// 3. Gateway is consumer, not producer, even if package root is specified
 	assert.equal(
 		isContractProducerSurface(
-			['apps/services/api-gateway'],
-			'apps/services/api-gateway',
+			['services/api-gateway'],
+			'services/api-gateway',
 			gatewayPkgData,
 		),
 		false,
@@ -193,33 +193,33 @@ test('contractArtifactPaths reads the authentication drift script and fails clos
 	const pkg = {
 		scripts: {
 			'check:contract-drift':
-				'bash ../../../tools/check-contract-drift.sh apps/services/authentication openapi/authentication-service.openapi.json contracts/generated-api.ts',
+				'bash ../../../tools/check-contract-drift.sh services/authentication openapi/authentication-service.openapi.json contracts/generated-api.ts',
 		},
 	};
-	assert.deepEqual(contractArtifactPaths('apps/services/authentication', pkg), [
-		'apps/services/authentication/openapi/authentication-service.openapi.json',
-		'apps/services/authentication/contracts/generated-api.ts',
+	assert.deepEqual(contractArtifactPaths('services/authentication', pkg), [
+		'services/authentication/openapi/authentication-service.openapi.json',
+		'services/authentication/contracts/generated-api.ts',
 	]);
 	assert.equal(
-		contractArtifactPaths('apps/services/demo', {
+		contractArtifactPaths('services/demo', {
 			scripts: { 'check:contract-drift': 'node drift.js' },
 		}),
 		null,
 	);
-	assert.equal(contractArtifactPaths('apps/services/demo', { scripts: {} }), null);
+	assert.equal(contractArtifactPaths('services/demo', { scripts: {} }), null);
 });
 
 test('a preserving sink that omits a controller or a contract artifact is TASK_PLAN_INVALID', () => {
 	withDemoRoot((rootDir) => {
 		const omittedController = demoTask({
 			authoredPaths: [
-				'apps/services/demo/src/a.controller.ts',
-				'apps/services/demo/openapi/demo.openapi.json',
-				'apps/services/demo/contracts/generated-api.ts',
+				'services/demo/src/a.controller.ts',
+				'services/demo/openapi/demo.openapi.json',
+				'services/demo/contracts/generated-api.ts',
 			],
 			pathPrefixes: [
-				'apps/services/demo/src',
-				'apps/services/demo/src/new.controller.ts',
+				'services/demo/src',
+				'services/demo/src/new.controller.ts',
 			],
 		});
 		assert.throws(
@@ -241,8 +241,8 @@ test('a preserving sink that omits a controller or a contract artifact is TASK_P
 					criteria: ['AC-01: The OpenAPI document must not change.'],
 					tasks: [
 						demoTask({
-							authoredPaths: ['apps/services/demo/src'],
-							pathPrefixes: ['apps/services/demo/src'],
+							authoredPaths: ['services/demo/src'],
+							pathPrefixes: ['services/demo/src'],
 							generatedOutputs: [],
 						}),
 					],
@@ -276,22 +276,22 @@ test('a directory prefix on the sink covers controllers and generated outputs co
 	withDemoRoot((rootDir) => {
 		const foundation = demoTask({
 			taskId: 'foundation-task',
-			authoredPaths: ['apps/services/demo/src/helper.ts'],
-			pathPrefixes: ['apps/services/demo/src/helper.ts'],
+			authoredPaths: ['services/demo/src/helper.ts'],
+			pathPrefixes: ['services/demo/src/helper.ts'],
 			deliveryLayers: ['domain'],
 		});
 		const sink = demoTask({
 			dependsOn: ['foundation-task'],
-			authoredPaths: ['apps/services/demo/src'],
-			pathPrefixes: ['apps/services/demo/src'],
+			authoredPaths: ['services/demo/src'],
+			pathPrefixes: ['services/demo/src'],
 			generatedOutputs: [
-				'apps/services/demo/openapi/demo.openapi.json',
-				'apps/services/demo/contracts/generated-api.ts',
+				'services/demo/openapi/demo.openapi.json',
+				'services/demo/contracts/generated-api.ts',
 			],
 			generatorCommand: [
 				'pnpm',
 				'--filter',
-				'@example/demo-service',
+				'@fixture/demo-service',
 				'run',
 				'build:contracts',
 			],
@@ -311,17 +311,17 @@ test('a directory prefix on the sink covers controllers and generated outputs co
 						demoTask({
 							taskId: 'foundation-task',
 							authoredPaths: [
-								'apps/services/demo/src',
-								'apps/services/demo/openapi/demo.openapi.json',
-								'apps/services/demo/contracts/generated-api.ts',
+								'services/demo/src',
+								'services/demo/openapi/demo.openapi.json',
+								'services/demo/contracts/generated-api.ts',
 							],
-							pathPrefixes: ['apps/services/demo/src'],
+							pathPrefixes: ['services/demo/src'],
 						}),
 						demoTask({
 							taskId: 'sink-task',
 							dependsOn: ['foundation-task'],
-							authoredPaths: ['apps/services/demo/src/helper.ts'],
-							pathPrefixes: ['apps/services/demo/src/helper.ts'],
+							authoredPaths: ['services/demo/src/helper.ts'],
+							pathPrefixes: ['services/demo/src/helper.ts'],
 							deliveryLayers: ['domain'],
 						}),
 					],
@@ -337,8 +337,8 @@ test('a non-preserving spec and a package without both contract scripts stay val
 	withDemoRoot((rootDir) => {
 		const tasks = [
 			demoTask({
-				authoredPaths: ['apps/services/demo/src/a.controller.ts'],
-				pathPrefixes: ['apps/services/demo/src'],
+				authoredPaths: ['services/demo/src/a.controller.ts'],
+				pathPrefixes: ['services/demo/src'],
 			}),
 		];
 		assert.equal(
@@ -392,8 +392,8 @@ test('a non-preserving spec and a package without both contract scripts stay val
 });
 
 test('missingContractCommands requires each argv to pass after the latest write', () => {
-	const quality = ['pnpm', 'run', 'quality:changed'];
-	const drift = ['pnpm', '--filter', '@example/demo-service', 'run', 'check:contract-drift'];
+	const quality = ['pnpm', 'run', 'quality:affected'];
+	const drift = ['pnpm', '--filter', '@fixture/demo-service', 'run', 'check:contract-drift'];
 	const commandItem = (argv, stepIndex, result) => ({
 		toolName: 'run_allowlisted_command',
 		stepIndex,

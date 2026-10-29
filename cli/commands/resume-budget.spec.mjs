@@ -34,7 +34,7 @@ test('CLI resumes a reviewer prompt-budget denial from the next materialized gen
 	let store;
 	try {
 		fs.mkdirSync(paths.artifactsDir, { recursive: true });
-		fs.mkdirSync(path.join(worktreeDir, 'packages/ddd-base'), { recursive: true });
+		fs.mkdirSync(path.join(worktreeDir, 'packages/shared-base'), { recursive: true });
 		store = new RuntimeStore(paths.databasePath);
 		const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
 		const loaded = registry.load();
@@ -127,8 +127,8 @@ test('CLI resumes a reviewer prompt-budget denial from the next materialized gen
 			approvedPlanPolicyHash: 'c'.repeat(64),
 			repositoryId: 'agent-sdlc',
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			allowedOperations: {
 				editIsolatedWorktree: true,
 				runAllowlistedCommands: true,
@@ -150,19 +150,19 @@ test('CLI resumes a reviewer prompt-budget denial from the next materialized gen
 			createdAt: new Date().toISOString(),
 			planPolicyHash: 'a'.repeat(64),
 			baseCommitSha,
-			integrationOrder: ['ddd-base'],
+			integrationOrder: ['shared-base'],
 			isParallel: false,
 			tasks: [
 				{
-					taskId: 'ddd-base',
+					taskId: 'shared-base',
 					title: 'ValueObject base',
-					targetPackage: 'packages/ddd-base',
-					pathPrefixes: ['packages/ddd-base/'],
+					targetPackage: 'packages/shared-base',
+					pathPrefixes: ['packages/shared-base/'],
 					dependsOn: [],
 					status: 'completed',
 					targetTreeSha,
 					integrationOrder: 0,
-					worktreeSubdir: 'worktrees/ddd-base',
+					worktreeSubdir: 'worktrees/shared-base',
 					baseCommitSha,
 				},
 			],
@@ -173,8 +173,8 @@ test('CLI resumes a reviewer prompt-budget denial from the next materialized gen
 			generation: 1,
 			baseCommitSha,
 			targetTreeSha,
-			scopeFingerprints: { 'packages/ddd-base': 'd'.repeat(64) },
-			taskOwnedPaths: ['packages/ddd-base/**'],
+			scopeFingerprints: { 'packages/shared-base': 'd'.repeat(64) },
+			taskOwnedPaths: ['packages/shared-base/**'],
 			materializedAt: new Date().toISOString(),
 		});
 		store.close();

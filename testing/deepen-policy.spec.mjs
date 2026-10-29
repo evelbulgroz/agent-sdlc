@@ -5,16 +5,16 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/agent-sdlc'))
+const ROOT = fs.existsSync(path.join(PACKAGE_ROOT, 'packages/engine'))
 	? PACKAGE_ROOT
 	: path.resolve(PACKAGE_ROOT, '../../..');
-const SDLC = fs.existsSync(path.join(ROOT, 'packages/agent-sdlc'))
-	? path.join(ROOT, 'packages/agent-sdlc')
+const SDLC = fs.existsSync(path.join(ROOT, 'packages/engine'))
+	? path.join(ROOT, 'packages/engine')
 	: PACKAGE_ROOT;
 
 function resolvePath(rel) {
 	if (fs.existsSync(path.join(ROOT, rel))) return path.join(ROOT, rel);
-	return path.join(SDLC, rel.replace(/^packages\/agent-sdlc\//, ''));
+	return path.join(SDLC, rel.replace(/^packages\/engine\//, ''));
 }
 
 function measure(rel) {
@@ -87,12 +87,12 @@ function assertWithinCeiling(files) {
 }
 
 const reliabilityModules = [
-	'packages/agent-sdlc/policy/reliability.ts',
-	...productionFiles('packages/agent-sdlc/policy/reliability'),
+	'packages/engine/policy/reliability.ts',
+	...productionFiles('packages/engine/policy/reliability'),
 ];
 const plannerModules = [
-	'packages/agent-sdlc/policy/task-planner.ts',
-	...productionFiles('packages/agent-sdlc/policy/task-planner'),
+	'packages/engine/policy/task-planner.ts',
+	...productionFiles('packages/engine/policy/task-planner'),
 ];
 
 test('@ac AC-01 @case AC-01.1 the reliability facade and six submodules are within the ceiling', () => {
@@ -101,10 +101,10 @@ test('@ac AC-01 @case AC-01.1 the reliability facade and six submodules are with
 });
 
 test('@ac AC-01 @case AC-01.2 reliability submodules do not import the facade and have no cycle', () => {
-	const modules = productionFiles('packages/agent-sdlc/policy/reliability');
+	const modules = productionFiles('packages/engine/policy/reliability');
 	for (const rel of modules) {
 		assert.equal(
-			relativeImports(rel).includes('packages/agent-sdlc/policy/reliability.ts'),
+			relativeImports(rel).includes('packages/engine/policy/reliability.ts'),
 			false,
 			rel,
 		);
@@ -121,9 +121,9 @@ test('@ac AC-04 @case AC-04.3 taskReaches is defined only in task-graph.mjs', ()
 	const definition = /(?:function|const)\s+taskReaches\b/;
 	const closure = /(?:function|const)\s+(?:taskReaches|reaches)\b/;
 	const hits = [];
-	const isMonorepo = fs.existsSync(path.join(ROOT, 'packages/agent-sdlc'));
+	const isMonorepo = fs.existsSync(path.join(ROOT, 'packages/engine'));
 	const expected = isMonorepo
-		? ['packages/agent-sdlc/policy/task-planner/task-graph.ts']
+		? ['packages/engine/policy/task-planner/task-graph.ts']
 		: ['policy/task-planner/task-graph.ts'];
 	const walk = (directory) => {
 		for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -145,18 +145,18 @@ test('@ac AC-04 @case AC-04.3 taskReaches is defined only in task-graph.mjs', ()
 	walk(path.join(SDLC, 'policy'));
 	assert.deepEqual(hits, expected);
 	for (const rel of [
-		'packages/agent-sdlc/policy/task-planner.ts',
-		'packages/agent-sdlc/policy/task-planner/task-readiness.ts',
+		'packages/engine/policy/task-planner.ts',
+		'packages/engine/policy/task-planner/task-readiness.ts',
 	]) {
 		assert.equal(closure.test(fs.readFileSync(resolvePath(rel), 'utf8')), false, rel);
 	}
 });
 
 test('@ac AC-04 @case AC-04.5 no task-planner submodule imports the facade', () => {
-	const modules = productionFiles('packages/agent-sdlc/policy/task-planner');
+	const modules = productionFiles('packages/engine/policy/task-planner');
 	for (const rel of modules) {
 		assert.equal(
-			relativeImports(rel).includes('packages/agent-sdlc/policy/task-planner.ts'),
+			relativeImports(rel).includes('packages/engine/policy/task-planner.ts'),
 			false,
 			rel,
 		);
@@ -166,10 +166,10 @@ test('@ac AC-04 @case AC-04.5 no task-planner submodule imports the facade', () 
 
 test('@ac AC-07 @case AC-07.1 policy spec files in this split are within the ceiling', () => {
 	assertWithinCeiling([
-		'packages/agent-sdlc/policy/reliability.spec.mjs',
-		'packages/agent-sdlc/policy/task-planner.spec.mjs',
-		...specFiles('packages/agent-sdlc/policy/reliability'),
-		...specFiles('packages/agent-sdlc/policy/task-planner'),
+		'packages/engine/policy/reliability.spec.mjs',
+		'packages/engine/policy/task-planner.spec.mjs',
+		...specFiles('packages/engine/policy/reliability'),
+		...specFiles('packages/engine/policy/task-planner'),
 	]);
 });
 
@@ -184,12 +184,12 @@ test('@ac AC-07 @case AC-07.2 exceptions omit the split reliability and task-pla
 });
 
 test('@ac AC-07 @case AC-07.3 facade spec titles are not repeated in a submodule spec', () => {
-	const reliabilityTitles = new Set(titles('packages/agent-sdlc/policy/reliability.spec.mjs'));
-	for (const rel of specFiles('packages/agent-sdlc/policy/reliability')) {
+	const reliabilityTitles = new Set(titles('packages/engine/policy/reliability.spec.mjs'));
+	for (const rel of specFiles('packages/engine/policy/reliability')) {
 		for (const title of titles(rel)) assert.equal(reliabilityTitles.has(title), false, title);
 	}
-	const plannerTitles = new Set(titles('packages/agent-sdlc/policy/task-planner.spec.mjs'));
-	for (const rel of specFiles('packages/agent-sdlc/policy/task-planner')) {
+	const plannerTitles = new Set(titles('packages/engine/policy/task-planner.spec.mjs'));
+	for (const rel of specFiles('packages/engine/policy/task-planner')) {
 		for (const title of titles(rel)) assert.equal(plannerTitles.has(title), false, title);
 	}
 });

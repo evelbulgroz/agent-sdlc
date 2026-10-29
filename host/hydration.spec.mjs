@@ -20,7 +20,7 @@ function withTempWorktree(fn) {
 		});
 }
 
-test('@ac AC-05 @case AC-05.1 script hydration with empty array makes 0 runner calls and does not copy security-config, read pnpm-workspace.yaml, or spawn pnpm', async () => {
+test('@ac AC-05 @case AC-05.1 script hydration with empty array makes 0 runner calls and does not copy secrets-config, read pnpm-workspace.yaml, or spawn pnpm', async () => {
 	await withTempWorktree(async (worktreeDir) => {
 		const calls = [];
 		const result = await scriptHydrate({

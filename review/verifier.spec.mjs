@@ -42,7 +42,7 @@ test('@ac AC-03 @case AC-03.1 executePreflightVerifier parses successful preflig
 			worktreeDir,
 			baseCommitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: mockExec,
 		});
@@ -69,7 +69,7 @@ test('executePreflightVerifier handles failing preflight and generates failure p
 	const mockFailingExec = () => {
 		const err = new Error('Preflight exit 1');
 		err.status = 1;
-		err.stdout = 'FAIL test suite in apps/services/conditioning';
+		err.stdout = 'FAIL test suite in services/billing';
 		err.stderr = 'ERR: preflight failed';
 		throw err;
 	};
@@ -81,7 +81,7 @@ test('executePreflightVerifier handles failing preflight and generates failure p
 			worktreeDir,
 			baseCommitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: mockFailingExec,
 		});
@@ -122,7 +122,7 @@ test('executePreflightVerifier fails closed on base mismatch', async () => {
 			worktreeDir,
 			baseCommitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: () => '',
 		});
@@ -155,7 +155,7 @@ test('executePreflightVerifier fails closed on gitHeadSha mismatch', async () =>
 			worktreeDir,
 			baseCommitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: () => '',
 		});
@@ -188,7 +188,7 @@ test('@ac AC-03 @case AC-03.4 executePreflightVerifier fails closed when canonic
 			worktreeDir,
 			baseCommitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: () => '',
 		});
@@ -218,7 +218,7 @@ test('executePreflightVerifier fails closed on malformed JSON', async () => {
 			worktreeDir,
 			baseCommitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: () => '',
 		});
@@ -271,7 +271,7 @@ test('@ac AC-03 @case AC-03.2 executeCommittedPreflightVerifier validates clean 
 			baseCommitSha,
 			commitSha,
 			targetTreeSha,
-			targetPaths: ['apps/services/conditioning/**'],
+			targetPaths: ['services/billing/**'],
 			artifactStore: fixture.artifacts,
 			execCli: mockExec,
 			gitCli: mockGitCli,
@@ -455,7 +455,7 @@ test('@ac AC-05 @case AC-05.2 a committed PASS carries commitSha and treeSha and
 test('@ac AC-03 @case AC-03.3 @case AC-03.5 runPreflightAndBind supports custom resultPath/headField and contains no preflight argv array or tools/.agent-preflight-last.json literal', async () => {
 	const source = fs.readFileSync(new URL('./verifier.ts', import.meta.url), 'utf8');
 	assert.equal(source.includes('tools/.agent-preflight-last.json'), false);
-	assert.equal(source.includes('agent:preflight'), false);
+	assert.equal(source.includes('agent:verify'), false);
 
 	const fixture = makeFixture('verifier-ac03-custom', []);
 	try {

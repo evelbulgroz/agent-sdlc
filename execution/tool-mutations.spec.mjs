@@ -25,17 +25,17 @@ test('writeFileTool rejects shrinking an existing large file', () => {
 	const tempDir = createTempDir();
 	try {
 		const worktreeDir = tempDir;
-		const allowedPathPrefixes = ['apps/services/conditioning'];
+		const allowedPathPrefixes = ['services/billing'];
 		const original = Array.from({ length: 80 }, (_, i) => `export const n${i} = ${i};`).join('\n');
 		writeFileTool(
-			{ path: 'apps/services/conditioning/src/big.ts', content: original },
+			{ path: 'services/billing/src/big.ts', content: original },
 			{ worktreeDir, allowedPathPrefixes },
 		);
 		assert.throws(
 			() =>
 				writeFileTool(
 					{
-						path: 'apps/services/conditioning/src/big.ts',
+						path: 'services/billing/src/big.ts',
 						content: 'export const n0 = 0;\n',
 					},
 					{ worktreeDir, allowedPathPrefixes },
@@ -44,14 +44,14 @@ test('writeFileTool rejects shrinking an existing large file', () => {
 				err.code === 'INVALID_INPUT' && /shrinks the file/.test(err.message),
 		);
 		const kept = readFileTool(
-			{ path: 'apps/services/conditioning/src/big.ts' },
+			{ path: 'services/billing/src/big.ts' },
 			{ worktreeDir },
 		);
 		assert.equal(kept.content, original);
 
 		const additive = `${original}\nexport const extra = true;\n`;
 		const written = writeFileTool(
-			{ path: 'apps/services/conditioning/src/big.ts', content: additive },
+			{ path: 'services/billing/src/big.ts', content: additive },
 			{ worktreeDir, allowedPathPrefixes },
 		);
 		assert.equal(written.written, true);
@@ -64,9 +64,9 @@ test('@ac AC-07 write_file and replace_snapshot_range accept an explicitly ackno
 	const tempDir = createTempDir();
 	try {
 		const worktreeDir = tempDir;
-		const allowedPathPrefixes = ['apps/services/conditioning'];
+		const allowedPathPrefixes = ['services/billing'];
 		const original = Array.from({ length: 80 }, (_, i) => `export const n${i} = ${i};`).join('\n');
-		const relPath = 'apps/services/conditioning/src/shrinkable.ts';
+		const relPath = 'services/billing/src/shrinkable.ts';
 
 		writeFileTool(
 			{ path: relPath, content: original },
@@ -136,15 +136,15 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 	const tempDir = createTempDir();
 	try {
 		const worktreeDir = tempDir;
-		const allowedPathPrefixes = ['apps/services/conditioning'];
+		const allowedPathPrefixes = ['services/billing'];
 		const original = 'export class Foo {\n\tbar() { return 1; }\n\tbaz() { return 2; }\n}\n';
 		writeFileTool(
-			{ path: 'apps/services/conditioning/src/foo.ts', content: original },
+			{ path: 'services/billing/src/foo.ts', content: original },
 			{ worktreeDir, allowedPathPrefixes },
 		);
 		const replaced = replaceInFileTool(
 			{
-				path: 'apps/services/conditioning/src/foo.ts',
+				path: 'services/billing/src/foo.ts',
 				old_string: '\tbar() { return 1; }',
 				new_string: '\tbar() { return 1; }\n\tqux() { return 3; }',
 				expected_file_hash: crypto.createHash('sha256').update(original, 'utf8').digest('hex'),
@@ -153,7 +153,7 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 		);
 		assert.equal(replaced.replaced, true);
 		const after = readFileTool(
-			{ path: 'apps/services/conditioning/src/foo.ts' },
+			{ path: 'services/billing/src/foo.ts' },
 			{ worktreeDir },
 		);
 		assert.match(after.content, /qux\(\) \{ return 3; \}/);
@@ -163,7 +163,7 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 			() =>
 				replaceInFileTool(
 					{
-						path: 'apps/services/conditioning/src/foo.ts',
+						path: 'services/billing/src/foo.ts',
 						old_string: '\tbaz() { return 2; }',
 						new_string: '\tbaz() { return 4; }',
 						expected_file_hash: crypto.createHash('sha256').update(original, 'utf8').digest('hex'),
@@ -177,7 +177,7 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 			() =>
 				replaceInFileTool(
 					{
-						path: 'apps/services/conditioning/src/foo.ts',
+						path: 'services/billing/src/foo.ts',
 						old_string: 'not-in-file',
 						new_string: 'x',
 					},
@@ -190,7 +190,7 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 			() =>
 				replaceInFileTool(
 					{
-						path: 'apps/services/conditioning/src/foo.ts',
+						path: 'services/billing/src/foo.ts',
 						old_string: 'baz\\(\\)',
 						new_string: 'quux()',
 					},
@@ -203,7 +203,7 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 			() =>
 				replaceInFileTool(
 					{
-						path: 'apps/services/conditioning/src/foo.ts',
+						path: 'services/billing/src/foo.ts',
 						old_string: '\tbaz() { return 2; }',
 						new_string: '\tbaz() { return 2; }',
 					},
@@ -220,7 +220,7 @@ test('replaceInFileTool patches a unique snippet and rejects missing or ambiguou
 			() =>
 				replaceInFileTool(
 					{
-						path: 'apps/services/conditioning/src/foo.ts',
+						path: 'services/billing/src/foo.ts',
 						old_string: '\tqux() { return 3; }\n',
 						new_string: '',
 					},

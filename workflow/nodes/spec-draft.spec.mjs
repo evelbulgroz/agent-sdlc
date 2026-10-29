@@ -77,7 +77,7 @@ test('createApplyModelPatchNode preserves task-manifest bound AC-NN IDs when mod
 	try {
 		const initial = fixture.runtime.initialize({
 			runId: fixture.runId,
-			goal: '# Intent\n\n## Goal\nClamp meters.\n\n## Non-goals\n- None.\n\n## Owning context\napps/services/conditioning\n\n## Touched surfaces\n- apps/services/conditioning/src/foo.ts\n\n## Invariants and constraints\n- Pure helper.\n\n## Public contract impact\nNone.\n\n## Acceptance criteria\n1. AC-01: Negative clamps to 0. Given -1. Then returns 0.\n2. AC-02: Positive unchanged. Given 2. Then returns 2.\n\n## Failure defenses\n- Throw TypeError on NaN.\n\n## Verification plan\n- Unit tests.\n',
+			goal: '# Intent\n\n## Goal\nClamp meters.\n\n## Non-goals\n- None.\n\n## Owning context\nservices/billing\n\n## Touched surfaces\n- services/billing/src/foo.ts\n\n## Invariants and constraints\n- Pure helper.\n\n## Public contract impact\nNone.\n\n## Acceptance criteria\n1. AC-01: Negative clamps to 0. Given -1. Then returns 0.\n2. AC-02: Positive unchanged. Given 2. Then returns 2.\n\n## Failure defenses\n- Throw TypeError on NaN.\n\n## Verification plan\n- Unit tests.\n',
 			taskManifest: {
 				schemaVersion: '1.0.0',
 				slices: [
@@ -93,12 +93,12 @@ test('createApplyModelPatchNode preserves task-manifest bound AC-NN IDs when mod
 					{
 						taskId: 't1',
 						sliceId: 's1',
-						targetPackage: 'apps/services/conditioning',
+						targetPackage: 'services/billing',
 						deliveryLayers: ['domain'],
-						pathPrefixes: ['apps/services/conditioning/src/foo.ts'],
-						authoredPaths: ['apps/services/conditioning/src/foo.ts'],
+						pathPrefixes: ['services/billing/src/foo.ts'],
+						authoredPaths: ['services/billing/src/foo.ts'],
 						dependsOn: [],
-						verificationCommand: ['pnpm', '--filter', '@example/conditioning-service', 'test'],
+						verificationCommand: ['pnpm', '--filter', '@fixture/billing-service', 'test'],
 						generatorCommand: null,
 						generatedOutputs: [],
 						dependencyMutations: [],

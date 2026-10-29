@@ -147,7 +147,7 @@ function describeAction(step: FailureTraceStep): string {
 			parameters?: { path?: unknown; command?: unknown };
 		};
 		const target = action.parameters?.path ?? action.parameters?.command ?? '';
-		return `${String(action.toolName ?? '')} ${String(target).replace(/^apps\/services\//, '')}`.trim();
+		return `${String(action.toolName ?? '')} ${String(target).replace(/^services\//, '')}`.trim();
 	} catch {
 		return step.chosenAction.slice(0, 80);
 	}

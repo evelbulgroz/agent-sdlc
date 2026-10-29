@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
-import { conditioningProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
+import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
 
 test('plan critic P1 interrupts before worktree creation; accept_residual freezes the plan', async () => {
 	const gitCalls = [];
 	const fixture = makeGraphFixture(
 		'slice2-plan-p1', 
 		[
-			conditioningProposal(),
+			billingProposal(),
 			{ __role: 'critic', status: 'PASS', findings: [] },
 			{
 				__role: 'critic',
@@ -45,8 +45,8 @@ test('plan critic P1 interrupts before worktree creation; accept_residual freeze
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 		});
 		const waiting = await fixture.runtime.authorize(approved, envelope);
 		assert.equal(waiting.state, 'WAITING_FOR_PLAN_ACCEPTANCE');
@@ -91,7 +91,7 @@ test('prepare_workspace throws before git worktree add when the plan is unfrozen
 	const gitCalls = [];
 	const fixture = makeGraphFixture(
 		'slice2-prepare-unfrozen', 
-		[conditioningProposal()], { profile: 'slice2', 
+		[billingProposal()], { profile: 'slice2', 
 			gitCli: (cmd, args = []) => {
 				gitCalls.push({ cmd, args });
 				if (cmd === 'git' && args[0] === 'rev-parse') {
@@ -110,8 +110,8 @@ test('prepare_workspace throws before git worktree add when the plan is unfrozen
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 		});
 		fixture.store.saveAuthorization(envelope);
 		const unfrozen = {
@@ -143,7 +143,7 @@ test('plan critic reauthorize requests a new envelope without reopening SPEC_APP
 	const fixture = makeGraphFixture(
 		'slice2-plan-reauth', 
 		[
-			conditioningProposal(),
+			billingProposal(),
 			{ __role: 'critic', status: 'PASS', findings: [] },
 			{
 				__role: 'critic',
@@ -178,8 +178,8 @@ test('plan critic reauthorize requests a new envelope without reopening SPEC_APP
 			runId: fixture.runId,
 			approvedSpecHash: approved.approvedSpecHash,
 			baseCommitSha: fixture.baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing'],
 		});
 		const waiting = await fixture.runtime.authorize(approved, envelope);
 		assert.equal(waiting.state, 'WAITING_FOR_PLAN_ACCEPTANCE');

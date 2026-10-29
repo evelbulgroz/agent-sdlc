@@ -134,7 +134,7 @@ test('reversible decisions: irreversible patterns are never auto-decided and rem
 	const questions = [
 		{
 			questionId: 'q-breaking',
-			prompt: 'Is this a breaking change to the conditioning API contracts?',
+			prompt: 'Is this a breaking change to the billing API contracts?',
 			targets: ['publicContractImpact'],
 		},
 		{
@@ -144,7 +144,7 @@ test('reversible decisions: irreversible patterns are never auto-decided and rem
 		},
 		{
 			questionId: 'q-secret',
-			prompt: 'Where should the new API key secret be stored in security-config?',
+			prompt: 'Where should the new API key secret be stored in secrets-config?',
 			targets: ['invariantsAndConstraints'],
 		},
 		{
@@ -268,11 +268,11 @@ test('reversible decisions: markdown formatting and file projection', () => {
 	}
 });
 
-test('buildIrreversiblePatterns treats configured secretPaths as irreversible but not security-config by default', async () => {
+test('buildIrreversiblePatterns treats configured secretPaths as irreversible but not secrets-config by default', async () => {
 	const { buildIrreversiblePatterns } = await import('./reversible-decisions.ts');
 	const hits = (patterns, text) => patterns.some((re) => re.test(text));
 	const base = buildIrreversiblePatterns({ profile: { version: '1.3.0' } });
-	assert.equal(hits(base, 'move the security-config folder'), false);
+	assert.equal(hits(base, 'move the secrets-config folder'), false);
 	assert.equal(hits(base, 'rotate the api-key'), true);
 	const configured = buildIrreversiblePatterns({ profile: { version: '1.3.0', policy: { secretPaths: ['vault/'] } } });
 	assert.equal(hits(configured, 'edit vault files'), true);

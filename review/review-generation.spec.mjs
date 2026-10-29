@@ -21,9 +21,9 @@ function setupGitWorktree(worktreeDir) {
 	execFileSync('git', ['config', 'user.name', 'test'], { cwd: worktreeDir });
 
 	fs.writeFileSync(path.join(worktreeDir, '.gitignore'), 'ignored.txt\nnode_modules/\n');
-	fs.mkdirSync(path.join(worktreeDir, 'apps/services/conditioning/src'), { recursive: true });
+	fs.mkdirSync(path.join(worktreeDir, 'services/billing/src'), { recursive: true });
 	fs.writeFileSync(
-		path.join(worktreeDir, 'apps/services/conditioning/src/initial.ts'),
+		path.join(worktreeDir, 'services/billing/src/initial.ts'),
 		'export const v = 1;\n',
 	);
 	execFileSync('git', ['add', '-A'], { cwd: worktreeDir });
@@ -33,26 +33,26 @@ function setupGitWorktree(worktreeDir) {
 }
 
 test('isHighRiskPath and anyHighRiskPaths detect protected repository surfaces', () => {
-	assert.equal(isHighRiskPath('apps/services/authentication/src/auth.service.ts'), true);
-	assert.equal(isHighRiskPath('apps/services/registry/src/main.ts'), true);
-	assert.equal(isHighRiskPath('packages/ddd-base/src/entity.ts'), true);
+	assert.equal(isHighRiskPath('services/authentication/src/auth.service.ts'), true);
+	assert.equal(isHighRiskPath('services/registry/src/main.ts'), true);
+	assert.equal(isHighRiskPath('packages/shared-base/src/entity.ts'), true);
 	assert.equal(isHighRiskPath('packages/base/src/index.ts'), true);
 	assert.equal(isHighRiskPath('.github/workflows/ci.yml'), true);
 	assert.equal(isHighRiskPath('tools/quality/gate.mjs'), true);
-	assert.equal(isHighRiskPath('security-config/local.env'), true);
+	assert.equal(isHighRiskPath('secrets-config/local.env'), true);
 
-	assert.equal(isHighRiskPath('apps/services/conditioning/src/service.ts'), false);
-	assert.equal(isHighRiskPath('apps/services/journal/src/entry.ts'), false);
+	assert.equal(isHighRiskPath('services/billing/src/service.ts'), false);
+	assert.equal(isHighRiskPath('services/journal/src/entry.ts'), false);
 
 	assert.equal(
 		anyHighRiskPaths([
-			'apps/services/conditioning/src/service.ts',
-			'packages/ddd-base/src/entity.ts',
+			'services/billing/src/service.ts',
+			'packages/shared-base/src/entity.ts',
 		]),
 		true,
 	);
 	assert.equal(
-		anyHighRiskPaths(['apps/services/conditioning/src/service.ts']),
+		anyHighRiskPaths(['services/billing/src/service.ts']),
 		false,
 	);
 });
@@ -70,11 +70,11 @@ test('materializeGenerationTree writes uncommitted tree and records generation i
 
 		// Create uncommitted modifications, additions, and ignored files
 		fs.writeFileSync(
-			path.join(worktreeDir, 'apps/services/conditioning/src/initial.ts'),
+			path.join(worktreeDir, 'services/billing/src/initial.ts'),
 			'export const v = 2;\n',
 		);
 		fs.writeFileSync(
-			path.join(worktreeDir, 'apps/services/conditioning/src/added.ts'),
+			path.join(worktreeDir, 'services/billing/src/added.ts'),
 			'export const added = true;\n',
 		);
 		fs.writeFileSync(path.join(worktreeDir, 'ignored.txt'), 'ignored content');
@@ -83,8 +83,8 @@ test('materializeGenerationTree writes uncommitted tree and records generation i
 			runId: fixture.runId,
 			worktreeDir,
 			baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
-			allowedPathPrefixes: ['apps/services/conditioning/src'],
+			allowedPackages: ['services/billing'],
+			allowedPathPrefixes: ['services/billing/src'],
 			generation: 0,
 			runtimeStore: fixture.store,
 		});
@@ -92,10 +92,10 @@ test('materializeGenerationTree writes uncommitted tree and records generation i
 		assert.equal(gen.generation, 0);
 		assert.equal(gen.baseCommitSha, baseCommitSha);
 		assert.match(gen.targetTreeSha, /^[a-f0-9]{40}$/);
-		assert.ok(gen.scopeFingerprints['apps/services/conditioning']);
+		assert.ok(gen.scopeFingerprints['services/billing']);
 		assert.deepEqual(gen.taskOwnedPaths, [
-			'apps/services/conditioning/src/added.ts',
-			'apps/services/conditioning/src/initial.ts',
+			'services/billing/src/added.ts',
+			'services/billing/src/initial.ts',
 		]);
 
 		// Verify generation was saved in SQLite
@@ -107,8 +107,8 @@ test('materializeGenerationTree writes uncommitted tree and records generation i
 			cwd: worktreeDir,
 			encoding: 'utf8',
 		});
-		assert.ok(status.includes('M apps/services/conditioning/src/initial.ts'));
-		assert.ok(status.includes('?? apps/services/conditioning/src/added.ts'));
+		assert.ok(status.includes('M services/billing/src/initial.ts'));
+		assert.ok(status.includes('?? services/billing/src/added.ts'));
 
 		// Verify targetTreeSha does not contain hydration marker
 		const lsTree = execFileSync('git', ['ls-tree', '-r', '--name-only', gen.targetTreeSha], {
@@ -126,7 +126,7 @@ test('materializeGenerationTree preserves exact newly authored test paths', () =
 	const fixture = makeFixture('gen-tree-exact-test-path', []);
 	const worktreeDir = path.join(fixture.runtimeDir, 'worktree');
 	const testPath =
-		'apps/services/conditioning/src/conditioning/domain/helpers/derive-elevation-totals.helper.spec.ts';
+		'services/billing/src/billing/domain/helpers/derive-elevation-totals.helper.spec.ts';
 
 	try {
 		const baseCommitSha = setupGitWorktree(worktreeDir);
@@ -146,7 +146,7 @@ test('materializeGenerationTree preserves exact newly authored test paths', () =
 			runId: fixture.runId,
 			worktreeDir,
 			baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
 			allowedPathPrefixes: [testPath],
 			generation: 0,
 			runtimeStore: fixture.store,
@@ -191,14 +191,14 @@ test('materializeGenerationTree preserves tracked files matching .gitignore with
 		execFileSync('git', ['config', 'user.email', 'test@example.local'], { cwd: worktreeDir });
 		execFileSync('git', ['config', 'user.name', 'test'], { cwd: worktreeDir });
 
-		fs.mkdirSync(path.join(worktreeDir, 'packages/ddd-base'), { recursive: true });
+		fs.mkdirSync(path.join(worktreeDir, 'packages/shared-base'), { recursive: true });
 		fs.mkdirSync(path.join(worktreeDir, 'coverage.root-owned.bak'), { recursive: true });
 		fs.writeFileSync(path.join(worktreeDir, '.env.example'), 'VITE_GATEWAY_BASE_URL=/gateway/api/v1\n');
 		fs.writeFileSync(
 			path.join(worktreeDir, 'coverage.root-owned.bak/coverage-summary.json'),
 			'{}\n',
 		);
-		fs.writeFileSync(path.join(worktreeDir, 'packages/ddd-base/fixture.ts'), 'export const value = 1;\n');
+		fs.writeFileSync(path.join(worktreeDir, 'packages/shared-base/fixture.ts'), 'export const value = 1;\n');
 		execFileSync('git', ['add', '-A'], { cwd: worktreeDir });
 		execFileSync('git', ['commit', '-m', 'track fixture files'], {
 			cwd: worktreeDir,
@@ -220,7 +220,7 @@ test('materializeGenerationTree preserves tracked files matching .gitignore with
 		}).trim();
 
 		fs.writeFileSync(
-			path.join(worktreeDir, 'packages/ddd-base/fixture.ts'),
+			path.join(worktreeDir, 'packages/shared-base/fixture.ts'),
 			'export const value = 2;\n',
 		);
 
@@ -233,8 +233,8 @@ test('materializeGenerationTree preserves tracked files matching .gitignore with
 			runId: fixture.runId,
 			worktreeDir,
 			baseCommitSha,
-			allowedPackages: ['packages/ddd-base'],
-			allowedPathPrefixes: ['packages/ddd-base/'],
+			allowedPackages: ['packages/shared-base'],
+			allowedPathPrefixes: ['packages/shared-base/'],
 			generation: 0,
 			runtimeStore: fixture.store,
 		});
@@ -247,7 +247,7 @@ test('materializeGenerationTree preserves tracked files matching .gitignore with
 			.trim()
 			.split('\n');
 
-		assert.deepEqual(changedFiles, ['M\tpackages/ddd-base/fixture.ts']);
+		assert.deepEqual(changedFiles, ['M\tpackages/shared-base/fixture.ts']);
 	} finally {
 		fixture.close();
 	}
@@ -268,7 +268,7 @@ test('ReviewGenerationAdapter supports generation queries, review recording, and
 			runId: fixture.runId,
 			worktreeDir,
 			baseCommitSha,
-			allowedPackages: ['apps/services/conditioning'],
+			allowedPackages: ['services/billing'],
 			generation: 0,
 			runtimeStore: fixture.store,
 		});
@@ -311,7 +311,7 @@ test('ReviewGenerationAdapter supports generation queries, review recording, and
 			0,
 			'report-hash-1',
 			['finding-1'],
-			['apps/services/conditioning'],
+			['services/billing'],
 		);
 		assert.equal(repair1.kind, 'accepted');
 		assert.equal(repair1.retryCount, 1);
@@ -323,7 +323,7 @@ test('ReviewGenerationAdapter supports generation queries, review recording, and
 			0,
 			'report-hash-2',
 			['finding-2'],
-			['apps/services/conditioning'],
+			['services/billing'],
 		);
 		assert.equal(repair2.kind, 'accepted');
 		assert.equal(repair2.retryCount, 2);
@@ -334,7 +334,7 @@ test('ReviewGenerationAdapter supports generation queries, review recording, and
 			0,
 			'report-hash-3',
 			['finding-3'],
-			['apps/services/conditioning'],
+			['services/billing'],
 		);
 		assert.equal(repair3.kind, 'interrupt');
 		assert.equal(repair3.reason, 'REPAIR_BUDGET_EXHAUSTED');
@@ -345,7 +345,7 @@ test('ReviewGenerationAdapter supports generation queries, review recording, and
 			0,
 			'report-hash-4',
 			['finding-4'],
-			['packages/ddd-base/src/aggregate.ts'],
+			['packages/shared-base/src/aggregate.ts'],
 		);
 		assert.equal(highRiskRepair.kind, 'interrupt');
 		assert.equal(highRiskRepair.reason, 'HIGH_RISK_PATH_REPAIR_PROHIBITED');

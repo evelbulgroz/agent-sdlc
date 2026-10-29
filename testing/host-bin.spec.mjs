@@ -10,10 +10,10 @@ import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { FakeModelGovernor } from './fake-model-governor.mjs';
 import { completeProposal } from './test-support.mjs';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
 const FIXTURE_HOST_DIR = IS_STANDALONE
 	? path.join(REPOSITORY_ROOT, 'testing/fixture-host')
-	: path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/testing/fixture-host');
+	: path.join(REPOSITORY_ROOT, 'packages/engine/testing/fixture-host');
 
 function withTempFixtureRepo(fn, profileOverrides = {}) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-host-bin-'));
@@ -55,10 +55,10 @@ function withTempFixtureRepo(fn, profileOverrides = {}) {
 		});
 }
 
-test('@ac AC-07 @case AC-07.1 node packages/agent-sdlc/cli/cli.ts and linked node_modules/.bin/agent-sdlc host check --root <dir> --json exit 0 and print fixture-host profile', async () => {
+test('@ac AC-07 @case AC-07.1 node packages/engine/cli/cli.ts and linked node_modules/.bin/agent-sdlc host check --root <dir> --json exit 0 and print fixture-host profile', async () => {
 	await withTempFixtureRepo(async (dir) => {
-		const cliEntry = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts'))
-			? path.join(REPOSITORY_ROOT, 'packages/agent-sdlc/cli/cli.ts')
+		const cliEntry = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine/cli/cli.ts'))
+			? path.join(REPOSITORY_ROOT, 'packages/engine/cli/cli.ts')
 			: path.join(REPOSITORY_ROOT, 'cli/cli.ts');
 		const directRes = spawnSync(
 			process.execPath,
@@ -120,8 +120,8 @@ test('@ac AC-07 @case AC-07.2 @case AC-07.3 start against --root <dir> with cust
 				runId,
 				approvedSpecHash: 'a'.repeat(64),
 				baseCommitSha: headSha,
-				allowedPackages: ['packages/agent-sdlc'],
-				allowedPathPrefixes: ['packages/agent-sdlc'],
+				allowedPackages: ['packages/engine'],
+				allowedPathPrefixes: ['packages/engine'],
 				rootDir: dir,
 			});
 			assert.equal(envelope.repositoryId, 'fixture-host');

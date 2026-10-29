@@ -140,13 +140,13 @@ export function scanFactoryTypeEscapes(
 	cap = NON_NULL_ASSERTION_CAP,
 ) {
 	const isDefaultRepoScan = rootDir === null;
-	const isStandalone = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+	const isStandalone = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
 	const baseDir = rootDir ?? REPOSITORY_ROOT;
 	const files = isDefaultRepoScan
 		? (isStandalone
 				? collectTsFiles(REPOSITORY_ROOT)
 				: [
-						...collectTsFiles(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc')),
+						...collectTsFiles(path.join(REPOSITORY_ROOT, 'packages/engine')),
 						...collectTsFiles(path.join(REPOSITORY_ROOT, 'packages/model-usage')),
 						...EXTERNAL_DECLARATION_PATHS.map((rel) => path.join(REPOSITORY_ROOT, rel)),
 					].sort())
@@ -222,14 +222,14 @@ test('@ac AC-02 @ac AC-03 @case AC-03.3 a temporary file with as unknown as is r
 	assert.equal(result.violations[0].rule, 'as-unknown-as');
 });
 
-test('@ac AC-02 @case AC-02.3 @case AC-02.4 @ac AC-03 @case AC-03.4 the repository scan reports zero violations and zero non-null assertions across packages/agent-sdlc, packages/model-usage, and the four external .d.mts declarations', () => {
+test('@ac AC-02 @case AC-02.3 @case AC-02.4 @ac AC-03 @case AC-03.4 the repository scan reports zero violations and zero non-null assertions across packages/engine, packages/model-usage, and the four external .d.mts declarations', () => {
 	const result = scanFactoryTypeEscapes();
 	assert.ok(result.files.length > 0, 'expected .ts files');
-	const isStandalone = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
+	const isStandalone = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
 	if (isStandalone) {
 		assert.equal(result.files.includes('testing/erasable-probe.ts'), true);
 	} else {
-		assert.equal(result.files.includes('packages/agent-sdlc/testing/erasable-probe.ts'), true);
+		assert.equal(result.files.includes('packages/engine/testing/erasable-probe.ts'), true);
 		assert.equal(result.files.includes('packages/model-usage/governor.ts'), true);
 		for (const declPath of EXTERNAL_DECLARATION_PATHS) {
 			assert.equal(result.files.includes(declPath), true, `expected scanner to include ${declPath}`);

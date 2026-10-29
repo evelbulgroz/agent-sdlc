@@ -10,7 +10,7 @@ const profile = (workspace) => ({ adapter: 'default', workspace });
 test('an empty workspace scan yields no packages instead of fabricated ones', () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'no-pkgs-'));
 	try {
-		const scan = scanWorkspacePackages(root, profile({ packageRoots: ['packages', 'apps/services', 'apps/frontends'] }));
+		const scan = scanWorkspacePackages(root, profile({ packageRoots: ['packages', 'services', 'frontends'] }));
 		assert.equal(scan.packageMap.size, 0);
 		assert.equal(scan.pathToPackage.size, 0);
 	} finally {

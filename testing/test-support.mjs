@@ -181,7 +181,7 @@ export function grammaticalAcceptance(outcome) {
 	return `AC-01: ${text}. Given the specification interview is complete. Then the operator may approve the draft.`;
 }
 
-export const CITING_SPEC_PATH = 'apps/services/conditioning/src/feature.spec.ts';
+export const CITING_SPEC_PATH = 'services/billing/src/feature.spec.ts';
 
 export function citingSpecSource(acId = 'AC-01') {
 	return `it('holds the approved outcome @ac ${acId}', () => {\n  expect(true).toBe(true);\n});\n`;
@@ -318,10 +318,10 @@ export function seedCitingSpecs(worktreeDir, acId = 'AC-01') {
 	if (!worktreeDir) return;
 	const paths = [
 		CITING_SPEC_PATH,
-		'apps/services/conditioning/src/feat1.spec.ts',
-		'apps/services/assessment/src/feat2.spec.ts',
-		'apps/services/authentication/src/feat2.spec.ts',
-		'packages/ddd-base/src/feature.spec.ts',
+		'services/billing/src/feat1.spec.ts',
+		'services/assessment/src/feat2.spec.ts',
+		'services/authentication/src/feat2.spec.ts',
+		'packages/shared-base/src/feature.spec.ts',
 	];
 	for (const relative of paths) {
 		const absolute = path.join(worktreeDir, relative);
@@ -332,7 +332,7 @@ export function seedCitingSpecs(worktreeDir, acId = 'AC-01') {
 
 export function seedWorkspacePackageManifest(
 	worktreeDir,
-	packagePath = 'apps/services/conditioning',
+	packagePath = 'services/billing',
 ) {
 	const source = path.join(REPOSITORY_ROOT, packagePath, 'package.json');
 	const destination = path.join(worktreeDir, packagePath, 'package.json');
@@ -340,9 +340,9 @@ export function seedWorkspacePackageManifest(
 	if (fs.existsSync(source)) {
 		fs.copyFileSync(source, destination);
 	} else {
-		const pkgName = packagePath.startsWith('apps/services/')
-			? `@example/${path.basename(packagePath)}-service`
-			: `@example/${path.basename(packagePath)}`;
+		const pkgName = packagePath.startsWith('services/')
+			? `@fixture/${path.basename(packagePath)}-service`
+			: `@fixture/${path.basename(packagePath)}`;
 		fs.writeFileSync(
 			destination,
 			JSON.stringify(
@@ -351,7 +351,7 @@ export function seedWorkspacePackageManifest(
 					version: '1.0.0',
 					type: 'module',
 					scripts: { test: 'pnpm test' },
-					dependencies: { '@example/ddd-base': 'workspace:*' },
+					dependencies: { '@fixture/shared-base': 'workspace:*' },
 				},
 				null,
 				2,
@@ -359,8 +359,8 @@ export function seedWorkspacePackageManifest(
 		);
 	}
 	for (const relFile of [
-		'apps/services/conditioning/src/main.ts',
-		'packages/ddd-base/src/index.ts',
+		'services/billing/src/main.ts',
+		'packages/shared-base/src/index.ts',
 	]) {
 		const fullFile = path.join(worktreeDir, relFile);
 		if (!fs.existsSync(fullFile)) {
@@ -608,7 +608,7 @@ export function createMockGitCli({
 				return `${treeShaForCwd(opts.cwd)}\n`;
 			}
 			if (sub === 'ls-tree') {
-				return '100644 blob cccc\tapps/services/conditioning/src/file.ts\n';
+				return '100644 blob cccc\tservices/billing/src/file.ts\n';
 			}
 			if (sub === 'diff-tree') {
 				const names = new Set();
@@ -670,7 +670,7 @@ export function createMockExecCli({
 	let preflightCalls = 0;
 	return (cmd, args = [], opts = {}) => {
 		if (cmd === 'pnpm') {
-			if (args.includes('agent:preflight')) {
+			if (args.includes('agent:verify')) {
 				preflightCalls++;
 				const shouldFail =
 					preflightStatus === 'FAIL' || preflightCalls <= failPreflightFirstNCalls;
@@ -700,7 +700,7 @@ export function createMockExecCli({
 					}),
 				);
 				if (shouldFail) {
-					const error = new Error('Command failed: pnpm run agent:preflight');
+					const error = new Error('Command failed: pnpm run agent:verify');
 					error.status = 1;
 					error.stdout = `agent-preflight: RESULT status=FAIL class=A sha=${baseCommitSha} exitCode=1 canonical=false\n`;
 					error.stderr = 'preflight failed';
@@ -777,7 +777,7 @@ export function createSlice2SmartGovernor({
 						: {
 								action: {
 									kind: 'complete',
-									summary: 'Implemented conditioning feature',
+									summary: 'Implemented billing feature',
 								},
 							};
 			return {
@@ -802,7 +802,7 @@ export function createSlice2SmartGovernor({
 								findingId: 'finding-1',
 								severity: 'P1',
 								category: 'correctness',
-								path: 'apps/services/conditioning/src/feature.ts',
+								path: 'services/billing/src/feature.ts',
 								lineRange: [1, 1],
 								evidence: 'export const feature = true;',
 								failureMechanism: 'Must be number',
@@ -829,7 +829,7 @@ export function createSlice2SmartGovernor({
 			const output =
 				repairerCalls === 1
 					? leanWriteAction(
-							'apps/services/conditioning/src/feature.ts',
+							'services/billing/src/feature.ts',
 							'export const feature = 42;\n',
 						)
 					: {
@@ -854,7 +854,7 @@ export function createSlice2SmartGovernor({
 }
 
 export function multiPackageProposal(
-	surfaces = ['packages/ddd-base', 'apps/services/conditioning'],
+	surfaces = ['packages/shared-base', 'services/billing'],
 	owningContext = 'Monorepo Tooling',
 ) {
 	const proposal = completeProposal();
@@ -870,7 +870,7 @@ export function multiPackageProposal(
 }
 
 export function createSlice4SmartGovernor({
-	surfaces = ['packages/ddd-base', 'apps/services/conditioning'],
+	surfaces = ['packages/shared-base', 'services/billing'],
 	failReview = false,
 } = {}) {
 	const taskCalls = new Map();
@@ -912,7 +912,7 @@ export function createSlice4SmartGovernor({
 			const count = (taskCalls.get(callKey) || 0) + 1;
 			taskCalls.set(callKey, count);
 			const isChild =
-				taskId.includes('conditioning') ||
+				taskId.includes('billing') ||
 				taskId === 'task-1' ||
 				taskId === 'child-task';
 			const targetPackage = isChild ? surfaces[1] : surfaces[0];

@@ -24,13 +24,13 @@ function makeWorktree() {
 test('architect scans touched files and attributes all required import violations', () => {
 	const root = makeWorktree();
 	const files = {
-		'apps/services/conditioning/src/local.ts': "import { value } from './value';\n",
-		'apps/services/conditioning/src/cross.ts':
-			"import { User } from '../../../packages/ddd-base/src/user.js';\n",
-		'apps/frontends/pwa-frontend/src/direct.ts':
-			"import { Contract } from '@example/conditioning-service/contracts';\n",
+		'services/billing/src/local.ts': "import { value } from './value';\n",
+		'services/billing/src/cross.ts':
+			"import { User } from '../../../packages/shared-base/src/user.js';\n",
+		'frontends/pwa-frontend/src/direct.ts':
+			"import { Contract } from '@fixture/billing-service/contracts';\n",
 		'packages/base/src/deep.ts':
-			"import { hidden } from '@example/ddd-base/dist/internal.js';\n",
+			"import { hidden } from '@fixture/shared-base/dist/internal.js';\n",
 	};
 	try {
 		for (const [file, content] of Object.entries(files)) {
@@ -45,17 +45,17 @@ test('architect scans touched files and attributes all required import violation
 			[
 				{
 					boundary: 'missing-esm-js-extension',
-					file: 'apps/services/conditioning/src/local.ts',
+					file: 'services/billing/src/local.ts',
 					severity: 'P2',
 				},
 				{
 					boundary: 'cross-package-relative-traversal',
-					file: 'apps/services/conditioning/src/cross.ts',
+					file: 'services/billing/src/cross.ts',
 					severity: 'P1',
 				},
 				{
 					boundary: 'frontend-backend-import',
-					file: 'apps/frontends/pwa-frontend/src/direct.ts',
+					file: 'frontends/pwa-frontend/src/direct.ts',
 					severity: 'P1',
 				},
 				{
@@ -72,7 +72,7 @@ test('architect scans touched files and attributes all required import violation
 
 test('architect persists structured P2 findings and stages task-aware learnings without failing', async () => {
 	const root = makeWorktree();
-	const file = 'apps/services/conditioning/src/local.ts';
+	const file = 'services/billing/src/local.ts';
 	const absolute = path.join(root, file);
 	const executions = [];
 	const candidates = [];

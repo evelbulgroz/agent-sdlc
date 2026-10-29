@@ -69,11 +69,11 @@ test('assertToolPathContained enforces worktree boundary and allowed prefixes', 
 		);
 
 		// Allowed prefixes
-		const allowedPrefixes = ['apps/services/conditioning', 'packages/common'];
+		const allowedPrefixes = ['services/billing', 'packages/common'];
 		assert.ok(
 			assertToolPathContained(
 				worktreeDir,
-				'apps/services/conditioning/src/file.ts',
+				'services/billing/src/file.ts',
 				allowedPrefixes,
 			),
 		);
@@ -81,13 +81,13 @@ test('assertToolPathContained enforces worktree boundary and allowed prefixes', 
 			() =>
 				assertToolPathContained(
 					worktreeDir,
-					'apps/services/conditioning-other/file.ts',
+					'services/billing-other/file.ts',
 					allowedPrefixes,
 				),
 			(err) => err.code === 'PATH_CONTAINMENT_VIOLATION',
 		);
 		assert.throws(
-			() => assertToolPathContained(worktreeDir, 'apps/services/auth/src/file.ts', allowedPrefixes),
+			() => assertToolPathContained(worktreeDir, 'services/auth/src/file.ts', allowedPrefixes),
 			(err) => err.code === 'PATH_CONTAINMENT_VIOLATION',
 		);
 	} finally {
@@ -122,9 +122,9 @@ test('assertToolPathContained catches symlink escapes', () => {
 test('path tools canonicalize surrounding whitespace and preserve resolution evidence', () => {
 	const tempDir = createTempDir();
 	try {
-		const canonicalPath = 'apps/services/conditioning/src/example.ts';
+		const canonicalPath = 'services/billing/src/example.ts';
 		const requestedPath = `${canonicalPath} `;
-		const allowedPathPrefixes = ['apps/services/conditioning'];
+		const allowedPathPrefixes = ['services/billing'];
 		fs.mkdirSync(path.dirname(path.join(tempDir, canonicalPath)), { recursive: true });
 		fs.writeFileSync(path.join(tempDir, canonicalPath), 'export const value = 1;\n');
 
@@ -151,7 +151,7 @@ test('path tools canonicalize surrounding whitespace and preserve resolution evi
 		);
 		assert.equal(fs.existsSync(path.join(tempDir, requestedPath)), false);
 
-		const createdCanonicalPath = 'apps/services/conditioning/src/created.ts';
+		const createdCanonicalPath = 'services/billing/src/created.ts';
 		const createdRequestedPath = ` ${createdCanonicalPath}`;
 		const writeResult = writeFileTool(
 			{ path: createdRequestedPath, content: 'export const created = true;\n' },

@@ -9,7 +9,7 @@ import path from 'node:path';
 export const NAVIGABILITY_LINE_CEILING = 500;
 export const NAVIGABILITY_BYTE_CEILING = 20_480;
 
-const SCAN_ROOTS = ['packages/agent-sdlc', 'packages/model-usage'];
+const SCAN_ROOTS = ['packages/engine', 'packages/model-usage'];
 
 function isSpecFile(name) {
 	return name.endsWith('.spec.mjs') || name.endsWith('.spec.ts');
@@ -21,7 +21,7 @@ function isCodeFile(name) {
 
 function isExempt(rel, name) {
 	if (isSpecFile(name)) return false;
-	if (rel.startsWith('packages/agent-sdlc/testing/')) return true;
+	if (rel.startsWith('packages/engine/testing/')) return true;
 	if (rel.startsWith('packages/model-usage/') && /-(support|child)\.(mjs|ts)$/.test(name)) return true;
 	return false;
 }

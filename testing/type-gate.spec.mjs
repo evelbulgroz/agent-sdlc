@@ -7,8 +7,8 @@ import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { summarizeProbePath } from './erasable-probe.ts';
 
-const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/agent-sdlc'));
-const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/agent-sdlc');
+const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));
+const FACTORY_ROOT = IS_STANDALONE ? REPOSITORY_ROOT : path.join(REPOSITORY_ROOT, 'packages/engine');
 const MODEL_USAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages/model-usage');
 const TSCONFIG_PATH = path.join(FACTORY_ROOT, 'tsconfig.json');
 const MODEL_USAGE_TSCONFIG_PATH = path.join(MODEL_USAGE_ROOT, 'tsconfig.json');
@@ -108,7 +108,7 @@ test('@ac AC-01 @case AC-01.4 both tsconfig files set strict, noImplicitOverride
 	}
 });
 
-test('@ac AC-01 @case AC-01.5 both package.json files set type to module and packages/agent-sdlc defines scripts.typecheck', () => {
+test('@ac AC-01 @case AC-01.5 both package.json files set type to module and packages/engine defines scripts.typecheck', () => {
 	const pkgPaths = [PACKAGE_JSON_PATH];
 	if (!IS_STANDALONE && fs.existsSync(MODEL_USAGE_PACKAGE_JSON_PATH)) {
 		pkgPaths.push(MODEL_USAGE_PACKAGE_JSON_PATH);

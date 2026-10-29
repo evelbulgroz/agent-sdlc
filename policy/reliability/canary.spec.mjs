@@ -259,7 +259,7 @@ test('@ac AC-03 @case AC-03.3 boundedPlanningHash is the sha256 of the planning-
 	const pairs = listBoundedPlanningFiles(REPOSITORY_ROOT).map((filename) => [
 		filename,
 		fs.readFileSync(
-			path.join(REPOSITORY_ROOT, filename.replace(/^packages\/agent-sdlc\//, '')),
+			path.join(REPOSITORY_ROOT, filename.replace(/^packages\/engine\//, '')),
 			'utf8',
 		),
 	]);
@@ -284,7 +284,7 @@ test('@ac AC-03 @case AC-03.5 a changed boundedPlanningHash is CANARY_STALE', ()
 	assert.equal(stale.reason, 'boundedPlanningHash-changed');
 });
 
-test('@ac AC-02 @case AC-02.1 currentCanaryBindings and resolveRunMaxPhysicalCalls succeed on an external host repo without packages/agent-sdlc or .agents/model-usage-policy.json', () => {
+test('@ac AC-02 @case AC-02.1 currentCanaryBindings and resolveRunMaxPhysicalCalls succeed on an external host repo without packages/engine or .agents/model-usage-policy.json', () => {
 	const externalHost = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-external-canary-'));
 	try {
 		fs.mkdirSync(path.join(externalHost, '.agents'), { recursive: true });
