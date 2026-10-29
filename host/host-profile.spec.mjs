@@ -220,9 +220,7 @@ test('@ac AC-01 @case AC-01.1 loadHostProfile(REPOSITORY_ROOT) succeeds with sch
 	const loaded = loadHostProfile(REPOSITORY_ROOT);
 	assert.equal(loaded.schemaVersion, '1.3.0');
 	assert.ok(loaded.workspace);
-	assert.ok(loaded.hydration);
 	assert.ok(loaded.policy);
-	assert.ok(loaded.architecture);
 	assert.ok(loaded.qualityGate);
 	assert.ok(loaded.learnings);
 	assert.ok(loaded.git);

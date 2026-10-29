@@ -47,7 +47,7 @@ export function packPlanDocument(plan: PlanDocumentPackingInput): string {
 		baseCommitSha: plan.baseCommitSha,
 		changeClass: derivePlanChangeClass(plan.tasks ?? []),
 		doneBar:
-			'pnpm run agent:preflight; success requires status=OK and canonical=true',
+			'host verify command (sdlc-host.json verify.argv) must pass',
 		isParallel: plan.isParallel,
 		integrationOrder: plan.integrationOrder,
 		tasks: (plan.tasks ?? []).map((task) => ({

@@ -1,3 +1,4 @@
+import '../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -127,7 +128,7 @@ test('executeReview derives status strictly from P1 findings even if model repor
 		runId: '2026-09-06-test-run',
 		authorVendor: 'google',
 		phase: 'code',
-		scope: 'packages/agent-sdlc',
+		scope: 'review',
 	});
 
 	assert.equal(result.hasP1, true);

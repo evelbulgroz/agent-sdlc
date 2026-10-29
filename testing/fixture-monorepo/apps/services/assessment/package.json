@@ -1,0 +1,7 @@
+{
+  "name": "@example/assessment-service",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {}
+}

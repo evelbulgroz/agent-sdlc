@@ -1,0 +1,9 @@
+{
+  "name": "@example/demo-service",
+  "scripts": {
+    "test": "node --test",
+    "build:contracts": "node build.mjs",
+    "check:contract-drift": "node check.mjs"
+  },
+  "dependencies": {}
+}

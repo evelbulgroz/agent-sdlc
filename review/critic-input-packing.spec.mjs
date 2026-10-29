@@ -1,3 +1,4 @@
+import '../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { packPlanDocument, packQaExcerpts, packSpecDocument } from './critic-input-packing.ts';
@@ -44,7 +45,7 @@ test('@ac AC-14 plan critic packet includes deterministic feasibility and done-b
 	assert.equal(document.changeClass, 'B');
 	assert.equal(
 		document.doneBar,
-		'pnpm run agent:preflight; success requires status=OK and canonical=true',
+		'host verify command (sdlc-host.json verify.argv) must pass',
 	);
 	assert.equal(document.tasks[0].complexityScore, 5);
 	assert.deepEqual(document.tasks[0].shadowPaths, {

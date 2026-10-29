@@ -128,19 +128,13 @@ test('@ac AC-01 @case AC-01.1 raw .agents/sdlc-host.json at REPOSITORY_ROOT omit
 		fs.readFileSync(path.join(REPOSITORY_ROOT, HOST_PROFILE_RELATIVE_PATH), 'utf8'),
 	);
 	assert.deepEqual(raw.verify, {
-		argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
-		resultPath: 'tools/.agent-preflight-last.json',
+		argv: ['pnpm', 'run', 'test:unit'],
 	});
 	assert.equal(raw.verify.require, undefined);
 	assert.equal(raw.verify.headField, undefined);
 
 	const loaded = loadHostProfile(REPOSITORY_ROOT);
-	assert.deepEqual(loaded.verify, {
-		argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
-		resultPath: 'tools/.agent-preflight-last.json',
-		require: { status: 'OK', canonical: true },
-		headField: 'gitHeadSha',
-	});
+	assert.deepEqual(loaded.verify, { argv: ['pnpm', 'run', 'test:unit'] });
 });
 
 test('@ac AC-01 @case AC-01.2 writeSyntheticHostProfile in cli-test-support.mjs and shell-driver-support.mjs omits raw verify.require and verify.headField and loadHostProfile resolves both defaults', async () => {

@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { type HostProfile, loadHostProfileOrFallback } from '../host/host-profile.ts';
+import { loadHostProfileOrFallback } from '../host/host-profile.ts';
 import { type DependencyMutation, canonicalJson, sha256 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import type { GitCliFn } from './git-manager.ts';
+import { copyPackageArtifacts, copyUntrackedFiles, resolveHydrationPlan } from './hydration-steps.ts';
 
 export type HydrationRunnerFn = (
 	command: string,
@@ -21,70 +22,6 @@ function gitText(gitCli: GitCliFn, args: readonly string[], options: Record<stri
 function errnoCode(error: unknown): string | undefined {
 	if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') return error.code;
 	return undefined;
-}
-
-function resolveServiceRootDirectories(sourceRoot: string, profile?: Readonly<HostProfile>): string[] {
-	const resolvedProfile = profile ?? loadHostProfileOrFallback(sourceRoot);
-	const producerPrefixes = resolvedProfile.policy?.contractProducerRules?.producerPrefixes ?? [];
-	const hydrationRoots =
-		resolvedProfile.hydration && !Array.isArray(resolvedProfile.hydration)
-			? (resolvedProfile.hydration.packageArtifactCopies ?? []).map((r) => r.packageRoot)
-			: [];
-	return [...new Set([...producerPrefixes, ...hydrationRoots].map((p) => p.replace(/\/+$/, '')).filter(Boolean))];
-}
-
-export function copyLiveSecurityConfigs(
-	sourceRoot = REPOSITORY_ROOT,
-	targetDir?: string,
-	options: { profile?: Readonly<HostProfile> } = {},
-): void {
-	if (!targetDir || sourceRoot === targetDir) return;
-	for (const relServiceRoot of resolveServiceRootDirectories(sourceRoot, options.profile)) {
-		const sourceApps = path.join(sourceRoot, relServiceRoot);
-		const targetApps = path.join(targetDir, relServiceRoot);
-		if (!fs.existsSync(sourceApps) || !fs.existsSync(targetApps)) continue;
-		for (const service of fs.readdirSync(sourceApps)) {
-			const srcSecDir = path.join(sourceApps, service, 'security-config');
-			const dstSecDir = path.join(targetApps, service, 'security-config');
-			if (fs.existsSync(srcSecDir) && fs.statSync(srcSecDir).isDirectory()) {
-				fs.mkdirSync(dstSecDir, { recursive: true });
-				for (const file of fs.readdirSync(srcSecDir)) {
-					if (file.endsWith('.security.config.ts') && !file.startsWith('test.')) {
-						const srcFile = path.join(srcSecDir, file);
-						const dstFile = path.join(dstSecDir, file);
-						if (!fs.existsSync(dstFile)) fs.copyFileSync(srcFile, dstFile);
-					}
-				}
-			}
-		}
-	}
-}
-
-export function copyExistingContracts(
-	sourceRoot = REPOSITORY_ROOT,
-	targetDir?: string,
-	options: { profile?: Readonly<HostProfile> } = {},
-): void {
-	if (!targetDir || sourceRoot === targetDir) return;
-	for (const relServiceRoot of resolveServiceRootDirectories(sourceRoot, options.profile)) {
-		const sourceApps = path.join(sourceRoot, relServiceRoot);
-		if (!fs.existsSync(sourceApps)) continue;
-		for (const entry of fs.readdirSync(sourceApps, { withFileTypes: true })) {
-			if (!entry.isDirectory()) continue;
-			const service = entry.name;
-			const srcDist = path.join(sourceApps, service, 'dist-contracts');
-			const targetServiceDir = path.join(targetDir, relServiceRoot, service);
-			const dstDist = path.join(targetServiceDir, 'dist-contracts');
-			if (fs.existsSync(srcDist) && fs.existsSync(targetServiceDir)) {
-				fs.mkdirSync(dstDist, { recursive: true });
-				for (const file of fs.readdirSync(srcDist)) {
-					const srcFile = path.join(srcDist, file);
-					const dstFile = path.join(dstDist, file);
-					if (fs.statSync(srcFile).isFile() && !fs.existsSync(dstFile)) fs.copyFileSync(srcFile, dstFile);
-				}
-			}
-		}
-	}
 }
 
 export function getHydrationMarkerPath(worktreeDir: string, metadataDir: string | null = null): string {
@@ -122,34 +59,6 @@ export function isWorktreeHydrated(
 	} catch {
 		return false;
 	}
-}
-
-export function determineHydrationSteps(
-	allowedPackages: string | readonly string[] | null | undefined,
-	options: { rootDir?: string; profile?: Readonly<HostProfile> } = {},
-): { needsSecurityConfig: boolean; needsWorkspaceBuild: boolean; allowedPackages: string[] } {
-	const packages = Array.isArray(allowedPackages) ? allowedPackages : allowedPackages ? [allowedPackages] : [];
-	const resolvedProfile = options.profile ?? loadHostProfileOrFallback(options.rootDir);
-	const contractRules = resolvedProfile.policy?.contractProducerRules;
-	const sharedPrefixes = contractRules?.sharedPackagePrefixes ?? ['packages/'];
-	const producerPrefixes = contractRules?.producerPrefixes ?? [];
-	const hasSharedRuntimePackage = packages.some(
-		(pkg) =>
-			sharedPrefixes.some((sp) => pkg.startsWith(sp)) &&
-			pkg !== 'packages/agent-sdlc' &&
-			pkg !== 'packages/model-usage',
-	);
-	const needsSecurityConfig =
-		hasSharedRuntimePackage ||
-		packages.some(
-			(pkg) =>
-				producerPrefixes.some((pp) => pkg.startsWith(pp)) ||
-				pkg.includes('service-auth') ||
-				pkg.includes('nest-service-auth'),
-		);
-	const needsWorkspaceBuild =
-		hasSharedRuntimePackage || packages.some((pkg) => producerPrefixes.some((pp) => pkg.startsWith(pp)));
-	return { needsSecurityConfig, needsWorkspaceBuild, allowedPackages: [...packages].sort() };
 }
 
 function extractRunnerFailureText(error: unknown): string {
@@ -344,82 +253,62 @@ export async function hydrateWorktree({
 		return {
 			status: 'CACHED',
 			fingerprint,
-			stepsCompleted: ['install', 'security-config', 'workspace-build', 'impact-build'],
+			stepsCompleted: ['install', 'impact-build'],
 		};
 	}
 
 	const stepsCompleted: string[] = [];
-	const runPnpm = (args: readonly string[]) =>
+	const resolvedProfile = loadHostProfileOrFallback(worktreeDir);
+	const plan = resolveHydrationPlan(resolvedProfile);
+	const runArgv = (argv: readonly string[]) =>
 		Promise.resolve(
-			runner('pnpm', args, { cwd: worktreeDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }),
+			runner(argv[0] as string, argv.slice(1), { cwd: worktreeDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }),
 		);
-
-	try {
-		await runPnpm(['install', '--frozen-lockfile']);
-		stepsCompleted.push('install');
-	} catch (error: unknown) {
+	const runPnpm = (args: readonly string[]) => runArgv(['pnpm', ...args]);
+	const fail = (step: string, error: unknown): never => {
 		const failureText = extractRunnerFailureText(error);
 		throw new SdlcError(
 			'HYDRATION_FAILED',
-			`Worktree hydration failed at step 'install': ${failureText}`,
-			{ step: 'install', worktreeDir, output: failureText },
+			`Worktree hydration failed at step '${step}': ${failureText}`,
+			{ step, worktreeDir, output: failureText },
 			{ cause: error },
 		);
+	};
+
+	try {
+		await runArgv(plan.installArgv);
+		stepsCompleted.push('install');
+	} catch (error: unknown) {
+		fail('install', error);
 	}
 
-	const resolvedProfile = loadHostProfileOrFallback(worktreeDir);
-	const sharedPrefixes =
-		resolvedProfile.policy?.contractProducerRules?.sharedPackagePrefixes ?? ['packages/'];
-	const plan = determineHydrationSteps(packages, { profile: resolvedProfile });
-	if (plan.needsSecurityConfig) {
+	if (plan.untrackedCopies.length > 0 || plan.packageArtifactCopies.length > 0) {
 		try {
-			copyLiveSecurityConfigs(REPOSITORY_ROOT, worktreeDir, { profile: resolvedProfile });
-			copyExistingContracts(REPOSITORY_ROOT, worktreeDir, { profile: resolvedProfile });
-			await runPnpm(['run', 'setup:security-config']);
-			stepsCompleted.push('security-config');
+			copyUntrackedFiles(REPOSITORY_ROOT, worktreeDir, plan.untrackedCopies);
+			copyPackageArtifacts(REPOSITORY_ROOT, worktreeDir, plan.packageArtifactCopies);
+			stepsCompleted.push('untracked-copies');
 		} catch (error: unknown) {
-			const failureText = extractRunnerFailureText(error);
-			throw new SdlcError(
-				'HYDRATION_FAILED',
-				`Worktree hydration failed at step 'security-config': ${failureText}`,
-				{ step: 'security-config', worktreeDir, output: failureText },
-				{ cause: error },
-			);
+			if (error instanceof SdlcError) throw error;
+			fail('untracked-copies', error);
 		}
 	}
 
-	if (plan.needsWorkspaceBuild) {
+	for (const build of plan.conditionalBuilds) {
+		if (fs.existsSync(path.join(worktreeDir, build.skipIfExists))) continue;
 		try {
-			await runPnpm(['run', 'build:packages']);
+			await runArgv(build.argv);
 			stepsCompleted.push('workspace-build');
 		} catch (error: unknown) {
-			if (
-				typeof targetPackage === 'string' &&
-				sharedPrefixes.some((sp) => targetPackage.startsWith(sp)) &&
-				packages.length > 1
-			) {
-				try {
-					await runPnpm(['run', 'build:types']);
-					await runPnpm(['run', 'build:packages:auth']);
-					stepsCompleted.push('workspace-build');
-				} catch (fallbackError: unknown) {
-					const failureText = extractRunnerFailureText(fallbackError);
-					throw new SdlcError(
-						'HYDRATION_FAILED',
-						`Worktree hydration failed at step 'workspace-build': ${failureText}`,
-						{ step: 'workspace-build', worktreeDir, output: failureText },
-						{ cause: fallbackError },
-					);
-				}
-			} else {
-				const failureText = extractRunnerFailureText(error);
-				throw new SdlcError(
-					'HYDRATION_FAILED',
-					`Worktree hydration failed at step 'workspace-build': ${failureText}`,
-					{ step: 'workspace-build', worktreeDir, output: failureText },
-					{ cause: error },
-				);
-			}
+			fail('workspace-build', error);
+		}
+	}
+
+	for (const argv of plan.steps) {
+		try {
+			await runArgv(argv);
+			stepsCompleted.push('host-step');
+		} catch (error: unknown) {
+			fail('host-step', error);
 		}
 	}
 

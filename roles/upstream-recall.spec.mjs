@@ -1,3 +1,5 @@
+import '../testing/use-fixture-monorepo.mjs';
+import { FIXTURE_MONOREPO_ROOT } from '../testing/fixture-monorepo-root.mjs';
 import assert from 'node:assert/strict';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -105,12 +107,14 @@ describe('Upstream Recall & Scope Mapping', () => {
       const resDeterministic = await resolveScopeLearnings({
         modelProfile: 'agent-sdlc-deterministic',
         storePath: tmpStorePath,
+        rootDir: FIXTURE_MONOREPO_ROOT,
       });
       assert.equal(resDeterministic, '');
 
       const resZeroTokens = await resolveScopeLearnings({
         requestedLimits: { maxPromptTokens: 0 },
         storePath: tmpStorePath,
+        rootDir: FIXTURE_MONOREPO_ROOT,
       });
       assert.equal(resZeroTokens, '');
     });
@@ -154,6 +158,7 @@ describe('Upstream Recall & Scope Mapping', () => {
         roleId: 'architect',
         modelProfile: 'agent-sdlc-llm',
         storePath: tmpStorePath,
+        rootDir: FIXTURE_MONOREPO_ROOT,
       });
       assert.ok(archRecall.includes('cond-arch-rule'));
       assert.ok(!archRecall.includes('cond-pitfall-rule'));
@@ -165,6 +170,7 @@ describe('Upstream Recall & Scope Mapping', () => {
         roleId: 'hardener',
         modelProfile: 'agent-sdlc-llm',
         storePath: tmpStorePath,
+        rootDir: FIXTURE_MONOREPO_ROOT,
       });
       assert.ok(!hardenerRecall.includes('cond-arch-rule'));
       assert.ok(hardenerRecall.includes('cond-pitfall-rule'));
@@ -176,6 +182,7 @@ describe('Upstream Recall & Scope Mapping', () => {
         roleId: 'implementer',
         modelProfile: 'agent-sdlc-llm',
         storePath: tmpStorePath,
+        rootDir: FIXTURE_MONOREPO_ROOT,
         candidateLearnings: [
           {
             learning_type: 'pitfall',

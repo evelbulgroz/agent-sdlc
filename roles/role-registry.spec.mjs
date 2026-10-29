@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { FIXTURE_MONOREPO_ROOT } from '../testing/fixture-monorepo-root.mjs';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -393,7 +394,7 @@ test('@ac AC-02 @case AC-02.1 @case AC-02.2 @case AC-02.3 @ac AC-03 @case AC-03.
 });
 
 test('@ac AC-03 @case AC-03.1 @case AC-03.2 @case AC-03.3 @case AC-03.4 pathScopedRules attach matching addenda and reject missing or executable files', () => {
-	const registry = new RoleRegistry({ rootDir: REPOSITORY_ROOT });
+	const registry = new RoleRegistry({ rootDir: FIXTURE_MONOREPO_ROOT });
 	const pwaImp = registry.loadRole('implementer', { authoredPaths: ['apps/frontends/example-pwa-frontend/src/App.tsx'] });
 	assert.ok(pwaImp.promptPolicy.includes('Path-Scoped Rules: Frontend PWA'));
 	assert.equal(pwaImp.promptPolicy.includes('Path-Scoped Rules: Backend Services'), false);

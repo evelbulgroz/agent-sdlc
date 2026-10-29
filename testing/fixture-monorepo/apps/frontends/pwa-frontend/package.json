@@ -1,0 +1,8 @@
+{
+  "name": "@example/pwa-frontend",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {}
+}

@@ -25,6 +25,20 @@ function writeRawProfile(rootDir, payload) {
 	fs.writeFileSync(fullPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
+const PREFLIGHT_PROFILE = {
+	schemaVersion: '1.3.0',
+	profileId: 'preflight-host',
+	repositoryId: 'preflight-host',
+	adapter: 'default',
+	stateDir: 'tools/.agent-sdlc',
+	reviewDir: 'tools/.review',
+	specDraftDir: 'docs/specs/drafts',
+	verify: {
+		argv: ['pnpm', 'run', 'agent:preflight', '--', '--base', '{baseSha}'],
+		resultPath: 'tools/.agent-preflight-last.json',
+	},
+};
+
 function withTempWorktree(fn) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-verify-runner-'));
 	return Promise.resolve()
@@ -41,6 +55,7 @@ test('@ac AC-03 @case AC-03.1 executePreflightVerifier substitutes baseSha, read
 		const baseCommitSha = '1'.repeat(40);
 		const targetTreeSha = '2'.repeat(40);
 		fs.mkdirSync(path.join(worktreeDir, 'tools'), { recursive: true });
+		writeRawProfile(worktreeDir, PREFLIGHT_PROFILE);
 		fs.writeFileSync(
 			path.join(worktreeDir, 'tools/.agent-preflight-last.json'),
 			JSON.stringify({
@@ -82,6 +97,7 @@ test('@ac AC-03 @case AC-03.2 executeCommittedPreflightVerifier checks headField
 		const commitSha = '3'.repeat(40);
 		const targetTreeSha = '4'.repeat(40);
 		fs.mkdirSync(path.join(worktreeDir, 'tools'), { recursive: true });
+		writeRawProfile(worktreeDir, PREFLIGHT_PROFILE);
 		fs.writeFileSync(
 			path.join(worktreeDir, 'tools/.agent-preflight-last.json'),
 			JSON.stringify({

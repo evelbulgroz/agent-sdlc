@@ -114,7 +114,8 @@ export function validateCommandAllowlist(
 		}
 	} else if (strArgs[0] === 'run') {
 		verbIndex = 1;
-		const isTestSdlc = strArgs.length === 2 && strArgs[1] === 'agent:test-sdlc';
+		const isTestSdlc =
+			strArgs.length === 2 && (strArgs[1] === 'agent:test-sdlc' || strArgs[1] === 'test:unit');
 		const isQualityChanged = strArgs.length === 2 && strArgs[1] === 'quality:changed';
 		const isPreflightRecovery =
 			strArgs.length === 5 &&
@@ -125,7 +126,7 @@ export function validateCommandAllowlist(
 		if (!isTestSdlc && !isPreflightRecovery && !isQualityChanged) {
 			throw new SdlcError(
 				'INVALID_INPUT',
-				`Unfiltered repository role commands must exactly match 'pnpm run agent:test-sdlc', 'pnpm run quality:changed', or 'pnpm run agent:preflight -- --base <sha>'`,
+				`Unfiltered repository role commands must exactly match 'pnpm run test:unit', 'pnpm run agent:test-sdlc', 'pnpm run quality:changed', or 'pnpm run agent:preflight -- --base <sha>'`,
 			);
 		}
 	} else {
@@ -153,7 +154,12 @@ export function validateCommandAllowlist(
 	}
 
 	if (targetPkg === null) {
-		if (verb !== 'agent:test-sdlc' && verb !== 'agent:preflight' && verb !== 'quality:changed') {
+		if (
+			verb !== 'test:unit' &&
+			verb !== 'agent:test-sdlc' &&
+			verb !== 'agent:preflight' &&
+			verb !== 'quality:changed'
+		) {
 			throw new SdlcError(
 				'INVALID_INPUT',
 				`Unfiltered 'pnpm run ${verb}' is not permitted`,

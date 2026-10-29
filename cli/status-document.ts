@@ -300,10 +300,10 @@ export function buildStatusDocument({
 	const baseSha = auth?.baseCommitSha ?? 'HEAD';
 	const verifiedCommand = verify
 		? verify.argv.map((token) => token.replaceAll('{baseSha}', baseSha)).join(' ')
-		: `pnpm run agent:preflight -- --base ${baseSha}`;
+		: `pnpm run test:unit`;
 	const verifiedResultFile = verify
 		? (verify.resultPath ?? null)
-		: 'tools/.agent-preflight-last.json';
+		: null;
 	const baseStatus: {
 		schemaVersion: number;
 		runId: string;

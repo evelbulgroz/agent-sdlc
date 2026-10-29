@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { FIXTURE_MONOREPO_ROOT } from './fixture-monorepo-root.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -96,7 +97,7 @@ test('@ac AC-02 @case AC-02.1 @case AC-02.2 inactive Layer 3 prompt files are ab
 		assert.equal(fs.existsSync(path.join(promptsDir, `${roleId}.md`)), true, `${roleId}.md must exist`);
 	}
 
-	const profile = loadHostProfile(REPOSITORY_ROOT);
+	const profile = loadHostProfile(FIXTURE_MONOREPO_ROOT);
 	const rules = profile.prompts?.pathScopedRules ?? [];
 	assert.equal(rules.length, 2);
 	for (const rule of rules) {

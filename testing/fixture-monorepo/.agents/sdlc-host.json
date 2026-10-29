@@ -1,0 +1,237 @@
+{
+	"schemaVersion": "1.3.0",
+	"profileId": "default-host",
+	"repositoryId": "agent-sdlc",
+	"adapter": "default",
+	"stateDir": "tools/.agent-sdlc",
+	"reviewDir": "tools/.review",
+	"specDraftDir": "docs/specs/drafts",
+	"runsDir": "docs/specs/runs",
+	"git": {
+		"authorName": "agent-sdlc",
+		"authorEmail": "agent@sdlc.local"
+	},
+	"workspace": {
+		"packageRoots": [
+			"packages",
+			"apps/services",
+			"apps/frontends"
+		],
+		"singlePackages": [
+			"apps/e2e"
+		],
+		"allowedPathRoots": [
+			"packages",
+			"apps/services",
+			"apps/frontends",
+			"apps/e2e",
+			"tools",
+			"docs",
+			".agents"
+		]
+	},
+	"hydration": {
+		"installArgv": [
+			"pnpm",
+			"install",
+			"--frozen-lockfile"
+		]
+	},
+	"policy": {
+		"highRiskPaths": [
+			"apps/services/authentication",
+			"apps/services/registry",
+			"packages/service-auth-core",
+			"packages/nest-service-auth",
+			"packages/ddd-base",
+			"packages/base",
+			".github/workflows",
+			"tools/quality",
+			"security-config"
+		],
+		"protectedBaselinePaths": [
+			"tools/quality/baselines",
+			"tools/quality/baseline",
+			"tools/quality/reports"
+		],
+		"defaultFailureTargetPaths": [
+			"apps/**"
+		],
+		"contractProducerRules": {
+			"producerPrefixes": [
+				"apps/services/"
+			],
+			"excludedProducerPackages": [
+				"apps/services/api-gateway"
+			],
+			"excludedProducerPrefixes": [
+				"apps/frontends/"
+			],
+			"consumerPackages": [
+				"apps/services/api-gateway"
+			],
+			"consumerPrefixes": [
+				"apps/frontends/"
+			],
+			"downstreamPrefixes": [
+				"apps/frontends/",
+				"apps/e2e/"
+			],
+			"sharedPackagePrefixes": [
+				"packages/"
+			],
+			"contractScripts": [
+				"build:contracts",
+				"build:types"
+			],
+			"sharedPackageBuildArgv": [
+				"pnpm",
+				"run",
+				"build:packages"
+			]
+		},
+		"irreversiblePatterns": [
+			"packages/ddd-base",
+			"packages/base"
+		]
+	},
+	"architecture": {
+		"enforcePackageContainment": true,
+		"importRules": [
+			{
+				"id": "service-boundary-internal-import",
+				"boundary": "service-boundary-internal-import",
+				"severity": "P1",
+				"forbiddenSpecifierPattern": "^@example/[a-z0-9-]+-service/(?!contracts(?:/|$))",
+				"description": "Forbidden inter-service internal import: \"{specifier}\". Inter-service communication must use /contracts."
+			},
+			{
+				"id": "frontend-backend-import",
+				"boundary": "frontend-backend-import",
+				"severity": "P1",
+				"sourcePathPattern": "^apps/frontends/",
+				"forbiddenSpecifierPattern": "^@example/(?:api-gateway|[a-z0-9-]+-service)(?:/|$)",
+				"description": "Frontend code must use the generated gateway client instead of importing \"{specifier}\"."
+			}
+		]
+	},
+	"qualityGate": {
+		"eslintConfigPath": "tools/quality/eslint-gate.cjs",
+		"baselinePath": "tools/quality/baselines/quality-v1.json",
+		"exceptionsPath": "tools/quality/exceptions.json"
+	},
+	"learnings": {
+		"filePath": ".learnings.jsonl",
+		"scopes": [
+			"global",
+			"api-gateway",
+			"registry",
+			"user",
+			"authentication",
+			"conditioning",
+			"import",
+			"strength",
+			"journal",
+			"assessment",
+			"ddd-base",
+			"base",
+			"service-auth-core",
+			"nest-service-auth",
+			"managed-stateful-component",
+			"stream-loggable",
+			"openapi-sanitizer",
+			"nest-platform",
+			"suunto-t6-sync",
+			"local-user-association",
+			"pwa-frontend",
+			"example-pwa-frontend",
+			"product-e2e"
+		],
+		"scopeInference": [
+			{
+				"prefix": "apps/services/",
+				"extractSegment": true
+			},
+			{
+				"prefix": "packages/",
+				"extractSegment": true
+			},
+			{
+				"prefix": "apps/frontends/example-pwa-frontend",
+				"scope": "example-pwa-frontend"
+			},
+			{
+				"exact": "example-pwa-frontend",
+				"scope": "example-pwa-frontend"
+			},
+			{
+				"prefix": "apps/frontends/pwa-frontend",
+				"scope": "pwa-frontend"
+			},
+			{
+				"exact": "pwa-frontend",
+				"scope": "pwa-frontend"
+			},
+			{
+				"prefix": "apps/e2e",
+				"scope": "product-e2e"
+			},
+			{
+				"exact": "product-e2e",
+				"scope": "product-e2e"
+			}
+		]
+	},
+	"verify": {
+		"argv": [
+			"pnpm",
+			"run",
+			"agent:preflight",
+			"--",
+			"--base",
+			"{baseSha}"
+		],
+		"resultPath": "tools/.agent-preflight-last.json"
+	},
+	"prompts": {
+		"preset": "default",
+		"roleAddendaDir": ".agents/workflows/prompts",
+		"rubricAddendaDir": ".agents/review-rubrics",
+		"pathScopedRules": [
+			{
+				"id": "frontend-pwa",
+				"pathPrefixes": [
+					"apps/frontends"
+				],
+				"addendaFile": ".agents/workflows/scoped/frontend-pwa.md",
+				"roles": [
+					"specifier",
+					"implementer",
+					"reviewer"
+				],
+				"phases": [
+					"spec",
+					"code",
+					"qa"
+				]
+			},
+			{
+				"id": "backend-services",
+				"pathPrefixes": [
+					"apps/services"
+				],
+				"addendaFile": ".agents/workflows/scoped/backend-services.md",
+				"roles": [
+					"specifier",
+					"implementer",
+					"reviewer"
+				],
+				"phases": [
+					"spec",
+					"code",
+					"qa"
+				]
+			}
+		]
+	}
+}

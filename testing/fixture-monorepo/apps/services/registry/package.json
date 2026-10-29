@@ -1,0 +1,8 @@
+{
+  "name": "@example/registry-service",
+  "scripts": {
+    "test": "pnpm test",
+    "build:contracts": "node build.mjs"
+  },
+  "dependencies": {}
+}

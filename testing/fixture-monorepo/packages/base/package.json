@@ -1,0 +1,7 @@
+{
+  "name": "@example/base",
+  "scripts": {
+    "test": "pnpm test"
+  },
+  "dependencies": {}
+}

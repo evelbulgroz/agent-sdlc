@@ -13,10 +13,10 @@ importers:
         version: 1.0.0
       '@langchain/langgraph':
         specifier: 1.4.13
-        version: 1.4.13(@langchain/core@1.3.0)(zod@4.5.4)
+        version: 1.4.13(@langchain/core@1.3.1)(zod@4.5.4)
       '@langchain/langgraph-checkpoint':
         specifier: 1.1.5
-        version: 1.1.5(@langchain/core@1.3.0)
+        version: 1.1.5(@langchain/core@1.3.1)
       '@swc/core':
         specifier: ^1.11.11
         version: 1.16.20
@@ -37,10 +37,10 @@ packages:
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
 
   '@evelbulgroz/model-usage-govenor@1.0.0':
-    resolution: {integrity: sha512-lj9Bk49TX0jf4Pc2XpDAm54/zdJnIhTH4fucRdQH3wQ39C5kcfku+3srx/SWst9AZ4S64rRqaj3msX10RKCLdg==, tarball: https://npm.pkg.github.com/download/@evelbulgroz/model-usage-govenor/1.0.0/615bb5dfbe89aa7730fbfa96a387fa5432ae69ab}
+    resolution: {integrity: sha512-j/NXch//cnUCmMhjf+XT+qc9fhwdVV0Iu/rF4xBLw6WLwGRHn24YAtfJ3BVYwyNzgOh07OSILkW2Q6p8uZVUdw==, tarball: https://npm.pkg.github.com/download/@evelbulgroz/model-usage-govenor/1.0.0/7b07e8033c6c3976df6930706b68c10ab1487c88}
 
-  '@langchain/core@1.3.0':
-    resolution: {integrity: sha512-ZiS8USsHdO8ZVFh0m8Rs6v2BvqBEvfFicG66zxdF4rGgXSJjk0d0sLnnFZCx3RXPUvP8ybTJgPlNfkJGs1J7BA==}
+  '@langchain/core@1.3.1':
+    resolution: {integrity: sha512-jt0miXWxNi+rbZLeSeZkc7BBYKnWopksoJSpB+P3zaYgzMMNwkAPWqnd1zSClfYGwLZPXQbbTtaqv8ZFXmE3FA==}
     engines: {node: '>=20'}
 
   '@langchain/langgraph-checkpoint@1.1.5':
@@ -192,8 +192,8 @@ packages:
   js-tiktoken@1.0.21:
     resolution: {integrity: sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g==}
 
-  langsmith@0.11.1:
-    resolution: {integrity: sha512-wcJKmXnJK6sKRTDm/eJ4ZAtsdSyjaQBu2VM9Hw6UZXBFzbICldlpNOcdDFbSIGzWr/kE7deV9kAVuxcE6V5vtg==}
+  langsmith@0.11.3:
+    resolution: {integrity: sha512-PKvl+msl8gj1qWBgHyfm76H/y6AcIUwhbW013jAHdFQTIuFmGk/2Ns3YTIlnOQT31EFRU+xVDbVGcBlbNQDFTQ==}
     peerDependencies:
       '@opentelemetry/api': '*'
       '@opentelemetry/exporter-trace-otlp-proto': '*'
@@ -257,12 +257,12 @@ snapshots:
 
   '@evelbulgroz/model-usage-govenor@1.0.0': {}
 
-  '@langchain/core@1.3.0':
+  '@langchain/core@1.3.1':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       '@standard-schema/spec': 1.1.0
       js-tiktoken: 1.0.21
-      langsmith: 0.11.1
+      langsmith: 0.11.3
       mustache: 4.2.0
       p-queue: 6.6.2
       zod: 4.5.4
@@ -273,23 +273,23 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/langgraph-checkpoint@1.1.5(@langchain/core@1.3.0)':
+  '@langchain/langgraph-checkpoint@1.1.5(@langchain/core@1.3.1)':
     dependencies:
-      '@langchain/core': 1.3.0
+      '@langchain/core': 1.3.1
 
-  '@langchain/langgraph-sdk@1.10.2(@langchain/core@1.3.0)':
+  '@langchain/langgraph-sdk@1.10.2(@langchain/core@1.3.1)':
     dependencies:
-      '@langchain/core': 1.3.0
+      '@langchain/core': 1.3.1
       '@langchain/protocol': 0.0.19
       '@types/json-schema': 7.0.15
       p-queue: 9.3.5
       p-retry: 7.1.1
 
-  '@langchain/langgraph@1.4.13(@langchain/core@1.3.0)(zod@4.5.4)':
+  '@langchain/langgraph@1.4.13(@langchain/core@1.3.1)(zod@4.5.4)':
     dependencies:
-      '@langchain/core': 1.3.0
-      '@langchain/langgraph-checkpoint': 1.1.5(@langchain/core@1.3.0)
-      '@langchain/langgraph-sdk': 1.10.2(@langchain/core@1.3.0)
+      '@langchain/core': 1.3.1
+      '@langchain/langgraph-checkpoint': 1.1.5(@langchain/core@1.3.1)
+      '@langchain/langgraph-sdk': 1.10.2(@langchain/core@1.3.1)
       '@langchain/protocol': 0.0.18
       '@standard-schema/spec': 1.1.0
       zod: 4.5.4
@@ -381,7 +381,7 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
 
-  langsmith@0.11.1:
+  langsmith@0.11.3:
     dependencies:
       p-queue: 6.6.2
 

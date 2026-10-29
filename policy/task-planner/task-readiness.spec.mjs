@@ -1,5 +1,7 @@
+import '../../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,7 +21,7 @@ import {
 function runCheckSpecCli(args) {
 	const result = spawnSync(
 		process.execPath,
-		['cli/cli.ts', 'check-spec', ...args],
+		[fileURLToPath(new URL('../../cli/cli.ts', import.meta.url)), 'check-spec', ...args],
 		{ cwd: REPOSITORY_ROOT, encoding: 'utf8', timeout: 60_000 },
 	);
 	return { status: result.status, parsed: JSON.parse(result.stdout) };

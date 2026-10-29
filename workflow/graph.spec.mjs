@@ -1,3 +1,4 @@
+import '../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
