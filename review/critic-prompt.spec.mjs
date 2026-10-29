@@ -20,6 +20,8 @@ test('loadRubric loads markdown rubric from repository or throws INVALID_CONTRAC
 
 	const planRubric = loadRubric(REPOSITORY_ROOT, 'plan');
 	assert.ok(planRubric.includes('Implementation Plan Quality & Invariant Rubric'));
+	assert.ok(planRubric.includes('complexityInputs'));
+	assert.ok(planRubric.includes('slices[].acceptanceCriteria'));
 
 	const codeRubric = loadRubric(REPOSITORY_ROOT, 'code');
 	assert.ok(codeRubric.includes('Code Quality & Architecture Rubric'));
