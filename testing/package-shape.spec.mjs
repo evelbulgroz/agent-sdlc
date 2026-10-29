@@ -107,7 +107,7 @@ test('@ac AC-01 @case AC-01.2 package.json declares package-local scripts, build
 	assert.equal(pkg.scripts?.['test:unit'].includes('cd ../..'), false);
 	assert.equal(typeof pkg.scripts?.build, 'string');
 	assert.equal(pkg.scripts?.test, undefined);
-	assert.equal(pkg.dependencies?.['@evelbulgroz/model-usage-govenor'], '1.0.0');
+	assert.equal(pkg.dependencies?.['@evelbulgroz/model-usage-govenor'], '1.1.0');
 	assert.equal(pkg.dependencies?.['@langchain/langgraph'], '1.4.13');
 	assert.equal(pkg.dependencies?.['@langchain/langgraph-checkpoint'], '1.1.5');
 	assert.equal(pkg.dependencies?.zod, '4.5.4');

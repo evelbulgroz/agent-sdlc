@@ -1,4 +1,4 @@
 allowBuilds:
   '@swc/core': true
 minimumReleaseAgeExclude:
-  - '@evelbulgroz/model-usage-govenor@1.0.0'
+  - '@evelbulgroz/model-usage-govenor@1.1.0'

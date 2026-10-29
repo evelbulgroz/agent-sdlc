@@ -57,7 +57,7 @@ test('@ac AC-04 @case AC-04.4 pnpm run audit:pricing exits 0 and prints its chec
 test('@ac AC-05 @case AC-05.2 the agent-sdlc test script discovers the model-usage gate', () => {
 	if (IS_STANDALONE) {
 		const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-		assert.equal(packageJson.dependencies?.['@evelbulgroz/model-usage-govenor'], '1.0.0');
+		assert.equal(packageJson.dependencies?.['@evelbulgroz/model-usage-govenor'], '1.1.0');
 		return;
 	}
 	const packageJson = JSON.parse(fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'));

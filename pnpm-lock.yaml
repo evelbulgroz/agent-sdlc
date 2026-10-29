@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@evelbulgroz/model-usage-govenor':
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: 1.1.0
+        version: 1.1.0
       '@langchain/langgraph':
         specifier: 1.4.13
         version: 1.4.13(@langchain/core@1.3.1)(zod@4.5.4)
@@ -36,8 +36,8 @@ packages:
   '@cfworker/json-schema@4.1.1':
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
 
-  '@evelbulgroz/model-usage-govenor@1.0.0':
-    resolution: {integrity: sha512-j/NXch//cnUCmMhjf+XT+qc9fhwdVV0Iu/rF4xBLw6WLwGRHn24YAtfJ3BVYwyNzgOh07OSILkW2Q6p8uZVUdw==, tarball: https://npm.pkg.github.com/download/@evelbulgroz/model-usage-govenor/1.0.0/7b07e8033c6c3976df6930706b68c10ab1487c88}
+  '@evelbulgroz/model-usage-govenor@1.1.0':
+    resolution: {integrity: sha512-zF3x294JNkpPLaR3zEEI5uanXK9j+4dLdx6hZ1UtMrS/xrtp94aUTG+jZfBEnycMJdLooC4fECeD8QxW5cot/w==, tarball: https://npm.pkg.github.com/download/@evelbulgroz/model-usage-govenor/1.1.0/c3e9f957363da621de8dac6b4082979de5a96ba1}
 
   '@langchain/core@1.3.1':
     resolution: {integrity: sha512-jt0miXWxNi+rbZLeSeZkc7BBYKnWopksoJSpB+P3zaYgzMMNwkAPWqnd1zSClfYGwLZPXQbbTtaqv8ZFXmE3FA==}
@@ -255,7 +255,7 @@ snapshots:
 
   '@cfworker/json-schema@4.1.1': {}
 
-  '@evelbulgroz/model-usage-govenor@1.0.0': {}
+  '@evelbulgroz/model-usage-govenor@1.1.0': {}
 
   '@langchain/core@1.3.1':
     dependencies:
