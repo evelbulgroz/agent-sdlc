@@ -30,6 +30,7 @@ const ALLOWED_TARGETED_TEST_VERBS: ReadonlySet<string> = new Set([
 ]);
 const SHELL_INJECTION_PATTERN = /[;&|><`$\n\r]/;
 export const ROLE_COMMAND_TIMEOUT_MS = 15 * 60 * 1000;
+export const COMMAND_MAX_BUFFER_BYTES = 256 * 1024 * 1024;
 
 export type CommandExecFn = (
 	command: string,
@@ -395,6 +396,7 @@ export function runCommandTool(
 		stdio: ['ignore', 'pipe', 'pipe'];
 		env: NodeJS.ProcessEnv;
 		timeout: number;
+		maxBuffer: number;
 	} = {
 		cwd: worktreeDir,
 		encoding: 'utf8',
@@ -404,6 +406,7 @@ export function runCommandTool(
 			CI: 'true',
 		},
 		timeout: ROLE_COMMAND_TIMEOUT_MS,
+		maxBuffer: COMMAND_MAX_BUFFER_BYTES,
 	};
 	let exitCode = 0;
 	let rawStdout = '';

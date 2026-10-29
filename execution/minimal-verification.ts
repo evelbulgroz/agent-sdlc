@@ -8,7 +8,7 @@ import {
 	type ParsedTestExecutionEvidence,
 	parseTestExecutionEvidence,
 } from './test-execution-evidence.ts';
-import { type CommandExecFn, ROLE_COMMAND_TIMEOUT_MS } from './tool-commands.ts';
+import { type CommandExecFn, COMMAND_MAX_BUFFER_BYTES, ROLE_COMMAND_TIMEOUT_MS } from './tool-commands.ts';
 import { presentPagedText } from './tool-read.ts';
 
 export const WRITE_TOOLS: ReadonlySet<string> = new Set([
@@ -158,12 +158,14 @@ export function captureCommand(
 		encoding: BufferEncoding;
 		stdio: ['ignore', 'pipe', 'pipe'];
 		timeout: number;
+		maxBuffer: number;
 		env?: NodeJS.ProcessEnv;
 	} = {
 		cwd: worktreeDir,
 		encoding: 'utf8',
 		stdio: ['ignore', 'pipe', 'pipe'],
 		timeout: ROLE_COMMAND_TIMEOUT_MS,
+		maxBuffer: COMMAND_MAX_BUFFER_BYTES,
 		...(evidenceCommand ? { env: { ...process.env, CI: 'true' } } : {}),
 	};
 	try {

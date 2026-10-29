@@ -15,6 +15,7 @@ import {
 } from './tool-mutations.ts';
 import {
 	MAX_COMMAND_OUTPUT_CHARS,
+	COMMAND_MAX_BUFFER_BYTES,
 	runCommandTool,
 	truncateCommandOutput,
 	validateCommandAllowlist,
@@ -166,8 +167,7 @@ test('validateCommandAllowlist and runCommandTool enforce security constraints',
 		assert.equal(res.stdout, 'mock stdout');
 		assert.equal(executed.cmd, 'pnpm');
 		assert.deepEqual(executed.args, ['--filter', 'services/billing', 'test']);
-
-		// Failing execution
+		assert.equal(executed.opts.maxBuffer, COMMAND_MAX_BUFFER_BYTES);
 		const failingExec = () => {
 			const err = new Error('Test failed');
 			err.status = 1;

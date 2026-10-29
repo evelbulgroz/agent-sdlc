@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { COMMAND_MAX_BUFFER_BYTES } from '../execution/tool-commands.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import {
 	DEFAULT_VERIFY_HEAD_FIELD,
@@ -18,6 +19,7 @@ export type VerifyExecCliFn = (
 		cwd: string;
 		encoding: 'utf8';
 		stdio: ['ignore', 'pipe', 'pipe'];
+		maxBuffer?: number;
 		env?: NodeJS.ProcessEnv;
 	},
 ) => unknown;
@@ -115,6 +117,7 @@ export async function runHostVerify({
 				cwd: worktreeDir,
 				encoding: 'utf8',
 				stdio: ['ignore', 'pipe', 'pipe'],
+				maxBuffer: COMMAND_MAX_BUFFER_BYTES,
 				env: {
 					...process.env,
 					CI: 'true',
