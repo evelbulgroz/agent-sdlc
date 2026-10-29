@@ -39,11 +39,17 @@ export function buildIrreversiblePatterns(
 		}
 	}
 
+	const secretTokens = ['secret', 'credential', 'api[-_]?key', 'token'];
+	for (const secretPath of resolvedProfile.policy?.secretPaths ?? []) {
+		const clean = secretPath.replace(/^\*+/, '').replace(/\/+$/, '');
+		if (clean.length >= 3) secretTokens.push(escapeRegex(clean));
+	}
+	const secretRegex = new RegExp(`(?:\\b(?:${secretTokens.join('|')})\\b)`, 'i');
 	const highRiskRegex = new RegExp(`\\b(?:${[...tokens].join('|')})\\b`, 'i');
 	return Object.freeze([
 		/\b(?:breaking\s*change|break\s*contract|contract\s*break|remove\s*endpoint|drop\s*column|delete\s*api)\b/i,
 		highRiskRegex,
-		/\b(?:security-config|secret|credential|api[-_]?key|token)\b/i,
+		secretRegex,
 		/\b(?:rm\s+-rf|drop\s+table|truncate|git\s+reset|git\s+push\s+--force)\b/i,
 	]);
 }

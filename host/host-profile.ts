@@ -13,6 +13,7 @@ import {
 } from './verify-config.ts';
 import { CommandPolicySchema } from './command-policy-schema.ts';
 import { EngineConfigSchema } from './engine-config-schema.ts';
+import { ContractProducerRulesSchema, PolicyConfigSchema } from './policy-config-schema.ts';
 
 export {
 	DEFAULT_VERIFY_ARGV,
@@ -69,20 +70,6 @@ const DeclarativeHydrationObjectSchema = z.strictObject({
 });
 
 const HydrationConfigSchema = z.union([z.array(ArgvSchema), DeclarativeHydrationObjectSchema]);
-
-const ContractProducerRulesSchema = z.strictObject({
-	producerPrefixes: z.array(NonEmptyTokenSchema).optional(), excludedProducerPackages: z.array(NonEmptyTokenSchema).optional(),
-	excludedProducerPrefixes: z.array(NonEmptyTokenSchema).optional(), consumerPackages: z.array(NonEmptyTokenSchema).optional(),
-	consumerPrefixes: z.array(NonEmptyTokenSchema).optional(), downstreamPrefixes: z.array(NonEmptyTokenSchema).optional(),
-	sharedPackagePrefixes: z.array(NonEmptyTokenSchema).optional(), contractScripts: z.array(NonEmptyTokenSchema).optional(),
-	sharedPackageBuildArgv: ArgvSchema.optional(),
-});
-
-const PolicyConfigSchema = z.strictObject({
-	highRiskPaths: z.array(NonEmptyTokenSchema).optional(), protectedBaselinePaths: z.array(NonEmptyTokenSchema).optional(),
-	defaultFailureTargetPaths: z.array(NonEmptyTokenSchema).optional(),
-	contractProducerRules: ContractProducerRulesSchema.optional(), irreversiblePatterns: z.array(NonEmptyTokenSchema).optional(),
-});
 
 const ArchitectureImportRuleSchema = z.strictObject({
 	id: NonEmptyTokenSchema.optional(), boundary: NonEmptyTokenSchema.optional(), description: NonEmptyTokenSchema.optional(),

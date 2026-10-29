@@ -45,6 +45,7 @@
 		]
 	},
 	"policy": {
+		"secretPaths": ["vault", "*.vault.config.ts"],
 		"highRiskPaths": [
 			"apps/services/authentication",
 			"apps/services/registry",

@@ -235,3 +235,13 @@ test('reversible decisions: markdown formatting and file projection', () => {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
 	}
 });
+
+test('buildIrreversiblePatterns treats configured secretPaths as irreversible but not security-config by default', async () => {
+	const { buildIrreversiblePatterns } = await import('./reversible-decisions.ts');
+	const hits = (patterns, text) => patterns.some((re) => re.test(text));
+	const base = buildIrreversiblePatterns({ profile: { version: '1.3.0' } });
+	assert.equal(hits(base, 'move the security-config folder'), false);
+	assert.equal(hits(base, 'rotate the api-key'), true);
+	const configured = buildIrreversiblePatterns({ profile: { version: '1.3.0', policy: { secretPaths: ['vault/'] } } });
+	assert.equal(hits(configured, 'edit vault files'), true);
+});

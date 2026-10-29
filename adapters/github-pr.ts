@@ -258,7 +258,7 @@ export function formatPullRequestBody({
 		'',
 		'## Checklist',
 		'',
-		'- [x] No secrets / `security-config/` committed',
+		secretsChecklistLine(resolvedProfile.policy?.secretPaths ?? []),
 		'- [x] No quality baseline updates unless this is maintenance',
 		'- [x] OpenAPI/contracts regenerated if API surface changed',
 		'- [x] Dual-tree / BC rules considered for wire vs domain changes',
@@ -269,6 +269,11 @@ export function formatPullRequestBody({
 		.join('\n');
 
 	return body;
+}
+
+function secretsChecklistLine(secretPaths: readonly string[]): string {
+	if (secretPaths.length === 0) return '- [x] No secrets committed';
+	return `- [x] No secrets / ${secretPaths.map((entry) => `\`${entry}\``).join(', ')} committed`;
 }
 
 export interface CreateDraftPullRequestOptions {

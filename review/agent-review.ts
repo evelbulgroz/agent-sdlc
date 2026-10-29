@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { loadHostProfileOrFallback } from '../host/host-profile.ts';
 import { sha256, validateRunId } from '../policy/contracts.ts';
 import { SdlcError, asSdlcError } from '../policy/errors.ts';
 import { canonicalizeAuthorVendor } from './author-vendor.ts';
@@ -35,13 +36,23 @@ export interface TerminalReportInput {
 	findings: readonly CriticFinding[];
 }
 
-export function isSecretOrExcludedPath(relPath: unknown): boolean {
+/** Host `policy.secretPaths` entry: `*suffix` matches a file-name suffix, anything else an exact path or directory prefix. */
+function matchesSecretPattern(normalized: string, pattern: string): boolean {
+	const clean = pattern.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/+$/, '');
+	if (!clean) return false;
+	if (clean.startsWith('*')) return normalized.endsWith(clean.slice(1));
+	return normalized === clean || normalized.startsWith(`${clean}/`);
+}
+
+export function secretPathsFor(rootDir: string): readonly string[] {
+	return loadHostProfileOrFallback(rootDir).policy?.secretPaths ?? [];
+}
+
+export function isSecretOrExcludedPath(relPath: unknown, secretPaths: readonly string[] = []): boolean {
 	if (typeof relPath !== 'string') return true;
 	const normalized = relPath.split(path.sep).join('/').replace(/^\.\//, '');
 	if (
-		normalized === 'security-config' ||
-		normalized.startsWith('security-config/') ||
-		normalized.endsWith('.security.config.ts') ||
+		secretPaths.some((pattern) => matchesSecretPattern(normalized, pattern)) ||
 		normalized === '.env' ||
 		normalized.startsWith('.env') ||
 		normalized.includes('/.env')
@@ -103,6 +114,7 @@ export function filterTrackedDiff(
 	if (!diffOutput || typeof diffOutput !== 'string') {
 		return { diff: '', touchedFiles: [] };
 	}
+	const secretPaths = secretPathsFor(rootDir);
 	const rawSections = diffOutput.split(/^diff --git /m);
 	const filteredSections: string[] = [];
 	const touchedFiles: string[] = [];
@@ -120,8 +132,8 @@ export function filterTrackedDiff(
 			if (lineB && lineB[1]) relB = lineB[1].trim();
 		}
 		if (
-			(relA && relA !== '/dev/null' && isSecretOrExcludedPath(relA)) ||
-			(relB && relB !== '/dev/null' && isSecretOrExcludedPath(relB))
+			(relA && relA !== '/dev/null' && isSecretOrExcludedPath(relA, secretPaths)) ||
+			(relB && relB !== '/dev/null' && isSecretOrExcludedPath(relB, secretPaths))
 		) {
 			continue;
 		}
@@ -155,7 +167,8 @@ export function resolveContainedPath(
 		throw new SdlcError('PATH_OUTSIDE_ROOT', `${flagName} path escapes repository root: ${userPath}`);
 	}
 	const lexicalRel = path.relative(resolvedRoot, resolved);
-	if (isSecretOrExcludedPath(lexicalRel)) {
+	const secretPaths = secretPathsFor(rootDir);
+	if (isSecretOrExcludedPath(lexicalRel, secretPaths)) {
 		throw new SdlcError('INVALID_INPUT', `${flagName} path is a protected or secret path: ${userPath}`);
 	}
 	if (!fs.existsSync(resolved)) {
@@ -175,7 +188,7 @@ export function resolveContainedPath(
 		throw new SdlcError('PATH_OUTSIDE_ROOT', `${flagName} path escapes repository root: ${userPath}`);
 	}
 	const relPath = path.relative(realRoot, realCandidate);
-	if (isSecretOrExcludedPath(relPath)) {
+	if (isSecretOrExcludedPath(relPath, secretPaths)) {
 		throw new SdlcError('INVALID_INPUT', `${flagName} path is a protected or secret path: ${userPath}`);
 	}
 	return { absPath: realCandidate, relPath };
@@ -226,8 +239,9 @@ export function collectCodeDiff({
 	const syntheticHunks: string[] = [];
 	const untrackedFiles: string[] = [];
 
+	const secretPaths = secretPathsFor(rootDir);
 	for (const relFile of untrackedLines) {
-		if (isSecretOrExcludedPath(relFile)) continue;
+		if (isSecretOrExcludedPath(relFile, secretPaths)) continue;
 		const fullPath = path.join(rootDir, relFile);
 		if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) continue;
 		if (isBinaryFile(fullPath)) continue;

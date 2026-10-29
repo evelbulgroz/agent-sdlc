@@ -253,3 +253,15 @@ test('formatPullRequestBody includes QA Divergence Brief and Test Linkage Adviso
 	assert.ok(missed.includes('## Acceptance Coverage'));
 	assert.ok(missed.includes('Acceptance coverage did not pass: AC-01, AC-04'));
 });
+
+test('formatPullRequestBody renders the secrets checklist from policy.secretPaths only', () => {
+	const spec = { goal: 'Checklist wording' };
+	const plain = formatPullRequestBody({ spec, profile: { version: '1.3.0' } });
+	assert.match(plain, /- \[x\] No secrets committed/);
+	assert.doesNotMatch(plain, /security-config/);
+	const configured = formatPullRequestBody({
+		spec,
+		profile: { version: '1.3.0', policy: { secretPaths: ['vault/', '*.keys.ts'] } },
+	});
+	assert.match(configured, /No secrets \/ `vault\/`, `\*\.keys\.ts` committed/);
+});

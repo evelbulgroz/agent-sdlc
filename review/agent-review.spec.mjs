@@ -1,3 +1,4 @@
+import '../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -24,9 +25,12 @@ function makeFixtureDir(prefix) {
 
 test('isSecretOrExcludedPath identifies secrets, certificates, and build artifacts', () => {
 	// Secret configs & env
-	assert.equal(isSecretOrExcludedPath('security-config'), true);
-	assert.equal(isSecretOrExcludedPath('security-config/jwt-keys.json'), true);
-	assert.equal(isSecretOrExcludedPath('apps/services/conditioning/src/conditioning.security.config.ts'), true);
+	assert.equal(isSecretOrExcludedPath('vault'), false, 'no host-specific paths excluded by default');
+	assert.equal(isSecretOrExcludedPath('vault/jwt-keys.json', ['vault']), true);
+	assert.equal(isSecretOrExcludedPath('vault', ['vault/']), true);
+	assert.equal(isSecretOrExcludedPath('vaulted/x.json', ['vault']), false);
+	assert.equal(isSecretOrExcludedPath('svc/a.security.config.ts', ['*.security.config.ts']), true);
+	assert.equal(isSecretOrExcludedPath('svc/a.config.ts', ['*.security.config.ts']), false);
 	assert.equal(isSecretOrExcludedPath('.env'), true);
 	assert.equal(isSecretOrExcludedPath('.env.local'), true);
 	assert.equal(isSecretOrExcludedPath('.envrc'), true);
@@ -105,10 +109,10 @@ index 000..111 100644
 +++ b/apps/service/.env.example
 @@ -1 +1 @@
 +SECRET=leak
-diff --git a/security-config/keys.json b/security-config/keys.json
+diff --git a/vault/keys.json b/vault/keys.json
 new file mode 100644
 --- /dev/null
-+++ b/security-config/keys.json
++++ b/vault/keys.json
 @@ -0,0 +1 @@
 +{"key": "secret"}
 diff --git a/docs/notes.md b/docs/notes.md
@@ -125,7 +129,7 @@ Binary files a/assets/image.png and b/assets/image.png differ`;
 	assert.ok(diff.includes("+console.log('new');"));
 	assert.ok(diff.includes('Binary files are stored in S3'), 'Text line mentioning binary files must be kept');
 	assert.equal(diff.includes('.env.example'), false, 'Tracked .env.example must be excluded');
-	assert.equal(diff.includes('security-config'), false, 'Tracked security-config must be excluded');
+	assert.equal(diff.includes('vault'), false, 'Tracked vault must be excluded');
 	assert.equal(diff.includes('image.png'), false, 'Tracked binary files must be excluded');
 	assert.deepEqual(touchedFiles, ['src/index.ts', 'docs/notes.md']);
 });
@@ -251,7 +255,7 @@ test('resolveContainedPath rejects path escapes, sibling prefixes, symlinks, and
 
 		// Secret path
 		assert.throws(
-			() => resolveContainedPath(REPOSITORY_ROOT, 'security-config/test.json'),
+			() => resolveContainedPath(REPOSITORY_ROOT, 'vault/test.json'),
 			(err) => err.code === 'INVALID_INPUT' && err.message.includes('protected or secret path'),
 		);
 
@@ -396,7 +400,7 @@ test('runReviewCli validates required flags and inputs', async () => {
 				'--author-vendor',
 				'google',
 				'--target',
-				'security-config/foo.json',
+				'vault/foo.json',
 			]),
 		(err) => err.code === 'INVALID_INPUT' && err.message.includes('protected or secret path'),
 	);
@@ -440,7 +444,7 @@ test('runReviewCli validates required flags and inputs', async () => {
 				'--target',
 				'README.md',
 				'--test-output',
-				'security-config/test.security.config.ts',
+				'vault/test.vault.config.ts',
 			]),
 		(err) => err.code === 'INVALID_INPUT' && err.message.includes('protected or secret path'),
 	);
