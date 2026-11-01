@@ -71,3 +71,32 @@ test('@regression canary-qualification-relative-artifact resolves preflight evid
 		fs.rmSync(runtimeDir, { recursive: true, force: true });
 	}
 });
+
+test('@regression run evidence reads stores at the current schema version and rejects newer ones', async () => {
+	const { STORE_SCHEMA_VERSION } = await import('../contracts.ts');
+	const { RuntimeStore } = await import('../../persistence/runtime-store.ts');
+	const { readRuntimeEvidence } = await import('./run-evidence.ts');
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-run-evidence-version-'));
+	try {
+		const current = path.join(root, 'current.sqlite');
+		new RuntimeStore(current).close();
+		const versionError = (() => {
+			try {
+				readRuntimeEvidence(current);
+				return null;
+			} catch (error) {
+				return error.code;
+			}
+		})();
+		assert.notEqual(versionError, 'STORE_VERSION_UNSUPPORTED', 'the current store version must be readable');
+		const database = new DatabaseSync(current);
+		database.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(STORE_SCHEMA_VERSION + 1, '2026-11-01T00:00:00.000Z');
+		database.close();
+		assert.throws(
+			() => readRuntimeEvidence(current),
+			(error) => error.code === 'STORE_VERSION_UNSUPPORTED' && error.message === `Runtime store schema ${STORE_SCHEMA_VERSION + 1} is newer than supported ${STORE_SCHEMA_VERSION}`,
+		);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});

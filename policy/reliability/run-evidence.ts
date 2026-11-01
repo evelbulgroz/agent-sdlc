@@ -8,6 +8,7 @@ import {
 	type MutationAttempt,
 	RELIABILITY_SCHEMA_VERSION,
 	type ReliabilityFailureCategory,
+	STORE_SCHEMA_VERSION,
 	type RouteAttribution,
 	type VerificationAttempt,
 	sha256,
@@ -179,10 +180,10 @@ export function readRuntimeEvidence(databasePath: string): RuntimeEvidence {
 		const migration = database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get() as { version?: number | null } | undefined;
-		if ((migration?.version ?? 0) > 13) {
+		if ((migration?.version ?? 0) > STORE_SCHEMA_VERSION) {
 			throw new SdlcError(
 				'STORE_VERSION_UNSUPPORTED',
-				`Runtime store schema ${migration?.version} is newer than supported 13`,
+				`Runtime store schema ${migration?.version} is newer than supported ${STORE_SCHEMA_VERSION}`,
 			);
 		}
 		const runRow = database
