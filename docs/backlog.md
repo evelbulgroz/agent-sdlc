@@ -4,7 +4,7 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## Reassess critic constraints and contributions
 
-**Origin:** host canary for fitness-app (runs `2026-10-29-host-canary-4` to `-7`, October 2026).
+**Origin:** downstream host canary (runs `2026-10-29-host-canary-4` to `-7`, October 2026).
 
 **Observed**
 - `review/excerpt-extractor.ts` sets `DEFAULT_ASSERTIONS_PER_TEST = 3`, so the QA critic sees at most 3 assertions per test (24 KB / 1,000-line packing budget; under pressure the eviction order keeps one assertion per test).
