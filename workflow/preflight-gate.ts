@@ -13,6 +13,7 @@ import {
 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { collectTouchedTestFiles, isTouchedTestFile } from '../review/critic-gate.ts';
+import { finalPreparationHook } from '../execution/verification-preparation.ts';
 import { executePreflightVerifier } from '../review/verifier.ts';
 import {
 	type WorkflowRuntimeLike,
@@ -237,6 +238,12 @@ export async function executePreflightForSnapshot(
 		targetPaths: auth.allowedPathPrefixes,
 		artifactStore: runtime.artifactStore,
 		execCli: runtime.execCli,
+		prepare: finalPreparationHook({
+			runId: snapshot.runId, runtimeRevision: snapshot.runtimeRevision, worktreeDir, execCli: runtime.execCli,
+			planTasks: runtime.runtimeStore.getTaskPlan(snapshot.runId)?.tasks ?? [],
+			authorizedPolicyHash: auth.preparationPolicyHash, frozenSelectionHash: snapshot.preparationSelectionHash,
+			artifactStore: runtime.artifactStore, runtimeStore: runtime.runtimeStore, now: () => runtime.now(),
+		}),
 	});
 
 	if (verifierResult.status === 'FAIL') {

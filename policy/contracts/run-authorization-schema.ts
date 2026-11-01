@@ -31,6 +31,8 @@ export const RunAuthorizationRecordSchema = z.object({
 	approvedSpecHash: z.string(),
 	taskManifestHash: z.string().nullable(),
 	approvedPlanPolicyHash: z.string(),
+	/** Hash of the host's normalized verificationPreparation policy; absent when the host declares none. */
+	preparationPolicyHash: z.string().optional(),
 	repositoryId: z.string(),
 	baseCommitSha: z.string(),
 	allowedPackages: z.array(z.string()).readonly(),
@@ -52,6 +54,7 @@ export function validateRunAuthorization(input: unknown): Readonly<RunAuthorizat
 		'runId',
 		'approvedSpecHash',
 		'approvedPlanPolicyHash',
+		'preparationPolicyHash',
 		'taskManifestHash',
 		'repositoryId',
 		'baseCommitSha',
@@ -80,6 +83,10 @@ export function validateRunAuthorization(input: unknown): Readonly<RunAuthorizat
 	if (typeof input.approvedPlanPolicyHash !== 'string' || !HASH_PATTERN.test(input.approvedPlanPolicyHash)) {
 		failContract('runAuthorization.approvedPlanPolicyHash is invalid');
 	}
+	const preparationPolicyHash = contractOptionalHash(
+		input.preparationPolicyHash ?? null,
+		'runAuthorization.preparationPolicyHash',
+	);
 	const repositoryId = contractNonEmptyString(input.repositoryId, 'runAuthorization.repositoryId');
 	if (typeof input.baseCommitSha !== 'string' || !GIT_SHA.test(input.baseCommitSha)) {
 		failContract('runAuthorization.baseCommitSha must be a 40-character hex commit SHA');
@@ -184,6 +191,7 @@ export function validateRunAuthorization(input: unknown): Readonly<RunAuthorizat
 		approvedSpecHash: input.approvedSpecHash,
 		taskManifestHash,
 		approvedPlanPolicyHash: input.approvedPlanPolicyHash,
+		...(preparationPolicyHash ? { preparationPolicyHash } : {}),
 		repositoryId,
 		baseCommitSha: input.baseCommitSha,
 		allowedPackages: Object.freeze([...allowedPackages]),

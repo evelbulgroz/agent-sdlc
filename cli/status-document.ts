@@ -276,6 +276,7 @@ export function buildStatusDocument({
 	eventLogHash = null,
 	gitCommitSha = null,
 	verify,
+	preparation = null,
 }: {
 	state: Readonly<RuntimeState>;
 	reservation: {
@@ -294,6 +295,8 @@ export function buildStatusDocument({
 	eventLogHash?: string | null;
 	gitCommitSha?: string | null;
 	verify?: Readonly<HostVerifyConfig> | null;
+	/** Verification preparation binding and latest outcomes (status-preparation.ts); omitted when null. */
+	preparation?: Readonly<Record<string, unknown>> | null;
 }) {
 	const tasks = projectTasks(taskPlan, state);
 	const taskProgress = projectTaskProgress(taskPlan, tasks, state);
@@ -417,6 +420,7 @@ export function buildStatusDocument({
 			projectionHash: null,
 		},
 	};
+	if (preparation) baseStatus.verification.preparation = preparation;
 	if (falseEconomyDiagnostics.length > 0) {
 		baseStatus.diagnostics = {
 			falseEconomy: falseEconomyDiagnostics,

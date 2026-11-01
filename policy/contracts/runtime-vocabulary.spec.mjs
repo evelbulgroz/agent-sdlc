@@ -107,8 +107,28 @@ test('EVENT_TYPES contains FALSE_ECONOMY_DETECTED', () => {
 	assert.ok(EVENT_TYPES.includes('FALSE_ECONOMY_DETECTED'));
 });
 
-test('STORE_SCHEMA_VERSION is 13 and EVENT_TYPES includes friction events', () => {
-	assert.equal(STORE_SCHEMA_VERSION, 13);
+test('STORE_SCHEMA_VERSION is 14 and EVENT_TYPES includes friction events', () => {
+	assert.equal(STORE_SCHEMA_VERSION, 14);
 	assert.ok(EVENT_TYPES.includes('PROMPT_FRICTION_DETECTED'));
 	assert.ok(EVENT_TYPES.includes('PROMPT_FRICTION_ANALYZED'));
+});
+
+test('runtime state accepts an optional frozen preparationSelectionHash and rejects malformed values', () => {
+	const now = new Date().toISOString();
+	const state = {
+		schemaVersion: '1.0.0', runId: '2026-11-01-prep-state', threadId: 'thread-1', runtimeRevision: 1,
+		state: 'EVALUATING_POLICY', goalArtifact: 'a'.repeat(64), draftArtifact: 'b'.repeat(64), draftHash: 'c'.repeat(64),
+		completeness: { complete: true, missingFields: [], ambiguousFields: [] }, pendingInterruptId: null,
+		approvedSpecHash: 'd'.repeat(64), modelOperations: [], blockedReason: null, lastError: null,
+		workflowHash: 'e'.repeat(64), roleHash: 'f'.repeat(64), promptPolicyHash: '1'.repeat(64),
+		capabilitySetHash: '2'.repeat(64), evaluatorSetHash: '3'.repeat(64), completenessHash: null,
+		activeModelOperationId: null, activeProposalArtifact: null, interviewRound: 0,
+		taskPlanHash: '5'.repeat(64), createdAt: now, updatedAt: now,
+	};
+	assert.equal(Object.hasOwn(validateRuntimeState(state), 'preparationSelectionHash'), false);
+	assert.equal(validateRuntimeState({ ...state, preparationSelectionHash: '6'.repeat(64) }).preparationSelectionHash, '6'.repeat(64));
+	assert.throws(
+		() => validateRuntimeState({ ...state, preparationSelectionHash: 'not-a-hash' }),
+		(error) => error.code === 'INVALID_CONTRACT',
+	);
 });

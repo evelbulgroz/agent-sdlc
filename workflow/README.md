@@ -23,6 +23,11 @@ LangGraph JS/TS state machine orchestration, specification hashing, detached git
    - **Multi-task DAG runs:** `tools/.agent-sdlc/<run-id>/worktrees/<task-id>` plus `tools/.agent-sdlc/<run-id>/worktrees/integration`
    - Dependent tasks initialize from synthetic parent commit objects (`git commit-tree`) derived from preceding task trees without polluting repository branch refs.
    - Worktrees hydrate lazily via `pnpm install --frozen-lockfile`, and the host-declared `hydration.steps` (for example setup scripts and scoped package builds).
+   - The hydration fingerprint covers installation inputs only (lockfile and manifests); a `CACHED` result is not evidence that compiled artifacts are current. Hosts that need fresh upstream builds declare `verificationPreparation` (see [`../host/README.md`](../host/README.md)).
+
+5. **Verification Preparation Binding (`nodes/planning.ts`, `preflight-gate.ts`, `nodes/commit.ts`):**
+   - `plan_tasks` re-checks the authorized `preparationPolicyHash`, derives each task's prerequisite-build selection plus the union for final verification, and freezes their digest as runtime-state `preparationSelectionHash` in the `TASK_PLAN_GENERATED` transition (absent for hosts without preparation; `taskPlanHash` is unchanged).
+   - Integration preflight and committed-tree verification run the union builds immediately before the host verify command (`execution/verification-preparation.ts`); a failed build returns `FAIL` without running verify.
 
 3. **Binary Patch Reconciliation (`reconciliation.ts`):**
    - Task deltas are extracted using isolated git index files (`GIT_INDEX_FILE`) and applied sequentially to `worktrees/integration` in topological order after `git apply --check` and realpath containment checks.

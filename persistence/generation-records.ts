@@ -17,6 +17,7 @@ interface RunAuthorizationRow {
 	approved_spec_hash: string;
 	task_manifest_hash: string | null;
 	approved_plan_policy_hash: string;
+	preparation_policy_hash?: string | null;
 	repository_id: string;
 	base_commit_sha: string;
 	allowed_packages_json: string;
@@ -123,15 +124,16 @@ export function createGenerationRecords(ctx: StoreContext): GenerationRecords {
 				.prepare(
 					`
 					INSERT INTO run_authorizations (
-						run_id, approved_spec_hash, task_manifest_hash, approved_plan_policy_hash, repository_id,
-						base_commit_sha, allowed_packages_json, allowed_path_prefixes_json,
+						run_id, approved_spec_hash, task_manifest_hash, approved_plan_policy_hash, preparation_policy_hash,
+						repository_id, base_commit_sha, allowed_packages_json, allowed_path_prefixes_json,
 						allowed_operations_json, max_semantic_repairs, model_usage_profile,
 						expires_at, approved_at, approval_method, created_at
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					ON CONFLICT(run_id) DO UPDATE SET
 						approved_spec_hash = excluded.approved_spec_hash,
 						task_manifest_hash = excluded.task_manifest_hash,
 						approved_plan_policy_hash = excluded.approved_plan_policy_hash,
+						preparation_policy_hash = excluded.preparation_policy_hash,
 						repository_id = excluded.repository_id,
 						base_commit_sha = excluded.base_commit_sha,
 						allowed_packages_json = excluded.allowed_packages_json,
@@ -150,6 +152,7 @@ export function createGenerationRecords(ctx: StoreContext): GenerationRecords {
 					auth.approvedSpecHash,
 					auth.taskManifestHash ?? null,
 					auth.approvedPlanPolicyHash,
+					auth.preparationPolicyHash ?? null,
 					auth.repositoryId,
 					auth.baseCommitSha,
 					canonicalJson(auth.allowedPackages),
@@ -179,6 +182,7 @@ export function createGenerationRecords(ctx: StoreContext): GenerationRecords {
 			approvedSpecHash: row.approved_spec_hash,
 			taskManifestHash: row.task_manifest_hash ?? null,
 			approvedPlanPolicyHash: row.approved_plan_policy_hash,
+			preparationPolicyHash: row.preparation_policy_hash ?? null,
 			repositoryId: row.repository_id,
 			baseCommitSha: row.base_commit_sha,
 			allowedPackages: JSON.parse(row.allowed_packages_json),

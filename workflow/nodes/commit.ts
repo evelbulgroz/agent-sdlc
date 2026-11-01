@@ -6,6 +6,7 @@ import { createDraftPullRequest, formatPullRequestBody } from '../../adapters/gi
 import { loadHostProfileOrFallback } from '../../host/host-profile.ts';
 import { type RuntimeState, createEvent, sha256 } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
+import { finalPreparationHook } from '../../execution/verification-preparation.ts';
 import { executeCommittedPreflightVerifier } from '../../review/verifier.ts';
 import {
 	type CreateLocalCommitResult,
@@ -213,6 +214,12 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 			artifactStore: runtime.artifactStore,
 			execCli: runtime.execCli,
 			gitCli: runtime.gitCli,
+			prepare: finalPreparationHook({
+				runId: snapshot.runId, runtimeRevision: snapshot.runtimeRevision, worktreeDir, execCli: runtime.execCli,
+				planTasks: runtime.runtimeStore.getTaskPlan(snapshot.runId)?.tasks ?? [],
+				authorizedPolicyHash: auth.preparationPolicyHash, frozenSelectionHash: snapshot.preparationSelectionHash,
+				artifactStore: runtime.artifactStore, runtimeStore: runtime.runtimeStore, now: () => runtime.now(),
+			}),
 		});
 
 		if (verifierResult.status === 'FAIL') {

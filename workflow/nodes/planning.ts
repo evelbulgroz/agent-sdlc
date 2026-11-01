@@ -6,6 +6,8 @@ import {
 	createPlanCriticInterrupt,
 	validatePendingResponse,
 } from '../../cli/hitl.ts';
+import { loadHostProfileOrFallback } from '../../host/host-profile.ts';
+import { freezePreparationSelection } from '../../host/verification-preparation.ts';
 import { type RuntimeState, type TaskManifest, validateTaskManifest } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import { evaluatePolicyGate } from '../../policy/policy-gate.ts';
@@ -70,6 +72,12 @@ export function createPlanTasksNode(runtime: WorkflowRuntimeLike) {
 			authorization: auth,
 			now: runtime.now,
 		});
+		const preparation = freezePreparationSelection(
+			loadHostProfileOrFallback(runtime.rootDir),
+			auth.preparationPolicyHash,
+			plan.tasks,
+		);
+		const preparationSelection = preparation.digest ? { preparationSelectionHash: preparation.digest } : {};
 		runtime.runtimeStore.saveTaskPlan(plan);
 		const planArtifact = runtime.artifactStore.writeJson('task-plan', plan);
 		const next = runtime.transition(snapshot, {
@@ -78,10 +86,12 @@ export function createPlanTasksNode(runtime: WorkflowRuntimeLike) {
 			causalId: `plan-tasks-${snapshot.runtimeRevision}`,
 			updates: {
 				taskPlanHash: plan.planPolicyHash,
+				...preparationSelection,
 			},
 			payload: {
 				taskPlanArtifact: planArtifact,
 				taskPlanHash: plan.planPolicyHash,
+				...preparationSelection,
 				taskCount: plan.tasks.length,
 				isParallel: plan.isParallel,
 			},

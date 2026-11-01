@@ -27,6 +27,7 @@ import {
 } from './task-verification-plan.ts';
 import { type WorktreeRuntimeStoreLike, prepareTaskWorktree } from './task-worktree-preparation.ts';
 import type { CommandExecFn } from './tool-commands.ts';
+import { type TaskPreparationHooks, taskPreparationHooks } from './verification-preparation.ts';
 
 export const DEFAULT_EXECUTOR_STEP_CEILING = 80;
 const ABSOLUTE_EXECUTOR_STEP_CEILING = 100;
@@ -351,6 +352,7 @@ export class TaskExecutor {
 		});
 		return await this.executeMinimalTask({
 			...v,
+			preparation: taskPreparationHooks({ runId, task, taskPlan, authorization, snapshot, worktreeDir, execCli: this.execCli, artifactStore: this.artifactStore, runtimeStore: this.runtimeStore, now: this.runtime?.now }),
 			runId,
 			task,
 			worktreeDir,
@@ -376,6 +378,7 @@ export class TaskExecutor {
 		parentTreeSha: string;
 		snapshot: TaskExecutorSnapshot | null;
 		completionValidator: CompletionValidatorFn | null;
+		preparation?: TaskPreparationHooks;
 	}): Promise<ExecutableTask> {
 		const { runId, task, worktreeDir, packageJson, effectiveTaskPromptContext } = p;
 		const authoredTestPaths = p.authoredTestPaths ?? [];
@@ -408,6 +411,7 @@ export class TaskExecutor {
 				targetedVerificationCommand: effectiveTaskPromptContext?.targetedVerificationCommand ?? null,
 				generatorCommand: effectiveTaskPromptContext?.generatorCommand ?? null,
 				acceptanceEvidenceCommand: p.acceptanceEvidenceCommand,
+				...p.preparation,
 				authoredPaths: Array.isArray(task.authoredPaths) ? task.authoredPaths : [],
 				authoredTestPaths,
 				allowedWritePathPrefixes: authoredPaths,

@@ -30,7 +30,7 @@ test('v5 database upgrades cleanly through v6 and v7 without skipping migration 
 			.prepare('SELECT version FROM schema_migrations ORDER BY version ASC')
 			.all()
 			.map((r) => r.version);
-		assert.deepEqual(versions, [5, 6, 7, 8, 9, 10, 11, 12, 13]);
+		assert.deepEqual(versions, [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
 
 		// Verify 3 new columns exist in model_operations
 		const cols = store.database.prepare('PRAGMA table_info(model_operations)').all();

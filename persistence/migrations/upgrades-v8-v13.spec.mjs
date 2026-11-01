@@ -111,7 +111,7 @@ test('schema v9 migrates v8 database and creates prompt_friction_findings table'
 		const maxVersion = migrated.database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get().version;
-		assert.equal(maxVersion, 13);
+		assert.equal(maxVersion, 14);
 		const continuationTable = migrated.database
 			.prepare(
 				"SELECT name FROM sqlite_master WHERE type='table' AND name='continuation_projections'",

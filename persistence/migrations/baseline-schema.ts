@@ -112,6 +112,7 @@ export function applyBaselineSchema(database: { exec(sql: string): void }): void
 						approved_spec_hash TEXT NOT NULL,
 						task_manifest_hash TEXT,
 						approved_plan_policy_hash TEXT NOT NULL,
+						preparation_policy_hash TEXT,
 						repository_id TEXT NOT NULL,
 						base_commit_sha TEXT NOT NULL,
 						allowed_packages_json TEXT NOT NULL,

@@ -3,11 +3,13 @@ import { SdlcError } from '../policy/errors.ts';
 import { type MigrationStep, applyBaselineSchema } from './migrations/baseline-schema.ts';
 import { upgradesV1ToV7 } from './migrations/upgrades-v1-v7.ts';
 import { upgradesV8ToV13 } from './migrations/upgrades-v8-v13.ts';
+import { upgradesFromV14 } from './migrations/upgrades-v14.ts';
 import type { StoreDatabase } from './run-ledger.ts';
 
 export const MIGRATION_LADDER: readonly MigrationStep[] = Object.freeze([
 	...upgradesV1ToV7,
 	...upgradesV8ToV13,
+	...upgradesFromV14,
 ]);
 
 export function assertLadder(steps: readonly { version: number }[]): void {

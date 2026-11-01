@@ -39,6 +39,7 @@ import {
 import {
 	type GitMetadataRecord, buildStatusDocument, gitMetadata, projectionHash,
 } from './status-document.ts';
+import { projectVerificationPreparation } from './status-preparation.ts';
 import { type AssembledStatusResult, assembleStatusResult } from './status-result.ts';
 
 export { computeContinuation, isInfrastructureContinuation } from './continuation.ts';
@@ -292,6 +293,7 @@ export class StatusProjection {
 			falseEconomyDiagnostics, candidateLearnings, rootDir: this.rootDir, runDir: this.paths.runDir,
 			eventLogHash, gitCommitSha: this.runtimeStore.getGitCommit(state.runId)?.commitSha ?? null,
 			verify: loadHostProfileOrFallback(this.rootDir).verify,
+			preparation: projectVerificationPreparation(this.runtimeStore.listEvents(state.runId), auth, state) as Record<string, unknown> | null,
 		});
 		const validation = validateStatus(baseStatus);
 		if (!validation.ok) {

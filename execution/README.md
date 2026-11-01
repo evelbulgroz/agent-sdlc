@@ -29,6 +29,12 @@ Inner-loop implementer execution (`--executor minimal`), allowlisted workspace t
    - Every frozen `AC-NN` (and `Cases: AC-NN.1; AC-NN.2` sub-oracle) must be cited by an asserting test (`@ac AC-NN` on the test or enclosing `describe(...)`, plus `@case AC-NN.N` for cases, including `it.each` / `test.each` rows) that executes and passes in machine-readable JSON or TAP test runner output after the latest mutation.
    - **Human-Owned Intent Oracles (`*.oracle.spec.ts(x)`):** Pre-existing oracle files in `baseCommitSha` and oracles frozen on `oracleSnapshot` after implementation are immutable; any edit or deletion escalates immediately with 0 autonomous repairs (`isOraclePath`).
 
-4. **Failure Traces (`non-progress-trace`):**
+4. **Verification Preparation Gate (`verification-preparation.ts`):**
+   - `runVerification` calls the task's preparation hook before every verification invocation (declared commands and acceptance evidence form one group). The hook reads the host profile from the execution worktree, fails closed with `AUTHORIZATION_INVALID` when it differs from the authorized policy or the frozen selection, and runs the selected builds unconditionally with the role-command timeout.
+   - Build failure, timeout, interruption, a missing declared output, or an undeclared source change stops verification before any consumer command (`reason: preparation-<reason>`) and counts as a failed attempt under the normal repair budget.
+   - Evidence (policy and selection hashes, candidate source digest, ordered argv, exit status/signal, timestamps; no environment data) is written as a `verification-preparation` artifact plus a `VERIFICATION_PREPARED` event, and surfaces in `status.json` under `verification.preparation`. The candidate digest excludes declared outputs, so permitted `dist` writes do not invalidate it, and any later source change does.
+   - Model-invoked `run_allowlisted_command` calls are exploratory: after allowlist validation, the task's builds run before the first such command and again only when the candidate digest changed (`exploratoryPreparationGuard`). A failed build is returned to the model as ordinary command output (the command does not run). These records carry `purpose: 'exploratory'`, are excluded from `status.json`, and never count as evidence.
+
+5. **Failure Traces (`non-progress-trace`):**
    - Terminal implementer failures write a redacted `non-progress-trace` artifact (up to 256 KiB) referenced at `error.metadata.traceArtifact`, capturing `failureClass`, `runCounters`, `wasteSummary`, `failureFingerprint`, and per-step actions, schema restrictions, and diagnostics.
    - Inspect traces via `agent-sdlc-trace --run <run-id> [--json]` or `--fingerprints [--json]`.

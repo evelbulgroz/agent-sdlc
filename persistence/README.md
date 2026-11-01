@@ -15,6 +15,7 @@ Authoritative SQLite run store (`runtime.sqlite`), content-addressed artifact st
 1. **Machine-Local Authoritative State vs Git-Tracked Projections (`run-paths.ts`):**
    - Live run state defaults to `<stateDir>/<run-id>/` (or `AGENT_SDLC_STATE_DIR` within the repository root) and is gitignored.
    - `docs/specs/runs/<run-id>/` (`intent.md`, `decisions.md`, `status.json`, `candidate-learnings.json`) is a read-only compatibility projection, never the authoritative state store.
+   - Store schema `14` adds nullable `run_authorizations.preparation_policy_hash` (migration `migrations/upgrades-v14.ts`); existing rows are not rewritten and read back without a preparation binding.
    - `recordDiagnostic()` in `runtime-store.ts` writes diagnostic rows and `FALSE_ECONOMY_DETECTED` events in a single atomic SQLite transaction; replay mismatches fail closed with `STORE_RECONCILIATION_FAILED`.
 
 2. **Two-Tier Run Retention & Compaction (`prune-runs`):**

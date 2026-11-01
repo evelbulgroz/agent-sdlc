@@ -15,7 +15,7 @@ import {
 
 export { RUNTIME_SCHEMA_VERSION };
 
-export const STORE_SCHEMA_VERSION = 13;
+export const STORE_SCHEMA_VERSION = 14;
 
 export const RUNTIME_STATES = Object.freeze([
 	'INITIALIZING',
@@ -95,6 +95,7 @@ export const EVENT_TYPES = Object.freeze([
 	'POLICY_GATE_EVALUATED',
 	'TASK_STARTED',
 	'TASK_COMPLETED',
+	'VERIFICATION_PREPARED',
 	'TASK_FAILED',
 	'RECONCILIATION_STARTED',
 	'RECONCILIATION_COMPLETED',
@@ -158,6 +159,7 @@ export const RuntimeStateSchema = z.object({
 	worktreePath: z.string().nullable().optional(),
 	semanticRepairsCount: z.number().int().min(0).optional(),
 	approvedPlanPolicyHash: z.string().nullable().optional(),
+	preparationSelectionHash: z.string().nullable().optional(),
 	preflightBindingArtifact: z.string().nullable().optional(),
 	targetTreeSha: z.string().nullable().optional(),
 	authorVendor: z.string().nullable().optional(),
@@ -218,6 +220,7 @@ export function validateRuntimeState(input: unknown): Readonly<RuntimeState> {
 		'worktreePath',
 		'semanticRepairsCount',
 		'approvedPlanPolicyHash',
+		'preparationSelectionHash',
 		'preflightBindingArtifact',
 		'targetTreeSha',
 		'authorVendor',
@@ -311,8 +314,8 @@ export function validateRuntimeState(input: unknown): Readonly<RuntimeState> {
 			failContract('semanticRepairsCount must be a non-negative integer');
 		}
 	}
-	if (normalized.approvedPlanPolicyHash !== undefined) {
-		contractOptionalHash(normalized.approvedPlanPolicyHash, 'approvedPlanPolicyHash');
+	for (const key of ['approvedPlanPolicyHash', 'preparationSelectionHash'] as const) {
+		if (normalized[key] !== undefined) contractOptionalHash(normalized[key], key);
 	}
 	if (normalized.preflightBindingArtifact !== undefined) {
 		contractOptionalHash(normalized.preflightBindingArtifact, 'preflightBindingArtifact');

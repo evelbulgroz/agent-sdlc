@@ -21,6 +21,7 @@ import {
 	parseTestExecutionEvidence,
 } from './test-execution-evidence.ts';
 import { presentPagedText } from './tool-read.ts';
+import type { RunPreparationResult } from './verification-preparation.ts';
 
 const VERIFY_BASE_SHA_TOKEN_PATTERN = /^(?:[0-9a-f]{7,40}|HEAD)$/;
 const ALLOWED_TARGETED_TEST_VERBS: ReadonlySet<string> = new Set([
@@ -283,6 +284,8 @@ export interface RunCommandContext {
 	readonly allowedPackages?: readonly string[];
 	readonly execCli?: CommandExecFn;
 	readonly pageOverflow?: boolean;
+	/** Exploratory prerequisite-build guard; null means nothing needed to run. */
+	readonly prepare?: () => RunPreparationResult | null;
 }
 
 function matchesHostVerifyArgv(
@@ -376,6 +379,7 @@ export function runCommandTool(
 		allowedPackages = [],
 		execCli = execFileSync as CommandExecFn,
 		pageOverflow = false,
+		prepare,
 	}: RunCommandContext,
 ): RunCommandResult {
 	const command = parameters?.command;
@@ -389,6 +393,14 @@ export function runCommandTool(
 	});
 	const validCommand = command as string;
 	const validArgs = args as readonly string[];
+	const prepared = prepare?.();
+	if (prepared && !prepared.ok) {
+		return {
+			exitCode: 1,
+			stdout: `Prerequisite build failed (${String(prepared.reason)}); this command did not run.\n${prepared.output}`,
+			stderr: '',
+		};
+	}
 
 	const execOptions: {
 		cwd: string;

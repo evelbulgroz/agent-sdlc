@@ -17,6 +17,7 @@ Run Authorization Envelope validation, Task DAG planning and serialization rules
    Execution past `SPEC_APPROVED` requires an affirmative envelope binding:
    - `approvedSpecHash`: SHA-256 of the approved specification.
    - `approvedPlanPolicyHash`: SHA-256 of authorization *inputs* (`runId`, `approvedSpecHash`, `baseCommitSha`, sorted packages/paths, `maxSemanticRepairs`, git flags) — distinct from runtime `taskPlanHash`.
+   - `preparationPolicyHash` (optional): SHA-256 of the host's normalized `verificationPreparation` policy, present only when the host declares builds and then folded into `approvedPlanPolicyHash`. Validation recomputes it from the current host profile; a missing binding while builds are declared, or any policy change, fails closed with `AUTHORIZATION_INVALID` (reauthorize). Envelopes for hosts without preparation are unchanged.
    - `baseCommitSha`: Git commit from which worktrees branch (a later repo `HEAD` does not invalidate an in-flight envelope).
    - `allowedPackages`, `allowedPathPrefixes`, `maxSemanticRepairs` (default `2`), and `expiresAt`.
    - `allowedOperations`: `editIsolatedWorktree`, `runAllowlistedCommands`, and `createDetachedWorktree` must be `true`; `createBranch`, `createLocalCommits`, `push`, and `openPullRequest` are opt-in; `merge` and `deploy` fail closed if `true`.

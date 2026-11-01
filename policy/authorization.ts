@@ -3,6 +3,7 @@ import {
 	loadHostProfile,
 	loadHostProfileOrFallback,
 } from '../host/host-profile.ts';
+import { computePreparationPolicyHash, validatePreparationPolicy } from '../host/verification-preparation.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import {
 	RUNTIME_SCHEMA_VERSION,
@@ -57,6 +58,9 @@ export function createDefaultAuthorizationEnvelope({
 		typeof repositoryId === 'string' && repositoryId.trim().length > 0
 			? repositoryId
 			: loadHostProfile(rootDir).repositoryId;
+	const hostProfile = loadHostProfileOrFallback(rootDir);
+	const preparationPolicyHash = computePreparationPolicyHash(hostProfile.verificationPreparation);
+	if (preparationPolicyHash) validatePreparationPolicy({ profile: hostProfile, rootDir });
 	const approvedPlanPolicyHash = sha256({
 		runId,
 		approvedSpecHash,
@@ -70,6 +74,8 @@ export function createDefaultAuthorizationEnvelope({
 		push: Boolean(push),
 		openPullRequest: Boolean(openPullRequest),
 		targetBranch: targetBranch ?? null,
+		// Omitted (not null-hashed) without preparation, so existing plan policy hashes are unchanged.
+		preparationPolicyHash: preparationPolicyHash ?? undefined,
 	});
 
 	const envelope = {
@@ -78,6 +84,7 @@ export function createDefaultAuthorizationEnvelope({
 		approvedSpecHash,
 		taskManifestHash,
 		approvedPlanPolicyHash,
+		...(preparationPolicyHash ? { preparationPolicyHash } : {}),
 		repositoryId: resolvedRepositoryId,
 		baseCommitSha,
 		allowedPackages: [...allowedPackages],
@@ -183,6 +190,7 @@ export function validateAuthorizationEnvelope(
 	}
 
 	const resolvedProfile = profile ?? loadHostProfileOrFallback(rootDir);
+	assertPreparationBinding(validated, resolvedProfile, rootDir);
 	const toolingRoots = (
 		resolvedProfile.workspace?.allowedPathRoots ?? ['tools', '.agents', 'docs']
 	).filter(
@@ -221,6 +229,30 @@ export function validateAuthorizationEnvelope(
 	}
 
 	return validated;
+}
+
+/**
+ * The envelope must carry exactly the hash of the host's current verificationPreparation policy:
+ * a changed policy, or a legacy envelope while the host declares builds, requires reauthorization.
+ */
+function assertPreparationBinding(
+	envelope: RunAuthorization,
+	profile: Readonly<HostProfile>,
+	rootDir: string,
+): void {
+	const expected = computePreparationPolicyHash(profile.verificationPreparation);
+	const actual = envelope.preparationPolicyHash ?? null;
+	if (expected === actual) {
+		if (expected) validatePreparationPolicy({ profile, rootDir });
+		return;
+	}
+	throw new SdlcError(
+		'AUTHORIZATION_INVALID',
+		actual === null
+			? 'Host declares verificationPreparation but the authorization envelope has no preparation binding; reauthorize the run'
+			: 'Host verificationPreparation policy differs from the authorized binding; reauthorize the run',
+		{ expectedPreparationPolicyHash: expected, actualPreparationPolicyHash: actual },
+	);
 }
 
 export interface DraftScopeInput {

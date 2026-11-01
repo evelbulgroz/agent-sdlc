@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { ALLOWED_TOOLS } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
-import { type CommandExecFn, runCommandTool } from './tool-commands.ts';
+import { type CommandExecFn, type RunCommandContext, runCommandTool } from './tool-commands.ts';
 import {
 	type MutationToolParameters,
 	deleteFileTool,
@@ -30,6 +30,8 @@ export interface ExecuteToolOptions {
 	readonly originalContentHash?: string | null;
 	readonly wholeFile?: boolean;
 	readonly pageOverflow?: boolean;
+	/** Exploratory prerequisite-build guard run before model-invoked commands. */
+	readonly prepareCommand?: RunCommandContext['prepare'];
 }
 
 export function executeTool({
@@ -44,6 +46,7 @@ export function executeTool({
 	originalContentHash = null,
 	wholeFile = false,
 	pageOverflow = false,
+	prepareCommand,
 }: ExecuteToolOptions): Record<string, unknown> | null {
 	if (!(ALLOWED_TOOLS as readonly string[]).includes(toolName)) {
 		throw new SdlcError('INVALID_INPUT', `Tool '${toolName}' is not allowlisted`);
@@ -107,7 +110,7 @@ export function executeTool({
 		case 'delete_file':
 			return deleteFileTool(parameters, { worktreeDir, allowedPathPrefixes });
 		case 'run_allowlisted_command':
-			return { ...runCommandTool(parameters, { worktreeDir, allowedPackages, execCli, pageOverflow }) };
+			return { ...runCommandTool(parameters, { worktreeDir, allowedPackages, execCli, pageOverflow, prepare: prepareCommand }) };
 		default:
 			throw new SdlcError('INVALID_INPUT', `Unsupported tool: ${toolName}`);
 	}

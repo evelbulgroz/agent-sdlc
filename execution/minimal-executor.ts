@@ -19,6 +19,7 @@ import {
 } from './minimal-verification.ts';
 import type { CommandExecFn } from './tool-commands.ts';
 import { executeTool, minimalActionSchema } from './tools.ts';
+import type { RunPreparationResult } from './verification-preparation.ts';
 
 export { minimalActionSchema };
 export const MINIMAL_TOOL_CALL_CAP = 150;
@@ -74,6 +75,8 @@ export interface MinimalExecutorInput extends MinimalPromptInput {
 	readonly worktreeDir: string;
 	readonly verificationCommands: readonly (readonly string[])[];
 	readonly acceptanceEvidenceCommand?: readonly string[] | null;
+	readonly prepareVerification?: () => RunPreparationResult;
+	readonly prepareExploratory?: () => RunPreparationResult | null;
 	readonly authoredPaths?: readonly string[];
 	readonly authoredTestPaths?: readonly string[];
 	readonly allowedWritePathPrefixes?: readonly string[];
@@ -394,6 +397,7 @@ export class MinimalExecutor {
 				allowedPackages: input.allowedPackages ?? [],
 				pageOverflow: true,
 				execCli: this.execCli,
+				prepareCommand: input.prepareExploratory,
 			});
 			return { result };
 		} catch (error) {

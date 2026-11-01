@@ -203,3 +203,35 @@ test('copyPackageArtifacts copies artifacts for present, non-excluded packages',
 		fs.rmSync(target, { recursive: true, force: true });
 	}
 });
+
+test('@ac AC-05 @case AC-05.1 repeated verification records new build evidence while cached installation is reused', async () => {
+	const { withFixture, packageRunner, BUILDS, TASKS } = await import('../testing/verification-preparation-fixture.mjs');
+	const { computePreparationPolicyHash, computePreparationSelectionBinding } = await import('../host/verification-preparation.ts');
+	const { prepareForVerification } = await import('../execution/verification-preparation.ts');
+	await withFixture(async (root) => {
+		const installs = [];
+		fs.mkdirSync(path.join(root, 'node_modules'));
+		const hydration = {
+			worktreeDir: root, allowedPackages: ['packages/consumer'], metadataDir: path.join(root, '.meta'),
+			runner: (cmd, args) => { installs.push([cmd, ...args].join(' ')); return ''; },
+		};
+		await hydrateWorktree(hydration);
+		const installsAfterHydration = installs.length;
+		const builds = [];
+		const evidence = [];
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			assert.equal((await hydrateWorktree(hydration)).status, 'CACHED');
+			const result = prepareForVerification({
+				execCli: packageRunner(root, builds), worktreeDir: root, runId: 'r', taskId: 'task-1', scope: 'task-1',
+				planTasks: TASKS, authorizedPolicyHash: computePreparationPolicyHash({ builds: BUILDS }),
+				frozenSelectionHash: computePreparationSelectionBinding({ builds: BUILDS }, TASKS).digest,
+				recordEvidence: (record) => evidence.push(record),
+			});
+			assert.equal(result.ok, true);
+		}
+		assert.equal(installs.length, installsAfterHydration, 'cached installation is not repeated');
+		assert.equal(builds.length, 4, 'every verification rebuilds both prerequisites');
+		assert.deepEqual(evidence.map((record) => record.status), ['passed', 'passed']);
+		assert.notEqual(evidence[0], evidence[1]);
+	});
+});

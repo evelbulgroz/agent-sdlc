@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import type { HostProfile, HostVerifyConfig } from '../host/host-profile.ts';
 import { runHostVerify } from '../host/verify-runner.ts';
+import type { RunPreparationResult } from '../execution/verification-preparation.ts';
 import {
 	sha256,
 	validatePreflightBinding,
@@ -113,6 +114,7 @@ async function runPreflightAndBind({
 	targetPaths,
 	artifactStore,
 	execCli,
+	prepare,
 }: {
 	runId: string;
 	generation: number;
@@ -127,7 +129,21 @@ async function runPreflightAndBind({
 	targetPaths: readonly string[];
 	artifactStore?: VerifierArtifactStoreLike | null;
 	execCli: VerifierExecCliFn;
+	prepare?: () => RunPreparationResult;
 }): Promise<PreflightVerifierResult> {
+	const prepared = prepare?.();
+	if (prepared && !prepared.ok) {
+		const failurePacket = buildFailurePacket({
+			runId,
+			generation,
+			failedCommand: `verification-preparation:${prepared.evidence?.failure?.stepId ?? 'unknown'}:${String(prepared.reason)}`,
+			exitCode: 1,
+			output: prepared.output,
+			targetPaths,
+			baseCommitSha,
+		});
+		return failResult({ artifactStore, failurePacket, exitCode: 1 });
+	}
 	const outcome = await runHostVerify({
 		worktreeDir,
 		rootDir,
@@ -204,6 +220,7 @@ export async function executePreflightVerifier({
 	targetPaths = [],
 	artifactStore,
 	execCli = execFileSync,
+	prepare,
 }: {
 	runId: string;
 	generation?: number;
@@ -216,6 +233,8 @@ export async function executePreflightVerifier({
 	targetPaths?: readonly string[];
 	artifactStore?: VerifierArtifactStoreLike | null;
 	execCli?: VerifierExecCliFn;
+	/** Prerequisite-build gate run immediately before the host verify command. */
+	prepare?: () => RunPreparationResult;
 }): Promise<PreflightVerifierResult> {
 	validateRunId(runId);
 	return runPreflightAndBind({
@@ -232,6 +251,7 @@ export async function executePreflightVerifier({
 		targetPaths,
 		artifactStore,
 		execCli,
+		prepare,
 	});
 }
 
@@ -249,6 +269,7 @@ export async function executeCommittedPreflightVerifier({
 	artifactStore,
 	execCli = execFileSync,
 	gitCli = execFileSync,
+	prepare,
 }: {
 	runId: string;
 	generation?: number;
@@ -262,6 +283,8 @@ export async function executeCommittedPreflightVerifier({
 	targetPaths?: readonly string[];
 	artifactStore?: VerifierArtifactStoreLike | null;
 	execCli?: VerifierExecCliFn;
+	/** Prerequisite-build gate run immediately before the host verify command. */
+	prepare?: () => RunPreparationResult;
 	gitCli?: VerifierExecCliFn;
 }): Promise<PreflightVerifierResult> {
 	validateRunId(runId);
@@ -331,6 +354,7 @@ export async function executeCommittedPreflightVerifier({
 		targetPaths,
 		artifactStore,
 		execCli,
+		prepare,
 	});
 	if (result.status !== 'PASS') return result;
 	return { ...result, commitSha: actualCommitSha, treeSha: actualTreeSha };

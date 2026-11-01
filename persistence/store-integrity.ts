@@ -35,6 +35,7 @@ interface OutboxSummaryRow {
 
 interface AuthSummaryRow {
 	run_id: string; approved_spec_hash: string; approved_plan_policy_hash: string; repository_id: string;
+	preparation_policy_hash?: string | null;
 	base_commit_sha: string; allowed_packages_json: string; allowed_path_prefixes_json: string;
 	allowed_operations_json: string; max_semantic_repairs: number; model_usage_profile: string;
 	expires_at: string; approved_at: string; approval_method: string;
@@ -402,6 +403,7 @@ export function createStoreIntegrity(
 				runId: authRow.run_id,
 				approvedSpecHash: authRow.approved_spec_hash,
 				approvedPlanPolicyHash: authRow.approved_plan_policy_hash,
+				preparationPolicyHash: authRow.preparation_policy_hash ?? null,
 				repositoryId: authRow.repository_id,
 				baseCommitSha: authRow.base_commit_sha,
 				allowedPackages: JSON.parse(authRow.allowed_packages_json),

@@ -9,6 +9,7 @@ import {
 	parseTestExecutionEvidence,
 } from './test-execution-evidence.ts';
 import { type CommandExecFn, COMMAND_MAX_BUFFER_BYTES, ROLE_COMMAND_TIMEOUT_MS } from './tool-commands.ts';
+import type { RunPreparationResult } from './verification-preparation.ts';
 import { presentPagedText } from './tool-read.ts';
 
 export const WRITE_TOOLS: ReadonlySet<string> = new Set([
@@ -24,6 +25,8 @@ export interface MinimalVerificationInput {
 	readonly worktreeDir: string;
 	readonly verificationCommands: readonly (readonly string[])[];
 	readonly acceptanceEvidenceCommand?: readonly string[] | null;
+	/** Prerequisite-build gate run before every verification invocation; failure blocks consumer commands. */
+	readonly prepareVerification?: () => RunPreparationResult;
 	readonly [key: string]: unknown;
 }
 
@@ -233,6 +236,11 @@ export function runVerification({
 	attempt: number;
 }): RunVerificationResult {
 	const worktreeDir = input.worktreeDir;
+	const prepared = input.prepareVerification?.();
+	if (prepared && !prepared.ok) {
+		const output = `Verification preparation failed (${String(prepared.reason)}); consumer verification did not run.\n${prepared.output}`;
+		return { ok: false, reason: `preparation-${String(prepared.reason)}`, output, exitCode: 1, terminal: false, evidence: null };
+	}
 	const chunks: string[] = [];
 	let evidence: VerificationEvidence | null = null;
 	for (const command of verificationArgv(input)) {

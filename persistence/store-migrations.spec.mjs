@@ -30,7 +30,7 @@ test('runtime store applies migration v4 cleanly and supports incremental upgrad
 		const freshVersion = freshStore.database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get().version;
-		assert.equal(freshVersion, 13);
+		assert.equal(freshVersion, 14);
 		const continuationTable = freshStore.database
 			.prepare(
 				"SELECT name FROM sqlite_master WHERE type='table' AND name='continuation_projections'",
@@ -49,7 +49,7 @@ test('runtime store applies migration v4 cleanly and supports incremental upgrad
 		const upgradedVersion1 = upgradedFrom1Store.database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get().version;
-		assert.equal(upgradedVersion1, 13);
+		assert.equal(upgradedVersion1, 14);
 		upgradedFrom1Store.close();
 
 		// 3. Existing v2 DB -> upgrade 2 -> 3 -> 4 -> 5
@@ -62,7 +62,7 @@ test('runtime store applies migration v4 cleanly and supports incremental upgrad
 		const upgradedVersion2 = upgradedFrom2Store.database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get().version;
-		assert.equal(upgradedVersion2, 13);
+		assert.equal(upgradedVersion2, 14);
 		upgradedFrom2Store.close();
 
 		// 4. Existing v3 DB -> upgrade 3 -> 4 -> 5
@@ -75,7 +75,7 @@ test('runtime store applies migration v4 cleanly and supports incremental upgrad
 		const upgradedVersion3 = upgradedFrom3Store.database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get().version;
-		assert.equal(upgradedVersion3, 13);
+		assert.equal(upgradedVersion3, 14);
 		upgradedFrom3Store.close();
 
 		// 5. Existing v4 DB with tool execution and optional role -> upgrade 4 -> 5 table rebuild
@@ -88,7 +88,7 @@ test('runtime store applies migration v4 cleanly and supports incremental upgrad
 		const upgradedVersion4 = upgradedFrom4Store.database
 			.prepare('SELECT max(version) AS version FROM schema_migrations')
 			.get().version;
-		assert.equal(upgradedVersion4, 13);
+		assert.equal(upgradedVersion4, 14);
 
 		// Verify existing data preserved with task_id default 'task-0'
 		const migratedToolExec = upgradedFrom4Store.getToolExecution('exec-v4-0');
@@ -179,13 +179,13 @@ test('@ac AC-01 @case AC-01.1 fresh and v1-upgraded stores match table, index, a
 	}
 });
 
-test('@ac AC-01 @case AC-01.2 fresh and v1-upgraded stores both record schema version 13', () => {
+test('@ac AC-01 @case AC-01.2 fresh and v1-upgraded stores both record schema version 14', () => {
 	const root = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `schema-versions-${crypto.randomUUID()}`);
 	fs.mkdirSync(root, { recursive: true });
 	try {
 		const fresh = new RuntimeStore(path.join(root, 'fresh.sqlite'));
 		const freshVersions = fresh.database.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map((row) => row.version);
-		assert.equal(Math.max(...freshVersions), 13);
+		assert.equal(Math.max(...freshVersions), 14);
 		fresh.close();
 		const upgradedPath = path.join(root, 'upgraded.sqlite');
 		const seeded = new DatabaseSync(upgradedPath);
@@ -193,8 +193,8 @@ test('@ac AC-01 @case AC-01.2 fresh and v1-upgraded stores both record schema ve
 		seeded.close();
 		const upgraded = new RuntimeStore(upgradedPath);
 		const versions = upgraded.database.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map((row) => row.version);
-		assert.equal(Math.max(...versions), 13);
-		for (let version = 2; version <= 13; version += 1) {
+		assert.equal(Math.max(...versions), 14);
+		for (let version = 2; version <= 14; version += 1) {
 			assert.equal(versions.filter((item) => item === version).length, 1, `version ${version}`);
 		}
 		upgraded.close();
@@ -203,29 +203,29 @@ test('@ac AC-01 @case AC-01.2 fresh and v1-upgraded stores both record schema ve
 	}
 });
 
-test('@ac AC-01 @case AC-01.3 the exported ladder ends at version 13 and rejects a ladder ending at 12', () => {
-	assert.equal(MIGRATION_LADDER.at(-1).version, 13);
-	assert.throws(() => assertLadder(MIGRATION_LADDER.slice(0, -1)), /ends at 12/);
+test('@ac AC-01 @case AC-01.3 the exported ladder ends at version 14 and rejects a ladder ending at 13', () => {
+	assert.equal(MIGRATION_LADDER.at(-1).version, 14);
+	assert.throws(() => assertLadder(MIGRATION_LADDER.slice(0, -1)), /ends at 13/);
 });
 
-test('@ac AC-01 @case AC-01.4 schema version 14 fails to open', () => {
-	const root = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `schema-14-${crypto.randomUUID()}`);
+test('@ac AC-01 @case AC-01.4 schema version 15 fails to open', () => {
+	const root = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `schema-15-${crypto.randomUUID()}`);
 	fs.mkdirSync(root, { recursive: true });
 	const databasePath = path.join(root, 'runtime.sqlite');
 	try {
 		const database = new DatabaseSync(databasePath);
-		database.exec("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL); INSERT INTO schema_migrations (version, applied_at) VALUES (14, '2026-10-22T00:00:00.000Z');");
+		database.exec("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL); INSERT INTO schema_migrations (version, applied_at) VALUES (15, '2026-10-22T00:00:00.000Z');");
 		database.close();
 		assert.throws(
 			() => new RuntimeStore(databasePath),
-			(error) => error instanceof SdlcError && error.code === 'STORE_VERSION_UNSUPPORTED' && error.message === 'Runtime store schema 14 is newer than supported 13',
+			(error) => error instanceof SdlcError && error.code === 'STORE_VERSION_UNSUPPORTED' && error.message === 'Runtime store schema 15 is newer than supported 14',
 		);
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
 	}
 });
 
-test('@ac AC-01 @case AC-01.5 a version 13 store missing generations.oracle_snapshot_json gains it on the next open', () => {
+test('@ac AC-01 @case AC-01.5 a version 14 store missing generations.oracle_snapshot_json gains it on the next open', () => {
 	const root = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `schema-repair-${crypto.randomUUID()}`);
 	fs.mkdirSync(root, { recursive: true });
 	const databasePath = path.join(root, 'runtime.sqlite');
@@ -235,14 +235,14 @@ test('@ac AC-01 @case AC-01.5 a version 13 store missing generations.oracle_snap
 		const database = new DatabaseSync(databasePath);
 		database.exec('ALTER TABLE generations DROP COLUMN oracle_snapshot_json');
 		const version = database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version;
-		assert.equal(version, 13);
+		assert.equal(version, 14);
 		const dropped = database.prepare('PRAGMA table_info(generations)').all().some((column) => column.name === 'oracle_snapshot_json');
 		assert.equal(dropped, false);
 		database.close();
 		const reopened = new RuntimeStore(databasePath);
 		const restored = reopened.database.prepare('PRAGMA table_info(generations)').all().some((column) => column.name === 'oracle_snapshot_json');
 		assert.equal(restored, true);
-		assert.equal(reopened.database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version, 13);
+		assert.equal(reopened.database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version, 14);
 		reopened.close();
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
