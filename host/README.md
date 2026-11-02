@@ -54,6 +54,15 @@ may omit the additive field so their hashes remain readable unchanged, but canno
 execute or reuse evidence until explicitly requalified and reapproved. Legacy
 `verify.argv` execution is unchanged.
 
+Large frozen closures can use optional `dependencyManifest: {path, sha256}`.
+Its repository-relative regular JSON file has the closed shape
+`{schemaVersion:"1.0.0", files:[{path,sha256}]}`: 1–100,000 unique paths,
+at most 20 MiB. The engine verifies its exact bytes and every listed regular file
+before/after execution and on receipt reuse, rejecting symlinked parents too.
+The approved manifest-backed registration grants frozen read inputs outside model
+edit scope; it never broadens authorized writes. Inline registrations retain
+their existing hashes and path-scope checks; no stored-data migration is needed.
+
 On Linux, evidence commands run in a detached process group. Success, timeout and
 error cleanup kill remaining group members and wait until they are no longer
 running before source observation; cleanup failure produces incomplete evidence.

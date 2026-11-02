@@ -284,6 +284,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 		for (const file of [
 			...registration.bundleFiles,
 			...registration.dependencyFiles,
+			...(registration.dependencyManifest ? [registration.dependencyManifest] : []),
 			...registration.configurationFiles,
 		]) {
 			checkRel(file.path, `evidenceAdapters[${index}].files.path`);

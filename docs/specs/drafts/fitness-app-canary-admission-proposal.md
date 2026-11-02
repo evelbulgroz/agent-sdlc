@@ -77,13 +77,12 @@ revision; do not silently allow product edits.
 
 Vendor installed dependencies offline. **Install/download list: empty.**
 Missing runtime components require separate approval and provenance.
-Operator approved a narrow engine extension: a frozen-plan, authorization-bound
-no-install hydration port, injected only by this canary supervisor. Legacy
-hydration and ordinary host policy remain unchanged. Bind run/spec/base/plan,
-adapter registrations, package/path scope and the frozen preparation closure.
-Verify files on reuse; reject changed bindings without fallback to installation.
-Implement in `workflow/checkpoint-hydration.ts`, wire hydration callers and add
-tests/reference docs. No Git/provider approval is implied. Prove before live use.
+Approved extensions: authorization-bound `checkpointHydration` and hash-bound
+`dependencyManifest` (`{path, sha256}`) registrations. The latter references closed
+`{schemaVersion:"1.0.0",files:[{path,sha256}]}` JSON (20 MiB, 100,000 files maximum).
+Verify every regular-file hash before/after execution and reuse; never truncate
+the closure into inline admission limits. Frozen inputs grant read access only,
+not model write scope. Preserve legacy behavior. No Git/provider approval implied.
 
 Use the canonical Node executable observed during inspection:
 

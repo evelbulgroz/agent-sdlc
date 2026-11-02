@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import test from 'node:test';
 import { AdapterRegistrationSchema, sha256 } from '../policy/contracts.ts';
+import { EvidenceDependencyManifestSchema } from '../policy/contracts/quality-evidence-schema.ts';
 import { hashEvidenceBytes, verifyEvidenceRegistration } from './evidence-files.ts';
 import { spawnEvidence } from './evidence-transport.ts';
 
@@ -74,4 +75,55 @@ test('a planted executable on PATH is never discovered or invoked', async t => {
 		{ timeoutMs: 1000, maxReportBytes: 1024 }, { PATH: f.root }, 0);
 	assert.equal(result.failureReason, 'spawn-failed');
 	assert.equal(fs.existsSync(marker), false);
+});
+
+test('hash-bound manifest verifies every frozen dependency without granting model write scope', t => {
+	const f = fixture(t);
+	fs.mkdirSync(path.join(f.root, 'runtime'));
+	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'frozen');
+	const contents = JSON.stringify({ schemaVersion: '1.0.0', files: [{
+		path: 'runtime/dependency', sha256: hashEvidenceBytes(Buffer.from('frozen')),
+	}] });
+	fs.writeFileSync(path.join(f.root, 'dependencies.json'), contents);
+	f.registration.dependencyManifest = { path: 'dependencies.json', sha256: hashEvidenceBytes(Buffer.from(contents)) };
+	const parsed = AdapterRegistrationSchema.parse(f.registration);
+	assert.deepEqual(parsed.dependencyManifest, f.registration.dependencyManifest);
+	assert.doesNotThrow(() => verifyEvidenceRegistration(f.root, parsed, () => { throw Error('write scope'); }));
+	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'drift');
+	assert.throws(f.verify, /frozen-adapter-file-changed/);
+	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'frozen');
+	fs.writeFileSync(path.join(f.root, 'dependencies.json'), contents + ' ');
+	assert.throws(f.verify, /frozen-adapter-file-changed/);
+});
+
+test('dependency manifest rejects nil, empty, duplicate, traversing and symlinked inputs', t => {
+	const f = fixture(t);
+	for (const value of [null, {}, { schemaVersion: '1.0.0', files: [] },
+		{ schemaVersion: '1.0.0', files: [{ path: '../escape', sha256: 'a'.repeat(64) }] }]) {
+		assert.equal(EvidenceDependencyManifestSchema.safeParse(value).success, false);
+	}
+	const file = { path: 'adapter', sha256: f.registration.executableSha256 };
+	assert.equal(EvidenceDependencyManifestSchema.safeParse({ schemaVersion: '1.0.0', files: [file, file] }).success, false);
+	fs.symlinkSync('adapter', path.join(f.root, 'alias'));
+	const contents = JSON.stringify({ schemaVersion: '1.0.0', files: [{ ...file, path: 'alias' }] });
+	fs.writeFileSync(path.join(f.root, 'dependencies.json'), contents);
+	f.registration.dependencyManifest = { path: 'dependencies.json', sha256: hashEvidenceBytes(Buffer.from(contents)) };
+	assert.throws(f.verify, /unsafe-file-path/);
+	fs.unlinkSync(path.join(f.root, 'dependencies.json'));
+	assert.throws(f.verify, /ENOENT/);
+});
+
+test('dependency manifest cannot block verification on a FIFO or escape through a parent symlink', t => {
+	const f = fixture(t);
+	fs.mkdirSync(path.join(f.root, 'real'));
+	fs.symlinkSync('real', path.join(f.root, 'linked'));
+	execFileSync('mkfifo', [path.join(f.root, 'real/pipe')]);
+	for (const relative of ['real/pipe', 'linked/pipe']) {
+		const contents = JSON.stringify({ schemaVersion: '1.0.0', files: [{
+			path: relative, sha256: 'a'.repeat(64),
+		}] });
+		fs.writeFileSync(path.join(f.root, 'dependencies.json'), contents);
+		f.registration.dependencyManifest = { path: 'dependencies.json', sha256: hashEvidenceBytes(Buffer.from(contents)) };
+		assert.throws(f.verify, /unsafe-file-path/);
+	}
 });

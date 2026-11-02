@@ -108,8 +108,8 @@ Before any real adapter invocation, freeze an inspectable manifest containing:
   packaging strategy, not an option to bind a live pnpm store. Materialize the
   entire executed dependency closure, including Chromium and its required
   runtime assets, without symlink traversal. Hash every regular file.
-- Browser binary/runtime assets and build/runtime inputs bound through approved
-  dependency/preparation manifests; no runtime download or PATH-based discovery.
+- Bind all hashes through approved `dependencyManifest` references, not oversized
+  inline lists. Verify every dependency on execution/reuse; no downloads or PATH.
 - Required environment inputs, allowed non-secret values, working directory,
   generated output ownership, artifact directory, and preparation hash.
 - Host-specific pretest checks, frontend build, gateway-client freshness checks,

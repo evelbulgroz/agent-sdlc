@@ -19,11 +19,21 @@ export const EvidenceAdapterProfileSchema = z.strictObject({
 });
 export type EvidenceAdapterProfile = z.infer<typeof EvidenceAdapterProfileSchema>;
 
+export const EvidenceDependencyManifestSchema = z.strictObject({
+	schemaVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
+	files: z.array(FileHash).min(1).max(100_000),
+}).superRefine((manifest, ctx) => {
+	if (new Set(manifest.files.map(file => file.path)).size !== manifest.files.length) {
+		ctx.addIssue({ code: 'custom', path: ['files'], message: 'dependency paths must be unique' });
+	}
+});
+
 export const AdapterRegistrationSchema = z.strictObject({
 	adapterId: Id,
 	protocolVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
 	bundleFiles: z.array(FileHash).min(1),
 	dependencyFiles: z.array(FileHash),
+	dependencyManifest: FileHash.optional(),
 	configurationFiles: z.array(FileHash),
 	argv: z.array(z.string().min(1)).min(1),
 	executableSha256: Hash.optional(),

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AdapterRegistration, EvidenceReport } from '../policy/contracts/quality-schema.ts';
+import { EvidenceDependencyManifestSchema } from '../policy/contracts/quality-evidence-schema.ts';
 
 export function hashEvidenceBytes(bytes: Buffer): string {
 	return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -30,11 +31,11 @@ export function readEvidenceFile(root: string, relative: string, maxBytes: numbe
 	for (const [index, segment] of segments.entries()) {
 		current = path.join(current, segment);
 		const stat = fs.lstatSync(current);
-		if (stat.isSymbolicLink() || (index < segments.length - 1 && !stat.isDirectory())) {
+		if (stat.isSymbolicLink() || (index < segments.length - 1 ? !stat.isDirectory() : !stat.isFile())) {
 			throw new Error('unsafe-file-path');
 		}
 	}
-	const descriptor = fs.openSync(current, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+	const descriptor = fs.openSync(current, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
 	try {
 		const stat = fs.fstatSync(descriptor);
 		if (!stat.isFile() || stat.size > maxBytes) throw new Error('invalid-file-size-or-kind');
@@ -59,10 +60,19 @@ export function verifyEvidenceRegistration(
 		command.slice(path.parse(command).root.length), Number.MAX_SAFE_INTEGER);
 	if (hashEvidenceBytes(executable) !== registration.executableSha256 ||
 		(fs.statSync(command).mode & 0o111) === 0) throw new Error('frozen-adapter-file-changed');
+	let manifestFiles: { path: string; sha256: string }[] = [];
+	if (registration.dependencyManifest) {
+		const file = registration.dependencyManifest;
+		const bytes = readEvidenceFile(root, file.path, 20 * 1024 * 1024);
+		if (hashEvidenceBytes(bytes) !== file.sha256) throw new Error('frozen-adapter-file-changed');
+		manifestFiles = EvidenceDependencyManifestSchema.parse(JSON.parse(bytes.toString('utf8'))).files;
+	}
 	for (const file of [
 		...registration.bundleFiles, ...registration.dependencyFiles, ...registration.configurationFiles,
+		...manifestFiles,
 	]) {
-		assertAllowed(file.path);
+		// A manifest-backed registration grants frozen read inputs, never model write scope.
+		if (!registration.dependencyManifest) assertAllowed(file.path);
 		// The schema has no bundle-size ceiling; read and hash exact regular-file bytes.
 		if (hashEvidenceBytes(readEvidenceFile(root, file.path, Number.MAX_SAFE_INTEGER)) !== file.sha256) {
 			throw new Error('frozen-adapter-file-changed');
