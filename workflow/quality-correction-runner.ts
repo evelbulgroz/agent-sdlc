@@ -13,6 +13,7 @@ import { assertPlanFrozenThenCreateWorktree } from './worktree-guard.ts';
 import { createTaskQualitySession } from './task-quality-session.ts';
 import { getAndValidateAuthorization, type WorkflowRuntimeLike } from './node-helpers.ts';
 import { hydrateWorktree } from './hydration.ts';
+import { checkpointHydrationBinding } from './checkpoint-hydration.ts';
 import { rebuildCorrectedFinal } from './corrected-final-checkpoint.ts';
 import { qualityParentRevisionHash } from './quality-checkpoints.ts';
 import { blockFailedCorrection, correctionNeedsAdjudication, pendingCorrectionAdjudication } from './quality-correction-failure.ts';
@@ -118,7 +119,8 @@ export async function runApprovedQualityCorrection({
 				runtime.gitCli('git', ['apply', '--binary', '-'], { cwd: worktreeDir, input: patch, stdio: ['pipe', 'pipe', 'pipe'] });
 			}
 			task.parentTreeSha = parentTreeSha;
-			await hydrateWorktree({ worktreeDir, allowedPackages: auth.allowedPackages, targetPackage: task.targetPackage, runner: runtime.execCli });
+			await hydrateWorktree({ worktreeDir, allowedPackages: auth.allowedPackages, targetPackage: task.targetPackage,
+				runner: runtime.execCli, checkpoint: checkpointHydrationBinding(plan, snapshot, auth) });
 			const owner = answer.correction.owners.find(entry => entry.taskId === taskId);
 			if (owner && staged?.status !== 'verifying') {
 				quality.saveTaskRevision({ ...progress, status: 'executing' });

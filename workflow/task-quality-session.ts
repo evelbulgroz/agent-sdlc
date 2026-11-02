@@ -8,6 +8,7 @@ import { SdlcError } from '../policy/errors.ts';
 import { liveRunRoot } from '../persistence/run-paths.ts';
 import { runCommandTool } from '../execution/tool-commands.ts';
 import { hydrateWorktree } from './hydration.ts';
+import { checkpointHydrationBinding, checkpointPreparationSelection } from './checkpoint-hydration.ts';
 import { materializeSliceCheckpoint } from './checkpoint-materialization.ts';
 import { createTaskSourceObserver, executeCheckpointObligations, qualityParentRevisionHash, qualityTaskBinding, sourcePreparationHash } from './quality-checkpoints.ts';
 import { getAndValidateAuthorization, type WorkflowRuntimeLike } from './node-helpers.ts';
@@ -26,7 +27,7 @@ export function createTaskQualitySession(
 	const quality = runtime.runtimeStore.quality;
 	if (!quality) throw new SdlcError('STORE_RECONCILIATION_FAILED', 'Quality records unavailable');
 	const auth = getAndValidateAuthorization(runtime, snapshot);
-	const preparationHash = sha256({
+	const preparationHash = checkpointPreparationSelection(runtime.execCli, {
 		preparationPolicyHash: auth.preparationPolicyHash ?? null,
 		preparationSelectionHash: snapshot.preparationSelectionHash ?? null,
 		adapters: plan.adapterBindings,
@@ -165,7 +166,8 @@ export function createTaskQualitySession(
 			if (existing) return existing;
 		}
 		await hydrateWorktree({ worktreeDir: materialized.worktreeDir,
-			allowedPackages: auth.allowedPackages, runner: runtime.execCli });
+			allowedPackages: auth.allowedPackages, runner: runtime.execCli,
+			checkpoint: checkpointHydrationBinding(plan, snapshot, auth) });
 		const obligations = evidenceObligations.filter(entry => entry.owner.kind === 'slice' && entry.owner.id === sliceId ||
 			entry.owner.kind === 'task' && taskMap.get(entry.owner.id)?.sliceId === sliceId);
 		const candidateTask: ExecutableTask = {

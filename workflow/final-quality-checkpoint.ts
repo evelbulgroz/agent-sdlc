@@ -7,6 +7,7 @@ import { liveRunRoot } from '../persistence/run-paths.ts';
 import { materializeClosureTree } from '../execution/eligible-closure.ts';
 import { createTaskSourceObserver, executeCheckpointObligations, sourcePreparationHash } from './quality-checkpoints.ts';
 import { getAndValidateAuthorization, type WorkflowRuntimeLike } from './node-helpers.ts';
+import { checkpointPreparationSelection } from './checkpoint-hydration.ts';
 
 export async function prepareFinalQualityCheckpoint(
 	runtime: WorkflowRuntimeLike, snapshot: Readonly<RuntimeState>, worktreeDir: string,
@@ -39,7 +40,7 @@ export async function prepareFinalQualityCheckpoint(
 			actualTreeSha: snapshot.targetTreeSha,
 		});
 	}
-	const preparationHash = sha256({
+	const preparationHash = checkpointPreparationSelection(runtime.execCli, {
 		preparationPolicyHash: auth.preparationPolicyHash ?? null,
 		preparationSelectionHash: snapshot.preparationSelectionHash ?? null, adapters: plan.adapterBindings,
 	});

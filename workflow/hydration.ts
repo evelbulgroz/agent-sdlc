@@ -7,12 +7,13 @@ import { SdlcError } from '../policy/errors.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import type { GitCliFn } from './git-manager.ts';
 import { copyPackageArtifacts, copyUntrackedFiles, resolveHydrationPlan } from './hydration-steps.ts';
+import { hydrateCheckpointWorktree, type CheckpointHydrationBinding, type CheckpointHydrationOverride } from './checkpoint-hydration.ts';
 
-export type HydrationRunnerFn = (
+export type HydrationRunnerFn = ((
 	command: string,
 	args: readonly string[],
 	options?: Record<string, unknown>,
-) => unknown;
+) => unknown) & { readonly checkpointHydration?: CheckpointHydrationOverride };
 
 function gitText(gitCli: GitCliFn, args: readonly string[], options: Record<string, unknown>): string {
 	const result = gitCli('git', args, options);
@@ -231,11 +232,12 @@ export async function refreshLockfile({
 
 export async function hydrateWorktree({
 	worktreeDir, allowedPackages = null, targetPackage = null, metadataDir = null,
-	runner = execFileSync as HydrationRunnerFn, now = new Date(),
+	runner = execFileSync as HydrationRunnerFn, now = new Date(), checkpoint = null,
 }: {
 	worktreeDir: string; allowedPackages?: string | readonly string[] | null;
 	targetPackage?: string | null; metadataDir?: string | null;
 	runner?: HydrationRunnerFn; now?: Date;
+	checkpoint?: CheckpointHydrationBinding | null;
 }): Promise<{ status: 'CACHED' | 'HYDRATED'; fingerprint: string; stepsCompleted: string[] }> {
 	const rawPackages = [
 		...(targetPackage ? [targetPackage] : []),
@@ -248,6 +250,12 @@ export async function hydrateWorktree({
 	const packages = Array.from(new Set(rawPackages));
 
 	const fingerprint = computeHydrationFingerprint(worktreeDir, packages);
+
+	if (checkpoint && runner.checkpointHydration) {
+		return hydrateCheckpointWorktree({ worktreeDir, packages, targetPackage,
+			binding: checkpoint, override: runner.checkpointHydration, fingerprint,
+			markerPath: getHydrationMarkerPath(worktreeDir, metadataDir) });
+	}
 
 	if (isWorktreeHydrated(worktreeDir, packages, metadataDir)) {
 		return {

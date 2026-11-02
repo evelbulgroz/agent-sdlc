@@ -4,6 +4,7 @@ import { type RuntimeState, createEvent } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import { createLocalBranch } from '../git-manager.ts';
 import { hydrateWorktree } from '../hydration.ts';
+import { checkpointHydrationBinding } from '../checkpoint-hydration.ts';
 import {
 	type GraphStateValues,
 	type WorkflowRuntimeLike,
@@ -117,6 +118,7 @@ export function createHydrateWorkspaceNode(runtime: WorkflowRuntimeLike) {
 				worktreeDir: snapshot.worktreePath,
 				allowedPackages: auth.allowedPackages,
 				runner: runtime.execCli,
+				checkpoint: checkpointHydrationBinding(runtime.runtimeStore.getTaskPlan(snapshot.runId), snapshot, auth),
 			});
 			const next = runtime.transition(snapshot, {
 				to: 'EXECUTING_IMPLEMENTATION',

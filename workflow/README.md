@@ -9,6 +9,7 @@ LangGraph JS/TS state machine orchestration, specification hashing, detached git
 - `workflow/specification.ts` & `workflow/acceptance-criteria.ts` — Specification completeness checks, `AC-NN` grammar validation, and `approvedSpecHash` binding.
 - `workflow/worktrees.ts` & `workflow/worktree-guard.ts` — Detached worktree lifecycle and `assertPlanFrozenThenCreateWorktree` enforcement.
 - `workflow/hydration.ts` — Lazy worktree dependency installation and host-declared `hydration.steps`.
+- `workflow/checkpoint-hydration.ts` — Optional no-install preparation port on an injected `HydrationRunnerFn.checkpointHydration`. Only frozen, authorized checkpoint plans may select it; run/spec/base/plan, adapter and write scopes must match. Frozen preparation files are verified on every reuse, changed preparation fails without installation fallback, and its identity enters candidate preparation hashes. Legacy hydration ignores the port.
 - `workflow/reconciliation.ts` — Topological binary patch extraction, `git apply --check` dry-run validation, and integration worktree assembly.
 - `workflow/git-manager.ts` & `workflow/landed-check.ts` — Opt-in local branch creation, structured commit formatting, remote push, and blob-level `main` landed checks.
 - `workflow/preflight-gate.ts` & `workflow/fleet.ts` — Preflight verification gating and fleet friction/learning-debt scanning.

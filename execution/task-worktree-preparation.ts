@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createEvent } from '../policy/contracts.ts';
 import { hydrateWorktree } from '../workflow/hydration.ts';
+import { checkpointHydrationBinding } from '../workflow/checkpoint-hydration.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../workflow/worktree-guard.ts';
 import { createSyntheticCommit } from '../workflow/worktrees.ts';
 import {
@@ -164,6 +165,7 @@ export async function prepareTaskWorktree({
 		targetPackage: task.targetPackage,
 		allowedPackages: cumulativeAllowedPackages,
 		runner: execCli,
+		checkpoint: checkpointHydrationBinding(taskPlan, { ...snapshot, runId }, authorization),
 	});
 
 	const hasHydrated = existingEvents.some(

@@ -10,6 +10,7 @@ import { executePreflightVerifier } from '../review/verifier.ts';
 import { runCheckpointQaCritic } from '../review/qa-checkpoint.ts';
 import { materializeCorrectedFinal } from './corrected-final-materialization.ts';
 import { hydrateWorktree } from './hydration.ts';
+import { checkpointHydrationBinding, checkpointPreparationSelection } from './checkpoint-hydration.ts';
 import { createTaskSourceObserver, executeCheckpointObligations, sourcePreparationHash } from './quality-checkpoints.ts';
 import { getAndValidateAuthorization, type WorkflowRuntimeLike } from './node-helpers.ts';
 
@@ -30,7 +31,7 @@ export async function rebuildCorrectedFinal({
 		tasks, rootDir: runtime.rootDir, gitCli: runtime.gitCli });
 	const relativePath = 'worktrees/integration';
 	const worktreeDir = path.join(liveRunRoot(runtime.rootDir), snapshot.runId, relativePath);
-	const preparationSelection = sha256({ preparationPolicyHash: auth.preparationPolicyHash ?? null,
+	const preparationSelection = checkpointPreparationSelection(runtime.execCli, { preparationPolicyHash: auth.preparationPolicyHash ?? null,
 		preparationSelectionHash: snapshot.preparationSelectionHash ?? null, adapters: plan.adapterBindings });
 	const firstTask = tasks[0];
 	if (!firstTask) throw new SdlcError('TASK_PLAN_INVALID', 'Corrected final has no tasks');
@@ -53,7 +54,8 @@ export async function rebuildCorrectedFinal({
 		ownerId: null, relativePath, bindingHash: sha256(binding), sourceHash: sha256(treeSha) });
 	await materializeCorrectedFinal({ runtime, snapshot, correctionId, binding, worktreeDir,
 		observeSource: () => createTaskSourceObserver(runtime, task, worktreeDir, preparationSelection)() });
-	await hydrateWorktree({ worktreeDir, allowedPackages: auth.allowedPackages, runner: runtime.execCli });
+	await hydrateWorktree({ worktreeDir, allowedPackages: auth.allowedPackages, runner: runtime.execCli,
+		checkpoint: checkpointHydrationBinding(plan, snapshot, auth) });
 	const receiptHashes = await executeCheckpointObligations({ runtime, snapshot, plan, binding, worktreeDir,
 		registryId: checkpointId, obligations: plan.evidenceObligations,
 		observeSource: createTaskSourceObserver(runtime, task, worktreeDir, preparationSelection) });
