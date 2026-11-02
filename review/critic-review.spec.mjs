@@ -450,3 +450,43 @@ test('executeReview truncates prompts exceeding ceiling to <= targetCeiling with
 	});
 	assert.ok(est.promptTokens <= 19800);
 });
+
+test('executeReview rejects a plan prompt that would truncate the immutable plan', async () => {
+	const governor = new FakeGovernorForCritic();
+	const adapter = new CriticReviewAdapter({ rootDir: REPOSITORY_ROOT, governor });
+	const largeDoc = 'Word '.repeat(4200);
+	assert.ok(Buffer.byteLength(largeDoc, 'utf8') <= 24576);
+
+	await assert.rejects(
+		adapter.executeReview({
+			runId: '2026-09-24-plan-truncation',
+			phase: 'plan',
+			authorVendor: 'google',
+			documentText: largeDoc,
+		}),
+		(error) =>
+			error.code === 'INPUT_OVERSIZED' &&
+			/would truncate the immutable task plan/.test(error.message),
+	);
+	assert.equal(governor.calls.length, 0);
+});
+
+test('checkpoint QA rejects token truncation of required evidence context', async () => {
+	const governor = new FakeGovernorForCritic();
+	const adapter = new CriticReviewAdapter({ rootDir: REPOSITORY_ROOT, governor });
+
+	await assert.rejects(
+		adapter.executeReview({
+			runId: '2026-09-24-checkpoint-qa-truncation',
+			phase: 'qa',
+			authorVendor: 'google',
+			testOutput: 'checkpoint-evidence '.repeat(900),
+			requestedLimits: { maxPromptTokens: 2000 },
+			requireUntruncatedInput: true,
+		}),
+		(error) =>
+			error.code === 'INPUT_OVERSIZED' &&
+			/would truncate required evidence context/.test(error.message),
+	);
+	assert.equal(governor.calls.length, 0);
+});

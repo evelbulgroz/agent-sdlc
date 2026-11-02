@@ -11,6 +11,7 @@ import {
 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import type { StoreContext } from './run-ledger.ts';
+import { createQualityStorage } from './quality-storage.ts';
 
 interface RunAuthorizationRow {
 	run_id: string;
@@ -116,10 +117,18 @@ function mapToolExecutionRow(row: ToolExecutionRow): Readonly<ToolExecutionRecor
 }
 
 export function createGenerationRecords(ctx: StoreContext): GenerationRecords {
+	const qualityStorage = createQualityStorage(ctx);
 	function saveAuthorization(authorizationInput: unknown): Readonly<RunAuthorizationRecord> {
 		ctx.assertOpen();
 		const auth = validateRunAuthorization(authorizationInput);
 		return ctx.transaction(() => {
+			const qualityKey = auth.approvedPlanPolicyHash;
+			const existingQuality = qualityStorage.get(auth.runId, 'authorization-quality', qualityKey);
+			if (auth.qualityPlan || existingQuality) {
+				qualityStorage.put(auth.runId, 'authorization-quality', qualityKey, {
+					qualityPlan: auth.qualityPlan ?? null,
+				});
+			}
 			ctx.database
 				.prepare(
 					`
@@ -176,6 +185,8 @@ export function createGenerationRecords(ctx: StoreContext): GenerationRecords {
 			.get(runId);
 		const row = raw as RunAuthorizationRow | undefined;
 		if (!row) return null;
+		const quality = qualityStorage.get<{ qualityPlan: RunAuthorizationRecord['qualityPlan'] | null }>(
+			runId, 'authorization-quality', row.approved_plan_policy_hash);
 		return validateRunAuthorization({
 			schemaVersion: RUNTIME_SCHEMA_VERSION,
 			runId: row.run_id,
@@ -193,6 +204,7 @@ export function createGenerationRecords(ctx: StoreContext): GenerationRecords {
 			expiresAt: row.expires_at,
 			approvedAt: row.approved_at,
 			approvalMethod: row.approval_method,
+			...(quality?.qualityPlan ? { qualityPlan: quality.qualityPlan } : {}),
 		});
 	}
 

@@ -12,6 +12,7 @@ import {
 	validateRunAuthorization,
 } from './contracts.ts';
 import { SdlcError } from './errors.ts';
+import { validateAuthorizedQualityPlan, type AuthorizedQualityPlan } from './contracts/quality-schema.ts';
 
 export const DEFAULT_AUTHORIZATION_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -33,6 +34,7 @@ export interface CreateDefaultAuthorizationOptions {
 	openPullRequest?: boolean;
 	targetBranch?: string | null;
 	now?: Date;
+	qualityPlan?: AuthorizedQualityPlan;
 }
 
 export function createDefaultAuthorizationEnvelope({
@@ -53,6 +55,7 @@ export function createDefaultAuthorizationEnvelope({
 	openPullRequest = false,
 	targetBranch = null,
 	now = new Date(),
+	qualityPlan,
 }: CreateDefaultAuthorizationOptions): RunAuthorization {
 	const resolvedRepositoryId =
 		typeof repositoryId === 'string' && repositoryId.trim().length > 0
@@ -61,6 +64,7 @@ export function createDefaultAuthorizationEnvelope({
 	const hostProfile = loadHostProfileOrFallback(rootDir);
 	const preparationPolicyHash = computePreparationPolicyHash(hostProfile.verificationPreparation);
 	if (preparationPolicyHash) validatePreparationPolicy({ profile: hostProfile, rootDir });
+	const approvedQualityPlan = qualityPlan === undefined ? undefined : validateAuthorizedQualityPlan(qualityPlan);
 	const approvedPlanPolicyHash = sha256({
 		runId,
 		approvedSpecHash,
@@ -76,6 +80,7 @@ export function createDefaultAuthorizationEnvelope({
 		targetBranch: targetBranch ?? null,
 		// Omitted (not null-hashed) without preparation, so existing plan policy hashes are unchanged.
 		preparationPolicyHash: preparationPolicyHash ?? undefined,
+		qualityPlan: approvedQualityPlan,
 	});
 
 	const envelope = {
@@ -85,6 +90,7 @@ export function createDefaultAuthorizationEnvelope({
 		taskManifestHash,
 		approvedPlanPolicyHash,
 		...(preparationPolicyHash ? { preparationPolicyHash } : {}),
+		...(approvedQualityPlan ? { qualityPlan: approvedQualityPlan } : {}),
 		repositoryId: resolvedRepositoryId,
 		baseCommitSha,
 		allowedPackages: [...allowedPackages],

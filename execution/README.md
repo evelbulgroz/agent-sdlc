@@ -11,13 +11,66 @@ Inner-loop implementer execution (`--executor minimal`), allowlisted workspace t
 - `execution/ac-coverage.ts` — Deterministic `@ac AC-NN` and `@case AC-NN.N` test citation and execution-evidence verifier (`ac-citations.ts`, `ac-worktree-coverage.ts`, `ac-author-feedback.ts`, `test-execution-evidence.ts`, `coverage-advisory.ts`).
 - `execution/pipeline-executor.ts` & `execution/pipeline-deterministic-roles.ts` — Post-implement (`cleaner`, `hardener`) and pre-review (`architect`) role pipeline runner.
 - `execution/local-api-signals.ts` — Repository-local API misuse guards and diagnostic emitters.
+- `host/evidence-port.ts` — Framework-neutral `executeEvidence(request, registration, context, spawn, store, callbacks?)` host-command boundary; `host/evidence-types.ts` defines injected collaborators, and `host/evidence-store.ts` adapts `runtimeStore.quality` lifecycle and budget transactions.
+
+## Approved command evidence API
+
+`executeEvidence` accepts the versioned contracts from `policy/contracts/quality-schema.ts`.
+The engine supplies an authorized worktree registry id, target package, exact command
+allowlist, frozen adapter binding hash, fresh absolute operation-artifact directory,
+and `observeSource()` returning the actual Git tree, complete source digest, and
+preparation hash. Source observation must include unauthorized untracked source;
+exclude only explicitly approved generated outputs. Runtime environment inputs are
+explicitly supplied through `context.environment`, never inherited.
+
+`host/evidence-source.ts` provides `createEvidenceSourceObserver({worktreeDir,
+sourceTreeSha, generatedOutputs, preparation, gitCli?})`. Its private Git index
+captures tracked and all nonignored untracked regular-file bytes and executable
+modes without touching the actual index or running host clean filters. Only exact
+declared generated files/directory prefixes are excluded; their baseline tree
+entries remain frozen. Use the initial observation's `treeSha` and `sourceHash`
+when binding the request, rather than a delta tree containing mutable outputs.
+Preparation is independently hashed from the frozen baseline/output declaration,
+`preparation.configuration` (hydration, runtime version, environment), and the
+verified byte hashes of `preparation.files`. Changed preparation inputs fail closed.
+`host/evidence-runtime.ts` exports asynchronous `defaultEvidenceSpawn`; synchronous
+`execCli` remains suitable for Git/preparation only, not the bounded evidence stream.
+
+The injected spawn receives exact argv with `shell: false`, one JSON stdin request,
+and bounded stdout/stderr. The host returns exactly one JSON report; opaque unit or
+browser raw reports belong in bounded, regular, non-symlink artifacts. The engine
+verifies byte hashes for bundle/dependency/configuration inputs before and after
+execution, exact case/file/obligation mappings, capability qualification, clean
+attempt histories, report/artifact limits, and unchanged source/preparation.
+Exit status or stderr alone is never acceptance evidence.
+Set `context.executionDurationCeilingMs` to the remaining persisted execution-duration
+budget. It must be a positive safe integer and can only narrow the frozen adapter
+timeout; exhausted or malformed ceilings reject before reservation or spawn.
+
+Create the persistence collaborator with `createEvidenceRecordStore(runtimeStore, request)`.
+It reserves the execution budget and invocation atomically before spawn, then
+atomically charges duration and publishes the invocation, engine-created receipt,
+report and source observations. The caller initializes the finite policy budget
+and registers the worktree with its matching candidate binding hash first.
+Persistence failures propagate; missing completion cannot pass. Completed
+matching successful operations reuse their durable receipt without respawning,
+after current source, frozen inputs and artifacts are rechecked. Conflicting ids,
+unfinished operations, and failed receipts cannot be replayed as success; any
+authorized infrastructure retry needs a fresh charged operation with `retryOf`.
+
+Task, slice and final callers retain checkpoint scheduling and QA responsibility:
+only a `passed` receipt discharges the requested obligations. This API provides no
+host adapter discovery, framework parsing, preparation bypass, or execution approval.
+Offline qualification shapes are exercised in `host/evidence-port.spec.mjs`; no
+real host adapters or browser dependencies are installed by the engine.
 
 ## Core Invariants
 
 1. **Boundary-Governed Minimal Executor (`minimal-executor.ts`):**
    - `minimal` is the only valid executor (`--executor minimal` or `AGENT_SDLC_EXECUTOR=minimal`; omitting both defaults to `minimal`, while `controlled` or any other value fails closed with `INVALID_INPUT` before run creation).
    - Follows *"Loose in the Middle, Tight at the Boundaries"*: the model receives discrete tool schemas and raw secret-redacted `stdout`/`stderr` diagnostics without regex error interceptors or synthetic micro-turn state machines.
-   - Maintains a compact working-set prompt (collapsing superseded `read_file` outputs and summarizing authored file hashes), preserves `toolCalls` across outer verification attempts, and enforces a two-call `AUDIT_REQUIRED` completion gate before running task verification, acceptance-evidence checks, and authored-path diff validation.
+   - Maintains a compact working-set prompt (collapsing superseded `read_file` outputs and summarizing authored file hashes), preserves `toolCalls` across outer verification attempts, and requests an informational `AUDIT_REQUIRED` self-audit after verification and acceptance-evidence checks pass.
+   - Missing authored files, failed verification, and failed acceptance/checkpoint evidence share the initial attempt plus at most two autonomous repair attempts. An `auditRequired` result cannot bypass that allowance. Human-approved corrections use their explicit one- or two-iteration cap instead; a clean, unchanged self-audit consumes no repair attempt and never replenishes either allowance.
    - Calls `governor.assertCanReserve` prior to each model dispatch. Honours `AGENT_SDLC_PREFERRED_ROUTES` and `AGENT_SDLC_MAX_ROUTE_FAILOVERS=0`.
 
 2. **Strict Read/Write Path Containment (`tools.ts`, `tool-path-guards.ts`):**

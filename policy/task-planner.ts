@@ -13,6 +13,7 @@ import {
 	validateTaskPlan,
 } from './contracts.ts';
 import { SdlcError } from './errors.ts';
+import { attachApprovedQualityPlan } from './quality-planning.ts';
 import { computeIsParallel, sortTasksTopologically } from './task-planner/task-graph.ts';
 import { type ReadinessDraftLike, deriveTaskId, evaluateTaskReadiness } from './task-planner/task-readiness.ts';
 import { type WorkspacePackagesScan, isContractProducerSurface } from './task-planner/workspace-packages.ts';
@@ -42,6 +43,7 @@ export interface PlannerAuthorizationLike {
 	taskManifestHash?: string | null;
 	allowedPackages?: readonly string[];
 	allowedPathPrefixes?: readonly string[];
+	qualityPlan?: unknown;
 }
 
 export interface PlannerDraftInput {
@@ -126,9 +128,10 @@ export function planTaskDag({
 		allowedPathPrefixes,
 		resolveNow,
 	};
-	if (taskManifest) return planManifestTasks(branch);
-	if (allowedPackages.length <= 1) return planSinglePackageTask(branch);
-	return planPackageTasks(branch);
+	const plan = taskManifest ? planManifestTasks(branch)
+		: allowedPackages.length <= 1 ? planSinglePackageTask(branch) : planPackageTasks(branch);
+	return authorization.qualityPlan === undefined ? plan
+		: attachApprovedQualityPlan(plan, authorization.qualityPlan, draft?.acceptanceCriteria ?? []);
 }
 
 function asReadinessDraft(draft: PlannerDraftInput | null): ReadinessDraftLike {

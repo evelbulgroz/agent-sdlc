@@ -20,12 +20,10 @@ import {
 import type { CommandExecFn } from './tool-commands.ts';
 import { executeTool, minimalActionSchema } from './tools.ts';
 import type { RunPreparationResult } from './verification-preparation.ts';
-
 export { minimalActionSchema };
 export const MINIMAL_TOOL_CALL_CAP = 150;
 export const MINIMAL_ATTEMPT_WALL_MS = 60 * 60 * 1000;
 export const MINIMAL_MAX_ATTEMPTS = 3;
-
 export interface LoadedImplementerRole {
 	readonly role: {
 		readonly modelProfile: string;
@@ -70,6 +68,8 @@ export interface GovernorLike {
 }
 
 export interface MinimalExecutorInput extends MinimalPromptInput {
+	readonly maxSourceEditIterations?: number;
+	readonly verifyCheckpointEvidence?: () => Promise<void>;
 	readonly runId: string;
 	readonly taskId: string;
 	readonly worktreeDir: string;
@@ -93,9 +93,7 @@ export interface MinimalExecuteResult {
 interface AuditState {
 	auditedDigest: string | null;
 	challenged: boolean;
-	qualityRetries?: number;
 }
-
 type AttemptOutcome =
 	| { readonly done: true; readonly result: MinimalExecuteResult; readonly auditRequired?: false }
 	| { readonly done: false; readonly auditRequired?: boolean; readonly feedback: string };
@@ -167,12 +165,17 @@ export class MinimalExecutor {
 		let feedback = '';
 		const toolCalls: MinimalToolCallRecord[] = [];
 		const auditState: AuditState = { auditedDigest: null, challenged: false };
-		for (let attempt = 1; attempt <= MINIMAL_MAX_ATTEMPTS; attempt += 1) {
+		const maxAttempts = input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS;
+		if (!Number.isInteger(maxAttempts) || maxAttempts < 1 ||
+			(input.maxSourceEditIterations !== undefined && maxAttempts > 2)) {
+			throw new SdlcError('INVALID_INPUT', 'Source edit iterations must be 1 or 2');
+		}
+		for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 			const outcome = await this.runAttempt(input, attempt, feedback, toolCalls, auditState);
 			if (outcome.done) return outcome.result;
 			feedback = outcome.feedback;
 		}
-		return { status: 'failed', failureReason: 'verification-failed', attempts: MINIMAL_MAX_ATTEMPTS };
+		return { status: 'failed', failureReason: 'verification-failed', attempts: maxAttempts };
 	}
 
 	async runAttempt(
@@ -285,8 +288,13 @@ export class MinimalExecutor {
 			input.auditGate === true
 				? checkMissingAuthoredFiles(input.worktreeDir, input.authoredPaths, input.authoredTestPaths)
 				: null;
-		if (missing && auditState && (auditState.qualityRetries = (auditState.qualityRetries ?? 0) + 1) <= 4) {
-			return { done: false, auditRequired: true, feedback: missing };
+		if (missing) {
+			if (auditState) auditState.auditedDigest = null;
+			await this.writeTranscript(input, { attempt, prompt, toolCalls, failureReason: 'evidence-failed', passed: false, started });
+			if (attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
+				return { done: true, result: { status: 'failed', failureReason: 'evidence-failed', attempts: attempt } };
+			}
+			return { done: false, feedback: missing };
 		}
 		const verification = runVerification({ execCli: this.execCli, runtimeStore: this.runtimeStore, clock: this.clock, input, attempt });
 		const recorded: MinimalToolCallRecord[] = [...toolCalls];
@@ -302,7 +310,7 @@ export class MinimalExecutor {
 			if (auditState) auditState.auditedDigest = null;
 			const reason = verification.reason;
 			await this.writeTranscript(input, { attempt, prompt, toolCalls: recorded, failureReason: reason, passed: false, started });
-			if (verification.terminal || attempt >= MINIMAL_MAX_ATTEMPTS) {
+			if (verification.terminal || attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
 				return { done: true, result: { status: 'failed', failureReason: reason, attempts: attempt } };
 			}
 			return { done: false, feedback: verification.output };
@@ -311,14 +319,24 @@ export class MinimalExecutor {
 		if (evidence && evidence.pass === false) {
 			if (auditState) auditState.auditedDigest = null;
 			const feedback = evidence.summary || verification.output;
-			if ((evidence.auditRequired || input.auditGate === true) && auditState && (auditState.qualityRetries = (auditState.qualityRetries ?? 0) + 1) <= 4) {
-				return { done: false, auditRequired: true, feedback };
-			}
 			await this.writeTranscript(input, { attempt, prompt, toolCalls: recorded, failureReason: 'evidence-failed', passed: false, started });
-			if (attempt >= MINIMAL_MAX_ATTEMPTS) {
+			if (attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
 				return { done: true, result: { status: 'failed', failureReason: 'evidence-failed', attempts: attempt } };
 			}
 			return { done: false, feedback };
+		}
+		if (input.verifyCheckpointEvidence) {
+			try {
+				await input.verifyCheckpointEvidence();
+			} catch (error) {
+				if (error instanceof SdlcError && error.code !== 'TASK_EXECUTION_FAILED') throw error;
+				if (auditState) auditState.auditedDigest = null;
+				await this.writeTranscript(input, { attempt, prompt, toolCalls: recorded, failureReason: 'evidence-failed', passed: false, started });
+				if (attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
+					return { done: true, result: { status: 'failed', failureReason: 'evidence-failed', attempts: attempt } };
+				}
+				return { done: false, feedback: error instanceof Error ? error.message : String(error) };
+			}
 		}
 		if (input.auditGate === true && auditState && !auditState.challenged) {
 			const candidateDigest = computeWorktreeDigest(input.worktreeDir, scopePaths);

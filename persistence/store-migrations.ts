@@ -4,12 +4,15 @@ import { type MigrationStep, applyBaselineSchema } from './migrations/baseline-s
 import { upgradesV1ToV7 } from './migrations/upgrades-v1-v7.ts';
 import { upgradesV8ToV13 } from './migrations/upgrades-v8-v13.ts';
 import { upgradesFromV14 } from './migrations/upgrades-v14.ts';
+import { upgradesFromV15 } from './migrations/upgrades-v15.ts';
 import type { StoreDatabase } from './run-ledger.ts';
+import { applyQualitySchema } from './quality-storage.ts';
 
 export const MIGRATION_LADDER: readonly MigrationStep[] = Object.freeze([
 	...upgradesV1ToV7,
 	...upgradesV8ToV13,
 	...upgradesFromV14,
+	...upgradesFromV15,
 ]);
 
 export function assertLadder(steps: readonly { version: number }[]): void {
@@ -92,6 +95,7 @@ export function migrateRuntimeStore(
 	if (current === 0) {
 		transaction(() => {
 			applyBaselineSchema(database);
+			applyQualitySchema(database);
 			recordVersion(database, STORE_SCHEMA_VERSION);
 		});
 		return;
@@ -104,6 +108,7 @@ export function migrateRuntimeStore(
 		});
 	}
 	applyUnversionedRepairs(database);
+	transaction(() => applyQualitySchema(database));
 }
 
 assertLadder(MIGRATION_LADDER);

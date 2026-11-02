@@ -350,20 +350,30 @@ export function pushBranch({
 	worktreeDir,
 	branchName,
 	remote = 'origin',
+	sourceCommitSha,
 	gitCli = execFileSync as GitCliFn,
 }: {
 	worktreeDir: string;
 	branchName: string;
 	remote?: string;
+	sourceCommitSha?: string;
 	gitCli?: GitCliFn;
 }): { pushed: true; branchName: string; remote: string } {
 	validateBranchName(branchName);
 	if (typeof remote !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(remote)) {
 		throw new SdlcError('INVALID_INPUT', `Invalid git remote name: '${String(remote)}'`);
 	}
+	if (sourceCommitSha !== undefined && !GIT_SHA.test(sourceCommitSha)) {
+		throw new SdlcError('INVALID_INPUT', `Invalid source commit SHA: '${String(sourceCommitSha)}'`);
+	}
 
 	try {
-		gitCli('git', ['push', '-u', remote, branchName], {
+		const refspec = sourceCommitSha
+			? `${sourceCommitSha}:refs/heads/${branchName}`
+			: null;
+		gitCli('git', refspec
+			? ['push', remote, refspec]
+			: ['push', '-u', remote, branchName], {
 			cwd: worktreeDir,
 			encoding: 'utf8',
 			stdio: ['ignore', 'pipe', 'pipe'],
@@ -380,6 +390,64 @@ export function pushBranch({
 			'GIT_PUSH_FAILED',
 			`Git push failed for branch '${branchName}' to remote '${remote}': ${message}`,
 			{ branchName, remote },
+			{ cause: error },
+		);
+	}
+}
+
+export function assertBranchCommitBinding({
+	worktreeDir,
+	branchName,
+	expectedCommitSha,
+	expectedTreeSha,
+	gitCli = execFileSync as GitCliFn,
+}: {
+	worktreeDir: string;
+	branchName: string;
+	expectedCommitSha: string;
+	expectedTreeSha: string;
+	gitCli?: GitCliFn;
+}): { commitSha: string; treeSha: string } {
+	validateBranchName(branchName);
+	if (!GIT_SHA.test(expectedCommitSha) || !GIT_SHA.test(expectedTreeSha)) {
+		throw new SdlcError('INVALID_INPUT', 'Expected branch commit and tree must be full git SHAs');
+	}
+	try {
+		const commitSha = gitText(gitCli, [
+			'rev-parse', '--verify', `refs/heads/${branchName}^{commit}`,
+		], {
+			cwd: worktreeDir,
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'pipe'],
+		}).trim();
+		if (!GIT_SHA.test(commitSha) || commitSha !== expectedCommitSha) {
+			throw new SdlcError(
+				'POLICY_VIOLATION',
+				`Local branch '${branchName}' no longer points to the approved commit`,
+				{ branchName, expectedCommitSha, actualCommitSha: commitSha },
+			);
+		}
+		const treeSha = gitText(gitCli, [
+			'rev-parse', '--verify', `${commitSha}^{tree}`,
+		], {
+			cwd: worktreeDir,
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'pipe'],
+		}).trim();
+		if (!GIT_SHA.test(treeSha) || treeSha !== expectedTreeSha) {
+			throw new SdlcError(
+				'POLICY_VIOLATION',
+				`Approved commit for branch '${branchName}' does not have the reviewed tree`,
+				{ branchName, expectedTreeSha, actualTreeSha: treeSha },
+			);
+		}
+		return { commitSha, treeSha };
+	} catch (error: unknown) {
+		if (error instanceof SdlcError) throw error;
+		throw new SdlcError(
+			'POLICY_VIOLATION',
+			`Could not verify the approved source for branch '${branchName}'`,
+			{ branchName, expectedCommitSha, expectedTreeSha },
 			{ cause: error },
 		);
 	}

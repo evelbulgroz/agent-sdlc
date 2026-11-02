@@ -9,6 +9,90 @@ Authoritative SQLite run store (`runtime.sqlite`), content-addressed artifact st
 - `persistence/run-paths.ts` — `REPOSITORY_ROOT`, state directory resolution (`tools/.agent-sdlc` or `AGENT_SDLC_STATE_DIR`), `liveRunRoot`, `archiveRoot`, `listRunDatabases`, and realpath containment checks.
 - `persistence/langgraph-checkpointer.ts` & `persistence/ledger-archive.ts` — LangGraph SQLite checkpointer and model-usage ledger snapshot archiving.
 - `persistence/run-retention.ts`, `persistence/run-cleanup.ts`, `persistence/run-compaction.ts` & `persistence/run-archive.ts` — Pure retention classification, merged-worktree removal, `VACUUM INTO` SQLite compaction, and atomic `.archive/` staging.
+- `persistence/quality-records.ts` — `runtimeStore.quality`: immutable task revisions,
+  selected-current index, closure lifecycle, registered candidate worktrees, charged
+  execution/review reservations, and evidence receipts. `quality-corrections.ts`
+  owns answer-consumption CAS and whole-correction publication; `quality-budget.ts`,
+  `quality-invocations.ts`, and `quality-storage.ts` are bounded collaborators.
+
+## Quality Record API
+
+Schema 15's additive quality tables are installed on both new and existing
+stores without rewriting legacy records or changing legacy hash projections.
+New wire records are closed-schema validated. Structured identity hashes use the
+canonical contract hash; adapter reports and artifact byte hashes remain
+engine-observed raw-byte hashes.
+
+`saveAuthorization` durably preserves the approved optional `qualityPlan` in the
+same transaction as the authorization row, keyed by its approved policy hash.
+`getAuthorization` restores and validates that exact plan after reopen; changing
+its content without a new approved hash is rejected. Legacy absence stays omitted.
+
+`saveTaskPlan` preserves the validated immutable v2 wire projection, including
+policy, adapter bindings and obligations. `taskPlans.getImmutableTaskPlan(runId)`
+reads that projection. `getTaskPlan` retains its v2 identity while hydrating the
+runtime task view from eligible current quality revisions; mutable task state
+does not enter its immutable plan hash. Re-saving changed v2 planning content
+under the same run is rejected, and an existing v2 plan cannot downgrade to v1.
+
+- Persist completed revisions with `quality.saveTaskRevision(record)`; select with
+  `selectTaskRevision(runId, taskId, executionRevision)`. Historical rows are
+  immutable after completion. Before completion, the same revision may advance
+  through materializing/executing/verifying without changing its identity or
+  parent provenance; lifecycle snapshots remain recorded. Verifying may capture
+  its target tree and patch together before receipts arrive; those captured
+  hashes cannot change on completion. `getTaskRevision` reads that exact revision.
+  `listRevisionSelections` exposes raw persisted index provenance, including
+  ineligible entries, without granting completion trust.
+  `getCurrentTaskRevision` and `listCurrentTaskRevisions` return no
+  eligible selection while any correction remains incomplete.
+- `registerWorktree` records an engine-chosen contained run-relative path,
+  registry identity, kind, owner and source/binding hashes before dispatch.
+  Task paths use `worktree`/`worktrees/`; non-task checkpoints additionally permit
+  `checkpoint-worktrees/<engine-safe-id>`. Symlink traversal is rejected.
+- `initializeBudget`, `reserveBudget`, and `chargeBudget` preserve charged work
+  across failures. Reservations precede dispatch; identical operation replay is
+  free, changed content is refused. Actual overruns stay charged and prohibit
+  subsequent dispatch. `interruptInvocations` marks unfinished dispatches and
+  their reservations interrupted without treating them as successful.
+- `reserveInvocation`, `startInvocation`, and `completeInvocation` persist the
+  evidence lifecycle; completion atomically stores receipt/report/observations.
+  `getEvidenceCompletionByReceiptHash` returns only non-invalidated evidence.
+- `saveVerificationReceipt` records ordinary deterministic task verification,
+  including enabling tasks without acceptance obligations. It requires an intact
+  content-addressed execution artifact and binds the returned receipt hash to the
+  exact task, execution revision and target tree; success is never fabricated
+  from an absent host evidence report.
+- Freeze the machine-selected pending interrupt through `bindInterrupt`, then
+  consume a validated answer through `consumeAnswer`. It checks interrupt,
+  candidate binding, expected current revisions, findings and budget hash in one
+  transaction. Correction approval invalidates affected eligibility, preserving
+  historical records and budgets. Staged revisions cannot win the current index.
+  `getConsumedAnswer(runId, interruptId)` returns the exact hash-checked durable
+  answer for interrupted application. A resolved quality interrupt may remain
+  referenced only while its consumed answer is being recovered; it is not a new
+  unanswered operator request.
+  Advance durable correction states before side effects. `completeCorrection`
+  checks every affected staged revision and rebuilt closure, then swaps all
+  current selections and closes the correction atomically.
+  `saveStagedClosure(correctionId, record)` validates correction-local evidence
+  while exposing only verifying/reviewing status until atomic publication.
+  Published revisions retain their `correctionId`; later closures may use them
+  only while the completed correction's committed selection remains current.
+  Unrelated active staging never acquires that provenance.
+  Interrupted/failed corrections may restart at materializing, never at completed.
+
+Registered task/enabling/slice/final worktrees participate in retention presence
+and individual Git cleanup, including nested checkpoint containers. Registered
+checkpoint snapshots are excluded from archive task-patch discovery. For quality
+plans, `unlanded.patch` is reconstructed from every current selected task delta
+in frozen integration order with raw-byte patch hashes and current parent-revision
+provenance. A supplied final tree and any matching persisted final closure must
+agree with the reconstruction. A null final tree before a final snapshot exists
+still permits a coherent selected-closure archive; missing
+or inconsistent selections fail closed rather than falling back to stale task
+worktrees. Compaction retains all quality records; only LangGraph checkpoint
+tables are dropped.
 
 ## Core Invariants
 

@@ -21,6 +21,7 @@ import {
 	createModelOperationRecords,
 } from './model-operation-records.ts';
 import { type ProjectionRecords, createProjectionRecords } from './projection-records.ts';
+import { type QualityRecords, createQualityRecords } from './quality-records.ts';
 import { type ReviewRecords, createReviewRecords } from './review-records.ts';
 import { type RunLedger, createRunLedger } from './run-ledger.ts';
 import { type StoreIntegrity, createStoreIntegrity } from './store-integrity.ts';
@@ -60,6 +61,7 @@ export class RuntimeStore {
 	readonly learning: LearningRecords;
 	readonly friction: FrictionRecords;
 	readonly integrity: StoreIntegrity;
+	readonly quality: QualityRecords;
 	private _transactionDepth = 0;
 
 	constructor(databasePath: string, { busyTimeoutMs = BUSY_TIMEOUT_MS }: { busyTimeoutMs?: number } = {}) {
@@ -88,6 +90,7 @@ export class RuntimeStore {
 			this.projections = createProjectionRecords(context, this.ledger);
 			this.learning = createLearningRecords(context, this.ledger);
 			this.friction = createFrictionRecords(context, this.ledger);
+			this.quality = createQualityRecords(context, databasePath);
 			this.integrity = createStoreIntegrity(context, {
 				ledger: this.ledger,
 				projections: this.projections,
@@ -272,6 +275,7 @@ export class RuntimeStore {
 	listOptionalRoleExecutions(...a: P<ReviewRecords['listOptionalRoleExecutions']>) { return this.reviews.listOptionalRoleExecutions(...a); }
 	saveTaskPlan(...a: P<TaskPlanRecords['saveTaskPlan']>) { return this.taskPlans.saveTaskPlan(...a); }
 	getTaskPlan(...a: P<TaskPlanRecords['getTaskPlan']>) { return this.taskPlans.getTaskPlan(...a); }
+	getTaskPlanForPolicy(...a: P<TaskPlanRecords['getTaskPlanForPolicy']>) { return this.taskPlans.getTaskPlanForPolicy(...a); }
 	getTask(...a: P<TaskPlanRecords['getTask']>) { return this.taskPlans.getTask(...a); }
 	updateTaskStatus(...a: P<TaskPlanRecords['updateTaskStatus']>) { return this.taskPlans.updateTaskStatus(...a); }
 	listTasks(...a: P<TaskPlanRecords['listTasks']>) { return this.taskPlans.listTasks(...a); }

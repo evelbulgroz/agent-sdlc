@@ -1,7 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
-import { loadPolicy } from '@evelbulgroz/model-usage-govenor/policy';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { createEvent } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
@@ -28,84 +25,12 @@ import {
 import { type WorktreeRuntimeStoreLike, prepareTaskWorktree } from './task-worktree-preparation.ts';
 import type { CommandExecFn } from './tool-commands.ts';
 import { type TaskPreparationHooks, taskPreparationHooks } from './verification-preparation.ts';
-
-export const DEFAULT_EXECUTOR_STEP_CEILING = 80;
-const ABSOLUTE_EXECUTOR_STEP_CEILING = 100;
-const STEPS_PER_FILE = 2;
-const VERIFICATION_ALLOWANCE = 4;
-
-export interface StepCapacityOptions {
-	readonly stepsPerFile?: number;
-	readonly verificationAllowance?: number;
-	readonly defaultCeiling?: number;
-	readonly absoluteCeiling?: number;
-	readonly detailed?: boolean;
-}
-
-export interface DetailedStepCapacity {
-	readonly requiredSteps: number;
-	readonly stepCeiling: number;
-	readonly allowedSteps: number;
-}
-
-export function calculateTaskStepCapacity(
-	pathsOrCount: readonly unknown[] | number,
-	options: StepCapacityOptions & { readonly detailed: true },
-): DetailedStepCapacity;
-export function calculateTaskStepCapacity(
-	pathsOrCount: readonly unknown[] | number,
-	options?: StepCapacityOptions & { readonly detailed?: false },
-): number;
-export function calculateTaskStepCapacity(
-	pathsOrCount: readonly unknown[] | number,
-	options: StepCapacityOptions = {},
-): number | DetailedStepCapacity {
-	const {
-		stepsPerFile = STEPS_PER_FILE,
-		verificationAllowance = VERIFICATION_ALLOWANCE,
-		defaultCeiling = DEFAULT_EXECUTOR_STEP_CEILING,
-		absoluteCeiling = ABSOLUTE_EXECUTOR_STEP_CEILING,
-		detailed = false,
-	} = options;
-	const pathCount = Array.isArray(pathsOrCount)
-		? pathsOrCount.length
-		: typeof pathsOrCount === 'number' && Number.isFinite(pathsOrCount)
-			? Math.max(0, Math.floor(pathsOrCount))
-			: 0;
-	const requiredSteps = pathCount * stepsPerFile + verificationAllowance;
-	if (requiredSteps > absoluteCeiling) {
-		throw new SdlcError(
-			'CAPACITY_LIMIT_EXCEEDED',
-			`Task requires at least ${requiredSteps} steps, which exceeds the absolute step ceiling of ${absoluteCeiling}`,
-			{ requiredSteps, allowedSteps: absoluteCeiling, pathCount },
-		);
-	}
-	const stepCeiling = Math.min(absoluteCeiling, Math.max(requiredSteps, defaultCeiling));
-	return detailed ? { requiredSteps, stepCeiling, allowedSteps: absoluteCeiling } : stepCeiling;
-}
-
-export function resolveRunMaxPhysicalCalls({
-	rootDir = REPOSITORY_ROOT,
-	modelProfile = 'agent-sdlc-default',
-	readFile = (filePath: string) => fs.readFileSync(filePath, 'utf8'),
-}: { rootDir?: string; modelProfile?: string; readFile?: (filePath: string) => string } = {}): number {
-	if (process.env.AGENT_SDLC_RUN_MAX_PHYSICAL_CALLS) {
-		const envLimit = Number.parseInt(process.env.AGENT_SDLC_RUN_MAX_PHYSICAL_CALLS, 10);
-		if (Number.isSafeInteger(envLimit) && envLimit > 0) return envLimit;
-	}
-	try {
-		const hostPath = path.join(rootDir ?? REPOSITORY_ROOT, '.agents/model-usage-policy.json');
-		const policyPath = fs.existsSync(hostPath) ? hostPath : loadPolicy.DEFAULT_BUNDLED_POLICY_PATH;
-		const policy = JSON.parse(readFile(policyPath)) as {
-			profiles?: Readonly<Record<string, { limits?: { runMaxPhysicalCalls?: unknown } } | undefined>>;
-		};
-		const limit = policy.profiles?.[modelProfile]?.limits?.runMaxPhysicalCalls;
-		if (typeof limit === 'number' && limit > 0) return limit;
-	} catch {
-		// fallback to conservative default
-	}
-	return 250;
-}
+import {
+	type ClosurePlan, assertEligiblePredecessors, eligibleParentTasks, materializeClosureTree,
+} from './eligible-closure.ts';
+import { DEFAULT_EXECUTOR_STEP_CEILING, calculateTaskStepCapacity, resolveRunMaxPhysicalCalls } from './task-capacity.ts';
+export { DEFAULT_EXECUTOR_STEP_CEILING, calculateTaskStepCapacity, resolveRunMaxPhysicalCalls } from './task-capacity.ts';
+export type { StepCapacityOptions, DetailedStepCapacity } from './task-capacity.ts';
 
 export interface StoredTaskRecord {
 	readonly taskId: string;
@@ -162,11 +87,21 @@ export interface ExecuteTaskCommonOptions {
 
 export interface ExecuteTaskPlanOptions extends ExecuteTaskCommonOptions {
 	readonly taskPromptContexts?: Readonly<Record<string, TaskPromptContextLike | undefined>>;
+	readonly quality?: TaskQualityHooks;
 }
 
 export interface ExecuteTaskOptions extends ExecuteTaskCommonOptions {
 	readonly task: ExecutableTask;
 	readonly taskPromptContext?: TaskPromptContextLike | null;
+	readonly quality?: TaskQualityHooks;
+}
+
+export interface TaskQualityHooks {
+	readonly plan: ClosurePlan;
+	readonly closureStatus: (sliceId: string) => string | null;
+	readonly verifyEnabling: (sliceId: string, plan: ExecutableTaskPlan) => Promise<void>;
+	readonly verifyTask: (task: ExecutableTask, worktreeDir: string) => Promise<void>;
+	readonly verifyTaskEvidence?: (task: ExecutableTask, worktreeDir: string) => Promise<unknown>;
 }
 
 export interface TaskExecutorOptions {
@@ -227,7 +162,10 @@ export class TaskExecutor {
 		return this.executeTaskPlan(options);
 	}
 
-	async executeTaskPlan(opts: ExecuteTaskPlanOptions): Promise<{ status: 'COMPLETED'; tasks: ExecutableTask[] }> {
+	async executeTaskPlan(opts: ExecuteTaskPlanOptions): Promise<
+		{ status: 'COMPLETED'; tasks: ExecutableTask[] } |
+		{ status: 'CHECKPOINT_REQUIRED'; sliceId: string; tasks: ExecutableTask[] }
+	> {
 		const { taskPlan, authorization, snapshot = null, generation = 0 } = opts;
 		const { specSummary = '', acceptanceCriteria = [], taskPromptContexts = {}, agentsMd = '', checkpointer = null } = opts;
 		if (snapshot?.taskPlanFrozen !== true) {
@@ -239,7 +177,7 @@ export class TaskExecutor {
 
 		const storedMap = new Map((this.runtimeStore.listTasks?.(taskPlan.runId) ?? []).map((t) => [t.taskId, t]));
 		const liveTasks: ExecutableTask[] = taskPlan.tasks.map((task) => {
-			const stored = storedMap.get(task.taskId);
+			const stored = opts.quality && task.status === 'completed' ? undefined : storedMap.get(task.taskId);
 			return !stored
 				? { ...task }
 				: {
@@ -257,9 +195,29 @@ export class TaskExecutor {
 		const livePlan: ExecutableTaskPlan = { ...taskPlan, tasks: liveTasks };
 		const taskMap = new Map(liveTasks.map((t) => [t.taskId, t]));
 
-		while (!liveTasks.every((t) => t.status === 'completed')) {
+		for (;;) {
+			if (opts.quality) {
+				for (const slice of opts.quality.plan.slices) {
+					const members = liveTasks.filter(task => task.sliceId === slice.sliceId);
+					if (!members.length || !members.every(task => task.status === 'completed')) continue;
+					const status = opts.quality.closureStatus(slice.sliceId);
+					if (slice.kind === 'enabling') {
+						if (status !== 'verified') await opts.quality.verifyEnabling(slice.sliceId, livePlan);
+					} else if (status !== 'accepted') {
+						return { status: 'CHECKPOINT_REQUIRED', sliceId: slice.sliceId, tasks: liveTasks };
+					}
+				}
+			}
+			if (liveTasks.every(t => t.status === 'completed')) break;
 			const readyTasks = liveTasks.filter((t) => {
 				if (t.status === 'completed' || t.status === 'failed' || t.status === 'cancelled') return false;
+				if (opts.quality && t.sliceId) {
+					try {
+						assertEligiblePredecessors(opts.quality.plan, t.sliceId, opts.quality.closureStatus);
+					} catch {
+						return false;
+					}
+				}
 				return (t.dependsOn ?? []).every((depId) => taskMap.get(depId)?.status === 'completed');
 			});
 			if (readyTasks.length === 0) {
@@ -291,6 +249,7 @@ export class TaskExecutor {
 				taskPromptContext: taskPromptContexts[taskToRun.taskId] ?? null,
 				agentsMd,
 				checkpointer,
+				quality: opts.quality,
 			});
 		}
 		return { status: 'COMPLETED', tasks: liveTasks };
@@ -316,7 +275,14 @@ export class TaskExecutor {
 				? resolveWorktreeDir(runId, this.rootDir, 'worktree')
 				: resolveTaskWorktreeDir(runId, task.taskId, this.rootDir);
 
-		const parentTreeSha = deriveParentTreeSha({ task, taskPlan, rootDir: this.rootDir, gitCli: this.gitCli, snapshot });
+		const parentTreeSha = opts.quality
+			? materializeClosureTree({
+					baseTreeSha: String(this.gitCli('git', ['rev-parse', `${task.baseCommitSha}^{tree}`],
+						{ cwd: this.rootDir, encoding: 'utf8' })).trim(),
+					tasks: eligibleParentTasks({ ...opts.quality.plan, tasks: taskPlan.tasks }, task.taskId),
+					rootDir: this.rootDir, gitCli: this.gitCli,
+				})
+			: deriveParentTreeSha({ task, taskPlan, rootDir: this.rootDir, gitCli: this.gitCli, snapshot });
 		const previousParentTreeSha = task.parentTreeSha;
 		task.parentTreeSha = parentTreeSha;
 
@@ -333,6 +299,7 @@ export class TaskExecutor {
 			worktreeDir,
 			parentTreeSha,
 			previousParentTreeSha,
+			useDerivedParent: Boolean(opts.quality),
 			rootDir: this.rootDir,
 			gitCli: this.gitCli,
 			execCli: this.execCli,
@@ -350,7 +317,7 @@ export class TaskExecutor {
 			specSummary,
 			gitCli: this.gitCli,
 		});
-		return await this.executeMinimalTask({
+		const completed = await this.executeMinimalTask({
 			...v,
 			preparation: taskPreparationHooks({ runId, task, taskPlan, authorization, snapshot, worktreeDir, execCli: this.execCli, artifactStore: this.artifactStore, runtimeStore: this.runtimeStore, now: this.runtime?.now }),
 			runId,
@@ -360,7 +327,10 @@ export class TaskExecutor {
 			agentsMd,
 			parentTreeSha,
 			snapshot,
+			qualityVerifyTask: opts.quality?.verifyTask,
+			qualityVerifyEvidence: opts.quality?.verifyTaskEvidence,
 		});
+		return completed;
 	}
 
 	async executeMinimalTask(p: {
@@ -379,6 +349,8 @@ export class TaskExecutor {
 		snapshot: TaskExecutorSnapshot | null;
 		completionValidator: CompletionValidatorFn | null;
 		preparation?: TaskPreparationHooks;
+		qualityVerifyTask?: TaskQualityHooks['verifyTask'];
+		qualityVerifyEvidence?: TaskQualityHooks['verifyTaskEvidence'];
 	}): Promise<ExecutableTask> {
 		const { runId, task, worktreeDir, packageJson, effectiveTaskPromptContext } = p;
 		const authoredTestPaths = p.authoredTestPaths ?? [];
@@ -398,6 +370,7 @@ export class TaskExecutor {
 			}),
 		});
 		const auditGate = task.auditGate ?? Boolean(task.sliceId || authoredTestPaths.length > 0);
+		const qualityVerifyEvidence = p.qualityVerifyEvidence;
 		let minimalResult;
 		try {
 			minimalResult = await minimal.execute({
@@ -411,6 +384,10 @@ export class TaskExecutor {
 				targetedVerificationCommand: effectiveTaskPromptContext?.targetedVerificationCommand ?? null,
 				generatorCommand: effectiveTaskPromptContext?.generatorCommand ?? null,
 				acceptanceEvidenceCommand: p.acceptanceEvidenceCommand,
+				verifyCheckpointEvidence: qualityVerifyEvidence ? async () => {
+					const candidate = captureTaskDelta({ task, worktreeDir, rootDir: this.rootDir, gitCli: this.gitCli, rawPatchHash: true });
+					await qualityVerifyEvidence({ ...task, targetTreeSha: candidate.targetTreeSha, patchHash: candidate.patchHash }, worktreeDir);
+				} : undefined,
 				...p.preparation,
 				authoredPaths: Array.isArray(task.authoredPaths) ? task.authoredPaths : [],
 				authoredTestPaths,
@@ -434,6 +411,10 @@ export class TaskExecutor {
 			);
 		}
 		try {
+			if (p.qualityVerifyTask) {
+				const candidate = captureTaskDelta({ task, worktreeDir, rootDir: this.rootDir, gitCli: this.gitCli, rawPatchHash: true });
+				await p.qualityVerifyTask({ ...task, targetTreeSha: candidate.targetTreeSha, patchHash: candidate.patchHash }, worktreeDir);
+			}
 			return await this.finishTaskExecution({
 				runId,
 				task,
@@ -441,6 +422,7 @@ export class TaskExecutor {
 				parentTreeSha: p.parentTreeSha,
 				snapshot: p.snapshot,
 				acceptEmptyDelta: true,
+				rawPatchHash: Boolean(p.qualityVerifyTask),
 			});
 		} catch (error) {
 			if (error && typeof error === 'object' && 'code' in error && error.code === 'PATH_CONTAINMENT_VIOLATION') {
@@ -457,9 +439,10 @@ export class TaskExecutor {
 		parentTreeSha: string;
 		snapshot: TaskExecutorSnapshot | null;
 		acceptEmptyDelta: boolean;
+		rawPatchHash?: boolean;
 	}): Promise<ExecutableTask> {
 		const { runId, task, worktreeDir, parentTreeSha, snapshot, acceptEmptyDelta } = p;
-		const delta = captureTaskDelta({ task, worktreeDir, rootDir: this.rootDir, gitCli: this.gitCli });
+		const delta = captureTaskDelta({ task, worktreeDir, rootDir: this.rootDir, gitCli: this.gitCli, rawPatchHash: p.rawPatchHash });
 		if (!acceptEmptyDelta && delta.targetTreeSha === parentTreeSha) {
 			this.runtimeStore.updateTaskStatus(runId, task.taskId, { status: 'failed' });
 			throw new SdlcError('TASK_EXECUTION_FAILED', `Implementer produced no file changes for task ${task.taskId}`, {

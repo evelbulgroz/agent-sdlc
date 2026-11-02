@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createEvent } from '../policy/contracts.ts';
 import { hydrateWorktree } from '../workflow/hydration.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../workflow/worktree-guard.ts';
@@ -52,6 +53,7 @@ export interface PrepareTaskWorktreeOptions {
 	readonly worktreeDir: string;
 	readonly parentTreeSha: string;
 	readonly previousParentTreeSha?: string | null;
+	readonly useDerivedParent?: boolean;
 	readonly rootDir?: string;
 	readonly gitCli?: GitCliFn;
 	readonly execCli?: CommandExecFn;
@@ -72,6 +74,7 @@ export async function prepareTaskWorktree({
 	worktreeDir,
 	parentTreeSha,
 	previousParentTreeSha,
+	useDerivedParent = false,
 	rootDir,
 	gitCli,
 	execCli,
@@ -79,7 +82,7 @@ export async function prepareTaskWorktree({
 	runtime,
 	onBoundary,
 }: PrepareTaskWorktreeOptions): Promise<void> {
-	if (!task.dependsOn || task.dependsOn.length === 0) {
+	if (!useDerivedParent && (!task.dependsOn || task.dependsOn.length === 0)) {
 		assertPlanFrozenThenCreateWorktree({
 			snapshot,
 			runId,
@@ -89,10 +92,13 @@ export async function prepareTaskWorktree({
 			gitCli,
 		});
 	} else {
-		let commitSha =
-			task.parentCommitSha && (!previousParentTreeSha || previousParentTreeSha === parentTreeSha)
-				? task.parentCommitSha
-				: null;
+		let commitSha = task.parentCommitSha ?? null;
+		if (commitSha) {
+			const actualParentTree = (gitCli ?? execFileSync)('git', ['rev-parse', `${commitSha}^{tree}`],
+				{ cwd: rootDir, encoding: 'utf8' }).toString().trim();
+			if (actualParentTree !== parentTreeSha ||
+				(previousParentTreeSha != null && previousParentTreeSha !== parentTreeSha)) commitSha = null;
+		}
 		if (!commitSha) {
 			commitSha = createSyntheticCommit({
 				parentTreeSha,

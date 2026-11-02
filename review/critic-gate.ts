@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { sha256 } from '../policy/contracts.ts';
+import type { QualityPolicy } from '../policy/contracts/quality-schema.ts';
 import { SdlcError } from '../policy/errors.ts';
+import type { QualityRecords } from '../persistence/quality-records.ts';
+import { runCheckpointQaCritic, type QaCheckpointContext } from './qa-checkpoint.ts';
 import {
 	resolveAuthorVendor,
 	resolveCodeAuthorVendors,
@@ -33,6 +36,7 @@ import {
 import type { TouchedFileEntry } from './critic-prompt.ts';
 
 export interface CriticGateSnapshot extends CriticBudgetSnapshot {
+	state?: string;
 	draftHash?: string | null;
 	draftArtifact?: string | null;
 	specApprovalAttempt?: number;
@@ -41,11 +45,17 @@ export interface CriticGateSnapshot extends CriticBudgetSnapshot {
 	integrationWorktreePath?: string | null;
 	worktreePath?: string | null;
 	authorVendor?: string | null;
+	targetTreeSha?: string | null;
+	qualityPolicy?: QualityPolicy;
+	qualityCheckpointId?: string;
+	qualityCheckpointSliceId?: string | null;
+	qualityCheckpointTreeSha?: string;
 }
 
 export interface CriticGateRuntimeStoreLike
 	extends CriticRuntimeStoreLike,
 		AuthorVendorRuntimeStoreLike {
+	quality?: QualityRecords;
 	listCriticReviews(runId: string): readonly CriticReviewLike[];
 	getGeneration?(runId: string, generation: number): { taskOwnedPaths?: readonly string[] } | null;
 	getLatestGeneration?(runId: string): { taskOwnedPaths?: readonly string[] } | null;
@@ -56,11 +66,15 @@ export interface CriticGateRuntimeLike {
 	runtimeStore: CriticGateRuntimeStoreLike;
 	registry: {
 		rootDir: string;
-		loadRole(roleId: string): { promptPolicy: string };
+		loadRole(roleId: string): {
+			promptPolicy: string;
+			role?: { requestedLimits?: { maxPromptTokens?: number; maxCompletionTokens?: number; maxPhysicalAttempts?: number } };
+		};
 	};
 	governor?: CriticGovernorLike;
 	artifactStore: {
 		readJson(artifactRef: string | null | undefined): Record<string, unknown>;
+		writeJson?(name: string, value: unknown): string;
 	};
 	gitCli?: (
 		cmd: string,
@@ -70,12 +84,13 @@ export interface CriticGateRuntimeLike {
 }
 
 export interface CriticGateResult {
-	status: 'SKIP' | 'BUDGET_EXHAUSTED' | 'PASS' | 'FAIL';
+	status: 'SKIP' | 'BUDGET_EXHAUSTED' | 'INSUFFICIENT_EVIDENCE' | 'PASS' | 'FAIL';
 	hasP1: boolean;
 	findings: readonly unknown[];
 	review: CriticReviewLike | CriticReviewExecutionResult | null;
 	artifactHash: string | null | undefined;
 	attemptKey: string;
+	retrievalArtifacts?: readonly { requestArtifact: string; responseArtifact: string }[];
 	event?: {
 		eventType: 'CRITIC_REVIEW_COMPLETED';
 		payload: {
@@ -344,10 +359,15 @@ export function collectTouchedTestFiles({
 export async function runQaCritic({
 	runtime,
 	snapshot,
+	checkpointContext,
 }: {
 	runtime: CriticGateRuntimeLike;
 	snapshot: CriticGateSnapshot;
+	checkpointContext?: QaCheckpointContext;
 }): Promise<Readonly<CriticGateResult>> {
+	if (checkpointContext) {
+		return runCheckpointQaCritic({ runtime, snapshot, context: checkpointContext });
+	}
 	assertCriticAllowed({ phase: 'qa', snapshot });
 	const binding = runtime.artifactStore.readJson(snapshot.preflightBindingArtifact);
 	if (binding.status !== 'OK' || binding.canonical !== true) {

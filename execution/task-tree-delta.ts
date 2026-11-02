@@ -24,6 +24,7 @@ export interface DeltaTaskLike {
 	readonly baseCommitSha?: string | null;
 	readonly parentTreeSha?: string | null;
 	readonly targetTreeSha?: string | null;
+	readonly patchHash?: string | null;
 	readonly dependsOn?: readonly string[];
 	readonly authoredPaths?: readonly string[];
 	readonly generatedOutputs?: readonly string[];
@@ -139,15 +140,14 @@ export function deriveParentTreeSha({
 	try {
 		for (const p of upstreamTasks) {
 			const parentBaseTree = p.parentTreeSha || baseCommitSha;
-			const patch = gitText(
-				gitCli('git', ['diff-tree', '-p', '--binary', parentBaseTree, p.targetTreeSha], {
+			const patch = gitCli(
+				'git', ['diff-tree', '-r', '-p', '--binary', parentBaseTree, p.targetTreeSha], {
 					cwd: rootDir,
-					encoding: 'utf8',
 					stdio: ['ignore', 'pipe', 'pipe'],
-				}),
+				},
 			);
 
-			if (patch && patch.trim()) {
+			if (patch.length) {
 				try {
 					gitCli('git', ['apply', '--check', '--binary', '-'], {
 						cwd: tmpWorktreeDir,
@@ -220,7 +220,7 @@ export function deriveParentTreeSha({
 
 export interface TaskDeltaResult {
 	readonly targetTreeSha: string;
-	readonly patch: string;
+	readonly patch: Buffer;
 	readonly patchHash: string;
 	readonly changedFiles: string[];
 }
@@ -234,11 +234,13 @@ export function captureTaskDelta({
 	worktreeDir,
 	rootDir = REPOSITORY_ROOT,
 	gitCli = execFileSync as GitCliFn,
+	rawPatchHash = false,
 }: {
 	task: DeltaTaskLike;
 	worktreeDir: string;
 	rootDir?: string;
 	gitCli?: GitCliFn;
+	rawPatchHash?: boolean;
 }): TaskDeltaResult {
 	const parentTreeSha =
 		task.parentTreeSha ||
@@ -319,17 +321,18 @@ export function captureTaskDelta({
 		).trim();
 
 		// 6. Generate binary delta patch
-		let patch = '';
+		let patch: Buffer = Buffer.alloc(0);
 		if (targetTreeSha !== parentTreeSha) {
-			patch = gitText(
-				gitCli('git', ['diff-tree', '-p', '--binary', parentTreeSha, targetTreeSha], {
+			patch = Buffer.from(
+				gitCli('git', ['diff-tree', '-r', '-p', '--binary', parentTreeSha, targetTreeSha], {
 					cwd: worktreeDir,
-					encoding: 'utf8',
 					stdio: ['ignore', 'pipe', 'pipe'],
 				}),
 			);
 		}
-		const patchHash = sha256(patch);
+		const patchHash = rawPatchHash
+			? crypto.createHash('sha256').update(patch).digest('hex')
+			: sha256(patch.toString('utf8'));
 
 		return {
 			targetTreeSha,

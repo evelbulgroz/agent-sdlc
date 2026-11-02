@@ -22,6 +22,8 @@ import {
 	getAndValidateAuthorization,
 } from '../node-helpers.ts';
 import { escalateAutonomousRepairRetired } from '../preflight-gate.ts';
+import { assertQualityDeliveryAllowed } from '../quality-delivery.ts';
+import { assertQualityCommitBinding } from '../quality-commit-binding.ts';
 
 function extractErrorCodeAndMessage(
 	error: unknown,
@@ -50,9 +52,11 @@ export function createCreateLocalCommitNode(runtime: WorkflowRuntimeLike) {
 				'createLocalCommits operation is not permitted',
 			);
 		}
+		assertQualityDeliveryAllowed(runtime, snapshot);
 
 		const existingCommit = runtime.runtimeStore.getGitCommit(snapshot.runId);
 		if (existingCommit) {
+			assertQualityCommitBinding(runtime, snapshot, auth, existingCommit);
 			const next = runtime.transition(snapshot, {
 				to: 'VERIFYING_COMMITTED_TREE',
 				eventType: 'GIT_COMMITTED',
@@ -189,6 +193,12 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 		const worktreeDir = snapshot.integrationWorktreePath || snapshot.worktreePath || '';
 
 		const commitRecord = runtime.runtimeStore.getGitCommit(snapshot.runId);
+		assertQualityDeliveryAllowed(
+			runtime,
+			snapshot,
+			commitRecord?.treeSha ?? snapshot.targetTreeSha ?? undefined,
+		);
+		assertQualityCommitBinding(runtime, snapshot, auth, commitRecord);
 		let commitSha: string | null = commitRecord?.commitSha ?? null;
 		if (!commitSha) {
 			try {
@@ -265,6 +275,11 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 		);
 		const verificationEvidenceHash =
 			verifierResult.binding.preflightResultHash || sha256(verifierResult.binding);
+		assertQualityDeliveryAllowed(
+			runtime,
+			snapshot,
+			verifierResult.binding.targetTreeSha,
+		);
 
 		let prBodyArtifact: string | null = null;
 		let prBody: string | null = null;
@@ -314,12 +329,15 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 		}
 
 		if (auth.allowedOperations?.push) {
+			assertQualityDeliveryAllowed(runtime, snapshot, verifierResult.binding.targetTreeSha);
 			const branchToPush = commitRecord?.targetBranch ?? auth.targetBranch ?? '';
 			try {
+				const source = assertQualityCommitBinding(runtime, snapshot, auth, commitRecord);
 				pushBranch({
 					worktreeDir,
 					branchName: branchToPush,
 					remote: 'origin',
+					sourceCommitSha: source?.commitSha,
 					gitCli: runtime.gitCli,
 				});
 			} catch (error: unknown) {
@@ -351,6 +369,8 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 			createdAt: string;
 		} | null = null;
 		if (auth.allowedOperations?.openPullRequest) {
+			assertQualityDeliveryAllowed(runtime, snapshot, verifierResult.binding.targetTreeSha);
+			assertQualityCommitBinding(runtime, snapshot, auth, commitRecord);
 			const branchToPush = commitRecord?.targetBranch ?? auth.targetBranch ?? '';
 			const title = `feat(${auth.allowedPackages[0] || 'core'}): ${draft?.goal || 'SDLC change'}`;
 			const createdPr = createDraftPullRequest({

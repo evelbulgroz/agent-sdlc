@@ -10,6 +10,8 @@ import {
 	nextRound,
 	planAttemptKey,
 	qaAttemptKey,
+	qaCheckpointAttemptKey,
+	qaCheckpointReviewOperationId,
 	specAttemptKey,
 } from './critic-budget.ts';
 
@@ -83,6 +85,85 @@ test('@ac AC-04 @case AC-04.1 nextRound skips the same artifactHash and caps spe
 	} finally {
 		fixture.close();
 	}
+});
+
+test('@ac AC-09 @case AC-09.5 checkpoint QA keys isolate slice and final candidates from legacy QA reuse', () => {
+	const fixture = makeFixture('critic-gate-checkpoint-qa', []);
+	try {
+		fixture.runtime.initialize({ runId: fixture.runId, goal: 'Checkpoint QA admission' });
+		const specHash = 'a'.repeat(64);
+		const planHash = 'b'.repeat(64);
+		const firstKey = qaCheckpointAttemptKey({
+			approvedSpecHash: specHash,
+			taskPlanHash: planHash,
+			checkpointKind: 'slice',
+			sliceId: 'slice-one',
+			treeSha: 'c'.repeat(40),
+		});
+		const nextSliceKey = qaCheckpointAttemptKey({
+			approvedSpecHash: specHash,
+			taskPlanHash: planHash,
+			checkpointKind: 'slice',
+			sliceId: 'slice-two',
+			treeSha: 'd'.repeat(40),
+		});
+		const finalKey = qaCheckpointAttemptKey({
+			approvedSpecHash: specHash,
+			taskPlanHash: planHash,
+			checkpointKind: 'final',
+			treeSha: 'e'.repeat(40),
+		});
+		fixture.store.saveCriticReview(reviewRecord(fixture.runId, {
+			phase: 'qa',
+			artifactHash: 'f'.repeat(64),
+			attemptKey: firstKey,
+		}));
+		const snapshot = { runId: fixture.runId };
+		assert.equal(nextRound({
+			phase: 'qa', snapshot, artifactHash: '1'.repeat(64), attemptKey: nextSliceKey,
+			runtimeStore: fixture.store, checkpointAware: true,
+		}).action, 'dispatch');
+		assert.equal(nextRound({
+			phase: 'qa', snapshot, artifactHash: '2'.repeat(64), attemptKey: finalKey,
+			runtimeStore: fixture.store, checkpointAware: true,
+		}).action, 'dispatch');
+		assert.equal(nextRound({
+			phase: 'qa', snapshot, artifactHash: 'f'.repeat(64), attemptKey: firstKey,
+			runtimeStore: fixture.store, checkpointAware: true,
+		}).action, 'skip');
+		assert.match(firstKey, new RegExp(`^qa:${specHash}:${planHash}:slice:slice-one:${'c'.repeat(40)}$`));
+		assert.match(finalKey, new RegExp(`^qa:${specHash}:${planHash}:final:${'e'.repeat(40)}$`));
+		assert.notEqual(
+			qaCheckpointReviewOperationId({
+				runId: fixture.runId, checkpointId: 'checkpoint-one', candidateRevision: 0, attemptKey: firstKey,
+			}),
+			qaCheckpointReviewOperationId({
+				runId: fixture.runId, checkpointId: 'checkpoint-one', candidateRevision: 1, attemptKey: firstKey,
+			}),
+		);
+	} finally {
+		fixture.close();
+	}
+});
+
+test('checkpoint-aware QA admission lets persisted follow-up budget decide after the initial review', () => {
+	const decision = nextRound({
+		phase: 'qa',
+		artifactHash: 'b'.repeat(64),
+		attemptKey: 'qa:checkpoint',
+		runtimeStore: {
+			listCriticReviews: () => [{
+				phase: 'qa',
+				artifactHash: 'a'.repeat(64),
+				attemptKey: 'qa:checkpoint',
+			}],
+		},
+		checkpointAware: true,
+		snapshot: { runId: '2026-11-01-sdlc-fixture' },
+	});
+
+	assert.equal(decision.action, 'dispatch');
+	assert.equal(decision.count, 1);
 });
 
 test('nextRound skips a legacy QA review whose artifactHash and attemptKey do not match current keys', () => {

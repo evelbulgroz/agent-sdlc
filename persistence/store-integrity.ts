@@ -19,6 +19,7 @@ import type { GenerationRecords } from './generation-records.ts';
 import type { PendingProjectionItem, ProjectionRecord, ProjectionRecords } from './projection-records.ts';
 import type { RunLedger, StoreContext } from './run-ledger.ts';
 import type { TaskPlanRecords } from './task-plan-records.ts';
+import { assertInterruptIntegrity } from './interrupt-integrity.ts';
 
 interface EventRow {
 	event_id: string; runtime_revision: number; event_type: string; event_json: string; created_at: string;
@@ -150,34 +151,7 @@ export function createStoreIntegrity(
 		) {
 			failReconcile('Latest transition event does not match canonical runtime state');
 		}
-		const rawUnresolved: unknown = ctx.database
-			.prepare(
-				"SELECT interrupt_id FROM interrupts WHERE run_id = ? AND status IN ('PENDING', 'RESPONSE_RECORDED') ORDER BY created_at",
-			)
-			.all(runId);
-		const unresolved = rawUnresolved as { interrupt_id: string }[];
-		if (
-			(state.pendingInterruptId === null && unresolved.length !== 0) ||
-			(state.pendingInterruptId !== null &&
-				(unresolved.length !== 1 || unresolved[0].interrupt_id !== state.pendingInterruptId))
-		) {
-			failReconcile('Runtime state and interrupt records diverged');
-		}
-		const interruptStates = [
-			'WAITING_FOR_ANSWERS',
-			'WAITING_FOR_APPROVAL',
-			'WAITING_FOR_AUTHORIZATION',
-			'WAITING_FOR_PLAN_ACCEPTANCE',
-		];
-		const pendingInterruptAllowed =
-			interruptStates.includes(state.state) ||
-			(state.state === 'RECONCILING_INTEGRATION' && state.pendingInterruptId !== null);
-		if (
-			(interruptStates.includes(state.state) && state.pendingInterruptId === null) ||
-			(!pendingInterruptAllowed && state.pendingInterruptId !== null)
-		) {
-			failReconcile('Runtime state and pending interrupt lifecycle diverged');
-		}
+		assertInterruptIntegrity(ctx, state);
 		const rawOperationRows: unknown = ctx.database
 			.prepare(
 				'SELECT operation_id, run_id, status, output_artifact, usage_record_ids_json FROM model_operations WHERE run_id = ? ORDER BY operation_id',

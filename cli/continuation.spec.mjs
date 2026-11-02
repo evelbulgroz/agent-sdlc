@@ -17,3 +17,16 @@ test('a run-deadline halt is not an infrastructure continuation', () => {
 	assert.equal(isInfrastructureContinuation(state), false);
 	assert.deepEqual(computeContinuation(state), { action: 'stop', reason: 'HALTED' });
 });
+
+test('only a durable consumed quality answer permits recovery, and unprovable edits halt it', () => {
+	const state = { state: 'BLOCKED', blockedReason: 'QUALITY_REVIEW_BLOCKED', pendingInterruptId: 'quality-a' };
+	assert.deepEqual(computeContinuation(state), { action: 'answer', reason: 'HUMAN_RESPONSE_REQUIRED' });
+	assert.deepEqual(computeContinuation(state, { qualityAnswerRecorded: true }),
+		{ action: 'resume', reason: 'INFRASTRUCTURE_RETRY' });
+	assert.deepEqual(computeContinuation({
+		...state, lastError: { metadata: { qualityRecoveryAllowed: false } },
+	}, { qualityAnswerRecorded: true }), { action: 'stop', reason: 'HALTED' });
+	assert.deepEqual(computeContinuation(state, {
+		qualityAnswerRecorded: true, qualityRecoveryHalted: true,
+	}), { action: 'stop', reason: 'HALTED' });
+});

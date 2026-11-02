@@ -1,11 +1,8 @@
 // Generation snapshot, reviewer, preflight verifier, and QA critic nodes.
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { formatPullRequestBody } from '../../adapters/github-pr.ts';
 import { executeRolePipeline } from '../../execution/pipeline-executor.ts';
-import { type RuntimeState, createEvent, sha256 } from '../../policy/contracts.ts';
-import { runQaCritic } from '../../review/critic-gate.ts';
+import { type RuntimeState, sha256 } from '../../policy/contracts.ts';
+import { runQaCritic, type CriticGateResult } from '../../review/critic-gate.ts';
 import { getEvaluator } from '../../review/evaluator-registry.ts';
 import { executeReviewerWithRetry } from '../../review/review-execution.ts';
 import {
@@ -13,181 +10,21 @@ import {
 	materializeGenerationTree,
 } from '../../review/review-generation.ts';
 import { assessSemanticFindings } from '../../review/semantic-review-evidence.ts';
+import { blockQualityCheckpoint } from '../quality-interrupt.ts';
 import { getCapability } from '../../roles/capability-registry.ts';
 import {
 	type GraphStateValues,
 	type WorkflowRuntimeLike,
 	blockForGovernorError,
-	collectQaBriefAndAdvisories,
 	deferUnavailableCritic,
 	getAndValidateAuthorization,
+	resolveCheckpointQualityContext,
 	resolvePreflightWorktree,
 } from '../node-helpers.ts';
 import { executePreflightForSnapshot } from '../preflight-gate.ts';
+import { advanceAfterGreenPreflight, applyLegacyQaP1 } from '../qa-delivery.ts';
 
-async function applyQaP1({
-	runtime,
-	snapshot,
-	criticResult,
-}: {
-	runtime: WorkflowRuntimeLike;
-	snapshot: Readonly<RuntimeState>;
-	criticResult: {
-		findings?: readonly unknown[];
-		artifactHash?: string | null;
-		attemptKey?: string | null;
-	};
-}): Promise<{ snapshot: Readonly<RuntimeState> }> {
-	const auth = getAndValidateAuthorization(runtime, snapshot);
-	const findings = criticResult.findings ?? [];
-	const worktreeDir = snapshot.integrationWorktreePath || snapshot.worktreePath || '';
-	const semanticAdvisories = assessSemanticFindings({
-		findings,
-		worktreeDir,
-		allowedPathPrefixes: auth.allowedPathPrefixes,
-		source: 'qa-critic',
-	});
-	const advisorySnapshot = runtime.transition(snapshot, {
-		to: snapshot.state,
-		eventType: 'REVIEW_EVALUATED',
-		causalId: `qa-p1-advisory-${snapshot.runtimeRevision}`,
-		updates: {},
-		payload: {
-			source: 'qa-critic',
-			findings,
-			semanticAdvisories,
-			repairAuthorized: false,
-			artifactHash: criticResult.artifactHash,
-			attemptKey: criticResult.attemptKey,
-		},
-	});
-	await runtime.onBoundary('semantic-review-advisory-recorded', {
-		runId: advisorySnapshot.runId,
-		runtimeRevision: advisorySnapshot.runtimeRevision,
-	});
-	return advanceAfterGreenPreflight(runtime, advisorySnapshot);
-}
-
-export async function advanceAfterGreenPreflight(
-	runtime: WorkflowRuntimeLike,
-	snapshot: Readonly<RuntimeState>,
-): Promise<{ snapshot: Readonly<RuntimeState> }> {
-	const auth = getAndValidateAuthorization(runtime, snapshot);
-	const worktreeDir = snapshot.integrationWorktreePath || snapshot.worktreePath || '';
-	const binding = snapshot.preflightBindingArtifact
-		? runtime.artifactStore.readJson(snapshot.preflightBindingArtifact)
-		: null;
-	let patchSummary = '';
-	try {
-		const rawDiff = runtime.gitCli('git', ['diff', '--stat', auth.baseCommitSha], {
-			cwd: worktreeDir,
-			encoding: 'utf8',
-			stdio: ['ignore', 'pipe', 'pipe'],
-		});
-		patchSummary = (typeof rawDiff === 'string' ? rawDiff : rawDiff.toString('utf8')).trim();
-	} catch {
-		patchSummary = '';
-	}
-	const verificationEvidenceHash =
-		(typeof binding?.preflightResultHash === 'string' && binding.preflightResultHash) ||
-		sha256(binding ?? snapshot.preflightBindingArtifact);
-
-	const { qaDivergences, coverageAdvisories, semanticReviewAdvisories } =
-		collectQaBriefAndAdvisories(runtime, snapshot);
-
-	if (auth.allowedOperations?.createLocalCommits) {
-		const next = runtime.transition(snapshot, {
-			to: 'COMMITTING_CHANGES',
-			eventType: 'QA_CRITIC_COMPLETED',
-			causalId: `qa-commit-${snapshot.runtimeRevision}`,
-			updates: {},
-			payload: {
-				worktreePath: worktreeDir,
-				baseCommitSha: auth.baseCommitSha,
-				targetTreeSha: snapshot.targetTreeSha,
-				preflightBindingArtifact: snapshot.preflightBindingArtifact,
-				verificationEvidenceHash,
-				patchSummary,
-				qaDivergences,
-				coverageAdvisories,
-				semanticReviewAdvisories,
-			},
-		});
-		await runtime.onBoundary('committing-changes-transition-recorded', {
-			runId: next.runId,
-			runtimeRevision: next.runtimeRevision,
-		});
-		return { snapshot: next };
-	}
-
-	let prBodyArtifact: string | null = null;
-	try {
-		const draft = runtime.artifactStore.readJson(snapshot.draftArtifact) as {
-			goal?: string;
-			owningContext?: string;
-			assumptions?: readonly unknown[];
-			touchedSurfaces?: readonly string[];
-		};
-		const prBody = formatPullRequestBody({
-			spec: draft,
-			decisions: draft?.assumptions ?? [],
-			repairs: snapshot.semanticRepairsCount ?? 0,
-			preflightEvidence: binding,
-			touchedSurfaces: draft?.touchedSurfaces ?? [],
-			allowedPackages: auth.allowedPackages ?? [],
-			runId: snapshot.runId,
-			branchName: auth.targetBranch,
-			qaDivergences,
-			coverageAdvisories,
-			semanticReviewAdvisories,
-		});
-		prBodyArtifact = runtime.artifactStore.writeText('pr-body.md', prBody);
-		try {
-			fs.writeFileSync(
-				path.join(runtime.artifactStore.artifactsDir, 'pr-body.md'),
-				prBody,
-				'utf8',
-			);
-		} catch {
-			// Best-effort copy beside the hashed artifact.
-		}
-		runtime.runtimeStore.recordEvent(
-			createEvent({
-				runId: snapshot.runId,
-				runtimeRevision: snapshot.runtimeRevision,
-				eventType: 'PR_BODY_PREPARED',
-				causalId: `pr-body-${snapshot.runtimeRevision}`,
-				payload: { prBodyArtifact },
-			}),
-		);
-	} catch {
-		// Non-fatal if PR body formatting fails
-	}
-
-	const terminal = runtime.transition(snapshot, {
-		to: 'READY_FOR_GIT_APPROVAL',
-		eventType: 'RUN_READY_FOR_GIT_APPROVAL',
-		causalId: `ready-git-${snapshot.runtimeRevision}`,
-		updates: {},
-		payload: {
-			worktreePath: worktreeDir,
-			baseCommitSha: auth.baseCommitSha,
-			targetTreeSha: snapshot.targetTreeSha,
-			preflightBindingArtifact: snapshot.preflightBindingArtifact,
-			verificationEvidenceHash,
-			patchSummary,
-			prBodyArtifact,
-			qaDivergences,
-			coverageAdvisories,
-			semanticReviewAdvisories,
-		},
-	});
-	await runtime.onBoundary('ready-git-approval-transition-recorded', {
-		runId: terminal.runId,
-		runtimeRevision: terminal.runtimeRevision,
-	});
-	return { snapshot: terminal };
-}
+export { advanceAfterGreenPreflight };
 
 export function createSnapshotGenerationNode(runtime: WorkflowRuntimeLike) {
 	return async ({
@@ -426,16 +263,48 @@ export function createExecuteQaCriticNode(runtime: WorkflowRuntimeLike) {
 	}: GraphStateValues): Promise<{ snapshot: Readonly<RuntimeState> }> => {
 		const advanced = runtime.currentOrAlreadyAdvanced(snapshot);
 		if (advanced) return { snapshot: advanced };
-		let criticResult: {
-			status: string;
-			hasP1: boolean;
-			findings: readonly unknown[];
-			artifactHash: string | null | undefined;
-			attemptKey: string | null;
-		};
+		const checkpointContext = resolveCheckpointQualityContext(runtime, snapshot);
+		if (checkpointContext) {
+			const coverage = runtime.runtimeStore.listEvents(snapshot.runId).slice().reverse().find(event =>
+				['AC_COVERAGE_FAILED', 'AC_COVERAGE_PASSED'].includes(event.eventType) &&
+				event.payload.qualityCheckpointBindingHash === snapshot.qualityCheckpointBindingHash);
+			if (coverage?.eventType === 'AC_COVERAGE_FAILED' ||
+				(coverage && coverage.payload.coveragePass !== true) ||
+				(snapshot.qualityCheckpointKind === 'final' && !coverage)) {
+				return { snapshot: await blockQualityCheckpoint({
+					runtime, snapshot, context: checkpointContext, status: 'COVERAGE_FAILED',
+					reason: 'Bound acceptance coverage is missing or failed; QA admission is forbidden',
+				}) };
+			}
+		}
+		let criticResult: Readonly<CriticGateResult>;
 		try {
-			criticResult = await runQaCritic({ runtime, snapshot });
+			criticResult = await runQaCritic({
+				runtime,
+				snapshot,
+				...(checkpointContext
+					? {
+							checkpointContext: {
+								plan: checkpointContext.plan,
+								policy: checkpointContext.policy,
+								closure: checkpointContext.closure,
+								worktreeDir: checkpointContext.worktreeDir,
+							},
+						}
+					: {}),
+			});
 		} catch (error: unknown) {
+			if (checkpointContext) {
+				return {
+					snapshot: await blockQualityCheckpoint({
+						runtime,
+						snapshot,
+						context: checkpointContext,
+						status: 'UNAVAILABLE',
+						reason: error instanceof Error ? error.message : String(error),
+					}),
+				};
+			}
 			const deferred = deferUnavailableCritic(runtime, snapshot, 'qa', error);
 			if (!deferred) {
 				return { snapshot: blockForGovernorError(runtime, snapshot, error) };
@@ -452,18 +321,21 @@ export function createExecuteQaCriticNode(runtime: WorkflowRuntimeLike) {
 			status: criticResult.status,
 			hasP1: criticResult.hasP1 === true,
 		});
+		if (checkpointContext) {
+			return advanceAfterGreenPreflight(runtime, snapshot, criticResult);
+		}
 		if (
 			(criticResult.status === 'SKIP' || criticResult.status === 'BUDGET_EXHAUSTED') &&
 			criticResult.hasP1 === true &&
 			(snapshot.semanticRepairsCount ?? 0) === 0
 		) {
-			return await applyQaP1({ runtime, snapshot, criticResult });
+			return await applyLegacyQaP1({ runtime, snapshot, criticResult });
 		}
 		if (criticResult.status === 'BUDGET_EXHAUSTED' || criticResult.status === 'SKIP') {
 			return advanceAfterGreenPreflight(runtime, snapshot);
 		}
 		if (criticResult.hasP1 === true) {
-			return await applyQaP1({ runtime, snapshot, criticResult });
+			return await applyLegacyQaP1({ runtime, snapshot, criticResult });
 		}
 		return advanceAfterGreenPreflight(runtime, snapshot);
 	};

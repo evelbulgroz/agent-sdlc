@@ -23,6 +23,8 @@ import {
 	blockForGovernorError,
 	getAndValidateAuthorization,
 } from '../node-helpers.ts';
+import { createTaskQualitySession } from '../task-quality-session.ts';
+import { sha256 } from '../../policy/contracts.ts';
 
 export interface TaskPromptContext {
 	sliceId: string;
@@ -170,7 +172,10 @@ export function createExecuteTasksNode(runtime: WorkflowRuntimeLike) {
 				authorization: auth,
 				now: runtime.now(),
 			});
-			runtime.runtimeStore.saveTaskPlan(plan);
+			runtime.runtimeStore.saveTaskPlan(
+				plan,
+				plan.schemaVersion === '2.0.0' ? auth.approvedPlanPolicyHash : undefined,
+			);
 		}
 
 		const executor = new TaskExecutor({
@@ -190,7 +195,8 @@ export function createExecuteTasksNode(runtime: WorkflowRuntimeLike) {
 				draft,
 				taskPlan: plan,
 			});
-			await executor.executeTasks({
+			const qualitySession = createTaskQualitySession(runtime, snapshot, plan);
+			const execution = await executor.executeTasks({
 				taskPlan: plan,
 				authorization: auth,
 				snapshot,
@@ -207,7 +213,24 @@ export function createExecuteTasksNode(runtime: WorkflowRuntimeLike) {
 				acceptanceCriteria: draft.acceptanceCriteria ?? [],
 				taskPromptContexts,
 				checkpointer: runtime.checkpointer,
+				quality: qualitySession?.hooks,
 			});
+			if (execution.status === 'CHECKPOINT_REQUIRED') {
+				if (!qualitySession) throw new SdlcError('POLICY_VIOLATION', 'Checkpoint yielded without quality policy');
+				const closure = await qualitySession.prepareSlice(execution.sliceId, { ...plan, tasks: execution.tasks });
+				return { snapshot: runtime.transition(snapshot, {
+					to: 'REVIEWING_QA', eventType: 'SLICE_CHECKPOINT_CREATED',
+					causalId: `slice-checkpoint-${closure.binding.checkpointId}`,
+					updates: {
+						qualityPolicy: qualitySession.policy,
+						qualityCheckpointId: closure.binding.checkpointId,
+						qualityCheckpointKind: 'slice', qualityCheckpointSliceId: execution.sliceId,
+						qualityCheckpointTreeSha: closure.binding.treeSha,
+						qualityCheckpointBindingHash: sha256(closure.binding),
+					},
+					payload: { sliceId: execution.sliceId, checkpointId: closure.binding.checkpointId },
+				}) };
+			}
 		} catch (error: unknown) {
 			const errRec =
 				error && typeof error === 'object'

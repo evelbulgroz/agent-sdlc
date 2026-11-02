@@ -11,6 +11,11 @@ import {
 	validateRunId,
 } from './primitives.ts';
 import { RUNTIME_SCHEMA_VERSION } from './runtime-vocabulary.ts';
+import {
+	AuthorizedQualityPlanSchema,
+	validateAuthorizedQualityPlan,
+	type AuthorizedQualityPlan,
+} from './quality-schema.ts';
 
 export const AllowedOperationsSchema = z.object({
 	editIsolatedWorktree: z.boolean(),
@@ -40,6 +45,7 @@ export const RunAuthorizationRecordSchema = z.object({
 	allowedOperations: AllowedOperationsSchema,
 	targetBranch: z.string().nullable(),
 	maxSemanticRepairs: z.number().int().min(0).max(2),
+	qualityPlan: AuthorizedQualityPlanSchema.optional(),
 	modelUsageProfile: z.string(),
 	expiresAt: z.string(),
 	approvedAt: z.string(),
@@ -62,6 +68,7 @@ export function validateRunAuthorization(input: unknown): Readonly<RunAuthorizat
 		'allowedPathPrefixes',
 		'allowedOperations',
 		'maxSemanticRepairs',
+		'qualityPlan',
 		'modelUsageProfile',
 		'expiresAt',
 		'approvedAt',
@@ -177,6 +184,8 @@ export function validateRunAuthorization(input: unknown): Readonly<RunAuthorizat
 		input.modelUsageProfile,
 		'runAuthorization.modelUsageProfile',
 	);
+	const qualityPlan: Readonly<AuthorizedQualityPlan> | undefined =
+		input.qualityPlan === undefined ? undefined : validateAuthorizedQualityPlan(input.qualityPlan);
 	for (const field of ['expiresAt', 'approvedAt'] as const) {
 		const tsVal = input[field];
 		if (typeof tsVal !== 'string' || Number.isNaN(Date.parse(tsVal))) {
@@ -199,6 +208,7 @@ export function validateRunAuthorization(input: unknown): Readonly<RunAuthorizat
 		allowedOperations: Object.freeze(opsUnknown as AllowedOperations),
 		targetBranch: resolvedTargetBranch,
 		maxSemanticRepairs: input.maxSemanticRepairs as number,
+		...(qualityPlan ? { qualityPlan } : {}),
 		modelUsageProfile,
 		expiresAt: input.expiresAt as string,
 		approvedAt: input.approvedAt as string,

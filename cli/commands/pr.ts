@@ -7,7 +7,9 @@ import {
 } from '../../adapters/github-pr.ts';
 import { RUNTIME_SCHEMA_VERSION, createEvent } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
-import { pushBranch } from '../../workflow/git-manager.ts';
+import { assertBranchCommitBinding, pushBranch } from '../../workflow/git-manager.ts';
+import { assertQualityDeliveryAllowed } from '../../workflow/quality-delivery.ts';
+import { getRunCheckpointQualityPolicy } from '../../workflow/node-helpers.ts';
 import { type ParsedArguments, requiredValue } from '../arguments.ts';
 import { type OpenContextOptions, openContext } from '../run-context.ts';
 
@@ -53,6 +55,17 @@ export async function prRun(
 		}
 		const auth = context.store.getAuthorization(runId);
 		const commitRecord = context.store.getGitCommit(runId);
+		const deliveryRequested =
+			parsed.booleans.has('--push') || parsed.booleans.has('--open-pr');
+		const qualityDelivery =
+			deliveryRequested && getRunCheckpointQualityPolicy(context.runtime, state) !== null;
+		if (deliveryRequested) {
+			assertQualityDeliveryAllowed(
+				context.runtime,
+				state,
+				commitRecord?.treeSha ?? state.targetTreeSha ?? undefined,
+			);
+		}
 		const draft = context.artifacts.readJson(state.draftArtifact) as PullRequestSpecLike & {
 			assumptions?: readonly unknown[];
 		};
@@ -85,10 +98,34 @@ export async function prRun(
 			if (!branchName) {
 				throw new SdlcError('INVALID_INPUT', 'No target branch to push');
 			}
+			let sourceCommitSha: string | undefined;
+			if (qualityDelivery) {
+				if (
+					!auth?.targetBranch ||
+					branchName !== auth.targetBranch ||
+					!commitRecord?.commitSha ||
+					!commitRecord.treeSha
+				) {
+					throw new SdlcError(
+						'POLICY_VIOLATION',
+						'Quality delivery requires the approved target branch and recorded source commit',
+					);
+				}
+				const source = assertBranchCommitBinding({
+					worktreeDir,
+					branchName,
+					expectedCommitSha: commitRecord.commitSha,
+					expectedTreeSha: commitRecord.treeSha,
+					gitCli: context.runtime.gitCli,
+				});
+				assertQualityDeliveryAllowed(context.runtime, state, source.treeSha);
+				sourceCommitSha = source.commitSha;
+			}
 			pushBranch({
 				worktreeDir,
 				branchName,
 				remote: 'origin',
+				sourceCommitSha,
 				gitCli: context.runtime.gitCli,
 			});
 			pushed = true;

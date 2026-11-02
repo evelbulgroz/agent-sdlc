@@ -45,11 +45,14 @@ import {
 	createApplyAnswersNode, createAskQuestionsNode, createPrepareQuestionsNode,
 } from './nodes/spec-interview.ts';
 import { createHydrateWorkspaceNode, createPrepareWorkspaceNode } from './nodes/workspace.ts';
+import { createAskQualityAnswerNode, createApplyQualityAnswerNode } from './nodes/quality-answer.ts';
 import { approvedInputHash, parseSpecification, taskManifestHash } from './specification.ts';
+import { workflowGraphConfig, type WorkflowGraphConfig } from './graph-config.ts';
 
 export type ExecCliFn = GitCliFn;
 
 export interface SdlcWorkflowRuntimeOptions {
+	evidenceSpawn?: import('../host/evidence-types.ts').EvidenceSpawn;
 	runtimeStore: WorkflowRuntimeStorePort;
 	artifactStore: WorkflowArtifactStorePort;
 	registry: RoleRegistry;
@@ -76,6 +79,7 @@ interface CompiledWorkflowGraph {
 }
 
 export class SdlcWorkflowRuntime implements WorkflowRuntimeLike {
+	readonly evidenceSpawn?: import('../host/evidence-types.ts').EvidenceSpawn;
 	readonly runtimeStore: WorkflowRuntimeStorePort;
 	readonly artifactStore: WorkflowArtifactStorePort;
 	readonly registry: RoleRegistry;
@@ -91,12 +95,13 @@ export class SdlcWorkflowRuntime implements WorkflowRuntimeLike {
 	readonly graph: CompiledWorkflowGraph;
 
 	constructor({
-		runtimeStore, artifactStore, registry, governor,
+		runtimeStore, artifactStore, registry, governor, evidenceSpawn,
 		now = () => new Date(), onBoundary,
 		execCli = execFileSync as GitCliFn, gitCli = execFileSync as GitCliFn,
 		ghCli = execFileSync as GitCliFn, rootDir = REPOSITORY_ROOT,
 	}: SdlcWorkflowRuntimeOptions) {
 		this.runtimeStore = runtimeStore;
+		this.evidenceSpawn = evidenceSpawn;
 		this.artifactStore = artifactStore;
 		this.registry = registry;
 		this.governor = governor;
@@ -218,6 +223,7 @@ export class SdlcWorkflowRuntime implements WorkflowRuntimeLike {
 		if (TERMINAL_STATES.has(state.state)) return state;
 		state = this.ensureConfigurationCurrent(state);
 		const config = {
+			...this.configFor(state),
 			configurable: {
 				thread_id: state.threadId,
 				checkpoint_ns: `external-transition-${state.runtimeRevision}`,
@@ -341,12 +347,8 @@ export class SdlcWorkflowRuntime implements WorkflowRuntimeLike {
 		return this.runtimeStore.getRun(state.runId);
 	}
 
-	configFor(state: Readonly<RuntimeState>): { configurable: { thread_id: string } } {
-		return {
-			configurable: {
-				thread_id: state.threadId,
-			},
-		};
+	configFor(state: Readonly<RuntimeState>): WorkflowGraphConfig {
+		return workflowGraphConfig(state, this.runtimeStore);
 	}
 
 	transition(
@@ -460,6 +462,8 @@ function buildGraph(runtime: SdlcWorkflowRuntime): CompiledWorkflowGraph {
 		.addNode('prepare_questions', createPrepareQuestionsNode(runtime))
 		.addNode('ask_questions', createAskQuestionsNode(runtime))
 		.addNode('apply_answers', createApplyAnswersNode(runtime))
+		.addNode('ask_quality_answer', createAskQualityAnswerNode(runtime))
+		.addNode('apply_quality_answer', createApplyQualityAnswerNode(runtime))
 		.addNode('execute_spec_critic', createExecuteSpecCriticNode(runtime))
 		.addNode('prepare_approval', createPrepareApprovalNode(runtime))
 		.addNode('ask_approval', createAskApprovalNode(runtime))

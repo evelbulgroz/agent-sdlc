@@ -252,20 +252,26 @@ export function projectHostInvocation(
 		authorization = null,
 		pendingInterrupt = null,
 		continuationAttempts = 0,
+		qualityAnswerRecorded = false,
+		qualityRecoveryHalted = false,
 	}: {
 		authorization?: { baseCommitSha?: string | null; [key: string]: unknown } | null;
 		pendingInterrupt?: HostInvocationInterruptInput | null;
 		continuationAttempts?: number;
+		qualityAnswerRecorded?: boolean;
+		qualityRecoveryHalted?: boolean;
 	} = {},
 ): Readonly<HostInvocationRecord> {
 	const continuation = computeContinuation(state, {
 		authorization,
 		pendingInterrupt,
 		continuationAttempts,
+		qualityAnswerRecorded,
+		qualityRecoveryHalted,
 	});
 	const exitCode = exitCodeForContinuation(continuation, state) ?? 3;
 	const interrupt = interruptView(pendingInterrupt);
-	const pending = Boolean(state?.pendingInterruptId || pendingInterrupt);
+	const pending = !qualityAnswerRecorded && Boolean(state?.pendingInterruptId || pendingInterrupt);
 	if (pending && (!interrupt?.kind || !RECOGNIZED_INTERRUPT_KINDS.has(interrupt.kind))) {
 		return unrecognizedCard(exitCode);
 	}

@@ -1,7 +1,86 @@
 import '../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { packPlanDocument, packQaExcerpts, packSpecDocument } from './critic-input-packing.ts';
+import { sha256 } from '../policy/contracts.ts';
+import { policy } from '../testing/quality-test-support.mjs';
+import { packPlanDocument, packQaExcerpts, packSpecDocument, PLAN_DOCUMENT_MAX_BYTES } from './critic-input-packing.ts';
+
+const v2Plan = () => {
+	const adapter = {
+		adapterId: 'planning-test',
+		protocolVersion: '1.0.0',
+		bundleFiles: [{ path: 'adapter.mjs', sha256: 'b'.repeat(64) }],
+		dependencyFiles: [],
+		configurationFiles: [],
+		argv: ['node', 'adapter.mjs'],
+		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
+		qualificationArtifactHash: 'c'.repeat(64),
+		limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 },
+	};
+	return {
+		schemaVersion: '2.0.0',
+		runId: '2026-11-02-packing-test',
+		planPolicyHash: 'a'.repeat(64),
+		baseCommitSha: 'b'.repeat(40),
+		slices: [{
+			sliceId: 'slice-a',
+			kind: 'vertical',
+			goal: 'Make the result visible.',
+			acceptanceCriteria: ['AC-01'],
+			dependsOn: [],
+		}],
+		tasks: [{
+			taskId: 'task-a',
+			sliceId: 'slice-a',
+			title: 'Expose result',
+			targetPackage: 'src',
+			pathPrefixes: ['src'],
+			dependsOn: [],
+			integrationOrder: 0,
+			verificationCommand: ['pnpm', 'test'],
+		}],
+		integrationOrder: ['task-a'],
+		isParallel: false,
+		createdAt: '2026-11-02T10:00:00.000Z',
+		qualityPolicy: policy,
+		qualityPolicyHash: sha256(policy),
+		adapterBindings: [adapter],
+		evidenceObligations: [{
+			obligationId: 'obligation-ac-01',
+			criterionId: 'AC-01',
+			caseId: null,
+			owner: { kind: 'slice', id: 'slice-a' },
+			observableOutcome: 'The result is visible.',
+			setupAction: 'Read the result.',
+			expectedResult: 'The result is displayed.',
+			layer: 'unit',
+			requiredCapabilities: [],
+			implementationPaths: ['src/result.ts'],
+			testCases: [{ file: 'src/result.spec.mjs', caseKey: 'visible' }],
+			adapterBindingHash: sha256(adapter),
+			profileId: 'unit',
+		}],
+	};
+};
+
+test('packPlanDocument includes the complete immutable v2 plan', () => {
+	const plan = v2Plan();
+	const document = JSON.parse(packPlanDocument(plan));
+	assert.deepEqual(document.immutableTaskPlan.qualityPolicy, plan.qualityPolicy);
+	assert.deepEqual(document.immutableTaskPlan.slices, plan.slices);
+	assert.deepEqual(document.immutableTaskPlan.evidenceObligations, plan.evidenceObligations);
+	assert.deepEqual(document.immutableTaskPlan.adapterBindings, plan.adapterBindings);
+	assert.deepEqual(document.immutableTaskPlan.tasks, plan.tasks);
+});
+
+test('packPlanDocument rejects an oversized v2 plan instead of trimming unseen obligations', () => {
+	const plan = v2Plan();
+	plan.evidenceObligations[0].expectedResult = 'x'.repeat(PLAN_DOCUMENT_MAX_BYTES);
+	assert.throws(
+		() => packPlanDocument(plan),
+		(error) => error.code === 'INVALID_CONTRACT' && /complete immutable v2 plan cannot be reviewed/.test(error.message),
+	);
+});
 
 test('@ac AC-14 plan critic packet includes deterministic feasibility and done-bar evidence', () => {
 	const document = JSON.parse(

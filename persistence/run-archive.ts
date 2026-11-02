@@ -8,6 +8,7 @@ import { checkRunLanded, resolveRunTargetRef } from '../workflow/landed-check.ts
 import { type GitCliFn, cleanMergedRunWorktrees } from './run-cleanup.ts';
 import { compactRunDatabase } from './run-compaction.ts';
 import { REPOSITORY_ROOT, archiveRoot, liveRunRoot } from './run-paths.ts';
+import { buildUnlandedPatch } from './run-archive-patch.ts';
 import {
 	type RecordedRun,
 	decideRunRetention,
@@ -17,7 +18,6 @@ import {
 } from './run-retention.ts';
 
 const LANDED_CHECK_STATES: ReadonlySet<string> = new Set(['DONE', 'READY_FOR_GIT_APPROVAL']);
-
 export interface LedgerUsageBucket {
 	calls: number; promptTokens: number; completionTokens: number; totalTokens: number; costMicrousd: number;
 }
@@ -126,72 +126,6 @@ function resolveLedgerSourcePath(rootDir: string, runId: string): string | null 
 	if (fs.existsSync(liveLedger)) return liveLedger;
 	const archivedLedger = path.join(rootDir, 'tools/.model-usage/archive', `${runId}.json`);
 	return fs.existsSync(archivedLedger) ? archivedLedger : null;
-}
-
-function diffWorktreeOrTree(
-	rootDir: string,
-	baseCommitSha: string,
-	{ worktreeDir, targetTreeSha, gitCli }: { worktreeDir: string | null; targetTreeSha: string | null; gitCli: GitCliFn },
-): string | null {
-	const opts = { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] };
-	if (worktreeDir && fs.existsSync(worktreeDir)) {
-		gitCli('git', ['-C', worktreeDir, 'add', '-N', '.'], opts);
-		return String(gitCli('git', ['-C', worktreeDir, 'diff', '--binary', baseCommitSha], opts));
-	}
-	if (targetTreeSha) {
-		return String(gitCli('git', ['-C', rootDir, 'diff', '--binary', baseCommitSha, targetTreeSha], opts));
-	}
-	return null;
-}
-
-function buildUnlandedPatch(
-	runRecord: RecordedRun,
-	{ rootDir, targetTreeSha, gitCli }: { rootDir: string; targetTreeSha: string | null; gitCli: GitCliFn },
-): string {
-	const baseCommitSha = runRecord.baseCommitSha;
-	if (!baseCommitSha) {
-		throw new SdlcError('WORKTREE_FAILED', `Cannot generate unlanded.patch for ${runRecord.runId}: missing baseCommitSha`);
-	}
-	for (const candidate of [
-		path.join(runRecord.runDir, 'worktrees', 'integration'),
-		path.join(runRecord.runDir, 'worktree'),
-	]) {
-		if (!fs.existsSync(candidate)) continue;
-		const patch = diffWorktreeOrTree(rootDir, baseCommitSha, { worktreeDir: candidate, targetTreeSha, gitCli });
-		if (!patch || !patch.trim()) throw new SdlcError('WORKTREE_FAILED', `Empty unlanded.patch for ${runRecord.runId}`);
-		return patch;
-	}
-
-	const multiWorktreesRoot = path.join(runRecord.runDir, 'worktrees');
-	const taskMap = new Map((runRecord.dagTasks ?? []).map((task) => [task.task_id, task]));
-	const taskIds = new Set(taskMap.keys());
-	if (fs.existsSync(multiWorktreesRoot)) {
-		for (const entry of fs.readdirSync(multiWorktreesRoot, { withFileTypes: true })) {
-			if ((entry.isDirectory() || entry.isSymbolicLink()) && entry.name !== 'integration') {
-				taskIds.add(entry.name);
-			}
-		}
-	}
-	const sortedTaskIds = [...taskIds].sort((left, right) => left.localeCompare(right));
-	if (sortedTaskIds.length > 0) {
-		const patches: string[] = [];
-		for (const taskId of sortedTaskIds) {
-			const taskRow = taskMap.get(taskId);
-			const taskPatch = diffWorktreeOrTree(rootDir, taskRow?.base_commit_sha ?? baseCommitSha, {
-				worktreeDir: path.join(multiWorktreesRoot, taskId),
-				targetTreeSha: taskRow?.target_tree_sha ?? null,
-				gitCli,
-			});
-			if (taskPatch && taskPatch.trim()) patches.push(`# task: ${taskId}\n${taskPatch}`);
-		}
-		const combined = patches.join('\n');
-		if (!combined.trim()) throw new SdlcError('WORKTREE_FAILED', `Empty multi-task patch for ${runRecord.runId}`);
-		return combined;
-	}
-
-	const patch = diffWorktreeOrTree(rootDir, baseCommitSha, { worktreeDir: null, targetTreeSha, gitCli });
-	if (!patch || !patch.trim()) throw new SdlcError('WORKTREE_FAILED', `Cannot generate unlanded.patch for ${runRecord.runId}`);
-	return patch;
 }
 
 function countFilesRecursive(dirPath: string): number {

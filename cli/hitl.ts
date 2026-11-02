@@ -14,6 +14,7 @@ import {
 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { applyAnswers, applyPatch } from '../workflow/specification.ts';
+import { validateQualityResponse } from './quality-answer.ts';
 
 export interface InterruptEnvelope<TPayload extends Record<string, unknown>> {
 	readonly interruptId: string;
@@ -333,12 +334,14 @@ export function validatePendingResponse({
 	request,
 	response,
 	draft,
+	artifacts,
 }: {
-	state: { taskPlanHash?: string | null; draftHash?: string | null };
+	state: { taskPlanHash?: string | null; draftHash?: string | null; qualityCheckpointBindingHash?: string | null };
 	interrupt: InterruptRef;
 	request: Record<string, unknown>;
 	response: unknown;
 	draft?: unknown;
+	artifacts?: { readJson(hash: string): Record<string, unknown>; read?(hash: string): string };
 }): Readonly<{
 	response: Record<string, unknown>;
 	revisedDraft: Readonly<SpecDraft> | null;
@@ -346,6 +349,9 @@ export function validatePendingResponse({
 }> {
 	const respRec =
 		response && typeof response === 'object' ? (response as Record<string, unknown>) : {};
+	if (interrupt.kind === 'quality_review') {
+		return validateQualityResponse(response, interrupt, state.qualityCheckpointBindingHash, request, artifacts);
+	}
 	if (interrupt.kind === 'questions') {
 		const questionBatch = validateQuestionBatch({
 			schemaVersion: RUNTIME_SCHEMA_VERSION,

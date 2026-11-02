@@ -1,6 +1,6 @@
 // Critic attempt caps and round decisions. Leaf module: it never imports the gate.
 
-import type { CriticReviewRecord } from '../policy/contracts.ts';
+import { sha256, type CriticReviewRecord } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 
 export type CriticPhase = 'spec' | 'plan' | 'code' | 'qa';
@@ -23,6 +23,8 @@ export interface CriticBudgetSnapshot {
 	approvedPlanPolicyHash?: string | null;
 	taskPlanFrozen?: boolean;
 	preflightBindingArtifact?: string | null;
+	qualityCheckpointKind?: 'slice' | 'final';
+	qualityCheckpointBindingHash?: string;
 }
 
 export interface CriticReviewLike {
@@ -56,12 +58,62 @@ export function qaAttemptKey(approvedSpecHash: string): string {
 	return `qa:${approvedSpecHash}`;
 }
 
+export function qaCheckpointAttemptKey({
+	approvedSpecHash,
+	taskPlanHash,
+	checkpointKind,
+	sliceId,
+	treeSha,
+}: {
+	approvedSpecHash: string;
+	taskPlanHash: string;
+	checkpointKind: 'slice' | 'final';
+	sliceId?: string | null;
+	treeSha: string;
+}): string {
+	if (!/^[a-f0-9]{64}$/.test(approvedSpecHash) || !/^[a-f0-9]{64}$/.test(taskPlanHash)) {
+		throw new SdlcError('INVALID_CONTRACT', 'QA checkpoint keys require approved spec and plan hashes');
+	}
+	if (!/^[a-f0-9]{40}$/.test(treeSha)) {
+		throw new SdlcError('INVALID_CONTRACT', 'QA checkpoint keys require a candidate tree SHA');
+	}
+	if (checkpointKind === 'slice') {
+		if (!sliceId || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(sliceId)) {
+			throw new SdlcError('INVALID_CONTRACT', 'Slice QA checkpoint keys require a slice id');
+		}
+		return `qa:${approvedSpecHash}:${taskPlanHash}:slice:${sliceId}:${treeSha}`;
+	}
+	if (sliceId != null) {
+		throw new SdlcError('INVALID_CONTRACT', 'Final QA checkpoint keys cannot name a slice');
+	}
+	return `qa:${approvedSpecHash}:${taskPlanHash}:final:${treeSha}`;
+}
+
+export function qaCheckpointReviewOperationId({
+	runId,
+	checkpointId,
+	candidateRevision,
+	attemptKey,
+}: {
+	runId: string;
+	checkpointId: string;
+	candidateRevision: number;
+	attemptKey: string;
+}): string {
+	if (!Number.isSafeInteger(candidateRevision) || candidateRevision < 0) {
+		throw new SdlcError('INVALID_CONTRACT', 'Candidate revision must be a non-negative integer');
+	}
+	return sha256({ runId, checkpointId, candidateRevision, attemptKey, kind: 'qa-review' });
+}
+
 export function assertCriticAllowed({
 	phase,
 	snapshot,
+	checkpointAware = false,
 }: {
 	phase: string;
 	snapshot: CriticBudgetSnapshot;
+	checkpointAware?: boolean;
 }): void {
 	if (!['spec', 'plan', 'code', 'qa'].includes(phase)) {
 		throw new SdlcError('INVALID_CONTRACT', `Invalid critic review phase: '${phase}'`);
@@ -87,10 +139,14 @@ export function assertCriticAllowed({
 		if (!snapshot.approvedSpecHash) {
 			throw new SdlcError('POLICY_VIOLATION', 'QA critic requires an approved specification');
 		}
-		if (!snapshot.preflightBindingArtifact) {
+		if (!snapshot.preflightBindingArtifact && !(
+			checkpointAware &&
+			snapshot.qualityCheckpointKind === 'slice' &&
+			typeof snapshot.qualityCheckpointBindingHash === 'string'
+		)) {
 			throw new SdlcError(
 				'POLICY_VIOLATION',
-				'QA critic requires a bound green preflight',
+				'QA critic requires a bound checkpoint and green verification',
 			);
 		}
 	}
@@ -110,12 +166,14 @@ export function nextRound<T extends CriticReviewLike = CriticReviewRecord>({
 	artifactHash,
 	attemptKey,
 	runtimeStore,
+	checkpointAware = false,
 }: {
 	phase: string;
 	snapshot: { runId: string };
 	artifactHash: unknown;
 	attemptKey: unknown;
 	runtimeStore: CriticBudgetStoreLike<T>;
+	checkpointAware?: boolean;
 }): NextRoundDecision<T> {
 	if (typeof artifactHash !== 'string' || !/^[a-f0-9]{64}$/.test(artifactHash)) {
 		throw new SdlcError('INVALID_CONTRACT', 'artifactHash must be a 64-character hex digest');
@@ -125,7 +183,10 @@ export function nextRound<T extends CriticReviewLike = CriticReviewRecord>({
 	}
 	const reviews = runtimeStore.listCriticReviews(snapshot.runId);
 	const sameArtifact = reviews.find(
-		(review) => review.phase === phase && review.artifactHash === artifactHash,
+		(review) =>
+			review.phase === phase &&
+			review.artifactHash === artifactHash &&
+			(!checkpointAware || review.attemptKey === attemptKey),
 	);
 	if (sameArtifact) {
 		return Object.freeze({ action: 'skip', existing: sameArtifact });
@@ -134,16 +195,15 @@ export function nextRound<T extends CriticReviewLike = CriticReviewRecord>({
 	const attemptCount = reviews.filter(
 		(review) => review.phase === phase && review.attemptKey === attemptKey,
 	).length;
-	if (attemptCount >= cap) {
+	if (!(phase === 'qa' && checkpointAware) && attemptCount >= cap) {
 		const last = [...reviews]
 			.reverse()
 			.find((review) => review.phase === phase && review.attemptKey === attemptKey);
 		return Object.freeze({ action: 'budget_exhausted', count: attemptCount, last });
 	}
-	// QA is 1 per approvedSpecHash. Legacy reviews may have been stored with
-	// adapter-fallback artifactHash/attemptKey, which must still consume the cap
-	// so resume does not re-dispatch the same critic operation ID.
-	if (phase === 'qa') {
+	// Legacy QA is one review per approved spec. Checkpoint QA scopes reuse to the
+	// exact attempt key and relies on the persisted checkpoint budget for admission.
+	if (phase === 'qa' && !checkpointAware) {
 		const existingQa = [...reviews].reverse().find((review) => review.phase === 'qa');
 		if (existingQa) {
 			return Object.freeze({ action: 'skip', existing: existingQa });

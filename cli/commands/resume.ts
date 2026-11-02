@@ -23,6 +23,8 @@ import {
 	isRunDeadlineHalt,
 } from '../continuation.ts';
 import { validatePendingResponse } from '../hitl.ts';
+import { preflightQualityAnswer } from '../../workflow/quality-answer-preflight.ts';
+import { QualityAnswerSchema } from '../../policy/contracts/quality-schema.ts';
 import { type OpenContextOptions, openContext } from '../run-context.ts';
 import type { CliStreams } from '../shell-driver.ts';
 import {
@@ -92,8 +94,17 @@ export async function resumeRun(
 	try {
 		await context.projection.reconcile();
 		let state = context.store.getRun(runId);
+		if (state.lastError?.metadata?.qualityRecoveryAllowed === false ||
+			(state.pendingInterruptId && context.store.quality.isAnswerRecoveryHalted(runId, state.pendingInterruptId))) {
+			return { ...context.projection.readStatusResult(), state: state.state };
+		}
+		const recoveringQualityAnswer = state.pendingInterruptId
+			? context.store.quality.getConsumedAnswer(runId, state.pendingInterruptId) : null;
 		if (state.state !== 'SNAPSHOT_GENERATION') {
 			state = await context.runtime.synchronizeCheckpoint(state);
+		}
+		if (recoveringQualityAnswer && !state.pendingInterruptId) {
+			return { ...context.projection.readStatusResult(), state: state.state };
 		}
 		if (parsed.values.has('--author-vendor')) {
 			const authorVendor = canonicalizeAuthorVendor(parsed.values.get('--author-vendor'));
@@ -183,7 +194,7 @@ export async function resumeRun(
 			}
 			const responseObj = {
 				interruptId: pending.interruptId,
-				stateHash: pending.stateHash,
+				...(pending.kind === 'quality_review' ? {} : { stateHash: pending.stateHash }),
 				...rawResponse,
 			};
 			const request = context.artifacts.readJson(pending.requestArtifact);
@@ -194,7 +205,11 @@ export async function resumeRun(
 				request,
 				response: responseObj,
 				draft,
+				artifacts: context.artifacts,
 			});
+			if (pending.kind === 'quality_review') {
+				preflightQualityAnswer(context.runtime, state, QualityAnswerSchema.parse(validated.response));
+			}
 			const responseArtifact = context.artifacts.writeJson(
 				'human-response',
 				validated.response,

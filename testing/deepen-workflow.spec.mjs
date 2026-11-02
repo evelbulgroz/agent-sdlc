@@ -27,6 +27,8 @@ const NODE_IDS = [
 	"prepare_questions",
 	"ask_questions",
 	"apply_answers",
+	"ask_quality_answer",
+	"apply_quality_answer",
 	"execute_spec_critic",
 	"prepare_approval",
 	"ask_approval",
@@ -198,7 +200,7 @@ test('@ac AC-04 @case AC-04.3 graph.mjs holds no route function or edge call', (
 	assert.equal(source.includes('addEdge'), false);
 });
 
-test('@ac AC-04 @case AC-04.4 a runtime graph exposes the 33 nodes plus __start__', () => {
+test('@ac AC-04 @case AC-04.4 a runtime graph exposes the 35 nodes plus __start__', () => {
 	const fixture = makeFixture('deepen-compiled-graph');
 	try {
 		assert.deepEqual(

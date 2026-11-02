@@ -28,6 +28,7 @@ export interface WorkflowGraphBuilder<TCompiled = unknown> {
 }
 
 export function routeFromStart({ snapshot }: GraphStateValues): string {
+	if (snapshot.pendingInterruptId && snapshot.blockedReason === 'QUALITY_REVIEW_BLOCKED') return 'ask_quality_answer';
 	switch (snapshot.state) {
 		case 'INITIALIZING':
 		case 'SPEC_DRAFTING':
@@ -184,6 +185,7 @@ export function routeAfterHydrate({ snapshot }: GraphStateValues): string {
 }
 
 export function routeAfterTasks({ snapshot }: GraphStateValues): string {
+	if (snapshot.state === 'REVIEWING_QA') return 'execute_qa_critic';
 	if (snapshot.state === 'RECONCILING_INTEGRATION' && snapshot.pendingInterruptId) {
 		return 'ask_reconciliation_conflict';
 	}
@@ -224,6 +226,8 @@ export function routeAfterVerifier({ snapshot }: GraphStateValues): string {
 }
 
 export function routeAfterQaCritic({ snapshot }: GraphStateValues): string {
+	if (snapshot.pendingInterruptId && snapshot.blockedReason === 'QUALITY_REVIEW_BLOCKED') return 'ask_quality_answer';
+	if (snapshot.state === 'EXECUTING_IMPLEMENTATION') return 'execute_tasks';
 	if (snapshot.state === 'COMMITTING_CHANGES') return 'create_local_commit';
 	if (snapshot.state === 'READY_FOR_GIT_APPROVAL') return 'finalize_run';
 	if (snapshot.state === 'REPAIRING_FAILURE') return 'repair_failure';
@@ -260,6 +264,7 @@ export function wireWorkflowEdges<T extends WorkflowGraphBuilder>(graph: T): T {
 	return graph
 		.addConditionalEdges(START, routeFromStart, {
 			check_completeness: 'check_completeness',
+			ask_quality_answer: 'ask_quality_answer',
 			execute_spec_critic: 'execute_spec_critic',
 			ask_questions: 'ask_questions',
 			ask_approval: 'ask_approval',
@@ -357,6 +362,7 @@ export function wireWorkflowEdges<T extends WorkflowGraphBuilder>(graph: T): T {
 			end: END,
 		})
 		.addConditionalEdges('execute_tasks', routeAfterTasks, {
+			execute_qa_critic: 'execute_qa_critic',
 			ask_reconciliation_conflict: 'ask_reconciliation_conflict',
 			reconcile_integration: 'reconcile_integration',
 			snapshot_generation: 'snapshot_generation',
@@ -388,10 +394,17 @@ export function wireWorkflowEdges<T extends WorkflowGraphBuilder>(graph: T): T {
 			end: END,
 		})
 		.addConditionalEdges('execute_qa_critic', routeAfterQaCritic, {
+			ask_quality_answer: 'ask_quality_answer',
+			execute_tasks: 'execute_tasks',
 			create_local_commit: 'create_local_commit',
 			finalize_run: 'finalize_run',
 			repair_failure: 'repair_failure',
 			end: END,
+		})
+		.addEdge('ask_quality_answer', 'apply_quality_answer')
+		.addConditionalEdges('apply_quality_answer', ({ snapshot }) =>
+			snapshot.state === 'EXECUTING_IMPLEMENTATION' ? 'execute_tasks' : 'end', {
+			execute_tasks: 'execute_tasks', end: END,
 		})
 		.addConditionalEdges('create_local_commit', routeAfterCommit, {
 			verify_committed_tree: 'verify_committed_tree',

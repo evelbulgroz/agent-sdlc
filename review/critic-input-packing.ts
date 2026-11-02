@@ -1,6 +1,8 @@
 // Document packing for critic prompts: plan, spec, and QA excerpts. Leaf module.
 
 import { canonicalJson } from '../policy/contracts.ts';
+import { projectTaskPlan } from '../policy/contracts/dag-schema.ts';
+import { SdlcError } from '../policy/errors.ts';
 import { truncateBody } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 
 export interface PlanTaskPackingInput {
@@ -21,11 +23,13 @@ export interface PlanTaskPackingInput {
 }
 
 export interface PlanDocumentPackingInput {
+	schemaVersion?: unknown;
 	planPolicyHash?: unknown;
 	baseCommitSha?: unknown;
 	isParallel?: unknown;
 	integrationOrder?: unknown;
 	tasks?: readonly PlanTaskPackingInput[];
+	[key: string]: unknown;
 }
 
 export interface SpecDocumentPackingInput {
@@ -41,8 +45,12 @@ export interface SpecDocumentPackingInput {
 	assumptions?: unknown;
 }
 
+export const PLAN_DOCUMENT_MAX_BYTES = 20480;
+
 export function packPlanDocument(plan: PlanDocumentPackingInput): string {
-	return canonicalJson({
+	const immutableTaskPlan =
+		plan.schemaVersion === '2.0.0' ? projectTaskPlan(plan) : undefined;
+	const document = {
 		planPolicyHash: plan.planPolicyHash,
 		baseCommitSha: plan.baseCommitSha,
 		changeClass: derivePlanChangeClass(plan.tasks ?? []),
@@ -66,7 +74,19 @@ export function packPlanDocument(plan: PlanDocumentPackingInput): string {
 			humanReviewEvidence: task.humanReviewEvidence,
 			verificationCommand: task.verificationCommand,
 		})),
-	});
+		...(immutableTaskPlan ? { immutableTaskPlan } : {}),
+	};
+	const packed = canonicalJson(document);
+	if (
+		immutableTaskPlan &&
+		Buffer.byteLength(packed, 'utf8') > PLAN_DOCUMENT_MAX_BYTES
+	) {
+		throw new SdlcError(
+			'INVALID_CONTRACT',
+			`Plan critic document exceeds ${PLAN_DOCUMENT_MAX_BYTES} bytes; the complete immutable v2 plan cannot be reviewed`,
+		);
+	}
+	return packed;
 }
 
 export function derivePlanChangeClass(

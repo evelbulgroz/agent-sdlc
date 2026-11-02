@@ -27,6 +27,7 @@ export interface CriticGovernorResult {
 export interface CriticGovernorLike {
 	synthetic?: boolean;
 	getRunOperations?(runId: string): Record<string, unknown>;
+	getRunUsageLedger?(runId: string): unknown;
 	execute(request: Record<string, unknown>): Promise<CriticGovernorResult>;
 }
 
@@ -52,6 +53,7 @@ export interface ExecuteCriticReviewInput {
 	testOutput?: string; documentText?: string; rubric?: string; preferredRouteIds?: readonly string[];
 	requestedLimits?: { maxPromptTokens?: number; [key: string]: unknown }; artifactHash?: string | null; attemptKey?: string | null;
 	groundingRootDir?: string | null;
+	requireUntruncatedInput?: boolean;
 }
 
 export interface CriticReviewExecutionResult {
@@ -265,6 +267,7 @@ export class CriticReviewAdapter {
 			artifactHash,
 			attemptKey,
 			groundingRootDir,
+			requireUntruncatedInput = false,
 		} = input;
 		const canonicalAuthors = canonicalizeAuthorVendors({ authorVendor, authorVendors });
 		if (!['spec', 'plan', 'code', 'qa'].includes(phase)) {
@@ -304,8 +307,24 @@ export class CriticReviewAdapter {
 			...(Array.isArray(preferredRouteIds) && preferredRouteIds.length > 0 ? { preferredRouteIds: [...preferredRouteIds] } : {}),
 		};
 
-		const targetCeiling = Math.min(requestedLimits?.maxPromptTokens ?? 20000, 20000) - 200;
+		const strictInput = phase === 'plan' || requireUntruncatedInput;
+		const targetCeiling =
+			Math.min(requestedLimits?.maxPromptTokens ?? 20000, 20000) - (strictInput ? 0 : 200);
 		const activePrompt = truncatePromptToTokenCeiling(prompt, estimateCriticPromptTokens, targetCeiling);
+		if (strictInput && activePrompt !== prompt) {
+			const estimatedInputTokens = estimateCriticPromptTokens(prompt);
+			throw new SdlcError(
+				'INPUT_OVERSIZED',
+				phase === 'plan'
+					? `Plan critic prompt needs ${estimatedInputTokens} tokens but the ${targetCeiling}-token ceiling would truncate the immutable task plan`
+					: `Critic prompt needs ${estimatedInputTokens} tokens but the ${targetCeiling}-token ceiling would truncate required evidence context`,
+				{
+					estimatedInputTokens,
+					maxPromptTokens: targetCeiling,
+					promptBytes: Buffer.byteLength(prompt, 'utf8'),
+				},
+			);
+		}
 		const resolvedTaskId = taskId ?? sha256(runId).slice(0, 24);
 		const scopeStr = (Array.isArray(scope) ? scope.join(',') : String(scope ?? '')).trim();
 		const request = {
@@ -321,7 +340,7 @@ export class CriticReviewAdapter {
 				generation: effectiveGeneration,
 				nodeAttempt: 1,
 				phase,
-				...(scopeStr.length > 0 ? { scope: scopeStr } : {}),
+				...(scopeStr.length > 0 ? { scope: scopeStr.length > 192 ? scopeDigest : scopeStr } : {}),
 			},
 			prompt: activePrompt,
 			structuredOutputSchema: CRITIC_FINDINGS_SCHEMA,

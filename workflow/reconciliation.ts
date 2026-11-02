@@ -102,7 +102,7 @@ export async function reconcileTasks({
 	snapshot?: { taskPlanFrozen?: boolean } | null;
 }): Promise<ReconcileTasksResult> {
 	// 1. Single-task run: Identity reconcile (P2-1)
-	if (taskPlan.tasks.length === 1) {
+	if (taskPlan.tasks.length === 1 && taskPlan.schemaVersion === '1.0.0') {
 		const task = taskPlan.tasks[0];
 		if (!task) {
 			throw new SdlcError('TASK_PLAN_INVALID', 'Single-task plan is missing task entry');
@@ -150,6 +150,22 @@ export async function reconcileTasks({
 	});
 
 	const taskMap = new Map(taskPlan.tasks.map((t) => [t.taskId, t]));
+	if (taskPlan.schemaVersion === '2.0.0') {
+		const ordered = new Set(taskPlan.integrationOrder);
+		if (ordered.size !== taskPlan.tasks.length || ordered.size !== taskMap.size ||
+			taskPlan.tasks.some((task) => !ordered.has(task.taskId))) {
+			throw new SdlcError('TASK_PLAN_INVALID', 'Quality reconciliation order must contain every task exactly once');
+		}
+		for (const task of taskPlan.tasks) {
+			if (task.status !== 'completed' || !task.parentTreeSha || !task.targetTreeSha || !task.patchHash) {
+				throw new SdlcError(
+					'INVALID_CONTRACT',
+					`Quality task '${task.taskId}' has no completed, selected delta`,
+					{ taskId: task.taskId },
+				);
+			}
+		}
+	}
 
 	// 3. Iterate tasks in predetermined integrationOrder
 	for (const taskId of taskPlan.integrationOrder) {
@@ -162,23 +178,33 @@ export async function reconcileTasks({
 			);
 		}
 
-		// Empty diffs where targetTreeSha === parentTreeSha are no-ops
-		if (!task.targetTreeSha || !task.parentTreeSha || task.targetTreeSha === task.parentTreeSha) {
+		if (!task.targetTreeSha || !task.parentTreeSha) {
+			continue;
+		}
+		if (taskPlan.schemaVersion !== '2.0.0' && task.targetTreeSha === task.parentTreeSha) {
 			continue;
 		}
 
 		// Generate binary patch: git diff-tree -p --binary parentTreeSha targetTreeSha
-		const patch = gitText(
-			gitCli,
-			['diff-tree', '-p', '--binary', task.parentTreeSha, task.targetTreeSha],
+		const patch = gitCli(
+			'git', ['diff-tree', '-p', '-r', '--binary', task.parentTreeSha, task.targetTreeSha],
 			{
 				cwd: rootDir,
-				encoding: 'utf8',
 				stdio: ['ignore', 'pipe', 'pipe'],
 			},
 		);
+		if (taskPlan.schemaVersion === '2.0.0') {
+			const actualPatchHash = crypto.createHash('sha256').update(patch).digest('hex');
+			if (!task.patchHash || task.patchHash !== actualPatchHash) {
+				throw new SdlcError(
+					'INVALID_CONTRACT',
+					`Quality task '${task.taskId}' patch hash does not match its selected trees`,
+					{ taskId: task.taskId, expectedPatchHash: task.patchHash, actualPatchHash },
+				);
+			}
+		}
 
-		if (!patch || patch.trim().length === 0) {
+		if (!patch.length) {
 			continue;
 		}
 
@@ -195,7 +221,7 @@ export async function reconcileTasks({
 		const changedFiles = changedFilesOutput.trim().split('\n').filter(Boolean);
 
 		const allowedPrefixes = [
-			...(task.pathPrefixes ?? []),
+			...(taskPlan.schemaVersion === '2.0.0' ? task.authoredPaths ?? [] : task.pathPrefixes ?? []),
 			...(task.generatedOutputs ?? []),
 		];
 		for (const file of changedFiles) {
@@ -207,8 +233,8 @@ export async function reconcileTasks({
 			if (!isContained) {
 				throw new SdlcError(
 					'PATH_CONTAINMENT_VIOLATION',
-					`Reconciliation containment failed: task '${task.taskId}' touched file '${file}' outside pathPrefixes: ${task.pathPrefixes.join(', ')}`,
-					{ taskId: task.taskId, file, pathPrefixes: task.pathPrefixes },
+					`Reconciliation containment failed: task '${task.taskId}' touched file '${file}' outside its allowed authored paths and generated outputs`,
+					{ taskId: task.taskId, file, allowedPrefixes },
 				);
 			}
 		}

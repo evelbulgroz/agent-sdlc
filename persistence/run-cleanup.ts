@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { removeWorktree } from '../workflow/worktrees.ts';
 import { REPOSITORY_ROOT, liveRunRoot } from './run-paths.ts';
+import { assertSafeQualityPath } from './quality-storage.ts';
+import { registeredWorktreePaths } from './quality-worktree-reader.ts';
 
 export type GitCliFn = (
 	command: string,
@@ -31,7 +33,7 @@ function errorMessageOf(error: unknown): string | undefined {
 }
 
 function collectRunWorktreeDirs(runDir: string): string[] {
-	const dirs: string[] = [];
+	const dirs: string[] = registeredWorktreePaths(runDir).filter(dir => fs.existsSync(dir));
 	const singleDir = path.join(runDir, 'worktree');
 	if (fs.existsSync(singleDir)) {
 		dirs.push(singleDir);
@@ -49,13 +51,15 @@ function collectRunWorktreeDirs(runDir: string): string[] {
 					return left.localeCompare(right);
 				});
 			for (const name of entries) {
-				dirs.push(path.join(multiRoot, name));
+				const candidate = path.join(multiRoot, name);
+				if (dirs.some(dir => dir.startsWith(`${candidate}${path.sep}`))) continue;
+				dirs.push(candidate);
 			}
 		} catch {
 			// Ignore unreadable directory; handled below.
 		}
 	}
-	return dirs;
+	return [...new Set(dirs)];
 }
 
 function removeSingleWorktreeViaGit(
@@ -118,6 +122,7 @@ export function cleanMergedRunWorktrees(
 
 	for (const worktreeDir of worktreeDirs) {
 		try {
+			assertSafeQualityPath(runDir, path.relative(runDir, worktreeDir).split(path.sep).join('/'));
 			removeSingleWorktreeViaGit(runId, worktreeDir, { rootDir, gitCli });
 			removed.push(worktreeDir);
 		} catch (error: unknown) {
@@ -131,6 +136,11 @@ export function cleanMergedRunWorktrees(
 	const multiRoot = path.join(runDir, 'worktrees');
 	if (fs.existsSync(multiRoot) && skipped.length === 0) {
 		try {
+			for (const entry of fs.readdirSync(multiRoot, { withFileTypes: true })) {
+				const container = path.join(multiRoot, entry.name);
+				if (entry.isDirectory() && !entry.isSymbolicLink() &&
+					fs.readdirSync(container).length === 0) fs.rmdirSync(container);
+			}
 			const remaining = fs.readdirSync(multiRoot);
 			if (remaining.length === 0) {
 				fs.rmdirSync(multiRoot);

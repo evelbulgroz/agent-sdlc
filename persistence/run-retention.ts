@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { RUNTIME_STATES, validateRunId } from '../policy/contracts.ts';
 import type { SqlParam } from './run-ledger.ts';
 import { REPOSITORY_ROOT, liveRunRoot } from './run-paths.ts';
+import { registeredWorktreePaths } from './quality-worktree-reader.ts';
 
 export const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -116,6 +117,11 @@ export function decideRunRetention({
 }
 
 export function hasRunWorktrees(runDir: string): boolean {
+	try {
+		if (registeredWorktreePaths(runDir).some(dir => fs.existsSync(dir))) return true;
+	} catch {
+		return true;
+	}
 	const singleWorktree = path.join(runDir, 'worktree');
 	if (fs.existsSync(singleWorktree)) return true;
 	const multiWorktrees = path.join(runDir, 'worktrees');
@@ -203,11 +209,32 @@ export function readRecordedRun(runDir: string, runId: string): Readonly<Recorde
 			'SELECT target_branch, commit_sha, tree_sha, parent_sha FROM git_commits WHERE run_id = ?',
 			runId,
 		);
-		const dagTasks = safeAll<RecordedDagTaskRow>(
+		let dagTasks = safeAll<RecordedDagTaskRow>(
 			db,
 			'SELECT task_id, status, worktree_subdir, base_commit_sha, target_tree_sha FROM dag_tasks WHERE run_id = ? ORDER BY integration_order ASC',
 			runId,
 		);
+		const qualityPlan = safeGet<{ record_json: string }>(db,
+			"SELECT record_json FROM quality_records WHERE run_id=? AND kind='task-plan'", runId);
+		if (qualityPlan) {
+			const corrections = safeAll<{ status: string | null }>(db,
+				"SELECT status FROM quality_records WHERE run_id=? AND kind='correction'", runId);
+			const blocked = corrections.some(c => c.status !== 'completed');
+			const selected = safeAll<{ task_id: string; record_json: string }>(db, `
+				SELECT c.task_id,r.record_json FROM quality_current_revisions c
+				JOIN quality_records r ON r.run_id=c.run_id AND r.kind='revision'
+					AND r.record_id=c.task_id || ':' || c.execution_revision
+				WHERE c.run_id=? AND c.eligible=1`, runId);
+			dagTasks = dagTasks.map(task => {
+				const row = blocked ? undefined : selected.find(r => r.task_id === task.task_id);
+				const revision = row ? JSON.parse(row.record_json) as {
+					parentTreeSha: string; targetTreeSha: string | null; status: string;
+				} : null;
+				return { ...task, status: revision?.status === 'completed' ? 'completed' : 'pending',
+					base_commit_sha: revision?.parentTreeSha ?? task.base_commit_sha,
+					target_tree_sha: revision?.targetTreeSha ?? null };
+			});
+		}
 		const approvedSpecHash =
 			authRow?.approved_spec_hash ??
 			stateDoc?.authorization?.approvedSpecHash ??

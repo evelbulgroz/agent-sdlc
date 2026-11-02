@@ -8,7 +8,7 @@ import {
 } from '../../cli/hitl.ts';
 import { loadHostProfileOrFallback } from '../../host/host-profile.ts';
 import { freezePreparationSelection } from '../../host/verification-preparation.ts';
-import { type RuntimeState, type TaskManifest, validateTaskManifest } from '../../policy/contracts.ts';
+import { assertTaskPlanHash, hashTaskPlanProjection, type RuntimeState, type TaskManifest, validateTaskManifest } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import { evaluatePolicyGate } from '../../policy/policy-gate.ts';
 import { planTaskDag } from '../../policy/task-planner.ts';
@@ -66,31 +66,44 @@ export function createPlanTasksNode(runtime: WorkflowRuntimeLike) {
 		const auth = getAndValidateAuthorization(runtime, snapshot);
 		const draft = runtime.artifactStore.readJson(snapshot.draftArtifact);
 		const taskManifest = readBoundTaskManifest(runtime, snapshot);
-		const plan = planTaskDag({
-			draft,
-			taskManifest,
-			authorization: auth,
-			now: runtime.now,
-		});
+		const persistedPlan =
+			auth.qualityPlan === undefined
+				? null
+				: runtime.runtimeStore.getTaskPlanForPolicy(
+						snapshot.runId,
+						auth.approvedPlanPolicyHash,
+					);
+		const plan =
+			persistedPlan ??
+			planTaskDag({
+				draft,
+				taskManifest,
+				authorization: auth,
+				now: runtime.now,
+			});
 		const preparation = freezePreparationSelection(
 			loadHostProfileOrFallback(runtime.rootDir),
 			auth.preparationPolicyHash,
 			plan.tasks,
 		);
 		const preparationSelection = preparation.digest ? { preparationSelectionHash: preparation.digest } : {};
-		runtime.runtimeStore.saveTaskPlan(plan);
+		const taskPlanHash = hashTaskPlanProjection(plan);
+		runtime.runtimeStore.saveTaskPlan(
+			plan,
+			plan.schemaVersion === '2.0.0' ? auth.approvedPlanPolicyHash : undefined,
+		);
 		const planArtifact = runtime.artifactStore.writeJson('task-plan', plan);
 		const next = runtime.transition(snapshot, {
 			to: 'EVALUATING_POLICY',
 			eventType: 'TASK_PLAN_GENERATED',
 			causalId: `plan-tasks-${snapshot.runtimeRevision}`,
 			updates: {
-				taskPlanHash: plan.planPolicyHash,
+				taskPlanHash,
 				...preparationSelection,
 			},
 			payload: {
 				taskPlanArtifact: planArtifact,
-				taskPlanHash: plan.planPolicyHash,
+				taskPlanHash,
 				...preparationSelection,
 				taskCount: plan.tasks.length,
 				isParallel: plan.isParallel,
@@ -115,6 +128,7 @@ export function createEvaluatePolicyGateNode(runtime: WorkflowRuntimeLike) {
 		if (!plan) {
 			throw new SdlcError('TASK_PLAN_INVALID', `Task plan not found for run ${snapshot.runId}`);
 		}
+		const taskPlanHash = assertTaskPlanHash(plan, snapshot.taskPlanHash);
 		try {
 			evaluatePolicyGate({
 				taskPlan: plan,
@@ -151,7 +165,7 @@ export function createEvaluatePolicyGateNode(runtime: WorkflowRuntimeLike) {
 			causalId: `policy-gate-${snapshot.runtimeRevision}`,
 			updates: {},
 			payload: {
-				taskPlanHash: plan.planPolicyHash,
+				taskPlanHash,
 				policyGatePassed: true,
 			},
 		});
@@ -174,6 +188,7 @@ export function createExecutePlanCriticNode(runtime: WorkflowRuntimeLike) {
 		if (!plan) {
 			throw new SdlcError('TASK_PLAN_INVALID', `Task plan not found for run ${current.runId}`);
 		}
+		assertTaskPlanHash(plan, current.taskPlanHash);
 		let criticResult: {
 			status: string;
 			hasP1: boolean;
@@ -368,6 +383,9 @@ export function createApplyPlanCriticNode(runtime: WorkflowRuntimeLike) {
 			});
 			return { snapshot: next, humanResponse: null };
 		}
+		const plan = runtime.runtimeStore.getTaskPlan(snapshot.runId);
+		if (!plan) throw new SdlcError('TASK_PLAN_INVALID', `Task plan not found for run ${snapshot.runId}`);
+		assertTaskPlanHash(plan, snapshot.taskPlanHash);
 		const next = runtime.transition(snapshot, {
 			to: 'PREPARING_WORKSPACE',
 			eventType: 'PLAN_FROZEN',

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import {
+	assertBranchCommitBinding,
 	checkBranchCollision,
 	createLocalBranch,
 	createLocalCommit,
@@ -240,6 +241,18 @@ test('pushBranch executes git push with tracking branch and handles shadow paths
 	assert.equal(commands[0].cmd, 'git');
 	assert.deepEqual(commands[0].args, ['push', '-u', 'origin', 'agent-sdlc/run-42']);
 
+	const pinnedSource = 'a'.repeat(40);
+	pushBranch({
+		worktreeDir: '/worktree',
+		branchName: 'agent-sdlc/run-42',
+		remote: 'origin',
+		sourceCommitSha: pinnedSource,
+		gitCli: mockGitCli,
+	});
+	assert.deepEqual(commands[1].args, [
+		'push', 'origin', `${pinnedSource}:refs/heads/agent-sdlc/run-42`,
+	]);
+
 	// 2. Invalid branch name
 	assert.throws(
 		() =>
@@ -278,3 +291,63 @@ test('pushBranch executes git push with tracking branch and handles shadow paths
 	);
 });
 
+test('assertBranchCommitBinding rejects moved refs and mismatched reviewed trees', () => {
+	const tempDir = path.join(
+		REPOSITORY_ROOT,
+		'tools/.agent-sdlc/test-fixtures',
+		`git-source-binding-${crypto.randomUUID()}`,
+	);
+	try {
+		const { repoDir, worktreeDir, baseCommitSha } = setupRepoWithWorktree(tempDir);
+		const remoteDir = path.join(tempDir, 'remote.git');
+		execFileSync('git', ['init', '--bare', remoteDir]);
+		execFileSync('git', ['remote', 'add', 'origin', remoteDir], { cwd: repoDir });
+		createLocalBranch({
+			worktreeDir,
+			baseCommitSha,
+			branchName: 'agent-sdlc/source-binding',
+			rootDir: repoDir,
+		});
+		const baseTreeSha = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], {
+			cwd: worktreeDir,
+			encoding: 'utf8',
+		}).trim();
+		assert.deepEqual(assertBranchCommitBinding({
+			worktreeDir,
+			branchName: 'agent-sdlc/source-binding',
+			expectedCommitSha: baseCommitSha,
+			expectedTreeSha: baseTreeSha,
+		}), { commitSha: baseCommitSha, treeSha: baseTreeSha });
+
+		fs.writeFileSync(path.join(worktreeDir, 'README.md'), '# Changed source\n');
+		execFileSync('git', ['add', 'README.md'], { cwd: worktreeDir });
+		execFileSync('git', ['commit', '-m', 'move approved source ref'], { cwd: worktreeDir });
+		const movedCommitSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+			cwd: worktreeDir,
+			encoding: 'utf8',
+		}).trim();
+		assert.throws(() => assertBranchCommitBinding({
+			worktreeDir,
+			branchName: 'agent-sdlc/source-binding',
+			expectedCommitSha: baseCommitSha,
+			expectedTreeSha: baseTreeSha,
+		}), /no longer points to the approved commit/);
+		assert.throws(() => assertBranchCommitBinding({
+			worktreeDir,
+			branchName: 'agent-sdlc/source-binding',
+			expectedCommitSha: movedCommitSha,
+			expectedTreeSha: baseTreeSha,
+		}), /does not have the reviewed tree/);
+		pushBranch({
+			worktreeDir,
+			branchName: 'agent-sdlc/source-binding',
+			sourceCommitSha: baseCommitSha,
+		});
+		const pushedCommitSha = execFileSync('git', [
+			'--git-dir', remoteDir, 'rev-parse', 'refs/heads/agent-sdlc/source-binding',
+		], { encoding: 'utf8' }).trim();
+		assert.equal(pushedCommitSha, baseCommitSha);
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});

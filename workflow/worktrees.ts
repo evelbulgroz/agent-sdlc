@@ -93,6 +93,15 @@ export function createSyntheticCommit({
 				cwd: rootDir,
 				encoding: 'utf8',
 				stdio: ['ignore', 'pipe', 'pipe'],
+				env: {
+					...process.env,
+					GIT_AUTHOR_NAME: 'agent-sdlc',
+					GIT_AUTHOR_EMAIL: 'agent-sdlc@localhost',
+					GIT_COMMITTER_NAME: 'agent-sdlc',
+					GIT_COMMITTER_EMAIL: 'agent-sdlc@localhost',
+					GIT_AUTHOR_DATE: '2000-01-01T00:00:00Z',
+					GIT_COMMITTER_DATE: '2000-01-01T00:00:00Z',
+				},
 			},
 		);
 		const commitSha = output.trim();

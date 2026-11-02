@@ -229,6 +229,7 @@ test('@ac AC-02 @case AC-02.3 resolveRunPaths throws RUN_NOT_FOUND without creat
 test('@ac AC-01 @case AC-01.1 resolveRepositoryRoot honors AGENT_SDLC_REPO_ROOT, strips node_modules paths, and no .ts file contains ../../..', () => {
 	const tempHost = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-repo-root-'));
 	try {
+		fs.mkdirSync(path.join(tempHost, '.git'));
 		assert.equal(
 			resolveRepositoryRoot('/some/other/dir', { AGENT_SDLC_REPO_ROOT: tempHost }),
 			tempHost,

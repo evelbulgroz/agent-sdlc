@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CompletenessEvaluationSchema, validateCompleteness } from './draft-schema.ts';
+import { RuntimeQualityFieldsSchema, validateRuntimeQualityFields } from './runtime-quality.ts';
 import {
 	GIT_SHA,
 	HASH_PATTERN,
@@ -15,7 +16,7 @@ import {
 
 export { RUNTIME_SCHEMA_VERSION };
 
-export const STORE_SCHEMA_VERSION = 14;
+export const STORE_SCHEMA_VERSION = 15;
 
 export const RUNTIME_STATES = Object.freeze([
 	'INITIALIZING',
@@ -69,6 +70,8 @@ export const EVENT_TYPES = Object.freeze([
 	'TOOL_EXECUTION_REQUESTED',
 	'TOOL_EXECUTION_COMPLETED',
 	'IMPLEMENTATION_COMPLETED',
+	'SLICE_CHECKPOINT_CREATED',
+	'QUALITY_CORRECTION_COMPLETED',
 	'HIGH_RISK_REVIEW_REQUESTED',
 	'HIGH_RISK_REVIEW_APPROVED',
 	'GENERATION_MATERIALIZED',
@@ -170,6 +173,7 @@ export const RuntimeStateSchema = z.object({
 	taskPlanHash: z.string().nullable().optional(),
 	integrationWorktreePath: z.string().nullable().optional(),
 	activeTaskId: z.string().nullable().optional(),
+	...RuntimeQualityFieldsSchema.shape,
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -231,6 +235,12 @@ export function validateRuntimeState(input: unknown): Readonly<RuntimeState> {
 		'taskPlanHash',
 		'integrationWorktreePath',
 		'activeTaskId',
+		'qualityPolicy',
+		'qualityCheckpointId',
+		'qualityCheckpointKind',
+		'qualityCheckpointSliceId',
+		'qualityCheckpointTreeSha',
+		'qualityCheckpointBindingHash',
 		'createdAt',
 		'updatedAt',
 	];
@@ -363,6 +373,7 @@ export function validateRuntimeState(input: unknown): Readonly<RuntimeState> {
 	if (normalized.activeTaskId !== undefined && normalized.activeTaskId !== null) {
 		validateOpaqueId(normalized.activeTaskId, 'activeTaskId');
 	}
+	validateRuntimeQualityFields(normalized, failContract);
 	for (const field of ['createdAt', 'updatedAt']) {
 		const tsVal = normalized[field];
 		if (typeof tsVal !== 'string' || Number.isNaN(Date.parse(tsVal))) {

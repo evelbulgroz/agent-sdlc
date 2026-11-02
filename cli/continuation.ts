@@ -66,6 +66,8 @@ export interface ContinuationInputs {
 	authorization?: { baseCommitSha?: string | null; [key: string]: unknown } | null;
 	pendingInterrupt?: ContinuationInterruptLike | null;
 	continuationAttempts?: number;
+	qualityAnswerRecorded?: boolean;
+	qualityRecoveryHalted?: boolean;
 }
 
 export function computeContinuation(
@@ -74,6 +76,8 @@ export function computeContinuation(
 		authorization = null,
 		pendingInterrupt = null,
 		continuationAttempts = 0,
+		qualityAnswerRecorded = false,
+		qualityRecoveryHalted = false,
 	}: ContinuationInputs = {},
 ): Readonly<ContinuationRecord> {
 	if (!state) {
@@ -89,6 +93,11 @@ export function computeContinuation(
 
 	if (state.state === 'CANCELLED' || state.state === 'SPEC_REJECTED') {
 		return validateContinuation({ action: 'stop', reason: 'HALTED' });
+	}
+	if (qualityAnswerRecorded) {
+		return validateContinuation(qualityRecoveryHalted || state.lastError?.metadata?.qualityRecoveryAllowed === false
+			? { action: 'stop', reason: 'HALTED' }
+			: { action: 'resume', reason: 'INFRASTRUCTURE_RETRY' });
 	}
 
 	if (state.pendingInterruptId || pendingInterrupt) {

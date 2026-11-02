@@ -9,10 +9,12 @@ import type { ArtifactStore } from '../persistence/artifacts.ts';
 import type { RunPaths } from '../persistence/run-paths.ts';
 import type { RuntimeStore } from '../persistence/runtime-store.ts';
 import type { RuntimeState } from '../policy/contracts.ts';
+import { findingsFromExistingReview } from '../review/critic-budget.ts';
 import { type ContinuationInputs, computeContinuation } from './continuation.ts';
 import { projectHostInvocation } from './host-invocation.ts';
 import { readCandidateLearnings } from './projection-artifacts.ts';
 import { projectTaskProgress, projectTasks } from './status-document.ts';
+import { currentQualityReview } from './quality-status.ts';
 
 export interface StatusProjectionLike {
 	readonly rootDir: string;
@@ -32,6 +34,8 @@ export interface QaDivergenceItem {
 
 export function assembleStatusResult(projection: StatusProjectionLike) {
 	const state = projection.runtimeStore.getRun(projection.paths.runId);
+	const taskPlan = projection.runtimeStore.getTaskPlan(projection.paths.runId);
+	const checkpointPolicy = taskPlan?.schemaVersion === '2.0.0';
 	const inputs = projection.continuationInputs(state);
 	const pending = inputs.pendingInterrupt;
 	const auth = inputs.authorization;
@@ -93,7 +97,7 @@ export function assembleStatusResult(projection: StatusProjectionLike) {
 			};
 		});
 
-	let qaDivergences: readonly QaDivergenceItem[] | null =
+	let qaDivergences: readonly QaDivergenceItem[] | null = checkpointPolicy ? null :
 		(donePayload?.qaDivergences as readonly QaDivergenceItem[] | null | undefined) ??
 		(readyPayload?.qaDivergences as readonly QaDivergenceItem[] | null | undefined) ??
 		null;
@@ -106,7 +110,12 @@ export function assembleStatusResult(projection: StatusProjectionLike) {
 		const covEvent = events
 			.slice()
 			.reverse()
-			.find((e) => e.eventType === 'AC_COVERAGE_PASSED');
+			.find((e) => checkpointPolicy
+				? (e.eventType === 'AC_COVERAGE_PASSED' || e.eventType === 'AC_COVERAGE_FAILED') &&
+					Boolean(state.qualityCheckpointBindingHash) &&
+					e.payload.qualityCheckpointBindingHash === state.qualityCheckpointBindingHash &&
+					e.payload.qualityCheckpointTreeSha === state.qualityCheckpointTreeSha
+				: e.eventType === 'AC_COVERAGE_PASSED');
 		const covPayload = covEvent?.payload as Record<string, unknown> | undefined;
 		if (typeof covPayload?.coverageArtifact === 'string') {
 			try {
@@ -123,8 +132,10 @@ export function assembleStatusResult(projection: StatusProjectionLike) {
 		const qaReviews = projection.runtimeStore
 			.listCriticReviews(projection.paths.runId)
 			.filter((r) => r.phase === 'qa');
-		const first = qaReviews[0];
-		if (first) {
+		const first = checkpointPolicy
+			? currentQualityReview(projection.runtimeStore, state).review : qaReviews[0];
+		if (checkpointPolicy) qaDivergences = findingsFromExistingReview(first);
+		if (first && !checkpointPolicy) {
 			try {
 				const manifestPath = path.isAbsolute(first.manifestPath)
 					? first.manifestPath
@@ -155,7 +166,6 @@ export function assembleStatusResult(projection: StatusProjectionLike) {
 
 	const gitCommit = projection.runtimeStore.getGitCommit(projection.paths.runId);
 	const pullRequest = projection.runtimeStore.getPullRequest(projection.paths.runId);
-	const taskPlan = projection.runtimeStore.getTaskPlan(projection.paths.runId);
 	const tasks = projectTasks(taskPlan, state);
 	const taskProgress = projectTaskProgress(taskPlan, tasks, state);
 	const falseEconomyDiagnostics = projection.runtimeStore

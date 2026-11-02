@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,6 +16,28 @@ const TEST_ONLY_MJS_FILES = new Set([
 	'ledger-child.mjs',
 	'ledger-success-child.mjs',
 ]);
+
+test('QA accounting reads the validated governor ledger from the configured state root without execution', t => {
+	const root = path.resolve('tools/.agent-sdlc/test-fixtures', `qa-accounting-${crypto.randomUUID()}`);
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const governor = new RepositoryModelGovernor({
+		executeOptions: { stateRoot: root },
+		execute() { throw new Error('No provider execution is permitted'); },
+	});
+	const runId = '2026-11-02-qa-accounting';
+	assert.equal(governor.getRunUsageLedger(runId), undefined);
+	const envelope = {
+		schemaVersion: '1.2.0', runId, policyVersion: '1.0.0', pricingVersion: 'fixture',
+		createdAt: '2026-11-02T00:00:00.000Z', runDeadlineAt: '2026-11-03T00:00:00.000Z',
+		operations: {}, attempts: [], reservations: [],
+	};
+	fs.mkdirSync(path.join(root, 'runs'), { recursive: true });
+	const file = path.join(root, 'runs', `${runId}.json`);
+	fs.writeFileSync(file, JSON.stringify(envelope));
+	assert.deepEqual(governor.getRunUsageLedger(runId), envelope);
+	fs.writeFileSync(file, JSON.stringify({ ...envelope, attempts: null }));
+	assert.throws(() => governor.getRunUsageLedger(runId), /Ledger records invalid/);
+});
 
 test('@ac AC-04 @case AC-04.1 the port default path resolves @evelbulgroz/model-usage-govenor governor entrypoint and every source production file under packages/model-usage is .ts', () => {
 	const governor = new RepositoryModelGovernor();

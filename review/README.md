@@ -29,11 +29,27 @@ Heterogeneous adversarial critic review (`spec`, `plan`, `code`, `qa`), uncommit
    | `qa` | Graph node (after green preflight & AC coverage) | $1$ per `approvedSpecHash` | Packs frozen ACs, compact test excerpts, and preflight log excerpts against `.agents/review-rubrics/qa.md`. Never executes test suites. |
    | `code` | Standalone CLI only (`agent-review --phase code`) | $1$ per generation/artifact | Never invoked from a graph node; runs on-demand for working-tree or staged diffs. |
 
+### Checkpoint-evidence v2 plans
+
+The explicit `checkpoint-evidence-v1` policy on a valid task-plan v2 opts into a separate QA contract; a missing policy keeps the legacy behavior above. Checkpoint QA is keyed to the exact approved spec, frozen plan, checkpoint kind, slice (when applicable), and candidate tree:
+
+- Slice reviews use `qa:<specHash>:<planHash>:slice:<sliceId>:<treeSha>`. They require a verified slice closure and its exact receipt-backed obligation evidence, but do not require final canonical preflight.
+- Final reviews use `qa:<specHash>:<planHash>:final:<treeSha>` and require canonical preflight for that same tree.
+- A prior QA review is reusable only for the same attempt and artifact. Legacy “any QA review means skip” reuse does not apply.
+- An accounted interrupted dispatch stays charged. A retry uses a distinct dispatch identity and consumes another existing review slot; it never resets candidate, logical, physical, or token allowances. Unresolved reservations still block dispatch until reconciled.
+- The bounded adequacy packet contains scoped obligations, declared case and implementation sources, and normalized outcomes/capabilities from current, non-invalidated passing receipts. Missing, invalidated, failed, or incomplete receipt evidence is insufficient; existing prompt and excerpt ceilings are unchanged.
+- A P1 citing a declared implementation path may trigger one persisted, budgeted follow-up retrieval of its exact cited line range. Requests are restricted to obligation implementation paths and the response is capped by the remaining candidate packet budget. Request/response artifacts and the follow-up reservation are visible in quality status.
+- Initial packet accounting includes actual source lines, not just serialized JSON lines. Both initial and follow-up source reads reject symlinks in parent directories as well as the final path.
+- Review admission reserves and charges the persisted quality budget. Insufficient evidence, exhausted admission, unavailable review, or unresolved P1 findings block the checkpoint and record a quality-review interrupt. Coverage failure/error also records `AC_COVERAGE_FAILED` and offers correction approval before QA; deterministic coverage failures cannot be refuted. These outcomes cannot proceed to commit, push, or PR; the final delivery guard rechecks exact candidate coverage and QA before every delivery entry point.
+- `qa-resources.ts` narrows each initial/follow-up governor dispatch using remaining physical calls and input/output tokens (`maxPhysicalAttempts`, `maxPromptTokens`, `maxCompletionTokens`). Dispatch identity and ceilings are durable with reservation. Restart settles abandoned reservations from terminal governed accounting, or charges their full frozen allowance when accounting is unprovable; a fresh charged slot may run only within remaining capacity. Historical reservations without a provable ceiling halt for operator reconciliation, not generic budget exhaustion. Replay never charges twice. Synthetic fixtures consume logical capacity even without provider tokens.
+
+Checkpoint review remains evidence, not merge trust: the candidate must still pass the deterministic final verifier and the authorization envelope controls allowed Git operations.
+
 3. **Prompt Ceilings, P1 Derivation & Provider Exhaustion (`critic-input-packing.ts`):**
    - Assembled critic prompts are capped at $\le 24\text{ KB}$ and $\le 1,000$ lines (`INPUT_OVERSIZED`).
    - Report status is derived strictly from whether any P1 finding exists (`hasP1`), ignoring subjective model status fields.
    - `excerpt-extractor.ts` retains at most 3 assertion lines per test ($\le 240$ chars), enforces an 80-line per-file soft cap, and prioritizes oracle files and uncited ACs before evicting.
-   - In graph runs, if all configured provider routes fail to return a critic response, the node records a `CRITIC_REVIEW_FAILED` advisory and continues; budget, policy, and contract errors remain blocking.
+   - In legacy graph runs, exhausted provider routes record a `CRITIC_REVIEW_FAILED` advisory and continue; budget, policy, and contract errors remain blocking. New-policy QA blocks instead.
 
 ## Standalone CLI Usage
 

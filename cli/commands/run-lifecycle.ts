@@ -5,6 +5,8 @@ import { RUNTIME_SCHEMA_VERSION } from '../../policy/contracts.ts';
 import { SdlcError, asSdlcError } from '../../policy/errors.ts';
 import { type ParsedArguments, requiredValue } from '../arguments.ts';
 import { validatePendingResponse } from '../hitl.ts';
+import { preflightQualityAnswer } from '../../workflow/quality-answer-preflight.ts';
+import { QualityAnswerSchema } from '../../policy/contracts/quality-schema.ts';
 import {
 	type OpenContextOptions,
 	openContext,
@@ -222,7 +224,11 @@ export async function answerRun(
 			request,
 			response,
 			draft,
+			artifacts: context.artifacts,
 		});
+		if (pending.kind === 'quality_review') {
+			preflightQualityAnswer(context.runtime, state, QualityAnswerSchema.parse(validated.response));
+		}
 		const responseArtifact = context.artifacts.writeJson('human-response', validated.response);
 		context.store.recordInterruptResponse(interruptId, responseArtifact);
 		await (onBoundary?.('answer-response-recorded', {

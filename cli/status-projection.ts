@@ -39,6 +39,7 @@ import {
 import {
 	type GitMetadataRecord, buildStatusDocument, gitMetadata, projectionHash,
 } from './status-document.ts';
+import { projectQualityStatus } from './quality-status.ts';
 import { projectVerificationPreparation } from './status-preparation.ts';
 import { type AssembledStatusResult, assembleStatusResult } from './status-result.ts';
 
@@ -294,6 +295,7 @@ export class StatusProjection {
 			eventLogHash, gitCommitSha: this.runtimeStore.getGitCommit(state.runId)?.commitSha ?? null,
 			verify: loadHostProfileOrFallback(this.rootDir).verify,
 			preparation: projectVerificationPreparation(this.runtimeStore.listEvents(state.runId), auth, state) as Record<string, unknown> | null,
+			quality: projectQualityStatus(this.runtimeStore, state),
 		});
 		const validation = validateStatus(baseStatus);
 		if (!validation.ok) {
@@ -363,9 +365,14 @@ export class StatusProjection {
 		const request = pending
 			? (this.artifactStore.readJson(pending.requestArtifact) as Record<string, unknown>)
 			: null;
+		const qualityAnswerRecorded = pending?.kind === 'quality_review' && pending.status === 'RESOLVED' &&
+			Boolean(this.runtimeStore.quality.getConsumedAnswer(state.runId, pending.interruptId));
 		return {
 			authorization: this.runtimeStore.getAuthorization(state.runId),
-			pendingInterrupt: pending ? { ...pending, request: request ?? {} } : null,
+			pendingInterrupt: pending && !qualityAnswerRecorded ? { ...pending, request: request ?? {} } : null,
+			qualityAnswerRecorded,
+			qualityRecoveryHalted: qualityAnswerRecorded && pending
+				? this.runtimeStore.quality.isAnswerRecoveryHalted(state.runId, pending.interruptId) : false,
 			continuationAttempts: state.blockedReason
 				? effectiveContinuationAttempts(
 						this.runtimeStore.getContinuationAttempt(state.runId, state.blockedReason),

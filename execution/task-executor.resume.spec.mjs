@@ -35,6 +35,9 @@ test('TaskExecutor reuses parentCommitSha on resume without minting new syntheti
 			if (args[0] === 'rev-parse' && args[1] === 'HEAD') {
 				return existingParentCommitSha + '\n';
 			}
+			if (args[0] === 'rev-parse' && args[1] === `${existingParentCommitSha}^{tree}`) {
+				return parentTreeSha + '\n';
+			}
 			if (args[0] === 'worktree') {
 				if (args[1] === 'add') {
 					fs.mkdirSync(args[3], { recursive: true });

@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { SdlcError } from '../policy/errors.ts';
 import {
 	DEFAULT_VERIFY_ARGV,
 	DEFAULT_VERIFY_HEAD_FIELD,
@@ -15,6 +14,8 @@ import { CommandPolicySchema } from './command-policy-schema.ts';
 import { EngineConfigSchema } from './engine-config-schema.ts';
 import { ContractProducerRulesSchema, PolicyConfigSchema } from './policy-config-schema.ts';
 import { preparationContainmentPaths, VerificationPreparationSchema } from './verification-preparation-schema.ts';
+import { AdapterRegistrationSchema } from '../policy/contracts/quality-schema.ts';
+import { invalidHostProfile, validateContainedRelativePath, validateRegexPattern } from './profile-validation.ts';
 
 export {
 	DEFAULT_VERIFY_ARGV,
@@ -26,14 +27,19 @@ export {
 };
 
 export const HOST_PROFILE_RELATIVE_PATH = '.agents/sdlc-host.json';
-export const HOST_PROFILE_SCHEMA_VERSION = '1.3.0';
+export const HOST_PROFILE_SCHEMA_VERSION = '1.4.0';
+export const PREVIOUS_HOST_PROFILE_SCHEMA_VERSION = '1.3.0';
 export const LEGACY_HOST_PROFILE_SCHEMA_VERSION = '1.2.0';
 export const MAX_HOST_PROFILE_BYTES = 65_536;
 
 const NonEmptyTokenSchema = z.string().min(1);
 const ArgvSchema = z.array(NonEmptyTokenSchema).min(1);
 const CriticPhaseSchema = z.enum(['spec', 'plan', 'code', 'qa']);
-const SupportedSchemaVersionSchema = z.enum([HOST_PROFILE_SCHEMA_VERSION, LEGACY_HOST_PROFILE_SCHEMA_VERSION]);
+const SupportedSchemaVersionSchema = z.enum([
+	HOST_PROFILE_SCHEMA_VERSION,
+	PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
+	LEGACY_HOST_PROFILE_SCHEMA_VERSION,
+]);
 
 const PathScopedRuleSchema = z.strictObject({
 	id: NonEmptyTokenSchema, pathPrefixes: z.array(NonEmptyTokenSchema).min(1), addendaFile: NonEmptyTokenSchema,
@@ -108,6 +114,7 @@ const BaseProfileFields = {
 	architecture: ArchitectureConfigSchema.optional(), qualityGate: QualityGateConfigSchema.optional(),
 	learnings: LearningsConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
 	engine: EngineConfigSchema.optional(), verificationPreparation: VerificationPreparationSchema.optional(),
+	evidenceAdapters: z.array(AdapterRegistrationSchema).optional(),
 };
 
 const DefaultHostProfileSchema = z.strictObject({
@@ -142,63 +149,6 @@ export type HostLearningsConfig = z.infer<typeof LearningsConfigSchema>;
 export type DefaultHostProfile = Omit<z.infer<typeof DefaultHostProfileSchema>, keyof ResolvedHostProfileDirs> & ResolvedHostProfileDirs;
 export type ScriptHostProfile = Omit<z.infer<typeof ScriptHostProfileSchema>, keyof ResolvedHostProfileDirs> & ResolvedHostProfileDirs;
 export type HostProfile = DefaultHostProfile | ScriptHostProfile;
-
-function invalidHostProfile(detail: string, metadata: Record<string, unknown> = {}, cause?: unknown): never {
-	throw new SdlcError('INVALID_INPUT', `HOST_PROFILE_INVALID: ${detail}`, metadata, cause !== undefined ? { cause } : {});
-}
-
-function validateContainedRelativePath(
-	rootDir: string,
-	candidate: string,
-	fieldName: string,
-	{ allowDot = false }: { allowDot?: boolean } = {},
-): string {
-	if (typeof candidate !== 'string' || candidate.length === 0) {
-		invalidHostProfile(`${fieldName} must be a non-empty relative path`, { fieldName });
-	}
-	if (
-		candidate.startsWith('/') ||
-		candidate.startsWith('\\') ||
-		candidate.includes('\\') ||
-		path.posix.isAbsolute(candidate) ||
-		path.isAbsolute(candidate)
-	) {
-		invalidHostProfile(`${fieldName} '${candidate}' must be a relative path`, { fieldName, candidate });
-	}
-	if (candidate === '.') {
-		if (!allowDot) invalidHostProfile(`${fieldName} cannot be '.'`, { fieldName, candidate });
-	} else {
-		const segments = candidate.split('/');
-		if (segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')) {
-			invalidHostProfile(`${fieldName} '${candidate}' contains an invalid path segment`, { fieldName, candidate });
-		}
-	}
-
-	const resolvedRoot = path.resolve(rootDir);
-	const resolvedCandidate = path.resolve(resolvedRoot, candidate);
-	const lexicallyInside = allowDot
-		? resolvedCandidate === resolvedRoot || resolvedCandidate.startsWith(`${resolvedRoot}${path.sep}`)
-		: resolvedCandidate.startsWith(`${resolvedRoot}${path.sep}`);
-	if (!lexicallyInside) {
-		invalidHostProfile(`${fieldName} '${candidate}' resolves outside rootDir`, { fieldName, candidate });
-	}
-
-	if (fs.existsSync(resolvedRoot)) {
-		const realRoot = fs.realpathSync(resolvedRoot);
-		const relSegments = candidate === '.' ? [] : candidate.split('/');
-		let current = resolvedRoot;
-		for (const segment of relSegments) {
-			const next = path.join(current, segment);
-			if (!fs.existsSync(next)) break;
-			const realNext = fs.realpathSync(next);
-			if (realNext !== realRoot && !realNext.startsWith(`${realRoot}${path.sep}`)) {
-				invalidHostProfile(`${fieldName} '${candidate}' escapes rootDir via symlink`, { fieldName, candidate });
-			}
-			current = next;
-		}
-	}
-	return candidate;
-}
 
 export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<HostProfile> {
 	if (typeof rootDir !== 'string' || rootDir.trim().length === 0) {
@@ -242,6 +192,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	const rawRecord = parsedJson as Record<string, unknown>;
 	if (
 		rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION &&
+		rawRecord.schemaVersion !== PREVIOUS_HOST_PROFILE_SCHEMA_VERSION &&
 		rawRecord.schemaVersion !== LEGACY_HOST_PROFILE_SCHEMA_VERSION
 	) {
 		invalidHostProfile(
@@ -261,8 +212,14 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 		}
 		for (const key of ['runsDir', 'git', 'policy', 'architecture', 'qualityGate', 'learnings', 'commandPolicy', 'engine', 'verificationPreparation']) {
 			if (rawRecord[key] !== undefined) {
-				invalidHostProfile(`Field '${key}' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+				invalidHostProfile(`Field '${key}' requires schemaVersion '${PREVIOUS_HOST_PROFILE_SCHEMA_VERSION}'`, {
 					fieldName: key,
+					schemaVersion: rawRecord.schemaVersion,
+				});
+			}
+			if (rawRecord.evidenceAdapters !== undefined) {
+				invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+					fieldName: 'evidenceAdapters',
 					schemaVersion: rawRecord.schemaVersion,
 				});
 			}
@@ -277,8 +234,19 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 				}
 			}
 		}
-	} else if (rawRecord.adapter === 'default' && rawRecord.commands !== undefined) {
-		invalidHostProfile("default profile cannot include 'commands'", { fieldName: 'commands' });
+	} else {
+		if (
+			rawRecord.schemaVersion === PREVIOUS_HOST_PROFILE_SCHEMA_VERSION &&
+			rawRecord.evidenceAdapters !== undefined
+		) {
+			invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+				fieldName: 'evidenceAdapters',
+				schemaVersion: rawRecord.schemaVersion,
+			});
+		}
+		if (rawRecord.adapter === 'default' && rawRecord.commands !== undefined) {
+			invalidHostProfile("default profile cannot include 'commands'", { fieldName: 'commands' });
+		}
 	}
 
 	const parsed = HostProfileSchema.safeParse(parsedJson);
@@ -312,6 +280,19 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	checkRel(profile.reviewDir, 'reviewDir');
 	checkRel(profile.specDraftDir, 'specDraftDir');
 	checkRel(profile.runsDir, 'runsDir');
+	for (const [index, registration] of (profile.evidenceAdapters ?? []).entries()) {
+		for (const file of [
+			...registration.bundleFiles,
+			...registration.dependencyFiles,
+			...registration.configurationFiles,
+		]) {
+			checkRel(file.path, `evidenceAdapters[${index}].files.path`);
+		}
+	}
+	const adapterIds = (profile.evidenceAdapters ?? []).map((registration) => registration.adapterId);
+	if (new Set(adapterIds).size !== adapterIds.length) {
+		invalidHostProfile('evidenceAdapters must have unique adapterId values', { fieldName: 'evidenceAdapters' });
+	}
 	checkRel(profile.engine?.selfRoot, 'engine.selfRoot', true);
 	for (const [p, f] of preparationContainmentPaths(profile.verificationPreparation)) checkRel(p, f, true);
 
@@ -387,14 +368,6 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	}
 
 	return deepFreezeProfile(profile);
-}
-
-function validateRegexPattern(pattern: string, fieldName: string): void {
-	try {
-		new RegExp(pattern);
-	} catch (error: unknown) {
-		invalidHostProfile(`${fieldName} '${pattern}' is not a valid regular expression`, { fieldName, pattern }, error);
-	}
 }
 
 export function hasHostProfile(rootDir: string): boolean {

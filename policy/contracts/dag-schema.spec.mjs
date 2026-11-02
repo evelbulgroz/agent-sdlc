@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { validateDagTask, validateReconciliationRecord, validateTaskPlan } from './dag-schema.ts';
+import { hashTaskPlanProjection, validateDagTask, validateReconciliationRecord, validateTaskPlan } from './dag-schema.ts';
 
 test('DAG task, task plan, and reconciliation record contracts validate strictly', () => {
 	const validTask = {
@@ -42,11 +42,14 @@ test('DAG task, task plan, and reconciliation record contracts validate strictly
 	const parsedPlan = validateTaskPlan(validPlan);
 	assert.equal(parsedPlan.runId, '2026-09-07-cross-service');
 	assert.equal(parsedPlan.tasks.length, 1);
+	assert.equal(hashTaskPlanProjection({ ...validPlan, ignoredLegacyField: 'omitted' }), hashTaskPlanProjection(validPlan));
+	assert.equal(hashTaskPlanProjection(validPlan), validPlan.planPolicyHash);
 
 	assert.throws(() => validateTaskPlan(null), /Invalid TaskPlan/);
 	assert.throws(() => validateTaskPlan({ ...validPlan, tasks: [] }), /Invalid TaskPlan/);
 	assert.throws(() => validateTaskPlan({ ...validPlan, runId: 'invalid-run-id' }), /runId must use/);
 	assert.throws(() => validateTaskPlan({ ...validPlan, planPolicyHash: 'invalid' }), /Invalid TaskPlan/);
+	assert.throws(() => validateTaskPlan({ ...validPlan, qualityPolicy: {} }), /Invalid TaskPlan/);
 
 	const validReconcile = {
 		reconciliationId: 'rec-12345678',

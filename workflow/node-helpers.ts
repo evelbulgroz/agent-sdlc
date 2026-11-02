@@ -9,7 +9,9 @@ import {
 } from '../execution/coverage-advisory.ts';
 import type { CheckpointerStore } from '../persistence/langgraph-checkpointer.ts';
 import type { ModelOperationInput } from '../persistence/model-operation-records.ts';
+import type { QualityRecords } from '../persistence/quality-records.ts';
 import { validateAuthorizationEnvelope } from '../policy/authorization.ts';
+import { sha256 } from '../policy/contracts.ts';
 import type {
 	CriticReviewRecord,
 	EventType,
@@ -23,9 +25,16 @@ import type {
 	TaskPlan,
 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
+import { qaCheckpointAttemptKey } from '../review/critic-budget.ts';
 import type { RoleExecutor, RoleExecutorGovernorPort } from '../roles/role-executor.ts';
 import type { RoleRegistry } from '../roles/role-registry.ts';
 import type { GitCliFn } from './git-manager.ts';
+import {
+	getRunCheckpointQualityPolicy,
+	resolveCheckpointQualityContext,
+} from './quality-context.ts';
+export { getRunCheckpointQualityPolicy, resolveCheckpointQualityContext };
+export type { CheckpointQualityContext } from './quality-context.ts';
 
 export type WorkflowModelGovernor = RoleExecutorGovernorPort;
 
@@ -86,7 +95,10 @@ export interface WorkflowRuntimeStorePort extends CheckpointerStore {
 	saveGitCommit(record: unknown): void;
 	savePullRequest(record: unknown): void;
 	getTaskPlan(runId: string): Readonly<TaskPlan> | null;
-	saveTaskPlan(plan: unknown): void;
+	getTaskPlanForPolicy(runId: string, approvedPlanPolicyHash: string): Readonly<TaskPlan> | null;
+	readonly quality: QualityRecords;
+	transaction<T>(callback: () => T): T;
+	saveTaskPlan(plan: unknown, approvedPlanPolicyHash?: string): void;
 	updateTaskStatus(runId: string, taskId: string, updates: Record<string, unknown>): void;
 	saveReconciliation(record: ReconciliationRecord): void;
 	getSemanticRepairsCount(runId: string): number;
@@ -111,10 +123,12 @@ export interface WorkflowArtifactStorePort {
 	writeText(prefix: string, content: string): string;
 	writeJson(prefix: string, payload: unknown): string;
 	readText?(hash: string | null | undefined): string;
+	read?(hash: string | null | undefined): string;
 	readJson(hash: string | null | undefined): Record<string, unknown>;
 }
 
 export interface WorkflowRuntimeLike {
+	readonly evidenceSpawn?: import('../host/evidence-types.ts').EvidenceSpawn;
 	readonly runtimeStore: WorkflowRuntimeStorePort;
 	readonly artifactStore: WorkflowArtifactStorePort;
 	readonly registry: RoleRegistry;
@@ -153,11 +167,21 @@ export function collectQaBriefAndAdvisories(
 	semanticReviewAdvisories: unknown[];
 } {
 	const events = runtime.runtimeStore.listEvents(snapshot.runId);
+	const qualityPolicy = getRunCheckpointQualityPolicy(runtime, snapshot);
 	let coverageAdvisories: CoverageAdvisory | null = null;
-	const covEvent = events
-		.slice()
-		.reverse()
-		.find((e) => e.eventType === 'AC_COVERAGE_PASSED');
+	let covEvent: RuntimeEvent | undefined;
+	if (qualityPolicy) {
+		const bindingHash = snapshot.qualityCheckpointBindingHash;
+		const treeSha = snapshot.qualityCheckpointTreeSha;
+		covEvent = events.slice().reverse().find((event) =>
+			(event.eventType === 'AC_COVERAGE_PASSED' || event.eventType === 'AC_COVERAGE_FAILED') &&
+			event.payload.qualityCheckpointBindingHash === bindingHash &&
+			event.payload.qualityCheckpointTreeSha === treeSha &&
+			event.payload.qualityPolicyHash === sha256(qualityPolicy),
+		);
+	} else {
+		covEvent = events.slice().reverse().find((event) => event.eventType === 'AC_COVERAGE_PASSED');
+	}
 	const covPayload =
 		covEvent?.payload && typeof covEvent.payload === 'object'
 			? (covEvent.payload as Record<string, unknown>)
@@ -175,23 +199,41 @@ export function collectQaBriefAndAdvisories(
 	}
 
 	let qaDivergences: QaDivergenceLike[] = [];
+	const plan = runtime.runtimeStore.getTaskPlan(snapshot.runId);
+	const currentAttemptKey = qualityPolicy && plan?.schemaVersion === '2.0.0' &&
+		snapshot.approvedSpecHash && snapshot.taskPlanHash && snapshot.qualityCheckpointKind &&
+		snapshot.qualityCheckpointTreeSha
+		? qaCheckpointAttemptKey({
+			approvedSpecHash: snapshot.approvedSpecHash,
+			taskPlanHash: snapshot.taskPlanHash,
+			checkpointKind: snapshot.qualityCheckpointKind,
+			sliceId: snapshot.qualityCheckpointSliceId,
+			treeSha: snapshot.qualityCheckpointTreeSha,
+		})
+		: null;
 	const qaReviews = runtime.runtimeStore
 		.listCriticReviews(snapshot.runId)
-		.filter((r) => r.phase === 'qa');
+		.filter((review) => review.phase === 'qa' &&
+			(!qualityPolicy || (currentAttemptKey !== null &&
+				(review.attemptKey === currentAttemptKey ||
+					review.attemptKey?.startsWith(`${currentAttemptKey}:follow-up:`) ||
+					review.attemptKey?.startsWith(`${currentAttemptKey}:dispatch:`)))));
 	if (qaReviews.length > 0) {
-		const first = qaReviews[0];
-		if (first) {
+		const selected = qualityPolicy ? qaReviews.at(-1) : qaReviews[0];
+		if (selected) {
 			try {
 				const root = runtime.registry?.rootDir || runtime.rootDir || process.cwd();
-				const manifestPath = path.isAbsolute(first.manifestPath)
-					? first.manifestPath
-					: path.join(root, first.manifestPath);
+				const manifestPath = path.isAbsolute(selected.manifestPath)
+					? selected.manifestPath
+					: path.join(root, selected.manifestPath);
 				if (fs.existsSync(manifestPath)) {
 					const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as {
 						reviews?: Array<{ reviewId?: string; phase?: string; reportPath?: string }>;
 					};
 					const entry = manifest.reviews?.find(
-						(r) => r.reviewId === first.reviewId || r.phase === 'qa',
+						(r) => qualityPolicy
+							? r.reviewId === selected.reviewId
+							: r.reviewId === selected.reviewId || r.phase === 'qa',
 					);
 					if (entry?.reportPath) {
 						const reportPath = path.isAbsolute(entry.reportPath)
@@ -235,12 +277,27 @@ export function getAndValidateAuthorization(
 			`No authorization envelope found for run '${snapshot.runId}'`,
 		);
 	}
-	return validateAuthorizationEnvelope(auth, {
+	const validated = validateAuthorizationEnvelope(auth, {
+		rootDir: runtime.rootDir,
 		currentRunId: snapshot.runId,
 		currentSpecHash: snapshot.approvedSpecHash ?? undefined,
 		currentTaskManifestHash: snapshot.taskManifestHash,
 		now: runtime.now(),
 	});
+	const taskPlan = runtime.runtimeStore.getTaskPlan(snapshot.runId);
+	const usesImmutableQualityPlan =
+		validated.qualityPlan !== undefined || taskPlan?.schemaVersion === '2.0.0';
+	if (usesImmutableQualityPlan && snapshot.approvedPlanPolicyHash !== validated.approvedPlanPolicyHash) {
+		throw new SdlcError(
+			'AUTHORIZATION_INVALID',
+			'Persisted authorization does not match the policy hash approved in runtime state',
+			{
+				expectedApprovedPlanPolicyHash: snapshot.approvedPlanPolicyHash ?? null,
+				actualApprovedPlanPolicyHash: validated.approvedPlanPolicyHash,
+			},
+		);
+	}
+	return validated;
 }
 
 export function deferUnavailableCritic(

@@ -107,8 +107,8 @@ test('EVENT_TYPES contains FALSE_ECONOMY_DETECTED', () => {
 	assert.ok(EVENT_TYPES.includes('FALSE_ECONOMY_DETECTED'));
 });
 
-test('STORE_SCHEMA_VERSION is 14 and EVENT_TYPES includes friction events', () => {
-	assert.equal(STORE_SCHEMA_VERSION, 14);
+test('STORE_SCHEMA_VERSION is 15 and EVENT_TYPES includes friction events', () => {
+	assert.equal(STORE_SCHEMA_VERSION, 15);
 	assert.ok(EVENT_TYPES.includes('PROMPT_FRICTION_DETECTED'));
 	assert.ok(EVENT_TYPES.includes('PROMPT_FRICTION_ANALYZED'));
 });
@@ -131,4 +131,47 @@ test('runtime state accepts an optional frozen preparationSelectionHash and reje
 		() => validateRuntimeState({ ...state, preparationSelectionHash: 'not-a-hash' }),
 		(error) => error.code === 'INVALID_CONTRACT',
 	);
+});
+
+test('runtime state accepts only complete new-policy checkpoint identity', () => {
+	const now = new Date().toISOString();
+	const state = {
+		schemaVersion: '1.0.0', runId: '2026-11-01-quality-state', threadId: 'thread-1', runtimeRevision: 1,
+		state: 'REVIEWING_QA', goalArtifact: 'a'.repeat(64), draftArtifact: 'b'.repeat(64), draftHash: 'c'.repeat(64),
+		completeness: { complete: true, missingFields: [], ambiguousFields: [] }, pendingInterruptId: null,
+		approvedSpecHash: 'd'.repeat(64), modelOperations: [], blockedReason: null, lastError: null,
+		workflowHash: 'e'.repeat(64), roleHash: 'f'.repeat(64), promptPolicyHash: '1'.repeat(64),
+		capabilitySetHash: '2'.repeat(64), evaluatorSetHash: '3'.repeat(64), completenessHash: null,
+		activeModelOperationId: null, activeProposalArtifact: null, interviewRound: 0,
+		taskPlanHash: '5'.repeat(64), createdAt: now, updatedAt: now,
+	};
+	const policy = {
+		schemaVersion: '1.0.0',
+		policyId: 'checkpoint-evidence-v1',
+		additionalCandidateReviews: 1,
+		followUpDispatches: 1,
+		testRetryPolicy: 'clean-success',
+		retrieval: { maxPacketBytes: 24576, maxPacketLines: 1000, maxTotalBytesPerCandidate: 49152, maxTotalLinesPerCandidate: 2000 },
+		execution: { maxInvocations: 10, maxTotalDurationMs: 1000 },
+		review: { maxLogicalDispatches: 4, maxPhysicalCalls: 10, maxInputTokens: 1000, maxOutputTokens: 1000 },
+	};
+	assert.equal(Object.hasOwn(validateRuntimeState(state), 'qualityPolicy'), false);
+	assert.throws(
+		() => validateRuntimeState({ ...state, qualityCheckpointId: 'checkpoint-1' }),
+		(error) => error.code === 'INVALID_CONTRACT',
+	);
+	const checkpoint = validateRuntimeState({
+		...state,
+		qualityPolicy: policy,
+		qualityCheckpointId: 'checkpoint-1',
+		qualityCheckpointKind: 'slice',
+		qualityCheckpointSliceId: 'slice-1',
+		qualityCheckpointTreeSha: '6'.repeat(40),
+		qualityCheckpointBindingHash: '7'.repeat(64),
+	});
+	assert.equal(checkpoint.qualityCheckpointKind, 'slice');
+	assert.throws(() => validateRuntimeState({
+		...state,
+		qualityPolicy: { ...policy, policyId: 'unknown-policy' },
+	}));
 });

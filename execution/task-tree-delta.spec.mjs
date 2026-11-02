@@ -239,8 +239,8 @@ test('captureTaskDelta materializes target tree and throws on path containment e
 		});
 
 		assert.equal(delta.targetTreeSha, newTreeSha);
-		assert.equal(delta.patch.trim(), binaryDiff);
-		assert.equal(delta.patchHash, sha256(delta.patch));
+		assert.equal(delta.patch.toString().trim(), binaryDiff);
+		assert.equal(delta.patchHash, sha256(delta.patch.toString()));
 		assert.deepEqual(delta.changedFiles, ['services/billing/src/file.ts']);
 
 		// 2. Escape case: file modified outside pathPrefixes

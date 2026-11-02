@@ -10,6 +10,8 @@ import {
 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import type { StoreContext } from './run-ledger.ts';
+import { createQualityTaskPlan, staticQualityPlan } from './quality-task-plan.ts';
+import type { TaskPlanV2 } from '../policy/contracts/dag-schema.ts';
 
 interface TaskPlanDbRow {
 	run_id: string;
@@ -53,8 +55,10 @@ interface ReconciliationDbRow {
 }
 
 export interface TaskPlanRecords {
-	saveTaskPlan(planInput: unknown): Readonly<TaskPlan>;
+	saveTaskPlan(planInput: unknown, approvedPlanPolicyHash?: string): Readonly<TaskPlan>;
 	getTaskPlan(runId: string): Readonly<TaskPlan> | null;
+	getTaskPlanForPolicy(runId: string, approvedPlanPolicyHash: string): Readonly<TaskPlan> | null;
+	getImmutableTaskPlan(runId: string, approvedPlanPolicyHash?: string): TaskPlanV2 | null;
 	getTask(runId: string, taskId: string): Readonly<DagTask> | null;
 	updateTaskStatus(
 		runId: string,
@@ -133,10 +137,24 @@ function mapReconciliationRow(row: ReconciliationDbRow): Readonly<Reconciliation
 }
 
 export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
-	function saveTaskPlan(planInput: unknown): Readonly<TaskPlan> {
+	const quality = createQualityTaskPlan(ctx);
+	function saveTaskPlan(planInput: unknown, approvedPlanPolicyHash?: string): Readonly<TaskPlan> {
 		ctx.assertOpen();
-		const plan = validateTaskPlan(planInput);
+		const frozen = staticQualityPlan(planInput);
+		const plan = validateTaskPlan(frozen ?? planInput);
 		return ctx.transaction(() => {
+			if (frozen) {
+				const existing = quality.getImmutableTaskPlan(plan.runId, approvedPlanPolicyHash);
+				const isSelected = quality.isSelectedTaskPlan(plan.runId, approvedPlanPolicyHash);
+				quality.saveImmutableTaskPlan(frozen, approvedPlanPolicyHash);
+				if (existing && isSelected) {
+					const current = getTaskPlan(plan.runId);
+					if (!current) throw new SdlcError('STORE_RECONCILIATION_FAILED', 'Persisted task plan disappeared');
+					return current;
+				}
+			} else if (quality.getImmutableTaskPlan(plan.runId)) {
+				throw new SdlcError('STORE_RECONCILIATION_FAILED', 'Cannot replace checkpoint plan with legacy policy');
+			}
 			ctx.database
 				.prepare(
 					`
@@ -210,6 +228,7 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 					JSON.stringify(taskManifestMetadata(task)),
 				);
 			}
+			if (frozen) quality.selectImmutableTaskPlan(plan.runId, approvedPlanPolicyHash);
 			return plan;
 		});
 	}
@@ -223,6 +242,8 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 		const planRow = rawPlanRow as TaskPlanDbRow | undefined;
 		if (!planRow) return null;
 		const tasks = listTasks(runId);
+		const frozen = quality.getImmutableTaskPlan(runId);
+		if (frozen) return Object.freeze({ ...validateTaskPlan(frozen), tasks });
 		return validateTaskPlan({
 			schemaVersion: RUNTIME_SCHEMA_VERSION,
 			runId,
@@ -237,6 +258,16 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 		});
 	}
 
+	function getTaskPlanForPolicy(
+		runId: string,
+		approvedPlanPolicyHash: string,
+	): Readonly<TaskPlan> | null {
+		ctx.assertOpen();
+		validateRunId(runId);
+		const frozen = quality.getImmutableTaskPlan(runId, approvedPlanPolicyHash);
+		return frozen ? validateTaskPlan(frozen) : null;
+	}
+
 	function getTask(runId: string, taskId: string): Readonly<DagTask> | null {
 		ctx.assertOpen();
 		validateRunId(runId);
@@ -245,7 +276,7 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 			.get(runId, taskId);
 		const row = raw as DagTaskDbRow | undefined;
 		if (!row) return null;
-		return mapDagTaskRow(row);
+		return quality.hydrateTask(runId, mapDagTaskRow(row));
 	}
 
 	function updateTaskStatus(
@@ -256,6 +287,12 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 		ctx.assertOpen();
 		validateRunId(runId);
 		return ctx.transaction(() => {
+			if (quality.getImmutableTaskPlan(runId) && Object.keys(updates).some(key =>
+				!['status', 'worktreeSubdir', 'baseCommitSha', 'parentTreeSha', 'parentCommitSha',
+					'targetTreeSha', 'patchHash', 'failurePacketArtifact', 'repairCount', 'failureMetadata',
+					'humanReviewEvidence', 'exceededLimits'].includes(key))) {
+				throw new SdlcError('STORE_RECONCILIATION_FAILED', 'Cannot mutate immutable checkpoint task planning fields');
+			}
 			const current = getTask(runId, taskId);
 			if (!current) {
 				throw new SdlcError('TASK_NOT_FOUND', `Task '${taskId}' not found for run '${runId}'`);
@@ -316,7 +353,7 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 			.prepare('SELECT * FROM dag_tasks WHERE run_id = ? ORDER BY integration_order ASC, rowid ASC')
 			.all(runId);
 		const rows = raw as DagTaskDbRow[];
-		return rows.map(mapDagTaskRow);
+		return rows.map(row => quality.hydrateTask(runId, mapDagTaskRow(row)));
 	}
 
 	function saveReconciliation(recordInput: unknown): Readonly<ReconciliationRecord> {
@@ -377,6 +414,8 @@ export function createTaskPlanRecords(ctx: StoreContext): TaskPlanRecords {
 	return {
 		saveTaskPlan,
 		getTaskPlan,
+		getTaskPlanForPolicy,
+		getImmutableTaskPlan: quality.getImmutableTaskPlan,
 		getTask,
 		updateTaskStatus,
 		listTasks,

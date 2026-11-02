@@ -56,6 +56,22 @@ test('an unlisted task status stays pending', () => {
 	assert.equal(mapToSchemaV1TaskStatus('failed'), 'blocked');
 });
 
+test('quality status is projected additively and bound into the projection hash', () => {
+	const quality = {
+		bindings: { checkpointId: 'final-one', bindingHash: 'a'.repeat(64) },
+		execution: { status: 'recorded', receipts: [{ receiptHash: 'b'.repeat(64), status: 'passed' }] },
+		citation: { cases: [{ file: 'src/main.spec.ts', caseKey: 'case-one', outcome: 'passed' }] },
+		adequacy: { status: 'reviewed', attemptKey: 'qa:final-one' },
+		disposition: { closureStatus: 'accepted', pendingInterruptId: null },
+		budget: { revision: 1, counters: { logicalDispatches: 1 } },
+	};
+	const projected = buildStatusDocument({ ...INPUT, quality });
+	const withoutQuality = buildStatusDocument(INPUT);
+
+	assert.deepEqual(projected.quality, quality);
+	assert.notEqual(projected.orchestration.projectionHash, withoutQuality.orchestration.projectionHash);
+});
+
 test('@ac AC-02 @case AC-02.1 buildStatusDocument in READY_FOR_GIT_APPROVAL with exit-code-only verify projects lastCommand npm test and resultFile null without reading fs, and formatPullRequestBody defaults verifyCommand to npm test when omitted', () => {
 	const originalRead = fs.readFileSync;
 	const originalExists = fs.existsSync;

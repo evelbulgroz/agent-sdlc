@@ -55,14 +55,14 @@ test('@ac AC-02 @case AC-02.7 a v13 store gains preparation_policy_hash on upgra
 		created.close();
 		const database = new DatabaseSync(databasePath);
 		database.exec('ALTER TABLE run_authorizations DROP COLUMN preparation_policy_hash');
-		database.exec('DELETE FROM schema_migrations WHERE version = 14');
+		database.exec('DELETE FROM schema_migrations WHERE version > 13');
 		database.exec("INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (13, '2026-11-01T00:00:00.000Z')");
 		database.close();
 
 		const reopened = new RuntimeStore(databasePath);
 		const columns = reopened.database.prepare('PRAGMA table_info(run_authorizations)').all().map((column) => column.name);
 		assert.ok(columns.includes('preparation_policy_hash'));
-		assert.equal(reopened.database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version, 14);
+		assert.equal(reopened.database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version, 15);
 		reopened.close();
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });

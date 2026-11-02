@@ -109,6 +109,7 @@ export const ALLOWED_TRANSITIONS: Readonly<Record<RuntimeStateName, ReadonlySet<
 		'CANCELLED',
 	]),
 	EXECUTING_IMPLEMENTATION: new Set<RuntimeStateName>([
+		'REVIEWING_QA',
 		'RECONCILING_INTEGRATION',
 		'SNAPSHOT_GENERATION',
 		'BLOCKED',
@@ -143,6 +144,7 @@ export const ALLOWED_TRANSITIONS: Readonly<Record<RuntimeStateName, ReadonlySet<
 		'BLOCKED',
 	]),
 	REVIEWING_QA: new Set<RuntimeStateName>([
+		'EXECUTING_IMPLEMENTATION',
 		'REVIEWING_QA',
 		'READY_FOR_GIT_APPROVAL',
 		'COMMITTING_CHANGES',

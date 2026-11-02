@@ -18,8 +18,34 @@ import { executePreflightVerifier } from '../review/verifier.ts';
 import {
 	type WorkflowRuntimeLike,
 	getAndValidateAuthorization,
+	getRunCheckpointQualityPolicy,
+	resolveCheckpointQualityContext,
 	resolvePreflightWorktree,
 } from './node-helpers.ts';
+import { prepareFinalQualityCheckpoint } from './final-quality-checkpoint.ts';
+import { blockQualityCheckpoint } from './quality-interrupt.ts';
+
+function boundQualityContext(runtime: WorkflowRuntimeLike, snapshot: Readonly<RuntimeState>) {
+	if (!snapshot.qualityCheckpointId && !snapshot.qualityCheckpointKind &&
+		!snapshot.qualityCheckpointTreeSha && !snapshot.qualityCheckpointBindingHash) return null;
+	return resolveCheckpointQualityContext(runtime, snapshot);
+}
+
+export async function blockFinalCoverageFailure(
+	runtime: WorkflowRuntimeLike,
+	snapshot: Readonly<RuntimeState>,
+): Promise<Readonly<RuntimeState>> {
+	if (snapshot.blockedReason !== 'AC_COVERAGE_FAILED') return snapshot;
+	const context = boundQualityContext(runtime, snapshot);
+	if (!context) return snapshot;
+	return blockQualityCheckpoint({
+		runtime,
+		snapshot,
+		context,
+		status: 'COVERAGE_FAILED',
+		reason: 'New-policy acceptance coverage failed for the bound final candidate',
+	});
+}
 
 function collectSpecFilesFromDirs(
 	dirs: readonly string[],
@@ -89,7 +115,9 @@ export function applyAcCoverageGate(
 	} = {},
 ): { snapshot: Readonly<RuntimeState> } {
 	const draft = runtime.artifactStore.readJson(snapshot.draftArtifact);
-	const searchDirs = coverageWorktreeDirs(snapshot);
+	const qualityPolicy = getRunCheckpointQualityPolicy(runtime, snapshot);
+	const newPolicy = qualityPolicy !== null;
+	const searchDirs = newPolicy ? [worktreeDir] : coverageWorktreeDirs(snapshot);
 	const collected = collectTouchedTestFiles({
 		runtime,
 		snapshot,
@@ -122,7 +150,7 @@ export function applyAcCoverageGate(
 			searchDirs,
 		});
 	} catch (error: unknown) {
-		if (!(error instanceof SdlcError)) throw error;
+		if (!(error instanceof SdlcError) && !newPolicy) throw error;
 		coverage = {
 			pass: false,
 			uncoveredAcIds: [],
@@ -132,25 +160,51 @@ export function applyAcCoverageGate(
 			emptyAssertFiles: [],
 			staleOracleCitations: [],
 			rows: [],
-			errors: [{ code: error.code, message: error.message }],
+			errors: [{
+				code: error instanceof SdlcError ? error.code : 'AC_COVERAGE_EVALUATION_FAILED',
+				message: error instanceof Error ? error.message : String(error),
+			}],
 		};
 	}
 	const coverageArtifact = runtime.artifactStore.writeJson('ac-coverage', coverage);
+	const failedNewPolicyCoverage = newPolicy && coverage.pass !== true;
 	const next = runtime.transition(snapshot, {
-		to: 'REVIEWING_QA',
-		eventType: 'AC_COVERAGE_PASSED',
-		causalId: `ac-coverage-pass-${snapshot.runtimeRevision}`,
+		to: failedNewPolicyCoverage ? 'BLOCKED' : 'REVIEWING_QA',
+		eventType: failedNewPolicyCoverage ? 'AC_COVERAGE_FAILED' : 'AC_COVERAGE_PASSED',
+		causalId: `ac-coverage-${failedNewPolicyCoverage ? 'failed' : 'pass'}-${snapshot.runtimeRevision}`,
 		updates: {
 			preflightBindingArtifact,
+			...(qualityPolicy ? { qualityPolicy } : {}),
+			...(snapshot.qualityCheckpointId ? {
+				qualityCheckpointId: snapshot.qualityCheckpointId,
+				qualityCheckpointKind: snapshot.qualityCheckpointKind,
+				qualityCheckpointSliceId: snapshot.qualityCheckpointSliceId,
+				qualityCheckpointTreeSha: snapshot.qualityCheckpointTreeSha,
+				qualityCheckpointBindingHash: snapshot.qualityCheckpointBindingHash,
+			} : {}),
+			...(failedNewPolicyCoverage ? {
+				blockedReason: 'AC_COVERAGE_FAILED',
+				lastError: {
+					code: 'AC_COVERAGE_FAILED',
+					message: 'New-policy acceptance coverage failed; QA and delivery are blocked',
+				},
+			} : {}),
 		},
 		payload: {
 			worktreePath: worktreeDir,
 			baseCommitSha: auth.baseCommitSha,
 			targetTreeSha: snapshot.targetTreeSha,
+			...(qualityPolicy ? { qualityPolicyHash: sha256(qualityPolicy) } : {}),
+			...(snapshot.qualityCheckpointBindingHash ? {
+				qualityCheckpointBindingHash: snapshot.qualityCheckpointBindingHash,
+				qualityCheckpointId: snapshot.qualityCheckpointId,
+				qualityCheckpointKind: snapshot.qualityCheckpointKind,
+				qualityCheckpointTreeSha: snapshot.qualityCheckpointTreeSha,
+			} : {}),
 			preflightBindingArtifact,
 			verificationEvidenceHash,
 			canonical: true,
-			status: 'OK',
+			status: failedNewPolicyCoverage ? 'FAILED' : 'OK',
 			coverageArtifact,
 			coveragePass: coverage.pass,
 			uncoveredAcIds: coverage.uncoveredAcIds ?? [],
@@ -247,6 +301,19 @@ export async function executePreflightForSnapshot(
 	});
 
 	if (verifierResult.status === 'FAIL') {
+		const qualityContext = boundQualityContext(runtime, snapshot);
+		if (qualityContext) {
+			return {
+				snapshot: await blockQualityCheckpoint({
+					runtime,
+					snapshot,
+					context: qualityContext,
+					status: 'PREFLIGHT_FAILED',
+					reason: 'Canonical final preflight failed for the bound quality candidate',
+					findings: verifierResult.failurePacket ? [verifierResult.failurePacket] : [],
+				}),
+			};
+		}
 		if (verifierResult.repairable === false) {
 			const next = runtime.transition(snapshot, {
 				to: 'ESCALATED',
@@ -287,9 +354,32 @@ export async function executePreflightForSnapshot(
 		'preflight-binding',
 		verifierResult.binding,
 	);
-	return applyAcCoverageGate(runtime, snapshot, auth, worktreeDir, {
+	let finalQualityFields: Partial<RuntimeState>;
+	try {
+		finalQualityFields = await prepareFinalQualityCheckpoint(runtime, snapshot, worktreeDir);
+	} catch (error: unknown) {
+		const qualityContext = boundQualityContext(runtime, snapshot);
+		if (qualityContext) {
+			return {
+				snapshot: await blockQualityCheckpoint({
+					runtime,
+					snapshot,
+					context: qualityContext,
+					status: 'EVIDENCE_FAILED',
+					reason: error instanceof Error ? error.message : String(error),
+				}),
+			};
+		}
+		throw error;
+	}
+	const candidateSnapshot = { ...snapshot, ...finalQualityFields };
+	const coverageResult = applyAcCoverageGate(runtime, candidateSnapshot, auth, worktreeDir, {
 		preflightBindingArtifact: bindingArtifact,
 		verificationEvidenceHash:
 			verifierResult.binding.preflightResultHash || sha256(verifierResult.binding),
 	});
+	if (coverageResult.snapshot.blockedReason !== 'AC_COVERAGE_FAILED') return coverageResult;
+	return {
+		snapshot: await blockFinalCoverageFailure(runtime, coverageResult.snapshot),
+	};
 }

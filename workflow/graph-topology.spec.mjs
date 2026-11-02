@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { END, START, StateGraph } from '@langchain/langgraph';
-import { GraphState, routeFromStart, wireWorkflowEdges } from './graph-topology.ts';
+import { GraphState, routeFromStart, routeAfterTasks, routeAfterQaCritic, wireWorkflowEdges } from './graph-topology.ts';
 
 const NODE_IDS = [
 	"check_completeness",
@@ -11,6 +11,8 @@ const NODE_IDS = [
 	"prepare_questions",
 	"ask_questions",
 	"apply_answers",
+	"ask_quality_answer",
+	"apply_quality_answer",
 	"execute_spec_critic",
 	"prepare_approval",
 	"ask_approval",
@@ -39,7 +41,8 @@ const NODE_IDS = [
 	"finalize_run"
 ];
 
-test('@ac AC-03 @case AC-03.5 wireWorkflowEdges compiles the 33-node graph and routes INITIALIZING to check_completeness', () => {
+test('@ac AC-03 @case AC-03.5 wireWorkflowEdges compiles the 35-node graph and routes INITIALIZING to check_completeness', () => {
+	assert.equal(NODE_IDS.length, 35);
 	let graph = new StateGraph(GraphState);
 	for (const id of NODE_IDS) {
 		graph = graph.addNode(id, async () => ({ snapshot: { state: 'FAILED' } }));
@@ -50,6 +53,14 @@ test('@ac AC-03 @case AC-03.5 wireWorkflowEdges compiles the 33-node graph and r
 	assert.equal(routeFromStart({ snapshot: { state: 'FAILED' } }), 'end');
 	assert.equal(routeFromStart({ snapshot: { state: 'NOT_A_STATE' } }), 'end');
 	assert.equal(routeFromStart({ snapshot: { state: 'DONE' } }), 'finalize_run');
+});
+
+test('@case AC-03.2 @case AC-07.4 slice QA yields back to execution and quality interrupts require answers', () => {
+	assert.equal(routeAfterTasks({ snapshot: { state: 'REVIEWING_QA' } }), 'execute_qa_critic');
+	assert.equal(routeAfterQaCritic({ snapshot: { state: 'EXECUTING_IMPLEMENTATION' } }), 'execute_tasks');
+	const snapshot = { state: 'BLOCKED', blockedReason: 'QUALITY_REVIEW_BLOCKED', pendingInterruptId: 'quality' };
+	assert.equal(routeFromStart({ snapshot }), 'ask_quality_answer');
+	assert.equal(routeAfterQaCritic({ snapshot }), 'ask_quality_answer');
 });
 
 test('a route key missing from its edge map throws', async () => {

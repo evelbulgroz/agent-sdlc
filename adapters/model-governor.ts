@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { resolveLocalPolicyPath } from '../policy/local-policy-fingerprint.ts';
+import { ModelUsageLedger } from '@evelbulgroz/model-usage-govenor/ledger';
 
 const GOVERNOR_PORT_VERSION = '1.0.0';
 const DEFAULT_GOVERNOR_FILE = fileURLToPath(import.meta.resolve('@evelbulgroz/model-usage-govenor'));
@@ -148,6 +149,12 @@ export class RepositoryModelGovernor {
 		} catch {
 			return {};
 		}
+	}
+
+	getRunUsageLedger(runId: string): unknown {
+		const stateRoot = typeof this.executeOptions.stateRoot === 'string'
+			? this.executeOptions.stateRoot : path.join(REPOSITORY_ROOT, 'tools/.model-usage');
+		return new ModelUsageLedger({ stateRoot }).readEnvelope(runId);
 	}
 
 	async assertCanReserve(request: unknown): Promise<unknown> {

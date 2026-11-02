@@ -271,6 +271,7 @@ export function buildStatusDocument({
 	hostInvocation,
 	falseEconomyDiagnostics = [],
 	candidateLearnings = [],
+	quality = null,
 	rootDir,
 	runDir,
 	eventLogHash = null,
@@ -290,6 +291,8 @@ export function buildStatusDocument({
 	hostInvocation: Readonly<HostInvocationRecord>;
 	falseEconomyDiagnostics?: readonly unknown[];
 	candidateLearnings?: readonly CandidateLearningItem[];
+	/** Checkpoint-evidence v2 execution, citation, review, disposition and budget summary. */
+	quality?: Readonly<Record<string, unknown>> | null;
 	rootDir: string;
 	runDir: string;
 	eventLogHash?: string | null;
@@ -340,6 +343,7 @@ export function buildStatusDocument({
 		diagnostics?: { falseEconomy: readonly unknown[] };
 		candidateLearnings?: readonly CandidateLearningItem[];
 		proposedLearnings?: Array<Record<string, unknown>>;
+		quality?: Readonly<Record<string, unknown>>;
 	} = {
 		schemaVersion: 1,
 		runId: state.runId,
@@ -420,6 +424,7 @@ export function buildStatusDocument({
 			projectionHash: null,
 		},
 	};
+	if (quality) baseStatus.quality = quality;
 	if (preparation) baseStatus.verification.preparation = preparation;
 	if (falseEconomyDiagnostics.length > 0) {
 		baseStatus.diagnostics = {

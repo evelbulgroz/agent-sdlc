@@ -56,6 +56,7 @@ const FROZEN_PROTOTYPE_NAMES = [
 	'getSemanticRepairsCount',
 	'getTask',
 	'getTaskPlan',
+	'getTaskPlanForPolicy',
 	'getToolExecution',
 	'hasAuthorization',
 	'hasRun',
@@ -188,7 +189,7 @@ function productionSources(directory, relBase, found) {
 
 test('@ac AC-05 @case AC-05.1 RuntimeStore keeps the frozen prototype names', () => {
 	const names = Object.getOwnPropertyNames(RuntimeStore.prototype).sort();
-	assert.equal(names.length, 95);
+	assert.equal(names.length, 96);
 	assert.deepEqual(names, FROZEN_PROTOTYPE_NAMES);
 });
 

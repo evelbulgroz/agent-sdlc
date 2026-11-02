@@ -181,10 +181,10 @@ test('saveResumeFromEscalation rolls back transition, candidate, and outbox toge
 	}
 });
 
-test('fresh store records schema version 14 and rolls a failed transaction back', () => {
+test('fresh store records schema version 15 and rolls a failed transaction back', () => {
 	const fixture = makeFixture('schema-rollback');
 	try {
-		assert.equal(fixture.store.database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version, 14);
+		assert.equal(fixture.store.database.prepare('SELECT max(version) AS version FROM schema_migrations').get().version, 15);
 		fixture.runtime.initialize({ runId: fixture.runId, goal: 'rollback marker' });
 		const event = createEvent({
 			eventType: 'RUN_BLOCKED',

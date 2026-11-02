@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateRunAuthorization } from './run-authorization-schema.ts';
+import { adapterBindingHash } from './quality-schema.ts';
 
 test('run authorization contracts validate permissions, path boundaries, and immutability', () => {
 	const validAuth = {
@@ -31,6 +32,58 @@ test('run authorization contracts validate permissions, path boundaries, and imm
 	assert.equal(parsed.runId, '2026-09-04-auth-test');
 	assert.equal(parsed.maxSemanticRepairs, 2);
 	assert.equal(parsed.allowedOperations.createBranch, false);
+	assert.equal(Object.hasOwn(parsed, 'qualityPlan'), false);
+
+	const qualityPolicy = {
+		schemaVersion: '1.0.0',
+		policyId: 'checkpoint-evidence-v1',
+		additionalCandidateReviews: 0,
+		followUpDispatches: 0,
+		testRetryPolicy: 'clean-success',
+		retrieval: {
+			maxPacketBytes: 24_576,
+			maxPacketLines: 1_000,
+			maxTotalBytesPerCandidate: 49_152,
+			maxTotalLinesPerCandidate: 2_000,
+		},
+		execution: { maxInvocations: 2, maxTotalDurationMs: 10_000 },
+		review: { maxLogicalDispatches: 1, maxPhysicalCalls: 1, maxInputTokens: 100, maxOutputTokens: 100 },
+	};
+	const adapter = {
+		adapterId: 'unit-adapter',
+		protocolVersion: '1.0.0',
+		bundleFiles: [{ path: 'tools/adapter.mjs', sha256: 'd'.repeat(64) }],
+		dependencyFiles: [],
+		configurationFiles: [],
+		argv: ['node', 'tools/adapter.mjs'],
+		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
+		qualificationArtifactHash: 'e'.repeat(64),
+		limits: { timeoutMs: 5_000, maxReportBytes: 10_000, maxArtifactBytes: 10_000, maxArtifacts: 2 },
+	};
+	const qualityPlan = {
+		qualityPolicy,
+		adapterBindings: [adapter],
+		evidenceObligations: [{
+			obligationId: 'obligation-one',
+			criterionId: 'AC-01',
+			caseId: 'AC-01.1',
+			owner: { kind: 'task', id: 'billing-task' },
+			observableOutcome: 'A visible result.',
+			setupAction: 'Open the screen.',
+			expectedResult: 'The result appears.',
+			layer: 'unit',
+			requiredCapabilities: [],
+			implementationPaths: ['src/main.ts'],
+			testCases: [{ file: 'src/main.spec.ts', caseKey: 'main-case' }],
+			adapterBindingHash: adapterBindingHash(adapter),
+			profileId: 'unit',
+		}],
+	};
+	const authorizedQuality = validateRunAuthorization({ ...validAuth, qualityPlan });
+	assert.equal(authorizedQuality.qualityPlan?.evidenceObligations[0].criterionId, 'AC-01');
+	assert.throws(
+		() => validateRunAuthorization({ ...validAuth, qualityPlan: { ...qualityPlan, unexpected: true } }),
+	);
 
 	// Slice 3 allows authorized local git operations with coupling rules
 	const authorizedBranchOnly = validateRunAuthorization({
