@@ -161,6 +161,9 @@ test('createPlanTasksNode freezes and binds the full v2 plan projection before p
 		assert.ok(criticPrompt?.includes('obligation-ac-01'));
 		assert.ok(criticPrompt?.includes('planning-test'));
 		assert.ok(criticPrompt?.includes(legacyPlan.slices[0].sliceId));
+		const criticRequest = fixture.governor.calls.find((call) => call.profile === 'critic-review');
+		assert.deepEqual(criticRequest.requestedLimits,
+			fixture.runtime.registry.loadRole('critic-reviewer').role.requestedLimits);
 
 		const planHash = planned.snapshot.taskPlanHash;
 		const changedObligation = structuredClone(plan);
