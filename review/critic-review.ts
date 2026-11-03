@@ -309,7 +309,7 @@ export class CriticReviewAdapter {
 
 		const strictInput = phase === 'plan' || requireUntruncatedInput;
 		const targetCeiling =
-			Math.min(requestedLimits?.maxPromptTokens ?? 20000, 20000) - (strictInput ? 0 : 200);
+			Math.min(requestedLimits?.maxPromptTokens ?? 32000, 32000) - (strictInput ? 0 : 200);
 		const activePrompt = truncatePromptToTokenCeiling(prompt, estimateCriticPromptTokens, targetCeiling);
 		if (strictInput && activePrompt !== prompt) {
 			const estimatedInputTokens = estimateCriticPromptTokens(prompt);

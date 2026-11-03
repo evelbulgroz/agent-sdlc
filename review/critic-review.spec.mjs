@@ -437,6 +437,7 @@ test('executeReview truncates prompts exceeding ceiling to <= targetCeiling with
 		phase: 'spec',
 		authorVendor: 'google',
 		documentText: largeDoc,
+		requestedLimits: { maxPromptTokens: 20000 },
 	});
 
 	assert.equal(governor.calls.length, 1);
@@ -463,6 +464,7 @@ test('executeReview rejects a plan prompt that would truncate the immutable plan
 			phase: 'plan',
 			authorVendor: 'google',
 			documentText: largeDoc,
+			requestedLimits: { maxPromptTokens: 20000 },
 		}),
 		(error) =>
 			error.code === 'INPUT_OVERSIZED' &&

@@ -10,7 +10,7 @@
 	"routingStrategy": "quality-first",
 	"minQualityTier": 3,
 	"requestedLimits": {
-		"maxPromptTokens": 20000,
+		"maxPromptTokens": 32000,
 		"maxCompletionTokens": 6000,
 		"timeoutMs": 120000,
 		"maxPhysicalAttempts": 3,
