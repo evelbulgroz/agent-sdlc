@@ -76,6 +76,7 @@ AdapterRegistration:
   argv: nonempty string[]
   profiles: [{ profileId: Id, layers: Layer[], capabilities: Capability[] }]
   qualificationArtifactHash: Hash
+  qualificationArtifact: { path: RelPath, sha256: Hash }  # required to execute; sha256 == qualificationArtifactHash
   limits: { timeoutMs: positive integer, maxReportBytes: positive integer,
             maxArtifactBytes: positive integer, maxArtifacts: positive integer }
 ```

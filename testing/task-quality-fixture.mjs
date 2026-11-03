@@ -16,6 +16,7 @@ import { createTaskQualitySession } from '../workflow/task-quality-session.ts';
 import { initialize, policy, H, TIME } from './quality-test-support.mjs';
 import { FakeModelGovernor } from './fake-model-governor.mjs';
 import { createMockExecCli } from './test-support.mjs';
+import { qualify } from '../host/evidence-qualification-fixture.mjs';
 
 export function taskQualityFixture(t, { withConsumer = false, overlappingConsumer = false } = {}) {
 	const fixtureParent = path.resolve('tools/.agent-sdlc/test-fixtures');
@@ -36,6 +37,7 @@ export function taskQualityFixture(t, { withConsumer = false, overlappingConsume
 	fs.mkdirSync(path.join(rootDir, 'src'));
 	fs.writeFileSync(path.join(rootDir, 'src/a.ts'), 'export const value = 1;\n');
 	fs.writeFileSync(path.join(rootDir, 'src/adapter.mjs'), 'fixture protocol adapter\n');
+	const qualification = qualify(rootDir, 'src/qualification.json', 'b'.repeat(40), H);
 	git(['add', '.']);
 	git(['-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'fixture']);
 	const base = git(['rev-parse', 'HEAD']), tree = git(['rev-parse', 'HEAD^{tree}']);
@@ -52,7 +54,7 @@ export function taskQualityFixture(t, { withConsumer = false, overlappingConsume
 			sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(rootDir, 'src/adapter.mjs'))).digest('hex') }],
 		dependencyFiles: [], configurationFiles: [], argv: [fs.realpathSync(process.execPath)],
 		executableSha256: crypto.createHash('sha256').update(fs.readFileSync(process.execPath)).digest('hex'),
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }], qualificationArtifactHash: H,
+		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }], ...qualification,
 		limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } };
 	const obligation = (id, taskId, stem, criterionId) => ({
 		obligationId: id, criterionId, caseId: `${criterionId}.1`, owner: { kind: 'task', id: taskId },

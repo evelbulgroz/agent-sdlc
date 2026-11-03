@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import test from 'node:test';
 import { sha256 } from '../policy/contracts.ts';
 import { hashEvidenceBytes } from './evidence-files.ts';
+import { qualify } from './evidence-qualification-fixture.mjs';
 import { executeEvidence } from './evidence-port.ts';
 
 const H = 'a'.repeat(64), TREE = 'b'.repeat(40);
@@ -18,6 +19,7 @@ function fixture(t) {
 	fs.mkdirSync(path.join(root, 'runtime'));
 	fs.writeFileSync(path.join(root, 'src/case.mjs'), 'assert visible\n');
 	fs.writeFileSync(path.join(root, 'runtime/dependency'), 'frozen');
+	const qualification = qualify(root, 'runtime/qualification.json', TREE, H);
 	fs.writeFileSync(path.join(root, 'runtime/adapter.mjs'), `
 		import fs from 'node:fs';
 		const request = JSON.parse(fs.readFileSync(0, 'utf8'));
@@ -40,7 +42,7 @@ function fixture(t) {
 		argv: [fs.realpathSync(process.execPath), 'runtime/adapter.mjs'],
 		executableSha256: hashEvidenceBytes(fs.readFileSync(process.execPath)),
 		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: H,
+		...qualification,
 		limits: { timeoutMs: 2000, maxReportBytes: 4096, maxArtifactBytes: 1024, maxArtifacts: 1 } };
 	const policy = { schemaVersion: '1.0.0', policyId: 'checkpoint-evidence-v1',
 		additionalCandidateReviews: 1, followUpDispatches: 1, testRetryPolicy: 'clean-success',

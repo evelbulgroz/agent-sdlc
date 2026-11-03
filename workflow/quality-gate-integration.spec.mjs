@@ -11,6 +11,7 @@ import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { canonicalJson, sha256 } from '../policy/contracts.ts';
 import { hashTaskPlanProjection } from '../policy/contracts/dag-schema.ts';
 import { makeFixture } from '../testing/test-support.mjs';
+import { qualify } from '../host/evidence-qualification-fixture.mjs';
 import { policy as defaultPolicy } from '../testing/quality-test-support.mjs';
 import { SdlcWorkflowRuntime } from './graph.ts';
 import { createExecuteQaCriticNode } from './nodes/review-qa.ts';
@@ -41,6 +42,7 @@ function fixture(t, finalReview) {
 			`test('@ac AC-0${index} @case AC-0${index}.1 visible', () => { assert.equal(true, true); });\n`);
 	}
 	fs.writeFileSync(path.join(worktreeDir, 'src/adapter.mjs'), 'frozen adapter\n');
+	const qualification = qualify(worktreeDir, 'src/qualification.json', BASE, H);
 	const policy = {
 		...defaultPolicy,
 		followUpDispatches: 0,
@@ -54,7 +56,7 @@ function fixture(t, finalReview) {
 		dependencyFiles: [], configurationFiles: [], argv: [fs.realpathSync(process.execPath)],
 		executableSha256: crypto.createHash('sha256').update(fs.readFileSync(process.execPath)).digest('hex'),
 		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: H,
+		...qualification,
 		limits: { timeoutMs: 1_000, maxReportBytes: 16_384, maxArtifactBytes: 1_000, maxArtifacts: 1 },
 	};
 	const obligations = [1, 2].map(index => ({

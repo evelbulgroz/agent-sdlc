@@ -7,7 +7,10 @@ import test from 'node:test';
 import { AdapterRegistrationSchema, sha256 } from '../policy/contracts.ts';
 import { EvidenceDependencyManifestSchema } from '../policy/contracts/quality-evidence-schema.ts';
 import { hashEvidenceBytes, verifyEvidenceRegistration } from './evidence-files.ts';
+import { qualify } from './evidence-qualification-fixture.mjs';
 import { spawnEvidence } from './evidence-transport.ts';
+
+const BASE_COMMIT_SHA = 'b'.repeat(40);
 
 function fixture(t) {
 	const root = path.resolve(`.evidence-executable-${crypto.randomUUID()}`);
@@ -16,13 +19,16 @@ function fixture(t) {
 	const command = path.join(root, 'adapter');
 	const bytes = Buffer.from('#!/bin/sh\nprintf "{}"\n');
 	fs.writeFileSync(command, bytes, { mode: 0o755 });
+	const qualification = qualify(root, 'qualification.json', BASE_COMMIT_SHA, 'c'.repeat(64));
+	const qualificationPath = path.join(root, qualification.qualificationArtifact.path);
+	const qualificationHash = qualification.qualificationArtifactHash;
 	const registration = {
 		adapterId: 'executable-fixture', protocolVersion: '1.0.0',
 		bundleFiles: [{ path: 'adapter', sha256: hashEvidenceBytes(bytes) }],
 		dependencyFiles: [], configurationFiles: [], argv: [command],
 		executableSha256: hashEvidenceBytes(bytes),
 		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: 'a'.repeat(64),
+		...qualification,
 		limits: { timeoutMs: 1000, maxReportBytes: 1000, maxArtifactBytes: 1000, maxArtifacts: 1 },
 	};
 	return { root, command, registration, verify: () =>
@@ -67,6 +73,56 @@ test('replacement, nonexecutable files and symlink aliases invalidate frozen exe
 	assert.throws(f.verify, /frozen-adapter-file-changed/);
 });
 
+test('adapter qualification is hash-bound, passed, non-live and provider-free', t => {
+	const f = fixture(t);
+	const qualificationPath = path.join(f.root, 'qualification.json');
+	const setReceipt = (receipt) => {
+		const bytes = Buffer.from(JSON.stringify(receipt));
+		fs.writeFileSync(qualificationPath, bytes);
+		const qualificationHash = hashEvidenceBytes(bytes);
+		f.registration.qualificationArtifactHash = qualificationHash;
+		f.registration.qualificationArtifact = { path: 'qualification.json', sha256: qualificationHash };
+	};
+	const valid = JSON.parse(fs.readFileSync(qualificationPath, 'utf8'));
+	assert.doesNotThrow(f.verify);
+	for (const invalid of [
+		{ ...valid, status: 'blocked' },
+		{ ...valid, liveQualified: true },
+		{ ...valid, providerOperations: 1 },
+		{ ...valid, sourceCommitSha: 'not-a-commit' },
+		{ ...valid, inventorySha256: 'not-a-hash' },
+	]) {
+		setReceipt(invalid);
+		assert.throws(f.verify, /unqualified-evidence-adapter/);
+	}
+	setReceipt(valid);
+	delete f.registration.qualificationArtifact;
+	assert.throws(f.verify, /unqualified-evidence-adapter/);
+	f.registration.qualificationArtifact = { path: 'qualification.json', sha256: f.registration.qualificationArtifactHash };
+	setReceipt(valid);
+	fs.writeFileSync(qualificationPath, '');
+	assert.throws(f.verify, /frozen-adapter-file-changed/);
+	setReceipt(valid);
+	fs.writeFileSync(qualificationPath, '{');
+	const malformedHash = hashEvidenceBytes(fs.readFileSync(qualificationPath));
+	f.registration.qualificationArtifactHash = malformedHash;
+	f.registration.qualificationArtifact = { path: 'qualification.json', sha256: malformedHash };
+	assert.throws(f.verify, /unqualified-evidence-adapter/);
+});
+
+test('qualification metadata must identify its hash-bound receipt', t => {
+	const f = fixture(t);
+	assert.equal(AdapterRegistrationSchema.safeParse({
+		...f.registration, qualificationArtifactHash: 'd'.repeat(64),
+	}).success, false);
+	assert.equal(AdapterRegistrationSchema.safeParse({
+		...f.registration, qualificationArtifact: null,
+	}).success, false);
+	assert.equal(AdapterRegistrationSchema.safeParse({
+		...f.registration, qualificationArtifact: { path: '../qualification.json', sha256: f.registration.qualificationArtifactHash },
+	}).success, false);
+});
+
 test('a planted executable on PATH is never discovered or invoked', async t => {
 	const f = fixture(t);
 	const marker = path.join(f.root, 'executed');
@@ -88,7 +144,9 @@ test('hash-bound manifest verifies every frozen dependency without granting mode
 	f.registration.dependencyManifest = { path: 'dependencies.json', sha256: hashEvidenceBytes(Buffer.from(contents)) };
 	const parsed = AdapterRegistrationSchema.parse(f.registration);
 	assert.deepEqual(parsed.dependencyManifest, f.registration.dependencyManifest);
-	assert.doesNotThrow(() => verifyEvidenceRegistration(f.root, parsed, () => { throw Error('write scope'); }));
+	assert.doesNotThrow(() => verifyEvidenceRegistration(
+		f.root, parsed, () => { throw Error('write scope'); },
+	));
 	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'drift');
 	assert.throws(f.verify, /frozen-adapter-file-changed/);
 	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'frozen');

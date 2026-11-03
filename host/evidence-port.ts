@@ -191,7 +191,7 @@ export async function executeEvidence(
 		// Never persist attacker-controlled reports, diagnostics, or exception messages as reasons.
 		const known = new Set([
 			'timeout', 'spawn-failed', 'process-error', 'stdin-error', 'report-byte-limit',
-			'process-cleanup-failed', 'unqualified-evidence-executable',
+			'process-cleanup-failed', 'unqualified-evidence-executable', 'unqualified-evidence-adapter',
 			'candidate-source-or-preparation-changed', 'frozen-adapter-file-changed',
 			'artifact-directory-not-fresh', 'evidence-path-not-authorized', 'process-interrupted',
 			'artifact-count-limit', 'artifact-manifest-mismatch', 'undeclared-attempt-artifact',

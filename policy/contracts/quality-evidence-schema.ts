@@ -28,6 +28,17 @@ export const EvidenceDependencyManifestSchema = z.strictObject({
 	}
 });
 
+export const AdapterQualificationReceiptSchema = z.object({
+	schemaVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
+	kind: Id,
+	status: z.literal('passed'),
+	liveQualified: z.literal(false),
+	providerOperations: z.literal(0),
+	sourceCommitSha: Tree.optional(),
+	inventorySha256: Hash.optional(),
+});
+export type AdapterQualificationReceipt = z.infer<typeof AdapterQualificationReceiptSchema>;
+
 export const AdapterRegistrationSchema = z.strictObject({
 	adapterId: Id,
 	protocolVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
@@ -39,6 +50,7 @@ export const AdapterRegistrationSchema = z.strictObject({
 	executableSha256: Hash.optional(),
 	profiles: z.array(EvidenceAdapterProfileSchema).min(1),
 	qualificationArtifactHash: Hash,
+	qualificationArtifact: FileHash.optional(),
 	limits: z.strictObject({
 		timeoutMs: PosInt, maxReportBytes: PosInt, maxArtifactBytes: PosInt, maxArtifacts: PosInt,
 	}),
@@ -53,6 +65,10 @@ export const AdapterRegistrationSchema = z.strictObject({
 	}
 	const profileIds = registration.profiles.map((profile) => profile.profileId);
 	if (new Set(profileIds).size !== profileIds.length) ctx.addIssue({ code: 'custom', path: ['profiles'], message: 'profile ids must be unique' });
+	if (registration.qualificationArtifact &&
+		registration.qualificationArtifact.sha256 !== registration.qualificationArtifactHash) {
+		ctx.addIssue({ code: 'custom', path: ['qualificationArtifact'], message: 'qualification artifact hash mismatch' });
+	}
 });
 export type AdapterRegistration = z.infer<typeof AdapterRegistrationSchema>;
 

@@ -54,6 +54,14 @@ may omit the additive field so their hashes remain readable unchanged, but canno
 execute or reuse evidence until explicitly requalified and reapproved. Legacy
 `verify.argv` execution is unchanged.
 
+Execution and reuse also require `qualificationArtifact: {path, sha256}` whose
+hash equals `qualificationArtifactHash`. Its regular JSON receipt must be
+`{schemaVersion, kind, status:"passed", liveQualified:false, providerOperations:0,
+[sourceCommitSha, inventorySha256]}`. The optional SHAs are retained provenance, not
+checked against the run base (a committed receipt cannot name its own commit). Blocked,
+live-claiming, provider-using, malformed or missing receipts fail with `unqualified-evidence-adapter`. This
+proves provider-free offline qualification only, never semantic adequacy.
+
 Large frozen closures can use optional `dependencyManifest: {path, sha256}`.
 Its repository-relative regular JSON file has the closed shape
 `{schemaVersion:"1.0.0", files:[{path,sha256}]}`: 1–100,000 unique paths,

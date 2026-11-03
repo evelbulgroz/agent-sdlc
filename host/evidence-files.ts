@@ -2,7 +2,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AdapterRegistration, EvidenceReport } from '../policy/contracts/quality-schema.ts';
-import { EvidenceDependencyManifestSchema } from '../policy/contracts/quality-evidence-schema.ts';
+import {
+	AdapterQualificationReceiptSchema, EvidenceDependencyManifestSchema,
+} from '../policy/contracts/quality-evidence-schema.ts';
 
 export function hashEvidenceBytes(bytes: Buffer): string {
 	return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -77,6 +79,26 @@ export function verifyEvidenceRegistration(
 		if (hashEvidenceBytes(readEvidenceFile(root, file.path, Number.MAX_SAFE_INTEGER)) !== file.sha256) {
 			throw new Error('frozen-adapter-file-changed');
 		}
+	}
+	const qualification = registration.qualificationArtifact;
+	if (!qualification || qualification.sha256 !== registration.qualificationArtifactHash) {
+		throw new Error('unqualified-evidence-adapter');
+	}
+	if (!registration.dependencyManifest) assertAllowed(qualification.path);
+	const qualificationBytes = readEvidenceFile(root, qualification.path, 1024 * 1024);
+	if (hashEvidenceBytes(qualificationBytes) !== registration.qualificationArtifactHash) {
+		throw new Error('frozen-adapter-file-changed');
+	}
+	let qualificationInput: unknown;
+	try {
+		qualificationInput = JSON.parse(qualificationBytes.toString('utf8'));
+	} catch (error) {
+		if (error instanceof SyntaxError) throw new Error('unqualified-evidence-adapter');
+		throw error;
+	}
+	const receipt = AdapterQualificationReceiptSchema.safeParse(qualificationInput);
+	if (!receipt.success) {
+		throw new Error('unqualified-evidence-adapter');
 	}
 }
 

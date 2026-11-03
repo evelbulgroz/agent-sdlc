@@ -8,6 +8,7 @@ import test from 'node:test';
 import { sha256 } from '../policy/contracts/primitives.ts';
 import { executeEvidence } from './evidence-port.ts';
 import { hashEvidenceBytes } from './evidence-files.ts';
+import { qualify } from './evidence-qualification-fixture.mjs';
 import { createEvidenceRecordStore } from './evidence-store.ts';
 
 const H = 'a'.repeat(64);
@@ -21,7 +22,7 @@ async function fixture(fn, layer = 'unit') {
 	fs.writeFileSync(path.join(root, 'src/code.ts'), 'export const ready = true;\r\n');
 	fs.writeFileSync(path.join(root, 'src/check.spec.ts'), 'assert(ready);\n');
 	fs.writeFileSync(path.join(root, 'src/adapter.mjs'), 'frozen bundle\r\n');
-	fs.writeFileSync(path.join(root, 'src/config.json'), '{}\r\n');
+	const receipt = qualify(root, 'src/config.json', TREE, H);
 	fs.writeFileSync(path.join(root, 'src/dependency.mjs'), 'frozen dependency\n');
 	const capabilities = layer === 'browser' ? ['native-browser', 'native-file-picker', 'focus-navigation'] : [];
 	const registration = {
@@ -32,7 +33,7 @@ async function fixture(fn, layer = 'unit') {
 		argv: [fs.realpathSync(process.execPath), '--profile', layer],
 		executableSha256: hashEvidenceBytes(fs.readFileSync(process.execPath)),
 		profiles: [{ profileId: layer, layers: [layer], capabilities }],
-		qualificationArtifactHash: H,
+		...receipt,
 		limits: { timeoutMs: 1000, maxReportBytes: 16384, maxArtifactBytes: 2048, maxArtifacts: 2 },
 	};
 	const bindingHash = sha256(registration);
