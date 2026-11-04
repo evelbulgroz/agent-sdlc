@@ -51,6 +51,7 @@ export interface CommandDispatchOptions {
 	readonly onBoundary?: OpenContextOptions['onBoundary'];
 	readonly gitCli?: OpenContextOptions['gitCli'];
 	readonly execCli?: OpenContextOptions['execCli'];
+	readonly evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 	readonly ghCli?: OpenContextOptions['ghCli'];
 	readonly createReadline?: CreateReadlineFn | null;
 	readonly localPolicyPath?: string | null;
@@ -75,6 +76,7 @@ function shellEngineOptions(options: CommandDispatchOptions): Record<string, unk
 		onBoundary: options.onBoundary,
 		gitCli: options.gitCli,
 		execCli: options.execCli,
+		evidenceSpawn: options.evidenceSpawn,
 		ghCli: options.ghCli,
 		createReadline: options.createReadline,
 		localPolicyPath: options.localPolicyPath ?? null,

@@ -21,6 +21,7 @@ export async function prRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 	}: {
 		rootDir: string;
@@ -28,6 +29,7 @@ export async function prRun(
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 		ghCli?: OpenContextOptions['ghCli'];
 	},
 ): Promise<Record<string, unknown>> {
@@ -39,6 +41,7 @@ export async function prRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 	});
 	try {

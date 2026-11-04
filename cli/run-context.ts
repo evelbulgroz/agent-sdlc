@@ -33,6 +33,7 @@ export interface OpenContextOptions {
 	readonly onBoundary?: SdlcWorkflowRuntimeOptions['onBoundary'];
 	readonly gitCli?: GitCliFn;
 	readonly execCli?: ExecCliFn;
+	readonly evidenceSpawn?: SdlcWorkflowRuntimeOptions['evidenceSpawn'];
 	readonly ghCli?: ExecCliFn | null;
 	readonly localPolicyPath?: string | null;
 }
@@ -56,6 +57,7 @@ export function openContext({
 	onBoundary,
 	gitCli,
 	execCli,
+	evidenceSpawn,
 	ghCli,
 	localPolicyPath = null,
 }: OpenContextOptions): RunContext {
@@ -89,6 +91,7 @@ export function openContext({
 			onBoundary,
 			gitCli,
 			execCli,
+			evidenceSpawn,
 			ghCli,
 		});
 		const projection = new StatusProjection({

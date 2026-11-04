@@ -81,3 +81,23 @@ test('AC-06.3: openContext, resume, and status reject an archived runId with INV
 		fs.rmSync(rootDir, { recursive: true, force: true });
 	}
 });
+
+test('openContext hands a host-injected evidenceSpawn to the workflow runtime', () => {
+	const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-evidence-spawn-'));
+	const evidenceSpawn = () => { throw new Error('unused'); };
+	const runId = '2026-10-01-evidence-spawn';
+	try {
+		fs.mkdirSync(path.join(rootDir, 'docs/specs/runs', runId), { recursive: true });
+		fs.mkdirSync(path.join(rootDir, '.agent-sdlc', runId), { recursive: true });
+		const context = openContext({
+			rootDir, runId, governor: new FakeModelGovernor(), evidenceSpawn,
+		});
+		try {
+			assert.equal(context.runtime.evidenceSpawn, evidenceSpawn);
+		} finally {
+			context.store.close();
+		}
+	} finally {
+		fs.rmSync(rootDir, { recursive: true, force: true });
+	}
+});

@@ -120,12 +120,14 @@ export async function executePostMortem(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	}: {
 		rootDir: string;
 		governor?: OpenContextOptions['governor'];
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 	},
 ): Promise<{ runId: string; learning: CandidateLearningInput }> {
 	const runId = requiredValue(parsed, '--run');
@@ -139,6 +141,7 @@ export async function executePostMortem(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	});
 	try {
 		const state = context.store.getRun(runId);

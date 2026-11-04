@@ -23,6 +23,7 @@ export async function statusRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		localPolicyPath = null,
 	}: {
 		rootDir: string;
@@ -30,6 +31,7 @@ export async function statusRun(
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 		localPolicyPath?: string | null;
 	},
 ): Promise<Record<string, unknown>> {
@@ -41,6 +43,7 @@ export async function statusRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		localPolicyPath,
 	});
 	try {
@@ -60,12 +63,14 @@ export async function approveRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	}: {
 		rootDir: string;
 		governor?: OpenContextOptions['governor'];
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 	},
 ): Promise<Record<string, unknown>> {
 	const runId = requiredValue(parsed, '--run');
@@ -77,6 +82,7 @@ export async function approveRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	});
 	try {
 		await context.projection.reconcile();
@@ -156,6 +162,7 @@ export async function answerRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 	}: {
 		rootDir: string;
@@ -165,6 +172,7 @@ export async function answerRun(
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 		ghCli?: OpenContextOptions['ghCli'];
 	},
 ): Promise<Record<string, unknown>> {
@@ -185,6 +193,7 @@ export async function answerRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 	});
 	try {
@@ -259,12 +268,14 @@ export async function cancelRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	}: {
 		rootDir: string;
 		governor?: OpenContextOptions['governor'];
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 	},
 ): Promise<Record<string, unknown>> {
 	const runId = requiredValue(parsed, '--run');
@@ -275,6 +286,7 @@ export async function cancelRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	});
 	try {
 		await context.projection.reconcile();
@@ -317,12 +329,14 @@ export async function exportRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	}: {
 		rootDir: string;
 		governor?: OpenContextOptions['governor'];
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 	},
 ): Promise<Record<string, unknown>> {
 	const runId = requiredValue(parsed, '--run');
@@ -333,6 +347,7 @@ export async function exportRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 	});
 	try {
 		await context.projection.reconcile();

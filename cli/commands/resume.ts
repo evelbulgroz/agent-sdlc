@@ -62,6 +62,7 @@ export async function resumeRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 		streams,
 		localPolicyPath = null,
@@ -71,6 +72,7 @@ export async function resumeRun(
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 		ghCli?: OpenContextOptions['ghCli'];
 		streams?: CliStreams;
 		localPolicyPath?: string | null;
@@ -88,6 +90,7 @@ export async function resumeRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 		localPolicyPath,
 	});

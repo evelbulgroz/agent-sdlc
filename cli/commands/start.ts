@@ -61,6 +61,7 @@ export async function startRun(
 		onBoundary,
 		gitCli,
 		execCli,
+		evidenceSpawn,
 		ghCli,
 		env = process.env,
 	}: {
@@ -70,6 +71,7 @@ export async function startRun(
 		onBoundary?: OpenContextOptions['onBoundary'];
 		gitCli?: OpenContextOptions['gitCli'];
 		execCli?: OpenContextOptions['execCli'];
+		evidenceSpawn?: OpenContextOptions['evidenceSpawn'];
 		ghCli?: OpenContextOptions['ghCli'];
 		env?: NodeJS.ProcessEnv;
 	},
@@ -171,6 +173,7 @@ export async function startRun(
 			onBoundary,
 			gitCli,
 			execCli,
+			evidenceSpawn,
 			ghCli,
 		});
 		try {

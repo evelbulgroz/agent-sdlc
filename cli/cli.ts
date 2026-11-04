@@ -34,6 +34,7 @@ export interface RunCliOptions {
 	readonly onBoundary?: SdlcWorkflowRuntimeOptions['onBoundary'];
 	readonly gitCli?: GitCliFn;
 	readonly execCli?: ExecCliFn;
+	readonly evidenceSpawn?: SdlcWorkflowRuntimeOptions['evidenceSpawn'];
 	readonly ghCli?: ExecCliFn | null;
 	readonly createReadline?: CommandDispatchOptions['createReadline'];
 	readonly localPolicyPath?: string | null;
@@ -72,6 +73,7 @@ export async function runCli(
 					onBoundary: options.onBoundary,
 					gitCli: options.gitCli,
 					execCli: options.execCli,
+					evidenceSpawn: options.evidenceSpawn,
 					ghCli: options.ghCli,
 					createReadline: options.createReadline,
 					localPolicyPath: options.localPolicyPath ?? null,
