@@ -39,6 +39,15 @@ function within(relative: string, prefix: string): boolean {
 	return relative === prefix || relative.startsWith(`${prefix}/`);
 }
 
+function assertRealParents(root: string, relative: string): void {
+	let current = root;
+	for (const segment of relative.split('/').slice(0, -1)) {
+		current = path.join(current, segment);
+		const stat = fs.lstatSync(current);
+		if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('nonregular-evidence-source');
+	}
+}
+
 /** Source-only tree capture never changes the real index or worktree. */
 export function createEvidenceSourceObserver(options: EvidenceSourceOptions): () => Promise<EvidenceSourceObservation> {
 	if (!options || !GIT_SHA.test(options.sourceTreeSha) || !Array.isArray(options.generatedOutputs) ||
@@ -70,8 +79,21 @@ export function createEvidenceSourceObserver(options: EvidenceSourceOptions): ()
 		});
 		return Buffer.isBuffer(result) ? result : Buffer.from(result);
 	};
+	const writeBlob = (bytes: Buffer, env: NodeJS.ProcessEnv): string => {
+		const blob = gitCli('git', ['hash-object', '-w', '--stdin'], {
+			cwd: worktreeDir, env, input: bytes, encoding: 'utf8',
+			stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000, maxBuffer: 1024,
+		}).toString().trim();
+		if (!GIT_SHA.test(blob)) throw new Error('invalid-source-blob');
+		return blob;
+	};
 	return async () => {
 		assertEvidenceDirectory(worktreeDir);
+		const baselineSymlinks = new Map<string, string>();
+		for (const entry of git(['ls-tree', '-r', '-z', sourceTreeSha]).toString('utf8').split('\0').filter(Boolean)) {
+			const match = /^120000 blob ([0-9a-f]{40,64})\t(.+)$/s.exec(entry);
+			if (match) baselineSymlinks.set(match[2], match[1]);
+		}
 		const gitDir = git(['rev-parse', '--absolute-git-dir']).toString('utf8').trim();
 		assertEvidenceDirectory(gitDir);
 		const index = path.join(gitDir, `sdlc-evidence-${crypto.randomUUID()}.index`);
@@ -95,16 +117,23 @@ export function createEvidenceSourceObserver(options: EvidenceSourceOptions): ()
 					entries.push(`0 ${'0'.repeat(40)}\t${relative}\0`);
 					continue;
 				}
+				const baselineLink = baselineSymlinks.get(relative);
+				if (stat.isSymbolicLink() && baselineLink) {
+					assertRealParents(worktreeDir, relative);
+					const bytes = Buffer.from(fs.readlinkSync(path.join(worktreeDir, relative)), 'utf8');
+					const blob = writeBlob(bytes, env);
+					// Only a baseline symlink with its exact baseline target is evidence; new or retargeted links stay rejected.
+					if (blob !== baselineLink) throw new Error('nonregular-evidence-source');
+					files.push({ path: relative, mode: '120000', sha256: hashEvidenceBytes(bytes) });
+					entries.push(`120000 ${blob}\t${relative}\0`);
+					continue;
+				}
 				if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('nonregular-evidence-source');
 				const mode = stat.mode & 0o111 ? '100755' : '100644';
 				const bytes = readEvidenceFile(worktreeDir, relative, Number.MAX_SAFE_INTEGER);
 				files.push({ path: relative, mode, sha256: hashEvidenceBytes(bytes) });
 				// Bind the tree to exact bytes, independent of filters, autocrlf or stale stat caches.
-				const blob = gitCli('git', ['hash-object', '-w', '--stdin'], {
-					cwd: worktreeDir, env, input: bytes, encoding: 'utf8',
-					stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000, maxBuffer: 1024,
-				}).toString().trim();
-				if (!GIT_SHA.test(blob)) throw new Error('invalid-source-blob');
+				const blob = writeBlob(bytes, env);
 				entries.push(`${mode} ${blob}\t${relative}\0`);
 			}
 			gitCli('git', ['update-index', '-z', '--index-info'], {

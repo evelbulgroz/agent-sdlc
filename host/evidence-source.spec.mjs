@@ -140,6 +140,35 @@ test('rejects source symlinks, symlinked preparation inputs and unsupported Git 
 	});
 });
 
+test('accepts a baseline symlink with its exact target and rejects any retarget or replacement', async () => {
+	const root = path.resolve(`.evidence-source-fixture-${crypto.randomUUID()}`);
+	fs.mkdirSync(path.join(root, 'tools'), { recursive: true });
+	const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+	try {
+		git(['init', '--quiet']);
+		fs.writeFileSync(path.join(root, 'tools/a.md'), 'a\n');
+		fs.writeFileSync(path.join(root, 'tools/b.md'), 'b\n');
+		fs.writeFileSync(path.join(root, 'runtime.json'), '{}\n');
+		fs.symlinkSync('a.md', path.join(root, 'tools/skills'));
+		git(['add', '.']);
+		const sourceTreeSha = git(['write-tree']).trim();
+		const files = [{ path: 'runtime.json', sha256: hashEvidenceBytes(fs.readFileSync(path.join(root, 'runtime.json'))) }];
+		const observer = createEvidenceSourceObserver({ worktreeDir: root, sourceTreeSha, generatedOutputs: [],
+			preparation: { configuration: { runtime: 'node' }, files } });
+		const first = await observer();
+		assert.match(git(['ls-tree', first.treeSha, 'tools/skills']), /^120000 blob /);
+		assert.equal(git(['cat-file', 'blob', `${first.treeSha}:tools/skills`]), 'a.md');
+		fs.unlinkSync(path.join(root, 'tools/skills'));
+		fs.symlinkSync('b.md', path.join(root, 'tools/skills'));
+		await assert.rejects(observer(), /nonregular-evidence-source/);
+		fs.unlinkSync(path.join(root, 'tools/skills'));
+		fs.writeFileSync(path.join(root, 'tools/skills'), 'a.md');
+		const replaced = await observer();
+		assert.notEqual(replaced.treeSha, first.treeSha);
+		assert.match(git(['ls-tree', replaced.treeSha, 'tools/skills']), /^100644 blob /);
+	} finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test('validates nil, empty and traversal configuration and cleans failed index captures', async () => {
 	for (const options of [null, {}, { sourceTreeSha: null }, { sourceTreeSha: '' }]) {
 		assert.throws(() => createEvidenceSourceObserver(options), /invalid-evidence-source-options/);
