@@ -28,7 +28,13 @@ import { blockQualityCheckpoint } from './quality-interrupt.ts';
 function boundQualityContext(runtime: WorkflowRuntimeLike, snapshot: Readonly<RuntimeState>) {
 	if (!snapshot.qualityCheckpointId && !snapshot.qualityCheckpointKind &&
 		!snapshot.qualityCheckpointTreeSha && !snapshot.qualityCheckpointBindingHash) return null;
-	return resolveCheckpointQualityContext(runtime, snapshot);
+	try {
+		return resolveCheckpointQualityContext(runtime, snapshot);
+	} catch (error: unknown) {
+		// An accepted slice checkpoint has no reviewable context; the caller's own failure must surface instead.
+		if (snapshot.qualityCheckpointKind !== 'final' && error instanceof SdlcError && error.code === 'POLICY_VIOLATION') return null;
+		throw error;
+	}
 }
 
 export async function blockFinalCoverageFailure(
