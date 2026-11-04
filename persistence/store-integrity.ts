@@ -163,6 +163,9 @@ export function createStoreIntegrity(
 			'EXECUTING_IMPLEMENTATION',
 			'REVIEWING_GENERATION',
 			'REPAIRING_FAILURE',
+			// Slice checkpoint review and its quality-review block happen mid-execution, before task operations are committed.
+			'REVIEWING_QA',
+			'BLOCKED',
 		].includes(state.state);
 		const committedOpsMatch = inExecutionState
 			? state.modelOperations.every((id) => operationIds.includes(id))

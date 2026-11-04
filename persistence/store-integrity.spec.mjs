@@ -170,3 +170,31 @@ test('@ac AC-03 @case AC-03.4 reconcile names a missing artifact hash', () => {
 		fixture.close();
 	}
 });
+
+test('@ac AC-03 @case AC-03.5 reconcile tolerates uncommitted task operations only while a quality review blocks execution', () => {
+	for (const [state, tolerated] of [['BLOCKED', true], ['ESCALATED', false]]) {
+		const fixture = makeFixture(`reconcile-operations-${state}`);
+		try {
+			const initial = fixture.runtime.initialize({ runId: fixture.runId, goal: 'uncommitted operations' });
+			fixture.store.recordModelOperation({
+				operationId: 'minimal:task:1:0:op', runId: fixture.runId, synthetic: false, status: 'requested',
+			});
+			const next = { ...initial, state, runtimeRevision: initial.runtimeRevision + 1, updatedAt: new Date().toISOString(),
+				...(state === 'BLOCKED' ? { blockedReason: 'QUALITY_REVIEW_BLOCKED' } : {}) };
+			const payload = { reason: 'TEST' };
+			fixture.store.saveTransition(initial.runtimeRevision, next, createEvent({
+				eventType: 'RUN_BLOCKED', runId: fixture.runId, runtimeRevision: next.runtimeRevision,
+				state: next, input: initial, output: payload, causalId: `${fixture.runId}:${state}`, payload,
+			}));
+			if (tolerated) assert.equal(fixture.store.reconcile(fixture.runId).state.state, state);
+			else {
+				assert.throws(
+					() => fixture.store.reconcile(fixture.runId),
+					(error) => error.code === 'STORE_RECONCILIATION_FAILED' && /model operations diverged/.test(error.message),
+				);
+			}
+		} finally {
+			fixture.close();
+		}
+	}
+});
