@@ -158,6 +158,7 @@ export async function runCheckpointQaCritic({
 			status: 'INSUFFICIENT_EVIDENCE',
 			hasP1: false,
 			findings: Object.freeze([]),
+			reason: packet.reason,
 			review: null,
 			artifactHash,
 			attemptKey,

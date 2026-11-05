@@ -131,8 +131,9 @@ export function packQualityEvidencePacket({
 		}
 		files.push({ path: sourcePath, content });
 	}
-	const fileByPath = new Map(files.map((file) => [file.path, file.content]));
+	// Each source file appears once; cases and implementation paths reference it by path.
 	const packet = {
+		sources: Object.fromEntries(files.map((file) => [file.path, file.content])),
 		checkpointEvidence: obligations.map((obligation) => ({
 			obligationId: obligation.obligationId,
 			criterionId: obligation.criterionId,
@@ -143,15 +144,9 @@ export function packQualityEvidencePacket({
 			expectedResult: obligation.expectedResult,
 			layer: obligation.layer,
 			requiredCapabilities: obligation.requiredCapabilities,
-			executedCases: obligation.testCases.map((testCase) => ({
-				...testCase,
-				source: fileByPath.get(testCase.file),
-			})),
+			executedCases: obligation.testCases.map((testCase) => ({ ...testCase })),
 		})),
-		implementationSources: implementationPaths.map((filePath) => ({
-			path: filePath,
-			source: fileByPath.get(filePath),
-		})),
+		implementationPaths,
 		receipts: normalizedReceipts,
 	};
 	const text = JSON.stringify(packet);

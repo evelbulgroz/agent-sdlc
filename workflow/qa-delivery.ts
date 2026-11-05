@@ -110,7 +110,9 @@ export async function advanceAfterGreenPreflight(
 					snapshot,
 					context: qualityContext,
 					status: qaResult?.status ?? 'INSUFFICIENT_EVIDENCE',
-					reason: 'Current checkpoint has no exact completed passing adequacy review',
+					reason: qaResult?.reason
+						? `Current checkpoint has no exact completed passing adequacy review: ${qaResult.reason}`
+						: 'Current checkpoint has no exact completed passing adequacy review',
 					findings: qaResult?.findings ?? [],
 				}),
 			};

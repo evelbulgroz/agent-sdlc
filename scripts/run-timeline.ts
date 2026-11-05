@@ -64,7 +64,7 @@ export function buildTimeline(db: DatabaseSync, runId: string): TimelineSummary 
 	}
 	entries.sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 	const events = entries.filter((e) => e.kind === 'event');
-	const eventIntervals = events.slice(1).map((e, i) => ({ label: e.label, ms: e.startMs - events[i]!.startMs }));
+	const eventIntervals = events.slice(1).map((e, i) => ({ label: e.label, ms: e.startMs - (events[i]?.startMs ?? e.startMs) }));
 	const spanMsByKind: Record<string, number> = {};
 	for (const e of entries) spanMsByKind[e.kind] = (spanMsByKind[e.kind] ?? 0) + (e.endMs - e.startMs);
 	return {

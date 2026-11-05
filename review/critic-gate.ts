@@ -90,6 +90,7 @@ export interface CriticGateResult {
 	review: CriticReviewLike | CriticReviewExecutionResult | null;
 	artifactHash: string | null | undefined;
 	attemptKey: string;
+	reason?: string | null;
 	retrievalArtifacts?: readonly { requestArtifact: string; responseArtifact: string }[];
 	event?: {
 		eventType: 'CRITIC_REVIEW_COMPLETED';

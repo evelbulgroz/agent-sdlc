@@ -60,8 +60,38 @@ test('checkpoint packet includes case-focused source and normalized receipt outc
 	assert.match(packet.text, /"caseKey":"case-1"/);
 	assert.match(packet.text, /"outcome":"passed"/);
 	assert.match(packet.text, /"exercisedCapabilities":\[\]/);
-	assert.match(packet.text, /"implementationSources":\[\{"path":"review\/critic-budget.ts","source":"/);
+	assert.match(packet.text, /"sources":\{"review\/critic-budget.spec.mjs":"/);
+	assert.match(packet.text, /"implementationPaths":\["review\/critic-budget.ts"\]/);
 	assert.match(packet.text, /"receiptHash":"b{64}"/);
+});
+
+test('checkpoint packet includes each shared source file once regardless of obligation count', () => {
+	const many = Array.from({ length: 12 }, (_, index) => ({
+		...obligation,
+		obligationId: `obligation-${index}`,
+		testCases: [{ file: 'review/critic-budget.spec.mjs', caseKey: `case-${index}` }],
+	}));
+	const base = completion();
+	const completionFor = {
+		...base,
+		receipt: { ...base.receipt, dischargedObligationIds: many.map((item) => item.obligationId) },
+		report: {
+			cases: many.map((item, index) => ({
+				...base.report.cases[0],
+				caseKey: `case-${index}`,
+				obligationIds: [item.obligationId],
+			})),
+		},
+	};
+	const sourceBytes = fs.statSync('review/critic-budget.spec.mjs').size + fs.statSync('review/critic-budget.ts').size;
+	const packet = packQualityEvidencePacket({
+		worktreeDir: process.cwd(),
+		obligations: many,
+		receipts: [{ receiptHash: 'b'.repeat(64), completion: completionFor }],
+		policy: { retrieval: { maxPacketBytes: sourceBytes * 3, maxPacketLines: 100_000 } },
+	});
+	assert.equal(packet.status, 'complete', packet.reason ?? '');
+	assert.equal(packet.text.split('"sources"').length, 2);
 });
 
 test('checkpoint packet rejects source paths traversing a symlinked parent directory', t => {

@@ -144,7 +144,7 @@ test('checkpoint QA persists one bounded production follow-up and lets it discha
 				maxTotalLinesPerCandidate: 2_000,
 			},
 			execution: { maxInvocations: 2, maxTotalDurationMs: 10_000 },
-			review: { maxLogicalDispatches: 2, maxPhysicalCalls: 2, maxInputTokens: 12_000, maxOutputTokens: 2_000 },
+			review: { maxLogicalDispatches: 2, maxPhysicalCalls: 2, maxInputTokens: 16_000, maxOutputTokens: 2_000 },
 		};
 		const policyHash = sha256(policy);
 		fixture.store.quality.initializeBudget({

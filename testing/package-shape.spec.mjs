@@ -15,7 +15,7 @@ function readPackageJson() {
 	return JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'));
 }
 
-test('@ac AC-01 @case AC-01.1 @ac AC-03 @case AC-03.1 package.json build emits dist/ and bin declares all five CLI entrypoints with shebangs', () => {
+test('@ac AC-01 @case AC-01.1 @ac AC-03 @case AC-03.1 package.json build emits dist/ and bin declares all six CLI entrypoints with shebangs', () => {
 	const buildRes = spawnSync('pnpm', ['run', 'build'], {
 		cwd: PACKAGE_ROOT,
 		encoding: 'utf8',
@@ -28,6 +28,7 @@ test('@ac AC-01 @case AC-01.1 @ac AC-03 @case AC-03.1 package.json build emits d
 		'agent-sdlc': './dist/cli/cli.js',
 		'agent-review': './dist/review/agent-review.js',
 		'agent-sdlc-trace': './dist/scripts/trace-summary.js',
+		'agent-sdlc-timeline': './dist/scripts/run-timeline.js',
 		'agent-sdlc-trends': './dist/scripts/aggregate-critic-trends.js',
 		'agent-sdlc-auto-prune': './dist/cli/auto-prune.js',
 	});
