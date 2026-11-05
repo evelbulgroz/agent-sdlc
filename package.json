@@ -18,6 +18,7 @@
     "agent-sdlc": "./dist/cli/cli.js",
     "agent-review": "./dist/review/agent-review.js",
     "agent-sdlc-trace": "./dist/scripts/trace-summary.js",
+    "agent-sdlc-timeline": "./dist/scripts/run-timeline.js",
     "agent-sdlc-trends": "./dist/scripts/aggregate-critic-trends.js",
     "agent-sdlc-auto-prune": "./dist/cli/auto-prune.js"
   },
@@ -36,6 +37,7 @@
     "sdlc": "node ./cli/cli.ts",
     "review": "node ./review/agent-review.ts",
     "trace": "node ./scripts/trace-summary.ts",
+    "timeline": "node ./scripts/run-timeline.ts",
     "trends": "node ./scripts/aggregate-critic-trends.ts",
     "skills": "node ./cli/cli.ts skills",
     "typecheck": "tsc --noEmit -p tsconfig.json",

@@ -204,6 +204,7 @@ agent-review --phase <spec|plan|code|qa> --author-vendor <vendor>
 
 # Trace diagnostics & closed-loop skill learning (see execution/README.md & roles/README.md)
 agent-sdlc-trace --run <run-id> [--json]
+agent-sdlc-timeline --run <run-id> [--json]   # read-only wall-time breakdown from the run store's event, model, tool and evidence timestamps
 agent-sdlc skills --run <run-id>
 agent-sdlc-trends --skills [--threshold <N>] [--json]
 ```
