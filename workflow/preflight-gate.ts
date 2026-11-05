@@ -115,9 +115,12 @@ export function applyAcCoverageGate(
 	{
 		preflightBindingArtifact = snapshot.preflightBindingArtifact,
 		verificationEvidenceHash,
+		transitionFrom,
 	}: {
 		preflightBindingArtifact?: string | null;
 		verificationEvidenceHash?: string;
+		// The persisted state; the transition's input hash must chain from it, not from an in-memory candidate.
+		transitionFrom?: Readonly<RuntimeState>;
 	} = {},
 ): { snapshot: Readonly<RuntimeState> } {
 	const draft = runtime.artifactStore.readJson(snapshot.draftArtifact);
@@ -174,7 +177,7 @@ export function applyAcCoverageGate(
 	}
 	const coverageArtifact = runtime.artifactStore.writeJson('ac-coverage', coverage);
 	const failedNewPolicyCoverage = newPolicy && coverage.pass !== true;
-	const next = runtime.transition(snapshot, {
+	const next = runtime.transition(transitionFrom ?? snapshot, {
 		to: failedNewPolicyCoverage ? 'BLOCKED' : 'REVIEWING_QA',
 		eventType: failedNewPolicyCoverage ? 'AC_COVERAGE_FAILED' : 'AC_COVERAGE_PASSED',
 		causalId: `ac-coverage-${failedNewPolicyCoverage ? 'failed' : 'pass'}-${snapshot.runtimeRevision}`,
@@ -383,6 +386,7 @@ export async function executePreflightForSnapshot(
 		preflightBindingArtifact: bindingArtifact,
 		verificationEvidenceHash:
 			verifierResult.binding.preflightResultHash || sha256(verifierResult.binding),
+		transitionFrom: snapshot,
 	});
 	if (coverageResult.snapshot.blockedReason !== 'AC_COVERAGE_FAILED') return coverageResult;
 	return {

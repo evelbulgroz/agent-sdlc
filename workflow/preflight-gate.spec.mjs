@@ -104,6 +104,36 @@ test('@ac AC-03 @case AC-03.3 @ac AC-05 applyAcCoverageGate does not block compl
 	}
 });
 
+test('coverage transition chains its input hash from the persisted state, not the in-memory candidate', () => {
+	const fixture = makeFixture('graph-coverage-chain', []);
+	try {
+		const draftArtifact = fixture.artifacts.writeJson('draft', { goal: 'g', acceptanceCriteria: ['AC-01: One'] });
+		const initial = fixture.runtime.initialize({ runId: fixture.runId, goal: 'g' });
+		const snapshot = {
+			...initial,
+			state: 'VERIFYING_PREFLIGHT',
+			targetTreeSha: '0123456789abcdef0123456789abcdef01234567',
+			activeGeneration: 0,
+			worktreePath: fixture.rootDir,
+			draftArtifact,
+		};
+		persistRuntimeSnapshot(fixture, snapshot);
+		const candidate = { ...snapshot, semanticRepairsCount: 1 };
+		const { snapshot: next } = applyAcCoverageGate(
+			fixture.runtime,
+			candidate,
+			{ baseCommitSha: snapshot.targetTreeSha, allowedPathPrefixes: [] },
+			fixture.rootDir,
+			{ verificationEvidenceHash: sha256('p'), transitionFrom: snapshot },
+		);
+		const event = fixture.store.listEvents(fixture.runId).find((e) => e.eventType === 'AC_COVERAGE_PASSED');
+		assert.equal(event.inputHash, sha256(snapshot));
+		assert.equal(next.semanticRepairsCount, snapshot.semanticRepairsCount);
+	} finally {
+		fixture.close();
+	}
+});
+
 test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FAILED and requests correction without QA', async () => {
 	const fixture = makeFixture('new-policy-coverage-fail', []);
 	try {
