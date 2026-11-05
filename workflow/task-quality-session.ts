@@ -12,6 +12,7 @@ import { checkpointHydrationBinding, checkpointPreparationSelection } from './ch
 import { materializeSliceCheckpoint } from './checkpoint-materialization.ts';
 import { createTaskSourceObserver, executeCheckpointObligations, qualityParentRevisionHash, qualityTaskBinding, sourcePreparationHash } from './quality-checkpoints.ts';
 import { getAndValidateAuthorization, type WorkflowRuntimeLike } from './node-helpers.ts';
+import { timedSpan } from '../persistence/run-spans.ts';
 
 export function createTaskQualitySession(
 	runtime: WorkflowRuntimeLike, snapshot: Readonly<RuntimeState>, plan: TaskPlan,
@@ -165,9 +166,10 @@ export function createTaskQualitySession(
 				binding.checkpointId, binding.candidateRevision);
 			if (existing) return existing;
 		}
-		await hydrateWorktree({ worktreeDir: materialized.worktreeDir,
+		await timedSpan(runtime.runtimeStore, 'prepare', `hydrate checkpoint ${sliceId}`, () => hydrateWorktree({
+			worktreeDir: materialized.worktreeDir,
 			allowedPackages: auth.allowedPackages, runner: runtime.execCli,
-			checkpoint: checkpointHydrationBinding(plan, snapshot, auth) });
+			checkpoint: checkpointHydrationBinding(plan, snapshot, auth) }));
 		const obligations = evidenceObligations.filter(entry => entry.owner.kind === 'slice' && entry.owner.id === sliceId ||
 			entry.owner.kind === 'task' && taskMap.get(entry.owner.id)?.sliceId === sliceId);
 		const candidateTask: ExecutableTask = {

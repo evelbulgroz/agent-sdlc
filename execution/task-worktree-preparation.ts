@@ -12,6 +12,7 @@ import {
 } from './task-scope.ts';
 import type { GitCliFn } from './task-tree-delta.ts';
 import type { CommandExecFn } from './tool-commands.ts';
+import { timedSpan } from '../persistence/run-spans.ts';
 
 export interface PreparableTask extends TaskScopeTaskLike {
 	readonly taskId: string;
@@ -160,13 +161,13 @@ export async function prepareTaskWorktree({
 		taskPlan,
 		authorization,
 	);
-	const hydrationResult = await hydrateWorktree({
+	const hydrationResult = await timedSpan(runtimeStore, 'prepare', `hydrate task ${task.taskId}`, () => hydrateWorktree({
 		worktreeDir,
 		targetPackage: task.targetPackage,
 		allowedPackages: cumulativeAllowedPackages,
 		runner: execCli,
 		checkpoint: checkpointHydrationBinding(taskPlan, { ...snapshot, runId }, authorization),
-	});
+	}));
 
 	const hasHydrated = existingEvents.some(
 		(e) =>

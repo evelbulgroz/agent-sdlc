@@ -29,6 +29,7 @@ import {
 	type ClosurePlan, assertEligiblePredecessors, eligibleParentTasks, materializeClosureTree,
 } from './eligible-closure.ts';
 import { DEFAULT_EXECUTOR_STEP_CEILING, calculateTaskStepCapacity, resolveRunMaxPhysicalCalls } from './task-capacity.ts';
+import { timedSpan } from '../persistence/run-spans.ts';
 export { DEFAULT_EXECUTOR_STEP_CEILING, calculateTaskStepCapacity, resolveRunMaxPhysicalCalls } from './task-capacity.ts';
 export type { StepCapacityOptions, DetailedStepCapacity } from './task-capacity.ts';
 
@@ -290,7 +291,7 @@ export class TaskExecutor {
 			defaultCeiling: this.configuredMaxSteps ?? DEFAULT_EXECUTOR_STEP_CEILING,
 		});
 
-		await prepareTaskWorktree({
+		await timedSpan(this.runtimeStore, 'prepare', `worktree ${task.taskId}`, () => prepareTaskWorktree({
 			task,
 			taskPlan,
 			authorization,
@@ -306,7 +307,7 @@ export class TaskExecutor {
 			runtimeStore: this.runtimeStore,
 			runtime: this.runtime,
 			onBoundary: this.onBoundary,
-		});
+		}));
 
 		const v = resolveTaskVerificationContext({
 			task,

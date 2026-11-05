@@ -12,6 +12,7 @@ import {
 	shouldDeferGitMaterialization,
 } from '../node-helpers.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../worktree-guard.ts';
+import { timedSpan } from '../../persistence/run-spans.ts';
 
 export function createPrepareWorkspaceNode(runtime: WorkflowRuntimeLike) {
 	return async ({
@@ -101,7 +102,8 @@ export function createHydrateWorkspaceNode(runtime: WorkflowRuntimeLike) {
 		const advanced = runtime.currentOrAlreadyAdvanced(snapshot);
 		if (advanced) return { snapshot: advanced };
 		const auth = getAndValidateAuthorization(runtime, snapshot);
-		if (!snapshot.worktreePath) {
+		const worktreePath = snapshot.worktreePath;
+		if (!worktreePath) {
 			throw new SdlcError(
 				'POLICY_VIOLATION',
 				'hydrate_workspace requires a prepared worktreePath',
@@ -114,12 +116,12 @@ export function createHydrateWorkspaceNode(runtime: WorkflowRuntimeLike) {
 			);
 		}
 		try {
-			const hydrationResult = await hydrateWorktree({
-				worktreeDir: snapshot.worktreePath,
+			const hydrationResult = await timedSpan(runtime.runtimeStore, 'prepare', 'hydrate run worktree', () => hydrateWorktree({
+				worktreeDir: worktreePath,
 				allowedPackages: auth.allowedPackages,
 				runner: runtime.execCli,
 				checkpoint: checkpointHydrationBinding(runtime.runtimeStore.getTaskPlan(snapshot.runId), snapshot, auth),
-			});
+			}));
 			const next = runtime.transition(snapshot, {
 				to: 'EXECUTING_IMPLEMENTATION',
 				eventType: 'WORKTREE_HYDRATED',

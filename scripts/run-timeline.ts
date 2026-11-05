@@ -5,10 +5,11 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
+import { readSpans, type RunSpan } from '../persistence/run-spans.ts';
 import { resolveTraceRunDir } from './trace-summary.ts';
 
 export interface TimelineEntry {
-	kind: 'event' | 'model' | 'tool' | 'evidence';
+	kind: 'event' | 'model' | 'tool' | 'evidence' | 'implementer' | 'prepare' | 'critic';
 	label: string;
 	startMs: number;
 	endMs: number;
@@ -34,8 +35,8 @@ function rows(db: DatabaseSync, sql: string, runId: string): Array<Record<string
 	return db.prepare(sql).all(runId) as Array<Record<string, unknown>>;
 }
 
-/** Read-only: merges the run's timestamped events, model calls, tool calls and evidence invocations. */
-export function buildTimeline(db: DatabaseSync, runId: string): TimelineSummary {
+/** Read-only: merges the run's timestamped events, model calls, tool calls, evidence invocations and engine spans (implementer, prepare, critic). */
+export function buildTimeline(db: DatabaseSync, runId: string, spans: readonly RunSpan[] = []): TimelineSummary {
 	const entries: TimelineEntry[] = [];
 	const add = (kind: TimelineEntry['kind'], label: string, start: unknown, end: unknown = start) => {
 		const startMs = parseMs(start);
@@ -62,6 +63,7 @@ export function buildTimeline(db: DatabaseSync, runId: string): TimelineSummary 
 				invocation.startedAt, invocation.finishedAt);
 		}
 	}
+	for (const span of spans) add(span.kind, `${span.label}${span.ok ? '' : ' (failed)'}`, span.startedAt, span.finishedAt);
 	entries.sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 	const events = entries.filter((e) => e.kind === 'event');
 	const eventIntervals = events.slice(1).map((e, i) => ({ label: e.label, ms: e.startMs - (events[i]?.startMs ?? e.startMs) }));
@@ -111,7 +113,7 @@ export function main(args: readonly string[] = process.argv.slice(2)): void {
 	}
 	const db = new DatabaseSync(databasePath, { readOnly: true });
 	try {
-		const summary = buildTimeline(db, runId);
+		const summary = buildTimeline(db, runId, readSpans(databasePath));
 		console.log(args.includes('--json') ? JSON.stringify(summary, null, 2) : renderTimeline(summary));
 	} finally {
 		db.close();

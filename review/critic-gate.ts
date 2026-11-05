@@ -34,6 +34,7 @@ import {
 	type CriticRuntimeStoreLike,
 } from './critic-review.ts';
 import type { TouchedFileEntry } from './critic-prompt.ts';
+import { timedSpan } from '../persistence/run-spans.ts';
 
 export interface CriticGateSnapshot extends CriticBudgetSnapshot {
 	state?: string;
@@ -369,7 +370,8 @@ export async function runQaCritic({
 	checkpointContext?: QaCheckpointContext;
 }): Promise<Readonly<CriticGateResult>> {
 	if (checkpointContext) {
-		return runCheckpointQaCritic({ runtime, snapshot, context: checkpointContext });
+		return timedSpan(runtime.runtimeStore, 'critic', 'checkpoint QA critic',
+			() => runCheckpointQaCritic({ runtime, snapshot, context: checkpointContext }));
 	}
 	assertCriticAllowed({ phase: 'qa', snapshot });
 	const binding = runtime.artifactStore.readJson(snapshot.preflightBindingArtifact);

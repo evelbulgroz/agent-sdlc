@@ -18,6 +18,7 @@ import {
 	runVerification,
 } from './minimal-verification.ts';
 import type { CommandExecFn } from './tool-commands.ts';
+import { timedSpan } from '../persistence/run-spans.ts';
 import { executeTool, minimalActionSchema } from './tools.ts';
 import type { RunPreparationResult } from './verification-preparation.ts';
 export { minimalActionSchema };
@@ -209,7 +210,7 @@ export class MinimalExecutor {
 				if (typeof this.governor?.assertCanReserve === 'function') {
 					await this.governor.assertCanReserve(request);
 				}
-				result = await this.governor.execute(request);
+				result = await timedSpan(this.runtimeStore, 'implementer', `${input.taskId} attempt ${attempt} step ${toolCalls.length}`, () => this.governor.execute(request));
 			} catch (error) {
 				const errCode =
 					error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'

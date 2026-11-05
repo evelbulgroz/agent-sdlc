@@ -24,6 +24,7 @@ import {
 } from './node-helpers.ts';
 import { prepareFinalQualityCheckpoint } from './final-quality-checkpoint.ts';
 import { blockQualityCheckpoint } from './quality-interrupt.ts';
+import { timedSpan } from '../persistence/run-spans.ts';
 
 function boundQualityContext(runtime: WorkflowRuntimeLike, snapshot: Readonly<RuntimeState>) {
 	if (!snapshot.qualityCheckpointId && !snapshot.qualityCheckpointKind &&
@@ -365,7 +366,8 @@ export async function executePreflightForSnapshot(
 	);
 	let finalQualityFields: Partial<RuntimeState>;
 	try {
-		finalQualityFields = await prepareFinalQualityCheckpoint(runtime, snapshot, worktreeDir);
+		finalQualityFields = await timedSpan(runtime.runtimeStore, 'prepare', 'final checkpoint preparation',
+			() => prepareFinalQualityCheckpoint(runtime, snapshot, worktreeDir));
 	} catch (error: unknown) {
 		const qualityContext = boundQualityContext(runtime, snapshot);
 		if (qualityContext) {

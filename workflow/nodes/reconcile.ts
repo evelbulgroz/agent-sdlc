@@ -14,6 +14,7 @@ import {
 	shouldDeferGitMaterialization,
 } from '../node-helpers.ts';
 import { reconcileTasks } from '../reconciliation.ts';
+import { timedSpan } from '../../persistence/run-spans.ts';
 
 export function createReconcileIntegrationNode(runtime: WorkflowRuntimeLike) {
 	return async ({
@@ -141,12 +142,12 @@ export function createReconcileIntegrationNode(runtime: WorkflowRuntimeLike) {
 
 		if (plan.tasks.length > 1) {
 			try {
-				await hydrateWorktree({
+				await timedSpan(runtime.runtimeStore, 'prepare', 'hydrate integration worktree', () => hydrateWorktree({
 					worktreeDir: reconcileResult.integrationWorktreePath,
 					allowedPackages: auth.allowedPackages,
 					runner: runtime.execCli,
 					checkpoint: checkpointHydrationBinding(plan, snapshot, auth),
-				});
+				}));
 			} catch (error: unknown) {
 				const message =
 					error instanceof Error && error.message
