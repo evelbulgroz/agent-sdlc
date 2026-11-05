@@ -9,7 +9,7 @@ import {
 	assertEvidenceDirectory, hashEvidenceBytes, readEvidenceFile,
 	verifyEvidenceArtifacts, verifyEvidenceRegistration,
 } from './evidence-files.ts';
-import { spawnEvidence } from './evidence-transport.ts';
+import { sanitizeEvidenceDiagnostic, spawnEvidence } from './evidence-transport.ts';
 import type {
 	EvidenceCallbacks, EvidenceCompletion, EvidenceExecutionResult, EvidenceInvocationContext,
 	EvidenceRecordStore, EvidenceSourceObservation, EvidenceSpawn,
@@ -198,6 +198,11 @@ export async function executeEvidence(
 			'unsafe-directory', 'unsafe-file-path', 'invalid-file-size-or-kind',
 		]);
 		failureReason = error instanceof Error && known.has(error.message) ? error.message : 'invalid-evidence';
+		// The unclassified cause is operator-visible only through the diagnostics callback, never in durable evidence.
+		if (callbacks.onDiagnostics && error instanceof Error) {
+			try { callbacks.onDiagnostics(`evidence-port: ${sanitizeEvidenceDiagnostic(error.message, maxDiagnosticBytes)}`); }
+			catch { /* Diagnostics never affect durable completion. */ }
+		}
 	}
 	const reportHash = hashEvidenceBytes(stdout);
 	const artifactManifestHash = sha256(report?.artifacts ?? []);

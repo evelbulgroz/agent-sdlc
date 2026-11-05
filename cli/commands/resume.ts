@@ -23,6 +23,7 @@ import {
 	isRunDeadlineHalt,
 } from '../continuation.ts';
 import { validatePendingResponse } from '../hitl.ts';
+import { materializeInlineClaims } from '../../workflow/quality-answer-claims.ts';
 import { preflightQualityAnswer } from '../../workflow/quality-answer-preflight.ts';
 import { QualityAnswerSchema } from '../../policy/contracts/quality-schema.ts';
 import { type OpenContextOptions, openContext } from '../run-context.ts';
@@ -198,7 +199,9 @@ export async function resumeRun(
 			const responseObj = {
 				interruptId: pending.interruptId,
 				...(pending.kind === 'quality_review' ? {} : { stateHash: pending.stateHash }),
-				...rawResponse,
+				...(pending.kind === 'quality_review'
+					? materializeInlineClaims(rawResponse, context.artifacts)
+					: rawResponse),
 			};
 			const request = context.artifacts.readJson(pending.requestArtifact);
 			const draft = context.artifacts.readJson(state.draftArtifact);

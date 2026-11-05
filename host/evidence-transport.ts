@@ -9,6 +9,18 @@ export interface EvidenceProcessResult {
 	failureReason: string | null;
 }
 
+export function sanitizeEvidenceDiagnostic(text: string, maxBytes: number): string {
+	return text
+		.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+		.replace(/[^\x20-\x7e\n\t]/g, '?')
+		.replace(/(?:[A-Za-z_]*(?:TOKEN|KEY|SECRET|PASSWORD|CREDENTIAL)[A-Za-z_]*\s*[=:]\s*)\S+/gi, '[REDACTED]')
+		.replace(/\b(?:Authorization\s*:\s*|Bearer\s+)\S+(?:\s+\S+)?/gi, '[REDACTED]')
+		.replace(/:\/\/[^/\s:@]+:[^/\s@]+@/g, '://[REDACTED]@')
+		.replace(/\b(?:sk-[A-Za-z0-9_-]+|AKIA[A-Z0-9]+)\b/g, '[REDACTED]')
+		.replace(/-----BEGIN[\s\S]*$/g, '[REDACTED]')
+		.slice(0, maxBytes);
+}
+
 export function spawnEvidence(
 	spawn: EvidenceSpawn,
 	argv: readonly string[],
@@ -61,16 +73,8 @@ export function spawnEvidence(
 			if (!await awaitEvidenceGroupStopped(child)) failureReason ??= 'process-cleanup-failed';
 			settled = true;
 			if (onDiagnostics && diagnostics.length) {
-				// Diagnostic content is not persisted or treated as evidence.
-				const sanitized = Buffer.concat(diagnostics).toString('utf8')
-					.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
-					.replace(/[^\x20-\x7e\n\t]/g, '?')
-					.replace(/(?:[A-Za-z_]*(?:TOKEN|KEY|SECRET|PASSWORD|CREDENTIAL)[A-Za-z_]*\s*[=:]\s*)\S+/gi, '[REDACTED]')
-					.replace(/\b(?:Authorization\s*:\s*|Bearer\s+)\S+(?:\s+\S+)?/gi, '[REDACTED]')
-					.replace(/:\/\/[^/\s:@]+:[^/\s@]+@/g, '://[REDACTED]@')
-					.replace(/\b(?:sk-[A-Za-z0-9_-]+|AKIA[A-Z0-9]+)\b/g, '[REDACTED]')
-					.replace(/-----BEGIN[\s\S]*$/g, '[REDACTED]')
-					.slice(0, maxDiagnosticBytes);
+				// Diagnostic content is not evidence; it is only surfaced to the operator through the callback.
+				const sanitized = sanitizeEvidenceDiagnostic(Buffer.concat(diagnostics).toString('utf8'), maxDiagnosticBytes);
 				try { onDiagnostics(sanitized); } catch { /* Diagnostics never affect durable completion. */ }
 			}
 			resolve({ stdout: Buffer.concat(chunks), exitCode, signal, failureReason });

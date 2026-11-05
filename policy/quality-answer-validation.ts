@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { QualityAnswer } from './contracts/quality-schema.ts';
 import { SdlcError } from './errors.ts';
 
-const ClaimEvidence = z.strictObject({
+export const ClaimEvidence = z.strictObject({
 	schemaVersion: z.literal('1.0.0'), bindingHash: z.string().regex(/^[a-f0-9]{64}$/),
 	findingId: z.string().min(1), rationale: z.string().trim().min(1),
 	evidenceHashes: z.array(z.string().regex(/^[a-f0-9]{64}$/)).min(1)

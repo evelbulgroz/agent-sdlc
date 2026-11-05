@@ -68,11 +68,20 @@ export async function executeCheckpointObligations({
 			expectedSourceHash: observation.sourceHash, observeSource,
 			environment: { PATH: process.env.PATH ?? '', CI: 'true' },
 			executionDurationCeilingMs: remainingDurationMs,
-		}, runtime.evidenceSpawn ?? spawn, createEvidenceRecordStore(runtime.runtimeStore, request), { now: runtime.now });
+		}, runtime.evidenceSpawn ?? spawn, createEvidenceRecordStore(runtime.runtimeStore, request), {
+			now: runtime.now,
+			onDiagnostics: (diagnostics) => {
+				// Not the ledger diagnostics table: it stamps every record as a FALSE_ECONOMY_DETECTED event.
+				fs.appendFileSync(path.join(artifactDirectory, 'engine-diagnostics.jsonl'),
+					`${JSON.stringify({ operationId, checkpointId: binding.checkpointId, diagnostics })}\n`);
+			},
+		});
 		const hash = sha256(result.receipt);
 		receiptHashes.push(hash);
 		if (result.receipt.status !== 'passed') throw new SdlcError('TASK_EXECUTION_FAILED',
-			'Checkpoint obligations did not pass', { operationId, receiptHash: hash });
+			'Checkpoint obligations did not pass', {
+				operationId, receiptHash: hash, failureReason: result.invocation.failureReason,
+			});
 	}
 	return receiptHashes;
 }

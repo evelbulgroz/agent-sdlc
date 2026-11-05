@@ -16,6 +16,7 @@ import { packQualityEvidencePacket } from './quality-evidence-packing.ts';
 import { makeQualityRetrievalRequest, retrieveQualitySource } from './quality-evidence-retrieval.ts';
 import { governedQaDispatch, qaDispatchIntent, qaDispatchLimits, qaReplayAccounted,
 	recoverAbandonedQaDispatches, settleUndispatchedQa } from './qa-resources.ts';
+import { qaReviewScope } from './qa-slice-scope.ts';
 import { checkpointQaDispatchSlot } from './qa-dispatch-slot.ts';
 
 export interface QaCheckpointContext {
@@ -199,6 +200,8 @@ export async function runCheckpointQaCritic({
 		governor: governedQaDispatch(runtime, snapshot.runId, operationId, requestedLimits, policy),
 		runtimeStore: runtime.runtimeStore,
 	});
+	const scope = qaReviewScope(typeof draft.goal === 'string' ? draft.goal : '',
+		closure.binding.checkpointKind, obligations);
 	let result;
 	try {
 		result = await adapter.executeReview({
@@ -210,8 +213,8 @@ export async function runCheckpointQaCritic({
 				synthetic: runtime.governor?.synthetic === true,
 			}),
 			promptPolicy: loaded.promptPolicy,
-			specSummary: typeof draft.goal === 'string' ? draft.goal : '',
-			acceptanceCriteria: obligations.map((obligation) => obligation.criterionId),
+			specSummary: scope.specSummary,
+			acceptanceCriteria: scope.acceptanceCriteria,
 			touchedFiles: [],
 			testOutput: packet.text,
 			requireUntruncatedInput: true,
