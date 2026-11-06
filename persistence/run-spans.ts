@@ -3,7 +3,7 @@ import path from 'node:path';
 
 export const SPANS_FILE = 'spans.jsonl';
 
-export type SpanKind = 'implementer' | 'prepare' | 'critic';
+export type SpanKind = 'implementer' | 'prepare' | 'critic' | 'tool';
 
 export interface RunSpan {
 	kind: SpanKind;
@@ -18,6 +18,17 @@ function spansPath(store: unknown): string | null {
 	return typeof databasePath === 'string' ? path.join(path.dirname(databasePath), SPANS_FILE) : null;
 }
 
+function appendSpan(store: unknown, kind: SpanKind, label: string, startedAt: string, ok: boolean): void {
+	const file = spansPath(store);
+	if (!file) return;
+	const span: RunSpan = { kind, label, startedAt, finishedAt: new Date().toISOString(), ok };
+	try {
+		fs.appendFileSync(file, `${JSON.stringify(span)}\n`);
+	} catch {
+		// Best-effort telemetry.
+	}
+}
+
 /** Times `work` and appends a span next to the run's runtime store; telemetry failures never affect the run. */
 export async function timedSpan<T>(store: unknown, kind: SpanKind, label: string, work: () => Promise<T> | T): Promise<T> {
 	const startedAt = new Date().toISOString();
@@ -27,16 +38,28 @@ export async function timedSpan<T>(store: unknown, kind: SpanKind, label: string
 		ok = true;
 		return value;
 	} finally {
-		const file = spansPath(store);
-		if (file) {
-			const span: RunSpan = { kind, label, startedAt, finishedAt: new Date().toISOString(), ok };
-			try {
-				fs.appendFileSync(file, `${JSON.stringify(span)}\n`);
-			} catch {
-				// Best-effort telemetry.
-			}
-		}
+		appendSpan(store, kind, label, startedAt, ok);
 	}
+}
+
+/** Wraps a synchronous command runner so each call is recorded as a `tool` span labelled with the command and its first argument only. */
+export function timedExec<F extends (command: string, args: readonly string[], options?: Record<string, unknown>) => unknown>(
+	store: unknown,
+	exec: F,
+): F {
+	if (!spansPath(store)) return exec;
+	const wrapped = (command: string, args: readonly string[], options?: Record<string, unknown>): unknown => {
+		const startedAt = new Date().toISOString();
+		let ok = false;
+		try {
+			const value = exec(command, args, options);
+			ok = true;
+			return value;
+		} finally {
+			appendSpan(store, 'tool', `${command.split('/').pop()} ${String(args[0] ?? '').slice(0, 40)}`.trim(), startedAt, ok);
+		}
+	};
+	return wrapped as F;
 }
 
 export function readSpans(databasePath: string): RunSpan[] {

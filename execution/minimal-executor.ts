@@ -18,7 +18,7 @@ import {
 	runVerification,
 } from './minimal-verification.ts';
 import type { CommandExecFn } from './tool-commands.ts';
-import { timedSpan } from '../persistence/run-spans.ts';
+import { timedExec, timedSpan } from '../persistence/run-spans.ts';
 import { executeTool, minimalActionSchema } from './tools.ts';
 import type { RunPreparationResult } from './verification-preparation.ts';
 export { minimalActionSchema };
@@ -145,7 +145,7 @@ export class MinimalExecutor {
 		this.artifactStore = artifactStore;
 		this.roleRegistry = roleRegistry;
 		this.runtimeStore = runtimeStore;
-		this.execCli = execCli;
+		this.execCli = timedExec(runtimeStore, execCli);
 		this.clock = clock;
 		this.estimatePromptTokens = estimatePromptTokens;
 		this.completionValidator = completionValidator;

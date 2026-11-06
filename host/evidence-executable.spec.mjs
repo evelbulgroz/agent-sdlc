@@ -154,6 +154,28 @@ test('hash-bound manifest verifies every frozen dependency without granting mode
 	assert.throws(f.verify, /frozen-adapter-file-changed/);
 });
 
+test('a shared verified set skips only identical path and hash pairs within one pass', t => {
+	const f = fixture(t);
+	fs.mkdirSync(path.join(f.root, 'runtime'));
+	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'frozen');
+	const manifest = (digest) => JSON.stringify({ schemaVersion: '1.0.0', files: [{ path: 'runtime/dependency', sha256: digest }] });
+	const frozen = manifest(hashEvidenceBytes(Buffer.from('frozen')));
+	fs.writeFileSync(path.join(f.root, 'dependencies.json'), frozen);
+	f.registration.dependencyManifest = { path: 'dependencies.json', sha256: hashEvidenceBytes(Buffer.from(frozen)) };
+	const verified = new Set();
+	verifyEvidenceRegistration(f.root, f.registration, () => {}, verified);
+	assert.equal(verified.size, 2);
+	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'drift');
+	assert.doesNotThrow(() => verifyEvidenceRegistration(f.root, f.registration, () => {}, verified));
+	assert.throws(f.verify, /frozen-adapter-file-changed/);
+	const other = manifest(hashEvidenceBytes(Buffer.from('drift')));
+	fs.writeFileSync(path.join(f.root, 'dependencies.json'), other);
+	f.registration.dependencyManifest = { path: 'dependencies.json', sha256: hashEvidenceBytes(Buffer.from(other)) };
+	assert.doesNotThrow(() => verifyEvidenceRegistration(f.root, f.registration, () => {}, verified));
+	fs.writeFileSync(path.join(f.root, 'runtime/dependency'), 'other');
+	assert.throws(() => verifyEvidenceRegistration(f.root, f.registration, () => {}, new Set()), /frozen-adapter-file-changed/);
+});
+
 test('dependency manifest rejects nil, empty, duplicate, traversing and symlinked inputs', t => {
 	const f = fixture(t);
 	for (const value of [null, {}, { schemaVersion: '1.0.0', files: [] },

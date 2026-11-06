@@ -7,7 +7,26 @@ import test from 'node:test';
 import { buildTimeline } from '../scripts/run-timeline.ts';
 import { applyBaselineSchema } from './migrations/baseline-schema.ts';
 import { applyQualitySchema } from './quality-storage.ts';
-import { readSpans, timedSpan } from './run-spans.ts';
+import { readSpans, timedExec, timedSpan } from './run-spans.ts';
+
+test('timedExec records command spans without argument leakage, passes results and errors through, and is a no-op without a store', () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spans-'));
+	try {
+		const store = { databasePath: path.join(dir, 'runtime.sqlite') };
+		const exec = timedExec(store, (command, args) => {
+			if (command === '/usr/bin/fail') throw new Error('nope');
+			return `${command}:${args.length}`;
+		});
+		assert.equal(exec('/usr/bin/pnpm', ['vitest', 'run', 'secret-token-argument']), '/usr/bin/pnpm:3');
+		assert.throws(() => exec('/usr/bin/fail', []), /nope/);
+		const spans = readSpans(store.databasePath);
+		assert.deepEqual(spans.map((s) => [s.kind, s.label, s.ok]), [['tool', 'pnpm vitest', true], ['tool', 'fail', false]]);
+		const plain = () => 'x';
+		assert.equal(timedExec(null, plain), plain);
+	} finally {
+		fs.rmSync(dir, { recursive: true, force: true });
+	}
+});
 
 test('timedSpan records successful and failed work beside the store and never breaks it', async () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spans-'));
