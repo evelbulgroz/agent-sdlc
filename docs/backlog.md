@@ -40,3 +40,11 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 7. **Driver tail (about 190 s)** between run end and driver exit (preflight, cleaning, archiving) is not broken down.
 
 **Done when:** each adopted change has a measurement before and after, tests, and a confirming canary that passes 7/7 invariants.
+
+## Surface implementer "blocked" summaries
+
+**Origin:** qualification case N1 (November 2026). The implementer refused to edit on contradictory requirements and asked which rule wins in its `complete` summary, but the engine recorded only a generic `evidence-failed` with no operator-visible question.
+
+**Candidate:** when the implementer completes with no file edits, publish its summary as a diagnostic or interrupt on the failed snapshot. Fail-closed behaviour stays unchanged.
+
+**Done when:** an N1 rerun shows the implementer's question in `status.json`, and a test covers it.

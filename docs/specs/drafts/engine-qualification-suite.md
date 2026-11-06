@@ -44,6 +44,7 @@ Evidence is under the session `files/qualification/`.
 
 - N1 and N2 specs are drafted in fitness-app `docs/specs/drafts/qualification-n{1,2}-*.md` (older host-canary path, no acceptance-evidence admission). N2 is scored offline by `testing/qualification/wrap-index-oracle.mjs` against hidden mutants.
 - N1 did not show that a gate can detect the contradiction. Next: a variant where the implementer does write, or an explicit plan-gate probe.
-- N2 needs a harder spec before it can show a surviving mutant.
+- N1 finding: the implementer did detect the contradiction. Each of its 3 `complete` actions said it was blocked by contradictory requirements and asked which rule wins. The engine recorded only `evidence-failed`, with no operator-visible question. See `docs/backlog.md`.
+- N2b (`…-df20ee16`, harder round-half-away spec, 8 hidden mutants, `round-half-away-oracle.mjs`): READY, 7/7, 502 s. The oracle killed all 8 mutants, so it is inconclusive again. The model writes thorough tests on these specs. Next: a subtler trap or a weaker implementer route.
 - Decide whether the clean unseen-spec canary lives in the engine fixtures or in a host.
 - Designed crash and resume cases (not yet in the suite).
