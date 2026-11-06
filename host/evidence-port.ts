@@ -157,6 +157,14 @@ export async function executeEvidence(
 	let failureReason: string | null = null;
 	let status: 'passed' | 'failed' | 'incomplete' = 'incomplete';
 	const startMs = Date.now();
+	// Phase durations go to the operator-only diagnostics channel, never into durable evidence.
+	const phases: string[] = [];
+	let phaseStart = Date.now();
+	const phase = (name: string): void => {
+		const current = Date.now();
+		phases.push(`${name}=${current - phaseStart}ms`);
+		phaseStart = current;
+	};
 	try {
 		assertEvidenceDirectory(context.worktreeDir);
 		assertEvidenceDirectory(context.artifactDirectory);
@@ -167,23 +175,30 @@ export async function executeEvidence(
 				readEvidenceFile(context.worktreeDir, file, Number.MAX_SAFE_INTEGER);
 			}
 		}
+		phase('verify-before');
 		before = await context.observeSource();
 		assertSource(before, request, context);
+		phase('observe-before');
 		invocation = InvocationRecordSchema.parse({ ...invocation, status: 'running' });
 		await store.started(invocation);
+		phase('record-start');
 		const processResult = await spawnEvidence(
 			spawn, registration.argv, context.worktreeDir, stdin, runtimeLimits,
 			context.environment ?? {}, maxDiagnosticBytes, callbacks.onDiagnostics,
 		);
 		({ stdout, exitCode, signal, failureReason } = processResult);
+		phase('adapter-process');
 		after = await context.observeSource();
 		assertSource(after, request, context);
+		phase('observe-after');
 		verifyEvidenceRegistration(context.worktreeDir, registration, assertAllowed);
+		phase('verify-after');
 		if (failureReason || signal || exitCode === null) throw new Error(failureReason ?? 'process-interrupted');
 		report = EvidenceReportSchema.parse(JSON.parse(stdout.toString('utf8')));
 		assertQualifiedReport(report);
 		validateEvidenceReportForRequest(report, request, { ...invocation, exitCode });
 		verifyEvidenceArtifacts(context.artifactDirectory, report, registration);
+		phase('report-and-artifacts');
 		status = exitCode === 0 && report.cases.every((item) => item.outcome === 'passed') ? 'passed' :
 			report.cases.some((item) => item.outcome === 'incomplete' || item.outcome === 'not-run') ? 'incomplete' : 'failed';
 		if (status === 'failed') failureReason = 'evidence-cases-failed';
@@ -203,6 +218,10 @@ export async function executeEvidence(
 			try { callbacks.onDiagnostics(`evidence-port: ${sanitizeEvidenceDiagnostic(error.message, maxDiagnosticBytes)}`); }
 			catch { /* Diagnostics never affect durable completion. */ }
 		}
+	}
+	if (callbacks.onDiagnostics) {
+		try { callbacks.onDiagnostics(`evidence-timing: ${phases.join(' ')}`); }
+		catch { /* Diagnostics never affect durable completion. */ }
 	}
 	const reportHash = hashEvidenceBytes(stdout);
 	const artifactManifestHash = sha256(report?.artifacts ?? []);

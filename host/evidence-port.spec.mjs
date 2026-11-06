@@ -313,9 +313,10 @@ test('surfaces unclassified failure causes and adapter stderr only through the d
 		const result = await executeEvidence(f.request, f.registration, f.context, spawn, f.store,
 			{ onDiagnostics: (message) => messages.push(message) });
 		assert.equal(result.invocation.failureReason, 'invalid-evidence');
-		assert.equal(messages.length, 2, JSON.stringify(messages));
+		assert.equal(messages.length, 3, JSON.stringify(messages));
 		assert.match(messages[0], /produced no report/);
 		assert.match(messages[1], /^evidence-port: /);
+		assert.match(messages[2], /^evidence-timing: verify-before=\d+ms observe-before=\d+ms record-start=\d+ms adapter-process=\d+ms/);
 		assert.ok(messages.every((message) => !message.includes('sk-secret-value')));
 		assert.ok(!JSON.stringify(f.completion()).includes('produced no report'));
 	});

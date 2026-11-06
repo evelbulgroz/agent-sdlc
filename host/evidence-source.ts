@@ -87,6 +87,24 @@ export function createEvidenceSourceObserver(options: EvidenceSourceOptions): ()
 		if (!GIT_SHA.test(blob)) throw new Error('invalid-source-blob');
 		return blob;
 	};
+	// Same object id Git assigns without filters; the repository's object format follows the tree id length.
+	const gitObjectId = (bytes: Buffer): string => crypto.createHash(sourceTreeSha.length === 64 ? 'sha256' : 'sha1')
+		.update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+	const writeBlobs = (relatives: readonly string[], env: NodeJS.ProcessEnv): string[] => {
+		if (relatives.length === 0) return [];
+		// Newline-bearing paths cannot ride the line protocol; hash those individually from their own bytes.
+		if (relatives.some((relative) => relative.includes('\n'))) {
+			return relatives.map((relative) => writeBlob(readEvidenceFile(worktreeDir, relative, Number.MAX_SAFE_INTEGER), env));
+		}
+		const output = gitCli('git', ['hash-object', '-w', '--no-filters', '--stdin-paths'], {
+			cwd: worktreeDir, env, input: `${relatives.join('\n')}\n`, encoding: 'utf8',
+			stdio: ['pipe', 'pipe', 'pipe'], timeout: 120000, maxBuffer: 16 * 1024 * 1024,
+		}).toString().split('\n').filter(Boolean);
+		if (output.length !== relatives.length || output.some((blob) => !GIT_SHA.test(blob))) {
+			throw new Error('invalid-source-blob');
+		}
+		return output;
+	};
 	return async () => {
 		assertEvidenceDirectory(worktreeDir);
 		const baselineSymlinks = new Map<string, string>();
@@ -106,6 +124,7 @@ export function createEvidenceSourceObserver(options: EvidenceSourceOptions): ()
 			const paths = [...new Set(Buffer.concat([manifest, actualTracked]).toString('utf8').split('\0').filter(Boolean))].sort();
 			const files: { path: string; mode: string; sha256: string }[] = [];
 			const entries: string[] = [];
+			const regular: { relative: string; mode: string; oid: string }[] = [];
 			for (const relative of paths) {
 				if (generatedOutputs.some((output) => within(relative, output))) continue;
 				assertRelative(relative);
@@ -133,8 +152,13 @@ export function createEvidenceSourceObserver(options: EvidenceSourceOptions): ()
 				const bytes = readEvidenceFile(worktreeDir, relative, Number.MAX_SAFE_INTEGER);
 				files.push({ path: relative, mode, sha256: hashEvidenceBytes(bytes) });
 				// Bind the tree to exact bytes, independent of filters, autocrlf or stale stat caches.
-				const blob = writeBlob(bytes, env);
-				entries.push(`${mode} ${blob}\t${relative}\0`);
+				regular.push({ relative, mode, oid: gitObjectId(bytes) });
+			}
+			for (const [index, blob] of writeBlobs(regular.map((file) => file.relative), env).entries()) {
+				const file = regular[index];
+				// Git re-reads each file, so an id that differs from the hashed bytes means the file changed mid-observation.
+				if (!file || blob !== file.oid) throw new Error('nonregular-evidence-source');
+				entries.push(`${file.mode} ${blob}\t${file.relative}\0`);
 			}
 			gitCli('git', ['update-index', '-z', '--index-info'], {
 				cwd: worktreeDir, env, input: entries.join(''), stdio: ['pipe', 'pipe', 'pipe'],

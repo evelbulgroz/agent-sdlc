@@ -53,6 +53,23 @@ test('captures exact raw source bytes in actual Git tree without changing the re
 	});
 });
 
+test('batched blob writes handle newline paths and reject a file changed after it was hashed', async () => {
+	await fixture(async (f) => {
+		fs.writeFileSync(path.join(f.root, 'odd\nname.ts'), 'odd path\n');
+		const observed = await createEvidenceSourceObserver(f.options)();
+		assert.equal(f.git(['cat-file', 'blob', `${observed.treeSha}:src/code.ts`]), 'export const value = 1;\r\n');
+		fs.rmSync(path.join(f.root, 'odd\nname.ts'));
+		const racing = createEvidenceSourceObserver({
+			...f.options,
+			gitCli(command, args, options) {
+				if (args.includes('--stdin-paths')) fs.writeFileSync(path.join(f.root, 'src/code.ts'), 'mutated mid-observation\n');
+				return execFileSync(command, args, options);
+			},
+		});
+		await assert.rejects(racing(), /nonregular-evidence-source/);
+	});
+});
+
 test('captures nonignored untracked source anywhere, deletion and rename without broad housekeeping skips', async () => {
 	await fixture(async (f) => {
 		const observer = createEvidenceSourceObserver(f.options);
