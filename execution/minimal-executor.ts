@@ -20,6 +20,7 @@ import {
 import type { CommandExecFn } from './tool-commands.ts';
 import { timedExec, timedSpan } from '../persistence/run-spans.ts';
 import { executeTool, minimalActionSchema } from './tools.ts';
+import { FILE_MODIFIED_FEEDBACK, withLastSummary } from './last-summary.ts';
 import type { RunPreparationResult } from './verification-preparation.ts';
 export { minimalActionSchema };
 export const MINIMAL_TOOL_CALL_CAP = 150;
@@ -89,15 +90,18 @@ export interface MinimalExecuteResult {
 	readonly status: 'completed' | 'failed';
 	readonly failureReason: string | null;
 	readonly attempts: number;
+	readonly lastSummary?: string;
 }
 
 interface AuditState {
 	auditedDigest: string | null;
 	challenged: boolean;
 }
-type AttemptOutcome =
+export type AttemptOutcome =
 	| { readonly done: true; readonly result: MinimalExecuteResult; readonly auditRequired?: false }
 	| { readonly done: false; readonly auditRequired?: boolean; readonly feedback: string };
+
+type EstimatePromptTokensFn = (input: { prompt: string; structuredOutputSchema: unknown }) => { promptTokens: number };
 
 export interface MinimalExecutorOptions {
 	readonly governor: GovernorLike;
@@ -106,10 +110,7 @@ export interface MinimalExecutorOptions {
 	readonly runtimeStore?: MinimalRuntimeStoreLike | null;
 	readonly execCli: CommandExecFn;
 	readonly clock?: () => number;
-	readonly estimatePromptTokens?: (input: {
-		prompt: string;
-		structuredOutputSchema: unknown;
-	}) => { promptTokens: number };
+	readonly estimatePromptTokens?: EstimatePromptTokensFn;
 	readonly completionValidator?: CompletionValidatorFn | null;
 }
 
@@ -125,10 +126,7 @@ export class MinimalExecutor {
 	readonly runtimeStore: MinimalRuntimeStoreLike | null;
 	readonly execCli: CommandExecFn;
 	readonly clock: () => number;
-	readonly estimatePromptTokens: (input: {
-		prompt: string;
-		structuredOutputSchema: unknown;
-	}) => { promptTokens: number };
+	readonly estimatePromptTokens: EstimatePromptTokensFn;
 	readonly completionValidator: CompletionValidatorFn | null;
 
 	constructor({
@@ -232,7 +230,7 @@ export class MinimalExecutor {
 					feedback = finished.feedback;
 					continue;
 				}
-				return finished;
+				return withLastSummary(finished, action.summary);
 			}
 			if (action?.kind === 'tool_call') {
 				const toolName = action.toolName ?? '';
@@ -244,7 +242,7 @@ export class MinimalExecutor {
 				if (WRITE_TOOLS.has(toolName) && !dispatched.result?.error && !dispatched.result?.code) {
 					auditState.auditedDigest = null;
 					if (/^quality-gate failed|^AUDIT_REQUIRED/.test(feedback)) {
-						feedback = 'Previous check reported an issue, and a file has since been modified. Once your edits and test runs pass, emit {"kind":"complete","summary":"..."} to re-verify.';
+						feedback = FILE_MODIFIED_FEEDBACK;
 					}
 				}
 				toolCalls.push({ toolName, parameters: action.parameters ?? {}, result: dispatched.result ?? null });

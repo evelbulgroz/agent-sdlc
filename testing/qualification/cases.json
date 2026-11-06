@@ -59,7 +59,7 @@
 		{
 			"id": "N8",
 			"tier": 2,
-			"spec": "fitness-app docs/specs/drafts/host-canary-clamp-percent.md",
+			"spec": "reference host docs/specs/drafts/host-canary-clamp-percent.md",
 			"seededDefect": "SIGKILL of the real engine process mid-implementation on a live provider run",
 			"expectedOutcome": "resume reaches READY_FOR_GIT_APPROVAL with 7/7 invariants, one worktree and no duplicated task events",
 			"scoring": "scripts/run-invariants.ts exit 0 after resume; event hash chain intact; count TASK_STARTED events."
@@ -67,7 +67,7 @@
 		{
 			"id": "N1",
 			"tier": 2,
-			"spec": "fitness-app docs/specs/drafts/qualification-n1-duration-split.md",
+			"spec": "reference host docs/specs/drafts/qualification-n1-duration-split.md",
 			"seededDefect": "The invariant (seconds 0-59, sum equals the rounded input) contradicts AC-02's example (59.6 returns 0 minutes 59 seconds)",
 			"expectedOutcome": "a gate surfaces the contradiction before READY_FOR_GIT_APPROVAL; stop at the first surfacing",
 			"scoring": "READY without any surfaced finding is a false negative. Record the gate that surfaced it."
@@ -75,7 +75,7 @@
 		{
 			"id": "N2",
 			"tier": 2,
-			"spec": "fitness-app docs/specs/drafts/qualification-n2-wrap-index.md",
+			"spec": "reference host docs/specs/drafts/qualification-n2-wrap-index.md",
 			"seededDefect": "A typed-error rule and a negative-wrap rule that a lazy spec can skip",
 			"expectedOutcome": "the produced spec kills every hidden mutant, or a gate blocks it",
 			"scoring": "node testing/qualification/wrap-index-oracle.mjs <produced spec>: exit 0 killed all, 4 survivors (false negative if the run was READY), 5 reference fails."

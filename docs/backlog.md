@@ -28,7 +28,7 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## Further canary run-time reductions
 
-**Origin:** live canary runs 9 and 10 against fitness-app (November 2026). Run time fell from about 3,240 s to about 1,426 s after worker-pool hydration, batched blob writes, native realpath, a shared admission verify set and `tool` spans. Run 10 breakdown: prepare 412 s, evidence 302 s, implementer 168 s, `tool` 328 s, critic 30 s, plus about 155 s of startup.
+**Origin:** live canary runs 9 and 10 against the reference host (November 2026). Run time fell from about 3,240 s to about 1,426 s after worker-pool hydration, batched blob writes, native realpath, a shared admission verify set and `tool` spans. Run 10 breakdown: prepare 412 s, evidence 302 s, implementer 168 s, `tool` 328 s, critic 30 s, plus about 155 s of startup.
 
 **Candidates (none approved; each keeps every verification unless stated)**
 1. **Child-side recipe verification (about 64 s/run).** `commandBridge` re-runs `verifyRecipeInputs` although the trusted parent verifies before and after execution. Dropping it is a defence-in-depth decision and needs explicit sign-off.

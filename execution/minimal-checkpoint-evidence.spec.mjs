@@ -18,7 +18,7 @@ for (const limit of [undefined, 1, 2]) {
 				...(limit === undefined ? {} : { maxSourceEditIterations: limit }),
 			});
 			const expected = limit ?? 3;
-			assert.deepEqual(result, { status: 'failed', failureReason: 'evidence-failed', attempts: expected });
+			assert.deepEqual(result, { status: 'failed', failureReason: 'evidence-failed', attempts: expected, lastSummary: 'candidate' });
 			assert.equal(checks, expected);
 			assert.equal(loop.governor.calls.length, expected);
 			assert.deepEqual(readTranscripts(loop.fixture.artifacts.artifactsDir).map(entry => entry.attempt),
@@ -39,7 +39,7 @@ for (const limit of [undefined, 1, 2]) {
 				...(limit === undefined ? {} : { maxSourceEditIterations: limit }),
 			});
 			const expected = limit ?? 3;
-			assert.deepEqual(result, { status: 'failed', failureReason: 'evidence-failed', attempts: expected });
+			assert.deepEqual(result, { status: 'failed', failureReason: 'evidence-failed', attempts: expected, lastSummary: 'candidate' });
 			assert.equal(loop.governor.calls.length, expected);
 			assert.equal(commands, 0);
 			assert.equal(readTranscripts(loop.fixture.artifacts.artifactsDir).length, expected);

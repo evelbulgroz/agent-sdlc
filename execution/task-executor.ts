@@ -407,8 +407,8 @@ export class TaskExecutor {
 			this.runtimeStore.updateTaskStatus(runId, task.taskId, { status: 'failed' });
 			throw new SdlcError(
 				'TASK_EXECUTION_FAILED',
-				`Implementer failed for task ${task.taskId}: ${String(minimalResult.failureReason)}`,
-				{ taskId: task.taskId, failureReason: minimalResult.failureReason },
+				`Implementer failed for task ${task.taskId}: ${String(minimalResult.failureReason)}${minimalResult.lastSummary ? ` (implementer's last message: ${minimalResult.lastSummary})` : ''}`,
+				{ taskId: task.taskId, failureReason: minimalResult.failureReason, lastSummary: minimalResult.lastSummary ?? null },
 			);
 		}
 		try {
