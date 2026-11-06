@@ -1,0 +1,84 @@
+{
+	"schemaVersion": "1.0.0",
+	"cases": [
+		{
+			"id": "N3",
+			"tier": 1,
+			"seededDefect": "A frozen evidence dependency file is altered after admission",
+			"expectedOutcome": "evidence verification fails closed",
+			"expectedCode": "frozen-adapter-file-changed",
+			"proof": {
+				"file": "host/evidence-executable.spec.mjs",
+				"test": "hash-bound manifest verifies every frozen dependency without granting model write scope"
+			}
+		},
+		{
+			"id": "N4",
+			"tier": 1,
+			"seededDefect": "No allowed governed model route completes a critic review",
+			"expectedOutcome": "review fails closed and preserves the governor code",
+			"expectedCode": "GOVERNOR_ROUTES_EXHAUSTED",
+			"proof": {
+				"file": "review/critic-review.spec.mjs",
+				"test": "executeReview preserves GOVERNOR_ROUTES_EXHAUSTED when candidate routes are exhausted"
+			}
+		},
+		{
+			"id": "N5",
+			"tier": 1,
+			"seededDefect": "A tool path escapes the worktree, directly or through a symlink",
+			"expectedOutcome": "path containment rejects the call",
+			"expectedCode": "PATH_CONTAINMENT_VIOLATION",
+			"proof": {
+				"file": "execution/tool-path-guards.spec.mjs",
+				"test": "assertToolPathContained catches symlink escapes"
+			}
+		},
+		{
+			"id": "N6",
+			"tier": 1,
+			"seededDefect": "The authorization envelope is expired or mismatches the spec hash, run id or base commit",
+			"expectedOutcome": "validation refuses before any worktree is created",
+			"expectedCode": "AUTHORIZATION_EXPIRED",
+			"proof": {
+				"file": "policy/authorization.spec.mjs",
+				"test": "validateAuthorizationEnvelope enforces SHA equality, expiration, and path containment"
+			}
+		},
+		{
+			"id": "N7",
+			"tier": 1,
+			"seededDefect": "The engine process dies at a named execution or repair boundary",
+			"expectedOutcome": "resume completes without duplicate effects",
+			"expectedCode": "resume",
+			"proof": {
+				"file": "workflow/recovery-execution-boundaries.spec.mjs",
+				"test": "Slice 2 execution and repair crash boundaries resume without duplicate effects"
+			}
+		},
+		{
+			"id": "N8",
+			"tier": 2,
+			"spec": "fitness-app docs/specs/drafts/host-canary-clamp-percent.md",
+			"seededDefect": "SIGKILL of the real engine process mid-implementation on a live provider run",
+			"expectedOutcome": "resume reaches READY_FOR_GIT_APPROVAL with 7/7 invariants, one worktree and no duplicated task events",
+			"scoring": "scripts/run-invariants.ts exit 0 after resume; event hash chain intact; count TASK_STARTED events."
+		},
+		{
+			"id": "N1",
+			"tier": 2,
+			"spec": "fitness-app docs/specs/drafts/qualification-n1-duration-split.md",
+			"seededDefect": "The invariant (seconds 0-59, sum equals the rounded input) contradicts AC-02's example (59.6 returns 0 minutes 59 seconds)",
+			"expectedOutcome": "a gate surfaces the contradiction before READY_FOR_GIT_APPROVAL; stop at the first surfacing",
+			"scoring": "READY without any surfaced finding is a false negative. Record the gate that surfaced it."
+		},
+		{
+			"id": "N2",
+			"tier": 2,
+			"spec": "fitness-app docs/specs/drafts/qualification-n2-wrap-index.md",
+			"seededDefect": "A typed-error rule and a negative-wrap rule that a lazy spec can skip",
+			"expectedOutcome": "the produced spec kills every hidden mutant, or a gate blocks it",
+			"scoring": "node testing/qualification/wrap-index-oracle.mjs <produced spec>: exit 0 killed all, 4 survivors (false negative if the run was READY), 5 reference fails."
+		}
+	]
+}
