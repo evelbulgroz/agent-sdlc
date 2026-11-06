@@ -22,7 +22,7 @@ export interface TimelineSummary {
 	entries: TimelineEntry[];
 	/** Wall time attributed to each event, measured from the previous event. */
 	eventIntervals: Array<{ label: string; ms: number }>;
-	/** Summed span time per kind; spans of one kind may overlap other kinds. */
+	/** Covered wall time per kind (nested or concurrent spans of one kind count once); kinds may overlap each other. */
 	spanMsByKind: Record<string, number>;
 }
 
@@ -67,8 +67,14 @@ export function buildTimeline(db: DatabaseSync, runId: string, spans: readonly R
 	entries.sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 	const events = entries.filter((e) => e.kind === 'event');
 	const eventIntervals = events.slice(1).map((e, i) => ({ label: e.label, ms: e.startMs - (events[i]?.startMs ?? e.startMs) }));
+	// Covered wall time per kind: nested or concurrent spans of one kind count once.
 	const spanMsByKind: Record<string, number> = {};
-	for (const e of entries) spanMsByKind[e.kind] = (spanMsByKind[e.kind] ?? 0) + (e.endMs - e.startMs);
+	const coveredUntil: Record<string, number> = {};
+	for (const e of entries) {
+		const from = Math.max(e.startMs, coveredUntil[e.kind] ?? e.startMs);
+		spanMsByKind[e.kind] = (spanMsByKind[e.kind] ?? 0) + Math.max(0, e.endMs - from);
+		coveredUntil[e.kind] = Math.max(coveredUntil[e.kind] ?? e.endMs, e.endMs);
+	}
 	return {
 		runId,
 		startMs: entries[0]?.startMs ?? 0,

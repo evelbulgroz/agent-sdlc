@@ -39,4 +39,11 @@ test('timeline attributes wall time to events and sums evidence spans', () => {
 	assert.equal(summary.endMs - summary.startMs, 65000);
 	assert.match(renderTimeline(summary), /evidence-cases-failed/);
 	assert.equal(buildTimeline(db, 'missing').entries.length, 0);
+
+	const nested = buildTimeline(db, 'r1', [
+		{ kind: 'prepare', label: 'worktree t', startedAt: '2026-11-05T10:00:00.000Z', finishedAt: '2026-11-05T10:01:30.000Z', ok: true },
+		{ kind: 'prepare', label: 'hydrate task t', startedAt: '2026-11-05T10:00:00.500Z', finishedAt: '2026-11-05T10:01:29.500Z', ok: true },
+		{ kind: 'prepare', label: 'hydrate checkpoint t', startedAt: '2026-11-05T10:02:00.000Z', finishedAt: '2026-11-05T10:02:10.000Z', ok: true },
+	]);
+	assert.equal(nested.spanMsByKind.prepare, 100000);
 });
