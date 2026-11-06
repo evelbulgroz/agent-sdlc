@@ -25,3 +25,18 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 **Out of scope until answered:** raising `DEFAULT_ASSERTIONS_PER_TEST` or weakening critic gates. Either changes engine behaviour that was qualified in isolation.
 
 **Done when:** the questions above have evidence-backed answers and each resulting change is specced and covered by tests.
+
+## Further canary run-time reductions
+
+**Origin:** live canary runs 9 and 10 against fitness-app (November 2026). Run time fell from about 3,240 s to about 1,426 s after worker-pool hydration, batched blob writes, native realpath, a shared admission verify set and `tool` spans. Run 10 breakdown: prepare 412 s, evidence 302 s, implementer 168 s, `tool` 328 s, critic 30 s, plus about 155 s of startup.
+
+**Candidates (none approved; each keeps every verification unless stated)**
+1. **Child-side recipe verification (about 64 s/run).** `commandBridge` re-runs `verifyRecipeInputs` although the trusted parent verifies before and after execution. Dropping it is a defence-in-depth decision and needs explicit sign-off.
+2. **Overlapped hydration (about 100–300 s/run).** Prepare is 9 hydrations of about 42 s plus an 83 s final checkpoint. First confirm whether a task worktree depends on the previous checkpoint. Needs an engine graph change.
+3. **Worker-thread engine verify (about 100 s/run).** Verification is syscall-bound; `tsconfig.build.json` rewrites only static imports, so a build-safe worker design is required.
+4. **Plan gate (about 63 s)** and **`live-run` startup (about 30 s per invocation, 4 invocations).** Not yet profiled beyond the admission dedupe.
+5. **Evidence adapter variance.** The adapter takes 9–10 s on 3 invocations and 19–20 s on 5; cause unknown.
+6. **Residual `pnpm --filter` overhead.** About 5 s per command after the three manifest hashes is inferred, not measured.
+7. **Driver tail (about 190 s)** between run end and driver exit (preflight, cleaning, archiving) is not broken down.
+
+**Done when:** each adopted change has a measurement before and after, tests, and a confirming canary that passes 7/7 invariants.
