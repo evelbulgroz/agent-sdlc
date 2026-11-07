@@ -163,3 +163,12 @@ Audit of `admission`, `admission-records`, `admission-proposal`, `run-authorizat
 Consequences: stored artifact names change, so admission is regenerated at S6 (already planned). The host's `CASES` table becomes a data file, which the engine validates against the case manifest. Modules keep their current names and are moved in the order `run-authorization`, `canary-execution`, `registrations`, `admission-records`, `admission-proposal`, `admission`, `readiness`, `live-records`.
 
 **Operator decisions:** to maximise decoupling, artifact names are engine-owned, and the case obligations live in a host data file named by `canary.obligations` and validated by the engine, not inline in the profile.
+
+## Progress (engine `2c61de2` to `f82a6e9`)
+
+- **S2c done.** `experiment-ledger`/`-governor`/`-broker` (governor split in three), `runtime-inventory` (runtime dir is a parameter), `workspace-bootstrap` (references sit under `config.output`), `supervisor`/`-recipes`/`-runner` plus `recipe-child` (the `_recipe` child is an engine file), `live-run` (writable mounts and credentials from config; `tools/.model-usage` stays an engine constant because the governor adapter owns it), pure `composeReceipt` and pure `qualificationResult`.
+- **Stays host-side by design:** the qualification component runners (native browser, unit, pretest, write limits, isolated runtime), `protocol`, `pretest`, `unit-adapter` and `browser-adapter`. They need a real sandbox and runtime, so they cannot be exercised in the engine until a fixture host has a bwrap sysroot.
+- **S3 done.** `reference-adapter.mjs`, `conformance.mjs` and `conformance.spec.mjs`. The fitness-app adapters are not yet run through the harness (S6).
+- **S4 done inside S2b.** `artifacts.mjs` derives `manifestVersion`, `experimentId` and `repositoryId` from `repositoryId` and `canaryId`. No literal remains; `host-neutrality.spec.mjs` enforces it. What is left is regeneration of admission at S6.
+- **S5 partial.** Specs use in-memory configs and temporary repositories. The ported tests that need a real sysroot (`executeFrozenRecipe` sandbox run, `verify-bootstrap` hydration, write limits) are deferred.
+- **Next: S6**, strip fitness-app to config and data, regenerate admission, run one 4-task canary.
