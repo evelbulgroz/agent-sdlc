@@ -72,9 +72,9 @@ const commands = {
     process.stdout.write(`${JSON.stringify(bindings, null, 2)}\n`);
   },
   authorize: async ({ root, config, argv }) => {
-    const args = argumentsFor(argv, ['--spec', '--tasks', '--registrations', '--quality-policy', '--output']);
+    const args = argumentsFor(argv, ['--spec', '--tasks', '--registrations', '--quality-policy', '--run-id', '--output']);
     const authorization = await buildAuthorization(root, config, {
-      spec: args['--spec'], tasks: args['--tasks'], registrations: readJson(args['--registrations']).registrations,
+      runId: args['--run-id'], spec: args['--spec'], tasks: args['--tasks'], registrations: readJson(args['--registrations']).registrations,
       policy: readJson(args['--quality-policy']), obligations: loadObligations(root, config), now: new Date(),
     });
     writeJson(args['--output'], { schemaVersion: '1.0.0', authorizations: [authorization],
