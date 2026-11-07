@@ -13,6 +13,9 @@ export const ARTIFACTS = Object.freeze({
   offlineQualification: 'offline/offline-qualification.json',
   preflightBootstrap: 'canonical-preflight/bootstrap.json',
   responses: 'responses',
+  adapterRegistrations: 'adapter-registrations.json',
+  governorResolution: 'governor-resolution.json',
+  roleDefinitions: 'role-definitions.json',
 });
 
 // Where the engine's model-usage ledger keeps per-run state; the orchestrator must be able to write it.
