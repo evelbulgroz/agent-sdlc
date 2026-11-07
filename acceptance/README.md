@@ -11,6 +11,7 @@ Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` 
 | `contracts.mjs` | Wire-contract loading from the pinned runtime copy, request/report helpers, and `caseSelections` bound to the configured package root. |
 | `experiment-budget.mjs`, `experiment-config.mjs` | Budget ceilings and validators; `buildExperiment(roles, runId)` takes the run id from the caller. |
 | `role-definitions.mjs`, `governor-resolution.mjs`, `prompt-fit.mjs` | Freeze the resolved roles, the governor policy and critic prompt fit. Engine modules load through `engineModule`, not `AGENT_SDLC_PATH`. |
+| `experiment-ledger.mjs`, `experiment-governor.mjs`, `experiment-broker.mjs` | Frozen-budget SQLite ledger (reserve/settle/recover, active-time clock), the all-role governor wrapper, and the token-authenticated socket broker with its child-side remote ledger. |
 | `evidence-broker.mjs`, `prepare-files.mjs` | Frozen-adapter broker (takes `stateDir`) and verified parallel file preparation. |
 | `bin-shims.mjs`, `recipes.mjs`, `preflight-bridge.mjs` | `.bin` shims, frozen command-recipe validation and the credential-free preflight runner. The node path, package root, package manager and preflight argv are passed in from `acceptanceConfig`. |
 | `readiness.mjs` | `readiness(root, config)` and `candidates(config)`: per-binding state of the standing admission inputs (missing, unpassed, present, no-producer) plus HEAD and dirty tree. |
