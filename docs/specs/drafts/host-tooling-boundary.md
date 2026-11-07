@@ -147,3 +147,19 @@ S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert th
 - **Host logic becomes config or host commands.** Canary file lists, generated-file paths and runner config paths become config keys. `pretest` is a host-declared command that the engine runs without knowing what it generates.
 - **Adapters stay host-side.** They run sandboxed with no engine imports and speak only JSON over stdin/stdout. The engine ships a reference adapter and a conformance suite (S3), and no sandbox bind of engine code is needed.
 - **Move rule.** Only modules fully parameterised by config move to the engine.
+
+## S2b design: canary configuration (draft for review)
+
+Audit of `admission`, `admission-records`, `admission-proposal`, `run-authorization`, `canary-execution`, `registrations`, `readiness` and `live-records` shows five kinds of host fact.
+
+| Kind | Examples | Proposal |
+|---|---|---|
+| Identity | `fitness-app-canary-admission-v1`, `fitness-app-acceptance-evidence-v1`, adapter ids `fitness-app-<kind>`, run slug `fitness-canary-healthy`, `repositoryId` | Derived: `<profileId>-canary-admission-v1`, `<profileId>-<canaryId>`, `<profileId>-<kind>`, `<slug>`. No new keys. |
+| Canary content | The 3 allowed files, 5 case rows (`CASES`) with file, title, setup and expected result, spec and task plan paths, corpus path | New block `acceptanceEvidence.canary`: `spec`, `tasks`, `corpus`, `obligations` (a host data file replacing the `CASES` literal) and `files[]` (`{ path, kind }`). `allowedPathPrefixes` and `allowedPackages` are derived from `files` and `package.root`. |
+| Commands | `pnpm --filter <pkg> run lint`, runner configs (`vitest.canary.config.ts`, `playwright.canary.config.ts`) | `taskVerificationCommand` (argv); `runners.<name>.config` (optional path). |
+| Artifact names | `runtime.full.v3.inventory.json`, `offline-v5/…`, `…attempt2.json`, `pretest-qualification-current.json` | Engine-owned canonical names under `evidenceDir/<canaryId>/`, without version suffixes. Not configurable. |
+| Environment | `/usr/bin/bwrap`, `tools/.agent-sdlc`, `tools/.model-usage`, `tools/.review`, provider credential names | Engine constants for the first, the profile `stateDir` for the rest; credentials come from the governor profile. Optional `sandbox.launcher`. |
+
+Consequences: stored artifact names change, so admission is regenerated at S6 (already planned). The host's `CASES` table becomes a data file, which the engine validates against the case manifest. Modules keep their current names and are moved in the order `run-authorization`, `canary-execution`, `registrations`, `admission-records`, `admission-proposal`, `admission`, `readiness`, `live-records`.
+
+**Operator decisions:** to maximise decoupling, artifact names are engine-owned, and the case obligations live in a host data file named by `canary.obligations` and validated by the engine, not inline in the profile.
