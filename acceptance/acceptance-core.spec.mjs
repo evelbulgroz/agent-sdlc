@@ -33,6 +33,22 @@ function withRepo(fn, block = BLOCK) {
 	try { return fn(root); } finally { fs.rmSync(root, { recursive: true, force: true }); }
 }
 
+test('acceptanceConfig exposes the optional packageManager and preflightCommand, null when absent', () => {
+	withRepo((root) => {
+		const config = acceptanceConfig(root);
+		assert.equal(config.packageManager, null);
+		assert.equal(config.preflightCommand, null);
+	});
+	withRepo((root) => {
+		const config = acceptanceConfig(root);
+		assert.equal(config.packageManager, 'pm');
+		assert.deepEqual(config.preflightCommand, ['pm', 'run', 'verify', '--', '--base']);
+		assert.throws(() => config.preflightCommand.push('x'));
+	}, { ...BLOCK, packageManager: 'pm', preflightCommand: ['pm', 'run', 'verify', '--', '--base'] });
+	withRepo((root) => assert.throws(() => acceptanceConfig(root), /HOST_PROFILE_INVALID/),
+		{ ...BLOCK, preflightCommand: ['pm'] });
+});
+
 test('acceptanceConfig derives output from evidenceDir and canaryId and fails closed without the block', () => {
 	withRepo((root) => {
 		const config = acceptanceConfig(root);

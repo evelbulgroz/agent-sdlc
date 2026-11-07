@@ -12,6 +12,7 @@ Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` 
 | `experiment-budget.mjs`, `experiment-config.mjs` | Budget ceilings and validators; `buildExperiment(roles, runId)` takes the run id from the caller. |
 | `role-definitions.mjs`, `governor-resolution.mjs`, `prompt-fit.mjs` | Freeze the resolved roles, the governor policy and critic prompt fit. Engine modules load through `engineModule`, not `AGENT_SDLC_PATH`. |
 | `evidence-broker.mjs`, `prepare-files.mjs` | Frozen-adapter broker (takes `stateDir`) and verified parallel file preparation. |
+| `bin-shims.mjs`, `recipes.mjs`, `preflight-bridge.mjs` | `.bin` shims, frozen command-recipe validation and the credential-free preflight runner. The node path, package root, package manager and preflight argv are passed in from `acceptanceConfig`. |
 
 Specs: `acceptance-core.spec.mjs`. Bind escapes (`../`, absolute, symlink) are refused twice: by the profile loader and by `namespaceArgv` itself.
 

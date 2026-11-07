@@ -21,6 +21,8 @@ export function acceptanceConfig(profile, root) {
 		runtime: block.runtimeDir,
 		helpers: block.helpersDir,
 		node: block.nodeExecutable,
+		packageManager: block.packageManager ?? null,
+		preflightCommand: block.preflightCommand ? Object.freeze([...block.preflightCommand]) : null,
 		caseManifest: block.caseManifest,
 		runtimeSources: block.runtimeSources,
 		runners: block.runners,

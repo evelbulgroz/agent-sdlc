@@ -18,6 +18,9 @@ export const AcceptanceEvidenceSchema = z.strictObject({
 	runtimeDir: PathSchema,
 	helpersDir: PathSchema,
 	nodeExecutable: z.string().refine((value) => path.isAbsolute(value), { message: 'must be an absolute path' }),
+	packageManager: z.string().min(1).optional(),
+	// Host-declared preflight argv prefix ending in the base flag; the engine appends one base commit.
+	preflightCommand: z.array(z.string().min(1)).min(2).optional(),
 	caseManifest: PathSchema,
 	runtimeSources: PathSchema,
 	package: z.strictObject({ root: PathSchema, openApiPath: PathSchema.optional() }),

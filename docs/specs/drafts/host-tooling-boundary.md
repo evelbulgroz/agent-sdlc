@@ -143,7 +143,7 @@ S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert th
 ## S2 decisions (operator-approved)
 
 - **Agnosticism first.** The engine holds no host literals; the profile config is the only host-specific input. The neutrality guard enforces this.
-- **Extra schema keys.** `runtimeDir`, `helpersDir` and `nodeExecutable` are required, because the shared primitives need them.
+- **Extra schema keys.** `runtimeDir`, `helpersDir` and `nodeExecutable` are required, because the shared primitives need them. `packageManager` and `preflightCommand` (an argv prefix ending in the base flag) are optional and null when absent.
 - **Host logic becomes config or host commands.** Canary file lists, generated-file paths and runner config paths become config keys. `pretest` is a host-declared command that the engine runs without knowing what it generates.
 - **Adapters stay host-side.** They run sandboxed with no engine imports and speak only JSON over stdin/stdout. The engine ships a reference adapter and a conformance suite (S3), and no sandbox bind of engine code is needed.
 - **Move rule.** Only modules fully parameterised by config move to the engine.
