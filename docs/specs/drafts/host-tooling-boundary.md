@@ -26,7 +26,8 @@ Move the generic acceptance-evidence and SDLC process tooling out of the referen
 | Owner | Contents |
 |---|---|
 | Engine (new module) | admission, experiment budget and governor, supervisor, recipe and evidence brokers, bin shims, prepare-files, preflight bridge, live records and live-run, offline receipt, prompt-fit, governor resolution, role definitions, readiness, qualify, runtime and pretest, the pnpm verify-bootstrap chain, `atomic-file-state`, telemetry and status validators, plus their specs |
-| Engine (new capability) | runner plugins for vitest and playwright, behind one interface (below) |
+| Engine (new capability) | an adapter conformance suite and a reference adapter (fixture host); no runner knowledge |
+| Host (adapters) | `unit-adapter`, `browser-adapter`, their specs, and the vitest and playwright specifics of `canary-execution` and `registrations`; hash-pinned as today |
 | Host (config and data) | `.agents/sdlc-host.json` and its `acceptanceEvidence` block, the case manifest, the runner config files, `runtime.sources.json`, the canary spec and task plan, `canary-v1/` evidence (gitignored) |
 | Host (policy) | everything in `tools/quality/`, security config, product scripts, CI, hooks, one-off migration scripts |
 | Deleted | `canonical-workspace.mjs` and its spec (dead per `docs/backlog.md`) |
@@ -69,28 +70,28 @@ Mapping from today's literals:
 
 `agent-sdlc host check` validates the block, resolves every named path inside the repository, and refuses symlink escapes with the existing path-containment guards.
 
-## Runner plugin interface
+## Adapter command interface (decided 2026-11-07)
 
-Today `unit-adapter.mjs` and `browser-adapter.mjs` embed vitest and playwright behaviour. The engine owns the plugin surface:
+The engine has no runner knowledge and no test-runner dependency. The host supplies adapter commands; the engine runs them under the existing frozen-adapter rules (absolute `argv[0]` plus `executableSha256`, hashed `bundleFiles`, qualification artifact, sandbox) and validates only the wire-contract result.
 
-```
-RunnerPlugin {
-  id: string                                  // "vitest" | "playwright"
-  buildCommand(config, caseSelection): argv   // exact argv, no shell
-  parseResult(stdout, stderr, files): CaseResult[]
-  caseTitle(caseId): string                   // matches the '@case AC-xx.y' tag convention
-  boundFiles(config): string[]                // files the pin must cover
+`runners` therefore has no `plugin` field. Each entry names an adapter command:
+
+```json
+"runners": {
+  "unit": { "argv": ["/abs/node", "tools/acceptance-evidence/unit-adapter.mjs"], "bundleFiles": ["vitest.canary.config.ts"] },
+  "browser": { "argv": ["/abs/node", "tools/acceptance-evidence/browser-adapter.mjs"], "bundleFiles": ["playwright.canary.config.ts"] }
 }
 ```
 
-- The engine bundles `vitest` and `playwright`. A host selects one by `plugin` and cannot supply executable code through config.
-- A host that needs another runner adds a plugin to the engine through review. This keeps the frozen-adapter guarantee that the engine never executes unreviewed host code in the evidence path.
+- The engine ships `acceptance/conformance.spec.mjs`, run against any adapter, and a trivial reference adapter in the fixture host. They define what an adapter must emit and refuse.
+- Trust rests on the pins, the sandbox, schema validation, `@ac` citation checks and the invariant checker, not on engine-owned parsers. A bad pinned adapter is a host fault and is auditable.
+- A host edit to an adapter still forces a manifest rebuild and admission regeneration, as today.
 
 ## Pins after the move
 
-- Engine-owned files are already covered by the engine commit that admission pins. They leave the host `execution.json` list, which now pins only host-owned files: the case manifest, runner configs, runtime sources and lockfile-derived dependency manifests.
-- The qualified adapter bundle references the engine's canonical absolute paths with their SHA-256. Symlink aliases and relative names still fail closed, as the frozen executable rule requires today.
-- Consequence: a host edit to a runner config forces regeneration as now, but a host no longer forces a manifest rebuild for adapter edits, because adapters are not host files. An engine change still forces regeneration, as today.
+- Engine-owned files are already covered by the engine commit that admission pins. They leave the host `execution.json` list, which keeps only host-owned files: adapters, the case manifest, runner configs, runtime sources and lockfile-derived dependency manifests.
+- Symlink aliases and relative names still fail closed, as the frozen executable rule requires today.
+- Consequence: host adapter or config edits force regeneration as now; an engine change forces it as today. Slices that touch only engine files still require regeneration, so S2 to S4 are verified against the fixture host and admission is regenerated at S6.
 
 ## Migration slices
 
@@ -101,7 +102,7 @@ Each slice ends with the done bar (`build`, `typecheck`, `test:unit`, `reliabili
 | S0 | Delete dead `canonical-workspace.mjs` and spec; remove `learn.mjs` if the native store is a superset (diff first) | host specs green; no references remain |
 | S1 | Add `acceptanceEvidence` schema, `1.5.0` loader, legacy `1.4.0` decoding, `host check` | schema and loader specs, including a negative spec per closed key |
 | S2 | Move generic modules with literals replaced by config; host `protocol.mjs` shrinks to a config reader | relocated specs plus the fixture host (S5) |
-| S3 | Runner plugin interface and the vitest and playwright plugins | per-plugin specs; adapter spec relocated |
+| S3 | Adapter conformance suite and reference adapter | suite passes the reference adapter and fails seeded bad adapters |
 | S4 | Admission literals from `profileId` and `canaryId`; regenerate admission | `admission verify` plus the S6 canary |
 | S5 | Fixture host in the engine repo with a one-file canary so the evidence path runs without fitness-app | engine suite passes standalone |
 | S6 | Strip fitness-app to config and data; rebuild manifest; regenerate admission | one 4-task canary: `READY_FOR_GIT_APPROVAL`, 7/7, run time within 10% of 1,470 s |
@@ -128,7 +129,8 @@ S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert th
 - Bump to `1.5.0` now with an optional `acceptanceEvidence` block.
 - `learn.mjs`: diff against the native store, then remove in S0.
 - S6 timing tolerance: 20% of run 11 (1,470 s).
-- Runner plugins: still open (question 4).
+- Runner plugins: rejected. Hosts supply adapter commands; the engine has no runner knowledge (see Adapter command interface).
+- Rollback: every slice is its own commit with a green done bar, so any regression is reverted by one `git revert`. Engine and host commits stay separate.
 
 ## Open questions (original wording)
 
