@@ -25,6 +25,7 @@ export function acceptanceConfig(profile, root) {
 		preflightCommand: block.preflightCommand ? Object.freeze([...block.preflightCommand]) : null,
 		taskVerificationCommand: block.taskVerificationCommand ? Object.freeze([...block.taskVerificationCommand]) : null,
 		repositoryId: profile.repositoryId,
+		stateDir: profile.stateDir,
 		canary: block.canary ? Object.freeze({ ...block.canary, files: Object.freeze(block.canary.files.map((file) => Object.freeze({ ...file }))) }) : null,
 		caseManifest: block.caseManifest,
 		runtimeSources: block.runtimeSources,

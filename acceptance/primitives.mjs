@@ -4,6 +4,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const bytesHash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
+// The one sandbox launcher the evidence runtime supports; admission pins its hash.
+export const LAUNCHER = '/usr/bin/bwrap';
 export const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
 export function fail(message) {
