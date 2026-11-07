@@ -15,6 +15,9 @@ export const AcceptanceEvidenceSchema = z.strictObject({
 	canaryId: IdSchema,
 	slug: IdSchema,
 	evidenceDir: PathSchema,
+	runtimeDir: PathSchema,
+	helpersDir: PathSchema,
+	nodeExecutable: z.string().refine((value) => path.isAbsolute(value), { message: 'must be an absolute path' }),
 	caseManifest: PathSchema,
 	runtimeSources: PathSchema,
 	package: z.strictObject({ root: PathSchema, openApiPath: PathSchema.optional() }),
@@ -31,6 +34,8 @@ export function acceptanceContainmentPaths(config: AcceptanceEvidenceConfig | un
 	if (!config) return [];
 	const paths: [string, string][] = [
 		[config.evidenceDir, 'acceptanceEvidence.evidenceDir'],
+		[config.runtimeDir, 'acceptanceEvidence.runtimeDir'],
+		[config.helpersDir, 'acceptanceEvidence.helpersDir'],
 		[config.caseManifest, 'acceptanceEvidence.caseManifest'],
 		[config.runtimeSources, 'acceptanceEvidence.runtimeSources'],
 		[config.package.root, 'acceptanceEvidence.package.root'],

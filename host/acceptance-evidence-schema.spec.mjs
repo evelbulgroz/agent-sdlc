@@ -11,6 +11,9 @@ const BLOCK = {
 	canaryId: 'canary-v1',
 	slug: 'healthy',
 	evidenceDir: 'tools/.evidence',
+	runtimeDir: 'tools/runtime',
+	helpersDir: 'tools/helpers',
+	nodeExecutable: '/usr/bin/node',
 	caseManifest: 'tools/cases.json',
 	runtimeSources: 'tools/runtime.sources.json',
 	package: { root: 'apps/web', openApiPath: 'apps/api/openapi.json' },
@@ -73,7 +76,7 @@ test('the block is closed: unknown keys fail at every level', () => {
 });
 
 test('each required key is enforced', () => {
-	for (const key of ['canaryId', 'slug', 'evidenceDir', 'caseManifest', 'runtimeSources', 'package', 'sandbox', 'runners']) {
+	for (const key of ['canaryId', 'slug', 'evidenceDir', 'runtimeDir', 'helpersDir', 'nodeExecutable', 'caseManifest', 'runtimeSources', 'package', 'sandbox', 'runners']) {
 		const block = clone();
 		delete block[key];
 		rejects({ acceptanceEvidence: block }, new RegExp(`acceptanceEvidence\\.${key}`));
@@ -96,6 +99,9 @@ test('ids must be lowercase tokens, runners non-empty, and adapter argv[0] absol
 test('every named path must be repository-relative and contained', () => {
 	for (const mutate of [
 		(b) => { b.evidenceDir = '/etc'; },
+		(b) => { b.runtimeDir = '../runtime'; },
+		(b) => { b.helpersDir = '/abs/helpers'; },
+		(b) => { b.nodeExecutable = 'node'; },
 		(b) => { b.caseManifest = '../outside.json'; },
 		(b) => { b.runtimeSources = 'a/../../b'; },
 		(b) => { b.package.root = '/abs'; },

@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "build": "node -e \"const fs=require('node:fs');fs.rmSync('dist',{recursive:true,force:true});\" && tsc -p tsconfig.build.json && node -e \"const fs=require('node:fs');fs.cpSync('roles/defaults','dist/roles/defaults',{recursive:true});fs.cpSync('review/defaults','dist/review/defaults',{recursive:true});\"",
+    "build": "node -e \"const fs=require('node:fs');fs.rmSync('dist',{recursive:true,force:true});\" && tsc -p tsconfig.build.json && node -e \"const fs=require('node:fs');fs.cpSync('roles/defaults','dist/roles/defaults',{recursive:true});fs.cpSync('review/defaults','dist/review/defaults',{recursive:true});fs.cpSync('acceptance','dist/acceptance',{recursive:true,filter:(s)=>!s.endsWith('.spec.mjs')});\"",
     "sdlc": "node ./cli/cli.ts",
     "review": "node ./review/agent-review.ts",
     "trace": "node ./scripts/trace-summary.ts",
