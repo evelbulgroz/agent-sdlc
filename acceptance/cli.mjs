@@ -12,6 +12,11 @@ import { readiness } from './readiness.mjs';
 import { buildRegistrations, validateRegistrations } from './registrations.mjs';
 import { buildAuthorization, loadObligations } from './run-authorization.mjs';
 import { dependencyManifest, expandedInventory, materialize } from './runtime-inventory.mjs';
+import { writeExperimentFiles } from './experiment-config.mjs';
+import { resolveGovernorRecord } from './governor-resolution.mjs';
+import { measurePromptFit } from './prompt-fit.mjs';
+import { resolveRoleRecord } from './role-definitions.mjs';
+import { approveAdmission, regenerateAdmission } from './regenerate.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // The control record reruns these engine specs against the host, so the engine, not the host, owns them.
@@ -80,6 +85,47 @@ const commands = {
     writeJson(args['--output'], { schemaVersion: '1.0.0', authorizations: [authorization],
       specSha256: bytesHash(fs.readFileSync(args['--spec'])), tasksSha256: bytesHash(fs.readFileSync(args['--tasks'])) });
     process.stdout.write(`authorization ok base=${authorization.baseCommitSha}\n`);
+  },
+  'governor-resolution': async ({ argv }) => {
+    const args = argumentsFor(argv, ['--output']);
+    const record = await resolveGovernorRecord();
+    writeJson(args['--output'], record);
+    process.stdout.write(`governor: ${record.status}\n`);
+    if (record.status !== 'passed') fail(`governor resolution blocked: ${record.failures.join('; ')}`);
+  },
+  'role-definitions': async ({ root, argv }) => {
+    const args = argumentsFor(argv, ['--output']);
+    const record = await resolveRoleRecord(root);
+    writeJson(args['--output'], record);
+    process.stdout.write(`roles: ${record.status}\n`);
+    if (record.status !== 'passed') fail(`role definitions blocked: ${record.failures.join('; ')}`);
+  },
+  'experiment-config': ({ argv }) => {
+    const args = argumentsFor(argv, ['--role-definitions', '--output-dir', '--run-id']);
+    writeExperimentFiles({ rolesFile: args['--role-definitions'], outputDir: args['--output-dir'], runId: args['--run-id'] });
+  },
+  'prompt-fit': async ({ root, argv }) => {
+    const args = argumentsFor(argv, ['--spec', '--tasks', '--role-definitions', '--output']);
+    const critic = readJson(args['--role-definitions']).roles.find((role) => role.roleId === 'critic-reviewer');
+    const record = await measurePromptFit(root, { spec: args['--spec'], tasks: args['--tasks'],
+      criticPromptCeiling: critic.requestedLimits.maxPromptTokens });
+    writeJson(args['--output'], record);
+    process.stdout.write(`prompt fit: ${record.status}\n`);
+    if (record.status !== 'passed') fail('critic prompts do not fit their ceiling');
+  },
+  'admission-regenerate': async ({ root, config, argv }) => {
+    if (argv.length) fail('admission-regenerate takes no flags');
+    const { head, dir, runId } = await regenerateAdmission({ root, config, engine: process.env.AGENT_SDLC_PATH, now: new Date(),
+      run: (name, args) => commands[name]({ root, config, argv: args }) });
+    process.stdout.write(`admission regenerated for ${head.slice(0, 8)} in ${dir} (run ${runId}); approve with admission-approve\n`);
+  },
+  'admission-approve': async ({ root, config, argv }) => {
+    const args = argumentsFor(argv, ['--approved-by', '--approval', '--implementation-scope', '--live-scope']);
+    const done = await approveAdmission({ root, config, now: new Date(),
+      approval: { approvedBy: args['--approved-by'], text: args['--approval'],
+        implementationScope: args['--implementation-scope'], liveScope: args['--live-scope'] },
+      verify: (manifest) => commands['admission-verify']({ root, config, argv: ['--manifest', manifest] }) });
+    process.stdout.write(`approved manifest: ${done.manifest} (run ${done.runId})\n`);
   },
   'runtime-inventory': ({ root, argv }) => {
     const args = argumentsFor(argv, ['--sources', '--output']);

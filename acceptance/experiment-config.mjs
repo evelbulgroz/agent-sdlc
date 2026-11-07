@@ -50,12 +50,17 @@ export function buildQualityPolicy() {
   return policy;
 }
 
+export function writeExperimentFiles({ rolesFile, outputDir, runId }) {
+  const roles = readJson(rolesFile);
+  if (roles.status !== 'passed') fail('role definitions not passed');
+  const experiment = buildExperiment(roles, runId);
+  writeJson(`${outputDir}/experiment.json`, { schemaVersion: '1.0.0', experiment });
+  writeJson(`${outputDir}/quality-policy.json`, buildQualityPolicy());
+  return experiment;
+}
+
 if (isMain(import.meta.url)) await main(async () => {
   const args = argumentsFor(process.argv.slice(2), ['--role-definitions', '--output-dir', '--run-id']);
-  const roles = readJson(args['--role-definitions']);
-  if (roles.status !== 'passed') fail('role definitions not passed');
-  const experiment = buildExperiment(roles, args['--run-id']);
-  writeJson(`${args['--output-dir']}/experiment.json`, { schemaVersion: '1.0.0', experiment });
-  writeJson(`${args['--output-dir']}/quality-policy.json`, buildQualityPolicy());
+  const experiment = writeExperimentFiles({ rolesFile: args['--role-definitions'], outputDir: args['--output-dir'], runId: args['--run-id'] });
   process.stdout.write(`${JSON.stringify(experiment.dispatchInventory, null, 1)}\n`);
 });

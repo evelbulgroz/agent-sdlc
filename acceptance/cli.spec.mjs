@@ -34,8 +34,9 @@ const cli = (cwd, ...argv) => {
 };
 
 test('the dispatcher names every moved host command and refuses anything else', (t) => {
-  assert.deepEqual([...COMMANDS].sort(), ['admission-assemble', 'admission-proposal', 'admission-records',
-    'admission-verify', 'authorize', 'canary-execution', 'readiness', 'registrations', 'runtime-dependencies',
+  assert.deepEqual([...COMMANDS].sort(), ['admission-approve', 'admission-assemble', 'admission-proposal', 'admission-records',
+    'admission-regenerate', 'admission-verify', 'authorize', 'canary-execution', 'experiment-config', 'governor-resolution',
+    'prompt-fit', 'readiness', 'registrations', 'role-definitions', 'runtime-dependencies',
     'runtime-inventory', 'runtime-materialize']);
   const result = cli(hostRoot(t), 'bogus');
   assert.equal(result.status, 1);
