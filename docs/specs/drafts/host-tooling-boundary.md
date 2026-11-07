@@ -105,7 +105,7 @@ Each slice ends with the done bar (`build`, `typecheck`, `test:unit`, `reliabili
 | S3 | Adapter conformance suite and reference adapter | suite passes the reference adapter and fails seeded bad adapters |
 | S4 | Admission literals from `profileId` and `canaryId`; regenerate admission | `admission verify` plus the S6 canary |
 | S5 | Fixture host in the engine repo with a one-file canary so the evidence path runs without fitness-app | engine suite passes standalone |
-| S6 | Strip fitness-app to config and data; rebuild manifest; regenerate admission | one 4-task canary: `READY_FOR_GIT_APPROVAL`, 7/7, run time within 10% of 1,470 s |
+| S6 | Strip fitness-app to config and data; rebuild manifest; regenerate admission | one 4-task canary: `READY_FOR_GIT_APPROVAL`, 7/7, run time within 20% of 1,470 s |
 
 S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert the host commit; the engine slices stay.
 
@@ -128,7 +128,7 @@ S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert th
 - Same package, new `acceptance/` module.
 - Bump to `1.5.0` now with an optional `acceptanceEvidence` block.
 - `learn.mjs`: diff against the native store, then remove in S0.
-- S6 timing tolerance: 20% of run 11 (1,470 s).
+- S6 timing tolerance: 20% of run 11 (1,470 s), so at most about 1,764 s. Confirmed by the operator. A single run landing between 10% and 20% is rerun once before it counts as a regression, because run-to-run variance is several minutes.
 - Runner plugins: rejected. Hosts supply adapter commands; the engine has no runner knowledge (see Adapter command interface).
 - Rollback: every slice is its own commit with a green done bar, so any regression is reverted by one `git revert`. Engine and host commits stay separate.
 
@@ -138,7 +138,7 @@ S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert th
 2. Is `1.5.0` the right version bump, or should this wait to batch with other schema changes?
 3. Should `learn.mjs` be removed in S0, or kept as a host adapter for a transition?
 4. Is the bundled-plugin rule acceptable, or does a second host need host-supplied runner code in the near term?
-5. Is the 10% timing tolerance for S6 right?
+5. Is the 10% timing tolerance for S6 right? Answered: 20%.
 
 ## S2 decisions (operator-approved)
 
