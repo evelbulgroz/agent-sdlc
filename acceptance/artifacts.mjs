@@ -22,3 +22,10 @@ export function artifact(config, name) {
   if (!Object.hasOwn(ARTIFACTS, name)) fail(`unknown artifact: ${name}`);
   return `${config.output}/${ARTIFACTS[name]}`;
 }
+
+// Identity strings admission binds, derived from the profile so no host name is hard-coded.
+export const admissionIdentity = (config) => Object.freeze({
+  manifestVersion: `${config.repositoryId}-${config.canaryId}-admission`,
+  experimentId: `${config.repositoryId}-${config.canaryId}-experiment`,
+  repositoryId: config.repositoryId,
+});
