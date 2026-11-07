@@ -133,7 +133,7 @@ export async function loadLearningStore(storePath: string): Promise<NormalizedLe
 		});
 }
 
-function writeStore(storePath: string, learnings: readonly NormalizedLearningEntry[]): void {
+export function writeLearningStore(storePath: string, learnings: readonly NormalizedLearningEntry[]): void {
 	const dir = dirname(storePath);
 	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 	const content = learnings.length > 0 ? `${learnings.map((item) => JSON.stringify(item)).join('\n')}\n` : '';
@@ -342,7 +342,7 @@ export async function addLearningBatch(
 		}
 	}
 
-	writeStore(storePath, learnings);
+	writeLearningStore(storePath, learnings);
 	return normalizedItems;
 }
 
@@ -369,7 +369,7 @@ export async function addLearningEntry(
 		learnings.push(newEntry);
 	}
 
-	writeStore(storePath, learnings);
+	writeLearningStore(storePath, learnings);
 	return newEntry;
 }
 

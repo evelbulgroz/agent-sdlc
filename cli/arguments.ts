@@ -34,10 +34,17 @@ const VALUE_FLAGS = new Set([
 	'--step',
 	'--executor',
 	'--root',
+	'--store',
+	'--query',
+	'--scope',
+	'--limit',
+	'--file',
 ]);
 
 const BOOLEAN_FLAGS = new Set([
 	'--json',
+	'--upsert',
+	'--missing-files',
 	'--skip-canary',
 	'--stdin',
 	'--overwrite',
@@ -155,6 +162,11 @@ const COMMAND_FLAGS = new Map<string, Set<string>>([
 	['shell reply', new Set(['--run', '--response-file', '--json'])],
 	['shell watch', new Set(['--run', '--json'])],
 	['host check', new Set(['--root', '--json'])],
+	['learnings search', new Set(['--root', '--store', '--query', '--scope', '--limit', '--json'])],
+	['learnings add', new Set(['--root', '--store', '--file', '--stdin', '--upsert', '--json'])],
+	['learnings prune', new Set(['--root', '--store', '--key', '--missing-files', '--apply', '--json'])],
+	['learnings validate', new Set(['--root', '--store', '--json'])],
+	['learnings stats', new Set(['--root', '--store', '--json'])],
 ]);
 
 /**
@@ -189,6 +201,7 @@ export function parseArguments(args: readonly string[]): ParsedArguments {
 		(command === 'reliability' ||
 			command === 'canary' ||
 			command === 'shell' ||
+			command === 'learnings' ||
 			command === 'host') &&
 		typeof normalizedArgs[1] === 'string' &&
 		!normalizedArgs[1].startsWith('-')
@@ -292,6 +305,9 @@ export function usage(): string {
 		'               --run <run-id> --response-file <path> [--json]',
 		'  shell watch  Operator shell: replay mechanical continuation cards until a human gate is reached',
 		'               --run <run-id> [--json]',
+		'  learnings search|add|prune|validate|stats',
+		'               Project learnings store [--root <dir>] [--store <path>]; search --query <text> [--scope <s>] [--limit <n>];',
+		'               add --file <path> | --stdin [--upsert]; prune --key <key> | --missing-files [--apply]; [--json]',
 		'  help, -h     Show this help message',
 	].join('\n');
 }

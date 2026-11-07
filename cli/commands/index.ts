@@ -31,6 +31,7 @@ import {
 	replayReliabilityCommand,
 } from './maintenance.ts';
 import { prRun } from './pr.ts';
+import { learningsExitCode, learningsHandler } from './learnings.ts';
 import { resumeRun } from './resume.ts';
 import {
 	answerRun,
@@ -207,6 +208,15 @@ const COMMAND_TABLE: Readonly<Record<string, CommandEntry>> = {
 		progressSink: true,
 	},
 	'host check': { handler: hostCheck, progressSink: false },
+	'learnings search': { handler: learningsHandler('search'), progressSink: false },
+	'learnings add': { handler: learningsHandler('add'), progressSink: false },
+	'learnings prune': { handler: learningsHandler('prune'), progressSink: false },
+	'learnings validate': {
+		handler: learningsHandler('validate'),
+		progressSink: false,
+		exitCode: learningsExitCode,
+	},
+	'learnings stats': { handler: learningsHandler('stats'), progressSink: false },
 	resume: { handler: resumeRun, progressSink: true },
 	status: { handler: statusRun, progressSink: false },
 	approve: { handler: approveRun, progressSink: true },

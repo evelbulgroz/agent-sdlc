@@ -57,4 +57,11 @@ agent-sdlc cancel --run <run-id> [--json]
 agent-sdlc export --run <run-id> --dest export.json [--overwrite] [--json]
 agent-sdlc prune-runs [--dry-run] [--json]
 agent-sdlc host check [--root <dir>] [--json]
+
+# Project learnings store (`.agents/sdlc-host.json` `learnings`); `validate` exits 2 on any invalid line
+agent-sdlc learnings search --query <text> [--scope <s>] [--limit <n>] [--root <dir>] [--store <path>] [--json]
+agent-sdlc learnings add --file <path> | --stdin [--upsert] [--json]
+agent-sdlc learnings prune --key <key> | --missing-files [--apply] [--json]
+agent-sdlc learnings validate [--json]
+agent-sdlc learnings stats [--json]
 ```
