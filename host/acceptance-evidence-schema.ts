@@ -9,6 +9,10 @@ const AdapterCommandSchema = z.strictObject({
 		message: 'argv[0] must be an absolute executable path',
 	}),
 	bundleFiles: z.array(PathSchema),
+	// Runner config file, relative to package.root; the canary execution manifest pins it.
+	config: PathSchema.optional(),
+	// Runner project name recorded in the case map (e.g. a browser project).
+	project: z.string().min(1).optional(),
 });
 
 const CanarySchema = z.strictObject({
@@ -67,6 +71,7 @@ export function acceptanceContainmentPaths(config: AcceptanceEvidenceConfig | un
 	}
 	for (const [name, runner] of Object.entries(config.runners)) {
 		for (const file of runner.bundleFiles) paths.push([file, `acceptanceEvidence.runners.${name}.bundleFiles`]);
+		if (runner.config) paths.push([`${config.package.root}/${runner.config}`, `acceptanceEvidence.runners.${name}.config`]);
 	}
 	return paths;
 }

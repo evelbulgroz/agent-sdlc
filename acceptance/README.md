@@ -13,6 +13,7 @@ Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` 
 | `role-definitions.mjs`, `governor-resolution.mjs`, `prompt-fit.mjs` | Freeze the resolved roles, the governor policy and critic prompt fit. Engine modules load through `engineModule`, not `AGENT_SDLC_PATH`. |
 | `evidence-broker.mjs`, `prepare-files.mjs` | Frozen-adapter broker (takes `stateDir`) and verified parallel file preparation. |
 | `bin-shims.mjs`, `recipes.mjs`, `preflight-bridge.mjs` | `.bin` shims, frozen command-recipe validation and the credential-free preflight runner. The node path, package root, package manager and preflight argv are passed in from `acceptanceConfig`. |
+| `canary-execution.mjs` | `buildCaseMap`, `buildCanaryExecution`, `assertCanaryExecutionCurrent`. Adapter bundle files come from each runner's `bundleFiles`; runner config and project from `runners.<name>.config` and `.project`. The engine CLI wrapper is deferred. |
 | `run-authorization.mjs` | `loadObligations` (validates the host obligations file against the configured canary files and runners), `allowedPaths`, `buildQualityPlan`, `buildAuthorization(root, config, …)`. Run id and repository id come from the caller and profile. |
 
 Specs: `acceptance-core.spec.mjs`. Bind escapes (`../`, absolute, symlink) are refused twice: by the profile loader and by `namespaceArgv` itself.

@@ -108,6 +108,7 @@ test('every named path must be repository-relative and contained', () => {
 		(b) => { b.package.openApiPath = '../x.json'; },
 		(b) => { b.sandbox.readOnlyBinds = ['../secrets']; },
 		(b) => { b.runners.unit.bundleFiles = ['/abs/config.ts']; },
+		(b) => { b.runners.unit.config = '../outside.config.ts'; },
 	]) {
 		const block = clone();
 		mutate(block);
