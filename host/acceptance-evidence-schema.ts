@@ -13,6 +13,9 @@ const AdapterCommandSchema = z.strictObject({
 	config: PathSchema.optional(),
 	// Runner project name recorded in the case map (e.g. a browser project).
 	project: z.string().min(1).optional(),
+	// Capabilities the runner qualifies for, and its per-operation timeout (default 120000 ms).
+	capabilities: z.array(z.string().min(1)).optional(),
+	timeoutMs: z.number().int().positive().optional(),
 });
 
 const CanarySchema = z.strictObject({
