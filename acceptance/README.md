@@ -9,6 +9,9 @@ Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` 
 | `process.mjs` | `executeOwned` (process-group ownership, time and output bounds) and `launchSupervised` (bubblewrap launcher with mount and environment validation). |
 | `sandbox.mjs` | `namespaceArgv(config, argv, opts)`: bubblewrap argv built only from configured binds. Every bind must be a repository-relative name whose real path stays under its base; writable paths must live under the owned evidence directory. |
 | `contracts.mjs` | Wire-contract loading from the pinned runtime copy, request/report helpers, and `caseSelections` bound to the configured package root. |
+| `experiment-budget.mjs`, `experiment-config.mjs` | Budget ceilings and validators; `buildExperiment(roles, runId)` takes the run id from the caller. |
+| `role-definitions.mjs`, `governor-resolution.mjs`, `prompt-fit.mjs` | Freeze the resolved roles, the governor policy and critic prompt fit. Engine modules load through `engineModule`, not `AGENT_SDLC_PATH`. |
+| `evidence-broker.mjs`, `prepare-files.mjs` | Frozen-adapter broker (takes `stateDir`) and verified parallel file preparation. |
 
 Specs: `acceptance-core.spec.mjs`. Bind escapes (`../`, absolute, symlink) are refused twice: by the profile loader and by `namespaceArgv` itself.
 

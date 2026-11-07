@@ -139,3 +139,11 @@ S5 can start after S1 and is the safety net for S2 to S4. If S6 fails, revert th
 3. Should `learn.mjs` be removed in S0, or kept as a host adapter for a transition?
 4. Is the bundled-plugin rule acceptable, or does a second host need host-supplied runner code in the near term?
 5. Is the 10% timing tolerance for S6 right?
+
+## S2 decisions (operator-approved)
+
+- **Agnosticism first.** The engine holds no host literals; the profile config is the only host-specific input. The neutrality guard enforces this.
+- **Extra schema keys.** `runtimeDir`, `helpersDir` and `nodeExecutable` are required, because the shared primitives need them.
+- **Host logic becomes config or host commands.** Canary file lists, generated-file paths and runner config paths become config keys. `pretest` is a host-declared command that the engine runs without knowing what it generates.
+- **Adapters stay host-side.** They run sandboxed with no engine imports and speak only JSON over stdin/stdout. The engine ships a reference adapter and a conformance suite (S3), and no sandbox bind of engine code is needed.
+- **Move rule.** Only modules fully parameterised by config move to the engine.

@@ -93,6 +93,15 @@ export function runnerOutcome(value) {
 	return values[value];
 }
 
+// Loads an engine module (e.g. 'roles/role-registry') from this checkout, as .ts in source or .js in dist.
+export async function engineModule(name) {
+	for (const extension of ['.ts', '.js']) {
+		const file = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', `${name}${extension}`);
+		if (fs.existsSync(file)) return import(pathToFileURL(file).href);
+	}
+	return fail(`engine module not found: ${name}`);
+}
+
 export function isMain(url) {
 	return process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === url;
 }
