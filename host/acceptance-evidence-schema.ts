@@ -24,6 +24,8 @@ const CanarySchema = z.strictObject({
 	corpus: PathSchema,
 	// Host data file listing one evidence obligation per acceptance case; validated by the engine.
 	obligations: PathSchema,
+	// Environment variable names the orchestrator may pass through to model providers.
+	providerCredentials: z.array(z.string().regex(/^[A-Z][A-Z0-9_]*$/)).optional(),
 	files: z.array(z.strictObject({ path: PathSchema, kind: z.enum(['support', 'unit', 'browser']) })).min(1),
 });
 
@@ -40,6 +42,8 @@ export const AcceptanceEvidenceSchema = z.strictObject({
 	// Per-task verification argv recorded in the admission commands (e.g. a package lint run).
 	taskVerificationCommand: z.array(z.string().min(1)).min(1).optional(),
 	canary: CanarySchema.optional(),
+	// Receipt the host's preflight command writes for the integration base commit.
+	preflightResult: PathSchema.optional(),
 	caseManifest: PathSchema,
 	runtimeSources: PathSchema,
 	package: z.strictObject({ root: PathSchema, openApiPath: PathSchema.optional() }),
@@ -63,6 +67,7 @@ export function acceptanceContainmentPaths(config: AcceptanceEvidenceConfig | un
 		[config.package.root, 'acceptanceEvidence.package.root'],
 	];
 	if (config.package.openApiPath) paths.push([config.package.openApiPath, 'acceptanceEvidence.package.openApiPath']);
+	if (config.preflightResult) paths.push([config.preflightResult, 'acceptanceEvidence.preflightResult']);
 	if (config.canary) {
 		for (const key of ['spec', 'tasks', 'corpus', 'obligations'] as const) {
 			paths.push([config.canary[key], `acceptanceEvidence.canary.${key}`]);

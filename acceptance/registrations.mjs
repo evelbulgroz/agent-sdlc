@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { bytesHash, engineModule, fail, readJson, regularFile, verifyFile } from './primitives.mjs';
 import { engineContracts } from './contracts.mjs';
+import { artifact } from './artifacts.mjs';
 
 const reference = (root, relative) => ({
   path: relative, sha256: bytesHash(fs.readFileSync(regularFile(root, relative))),
@@ -25,7 +26,7 @@ export function buildRegistrations(root, config, { execution, dependencyManifest
       bundleFiles: runner.bundleFiles.map((file) => reference(root, file)),
       dependencyFiles: [], dependencyManifest,
       configurationFiles: [reference(root, `${config.packageRoot}/${runner.config}`),
-        reference(root, `${config.output}/execution.json`)],
+        reference(root, artifact(config, 'executionManifest'))],
       argv: [...runner.argv], executableSha256: bytesHash(fs.readFileSync(fs.realpathSync(runner.argv[0]))),
       profiles: [{ profileId: kind, layers: [kind], capabilities: runner.capabilities ?? [] }],
       qualificationArtifactHash: binding.qualification.sha256, qualificationArtifact: binding.qualification,

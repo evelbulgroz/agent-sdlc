@@ -130,11 +130,13 @@ test('canary block is optional, closed, and its paths must be contained', () => 
 		(c) => { c.files = []; },
 		(c) => { c.extra = 1; },
 		(c) => { delete c.corpus; },
+		(c) => { c.providerCredentials = ['lower_case']; },
 	]) {
 		const next = structuredClone(canary);
 		mutate(next);
 		rejects({ acceptanceEvidence: { ...BLOCK, canary: next } }, /HOST_PROFILE_INVALID: acceptanceEvidence\.canary/);
 	}
+	rejects({ acceptanceEvidence: { ...BLOCK, preflightResult: '../receipt.json' } }, /acceptanceEvidence\.preflightResult/);
 });
 
 test('host check reports the acceptance block and omits it when absent', async () => {
