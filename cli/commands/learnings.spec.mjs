@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { Readable } from 'node:stream';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { runCli } from '../cli.ts';
@@ -99,5 +100,38 @@ test('learnings search without --query or --scope and add without a payload are 
 	await withStore([entry('a-one')], async ({ dir, store }) => {
 		assert.equal((await run(['search', '--store', store], dir)).result.ok, false);
 		assert.equal((await run(['add', '--store', store], dir)).result.ok, false);
+	});
+});
+
+test('learnings search rejects limits outside 1..20 with a non-zero exit', async () => {
+	await withStore([entry('a-one')], async ({ dir, store }) => {
+		for (const limit of ['0', '21', 'abc', '-1']) {
+			const outcome = await runCli(['learnings', 'search', '--query', 'sample', '--limit', limit, '--store', store, '--root', dir, '--json'], { rootDir: REPOSITORY_ROOT });
+			assert.notEqual(outcome.exitCode, 0, `limit ${limit}`);
+			assert.match(outcome.result.error.message, /Invalid limit/);
+		}
+	});
+});
+
+test('learnings add reads a payload from stdin', async () => {
+	await withStore([], async ({ dir, store }) => {
+		const stdin = Readable.from([JSON.stringify(entry('from-stdin'))]);
+		const outcome = await runCli(['learnings', 'add', '--stdin', '--store', store, '--root', dir, '--json'], {
+			rootDir: REPOSITORY_ROOT,
+			streams: { stdin, stdout: process.stdout, stderr: process.stderr },
+		});
+		assert.deepEqual(outcome.result.added, ['from-stdin']);
+	});
+});
+
+test('learnings add of an invalid batch file exits non-zero and leaves the store unchanged', async () => {
+	await withStore([entry('a-one')], async ({ dir, store }) => {
+		const before = fs.readFileSync(store, 'utf-8');
+		const batch = path.join(dir, 'candidates.json');
+		fs.writeFileSync(batch, JSON.stringify({ candidates: [entry('fine-one'), entry('bad-one', { type: 'nonsense' })] }));
+		const outcome = await run(['add', '--store', store, '--file', batch], dir);
+		assert.notEqual(outcome.exitCode, 0);
+		assert.match(outcome.result.error.message, /Validation failed for item 2/);
+		assert.equal(fs.readFileSync(store, 'utf-8'), before);
 	});
 });
