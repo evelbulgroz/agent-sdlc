@@ -115,6 +115,27 @@ test('every named path must be repository-relative and contained', () => {
 	}
 });
 
+test('canary block is optional, closed, and its paths must be contained', () => {
+	const canary = { spec: 'docs/spec.md', tasks: 'docs/tasks.json', corpus: 'tools/corpus.json',
+		obligations: 'tools/obligations.json', files: [{ path: 'apps/web/t.spec.ts', kind: 'unit' }] };
+	withProfile({ acceptanceEvidence: { ...BLOCK, canary, taskVerificationCommand: ['pm', 'run', 'lint'] } }, (dir) => {
+		assert.equal(loadHostProfile(dir).acceptanceEvidence.canary.files[0].kind, 'unit');
+	});
+	for (const mutate of [
+		(c) => { c.spec = '../spec.md'; },
+		(c) => { c.obligations = '/abs.json'; },
+		(c) => { c.files[0].path = 'a/../../x'; },
+		(c) => { c.files[0].kind = 'other'; },
+		(c) => { c.files = []; },
+		(c) => { c.extra = 1; },
+		(c) => { delete c.corpus; },
+	]) {
+		const next = structuredClone(canary);
+		mutate(next);
+		rejects({ acceptanceEvidence: { ...BLOCK, canary: next } }, /HOST_PROFILE_INVALID: acceptanceEvidence\.canary/);
+	}
+});
+
 test('host check reports the acceptance block and omits it when absent', async () => {
 	await withProfile({ acceptanceEvidence: BLOCK }, async (dir) => {
 		const outcome = await runCli(['host', 'check', '--root', dir, '--json'], { rootDir: REPOSITORY_ROOT });

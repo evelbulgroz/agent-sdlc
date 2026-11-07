@@ -1,11 +1,8 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { fail, regularFile, relativePath } from './primitives.mjs';
+import { engineModule, fail, regularFile, relativePath } from './primitives.mjs';
 
-export async function engineContracts() {
-	if (!process.env.AGENT_SDLC_PATH) fail('AGENT_SDLC_PATH is required');
-	return import(pathToFileURL(path.resolve(process.env.AGENT_SDLC_PATH, 'policy/contracts.ts')).href);
-}
+export const engineContracts = () => engineModule('policy/contracts');
 
 /** Loads the pinned wire-contract copy from the runtime directory, never from the live engine. */
 export function wireContracts(runtimeDir) {

@@ -11,6 +11,15 @@ const AdapterCommandSchema = z.strictObject({
 	bundleFiles: z.array(PathSchema),
 });
 
+const CanarySchema = z.strictObject({
+	spec: PathSchema,
+	tasks: PathSchema,
+	corpus: PathSchema,
+	// Host data file listing one evidence obligation per acceptance case; validated by the engine.
+	obligations: PathSchema,
+	files: z.array(z.strictObject({ path: PathSchema, kind: z.enum(['support', 'unit', 'browser']) })).min(1),
+});
+
 export const AcceptanceEvidenceSchema = z.strictObject({
 	canaryId: IdSchema,
 	slug: IdSchema,
@@ -21,6 +30,9 @@ export const AcceptanceEvidenceSchema = z.strictObject({
 	packageManager: z.string().min(1).optional(),
 	// Host-declared preflight argv prefix ending in the base flag; the engine appends one base commit.
 	preflightCommand: z.array(z.string().min(1)).min(2).optional(),
+	// Per-task verification argv recorded in the admission commands (e.g. a package lint run).
+	taskVerificationCommand: z.array(z.string().min(1)).min(1).optional(),
+	canary: CanarySchema.optional(),
 	caseManifest: PathSchema,
 	runtimeSources: PathSchema,
 	package: z.strictObject({ root: PathSchema, openApiPath: PathSchema.optional() }),
@@ -44,6 +56,12 @@ export function acceptanceContainmentPaths(config: AcceptanceEvidenceConfig | un
 		[config.package.root, 'acceptanceEvidence.package.root'],
 	];
 	if (config.package.openApiPath) paths.push([config.package.openApiPath, 'acceptanceEvidence.package.openApiPath']);
+	if (config.canary) {
+		for (const key of ['spec', 'tasks', 'corpus', 'obligations'] as const) {
+			paths.push([config.canary[key], `acceptanceEvidence.canary.${key}`]);
+		}
+		for (const file of config.canary.files) paths.push([file.path, 'acceptanceEvidence.canary.files']);
+	}
 	for (const bind of config.sandbox.readOnlyBinds) {
 		paths.push([`${config.package.root}/${bind}`, 'acceptanceEvidence.sandbox.readOnlyBinds']);
 	}
