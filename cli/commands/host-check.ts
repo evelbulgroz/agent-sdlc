@@ -16,8 +16,10 @@ export function hostCheck(
 		? path.resolve(options.rootDir, rawRoot)
 		: options.rootDir;
 	const profile = loadHostProfile(targetRoot);
+	const acceptance = profile.acceptanceEvidence;
 	return {
 		profileId: profile.profileId,
 		adapter: profile.adapter,
+		...(acceptance ? { acceptanceEvidence: { canaryId: acceptance.canaryId, runners: Object.keys(acceptance.runners) } } : {}),
 	};
 }

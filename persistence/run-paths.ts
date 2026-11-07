@@ -2,8 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
 	HOST_PROFILE_RELATIVE_PATH,
-	HOST_PROFILE_SCHEMA_VERSION,
-	PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
+	LEGACY_HOST_PROFILE_SCHEMA_VERSION,
 	loadHostProfile,
 } from '../host/host-profile.ts';
 import { validateRunId } from '../policy/contracts.ts';
@@ -90,10 +89,7 @@ export function runsRootDir(rootDir = REPOSITORY_ROOT): string {
 		if (profile.runsDir) {
 			return path.join(rootDir, profile.runsDir);
 		}
-		if (
-			profile.schemaVersion === HOST_PROFILE_SCHEMA_VERSION ||
-			profile.schemaVersion === PREVIOUS_HOST_PROFILE_SCHEMA_VERSION
-		) {
+		if (profile.schemaVersion !== LEGACY_HOST_PROFILE_SCHEMA_VERSION) {
 			return path.join(rootDir, profile.stateDir);
 		}
 	}

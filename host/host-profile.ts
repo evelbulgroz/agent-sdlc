@@ -15,6 +15,7 @@ import { EngineConfigSchema } from './engine-config-schema.ts';
 import { ContractProducerRulesSchema, PolicyConfigSchema } from './policy-config-schema.ts';
 import { preparationContainmentPaths, VerificationPreparationSchema } from './verification-preparation-schema.ts';
 import { AdapterRegistrationSchema } from '../policy/contracts/quality-schema.ts';
+import { AcceptanceEvidenceSchema, acceptanceContainmentPaths } from './acceptance-evidence-schema.ts';
 import { invalidHostProfile, validateContainedRelativePath, validateRegexPattern } from './profile-validation.ts';
 
 export {
@@ -27,7 +28,8 @@ export {
 };
 
 export const HOST_PROFILE_RELATIVE_PATH = '.agents/sdlc-host.json';
-export const HOST_PROFILE_SCHEMA_VERSION = '1.4.0';
+export const HOST_PROFILE_SCHEMA_VERSION = '1.5.0';
+export const ADAPTERS_HOST_PROFILE_SCHEMA_VERSION = '1.4.0';
 export const PREVIOUS_HOST_PROFILE_SCHEMA_VERSION = '1.3.0';
 export const LEGACY_HOST_PROFILE_SCHEMA_VERSION = '1.2.0';
 export const MAX_HOST_PROFILE_BYTES = 65_536;
@@ -37,6 +39,7 @@ const ArgvSchema = z.array(NonEmptyTokenSchema).min(1);
 const CriticPhaseSchema = z.enum(['spec', 'plan', 'code', 'qa']);
 const SupportedSchemaVersionSchema = z.enum([
 	HOST_PROFILE_SCHEMA_VERSION,
+	ADAPTERS_HOST_PROFILE_SCHEMA_VERSION,
 	PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
 	LEGACY_HOST_PROFILE_SCHEMA_VERSION,
 ]);
@@ -114,7 +117,7 @@ const BaseProfileFields = {
 	architecture: ArchitectureConfigSchema.optional(), qualityGate: QualityGateConfigSchema.optional(),
 	learnings: LearningsConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
 	engine: EngineConfigSchema.optional(), verificationPreparation: VerificationPreparationSchema.optional(),
-	evidenceAdapters: z.array(AdapterRegistrationSchema).optional(),
+	evidenceAdapters: z.array(AdapterRegistrationSchema).optional(), acceptanceEvidence: AcceptanceEvidenceSchema.optional(),
 };
 
 const DefaultHostProfileSchema = z.strictObject({
@@ -192,6 +195,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	const rawRecord = parsedJson as Record<string, unknown>;
 	if (
 		rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION &&
+		rawRecord.schemaVersion !== ADAPTERS_HOST_PROFILE_SCHEMA_VERSION &&
 		rawRecord.schemaVersion !== PREVIOUS_HOST_PROFILE_SCHEMA_VERSION &&
 		rawRecord.schemaVersion !== LEGACY_HOST_PROFILE_SCHEMA_VERSION
 	) {
@@ -218,7 +222,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 				});
 			}
 			if (rawRecord.evidenceAdapters !== undefined) {
-				invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+				invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${ADAPTERS_HOST_PROFILE_SCHEMA_VERSION}'`, {
 					fieldName: 'evidenceAdapters',
 					schemaVersion: rawRecord.schemaVersion,
 				});
@@ -239,7 +243,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 			rawRecord.schemaVersion === PREVIOUS_HOST_PROFILE_SCHEMA_VERSION &&
 			rawRecord.evidenceAdapters !== undefined
 		) {
-			invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+			invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${ADAPTERS_HOST_PROFILE_SCHEMA_VERSION}'`, {
 				fieldName: 'evidenceAdapters',
 				schemaVersion: rawRecord.schemaVersion,
 			});
@@ -247,6 +251,13 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 		if (rawRecord.adapter === 'default' && rawRecord.commands !== undefined) {
 			invalidHostProfile("default profile cannot include 'commands'", { fieldName: 'commands' });
 		}
+	}
+
+	if (rawRecord.acceptanceEvidence !== undefined && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION) {
+		invalidHostProfile(`Field 'acceptanceEvidence' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+			fieldName: 'acceptanceEvidence',
+			schemaVersion: String(rawRecord.schemaVersion),
+		});
 	}
 
 	const parsed = HostProfileSchema.safeParse(parsedJson);
@@ -296,6 +307,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	}
 	checkRel(profile.engine?.selfRoot, 'engine.selfRoot', true);
 	for (const [p, f] of preparationContainmentPaths(profile.verificationPreparation)) checkRel(p, f, true);
+	for (const [p, f] of acceptanceContainmentPaths(profile.acceptanceEvidence)) checkRel(p, f);
 
 	if (profile.prompts) {
 		checkRel(profile.prompts.roleAddendaDir, 'prompts.roleAddendaDir');
