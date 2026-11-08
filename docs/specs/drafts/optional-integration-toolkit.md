@@ -1,7 +1,7 @@
 
 # Optional host integration toolkit
 
-**Status:** Superseded by `single-config-host-onboarding.md` (draft). Kept for reference until that spec is approved. Implementation approval is withheld.
+**Status:** Superseded by `single-config-host-onboarding.md` (implemented; now in `docs/specs/retired/`). Kept for reference.
 **Type:** Reference.
 
 ## Approval gate

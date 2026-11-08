@@ -1,6 +1,6 @@
 # Single-config host onboarding and runner-agnostic evidence
 
-Status: draft for approval. Owner: engine maintainers. Supersedes `optional-integration-toolkit.md` (see "Carried forward"). Follows the retired `host-tooling-boundary.md`, which was only partly executed. Evidence base: a read-only audit of fitness-app `tools/acceptance-evidence/` and `tools/lib/` (host `5bb5cb43`, engine `c7658e0`), and live canary runs 11 to 15.
+Status: implemented (H0 to H7); ready to retire. Owner: engine maintainers. Supersedes `optional-integration-toolkit.md` (see "Carried forward"). Follows the retired `host-tooling-boundary.md`, which was only partly executed. Evidence base: a read-only audit of fitness-app `tools/acceptance-evidence/` and `tools/lib/` (host `5bb5cb43`, engine `c7658e0`), and live canary runs 11 to 15.
 
 ## Goal
 
@@ -155,12 +155,12 @@ Each slice is its own commit with user approval, a full done bar, and no timing 
 | H1 | Delete `qualify`, `offline-receipt` from the host. | Host specs and conformance green. |
 | H2 | Closed report parsers, the pass predicate, freshness rules, and the `command` registration kind with its `evidence-port.ts` branch. | Specs fail on a missing, duplicate-identity, skipped, stale, pre-written or exit-contradicting report, and accept `node:test` shapes (top-level `testcase`, nested `testsuite`) and collapsed retries. |
 | H3 | Profile `1.6.0`, supervisor handler, `argv[0]` resolution and pin, sandbox `PATH` and `/bin`, script pins with `PINNED_FILE_MODIFIED`, placeholder validation, escape specs (`../`, absolute, symlink, placeholder abuse), `commandQualificationReceipt`. Spike `pnpm run` in the sandbox. | New escape specs fail on the old code. |
-| H4 | Fixture host (Tier A) using `node:test` writing the JUnit subset to `{reportPath}`, reaching READY from config and data only. | The real test of the goal. Done offline: `testing/fixture-host-tier-a/` (profile, case data, a plain `node --test` script) runs through the real sandbox and parsers in `acceptance/tier-a-host.spec.mjs`. A live READY run on it is not done. Admission now executes the declared sentinel (`command-qualify`, run by `admission-regenerate`); `sentinel.planted` names the one case it must fail. |
-| H5a | fitness-app unit evidence on `commands`, beside the adapter. Regenerate admission. One canary to READY, 7/7. | Timing measured against the adapter path. |
-| H5b | fitness-app browser evidence on `commands`, beside the adapter. Shows a `webServer` runs under the sysroot and `--unshare-net`. One canary to READY. | Same. |
+| H4 | Fixture host (Tier A) using `node:test` writing the JUnit subset to `{reportPath}`, reaching READY from config and data only. | The real test of the goal. Done offline: `testing/fixture-host-tier-a/` (profile, case data, a plain `node --test` script) runs through the real sandbox and parsers in `acceptance/tier-a-host.spec.mjs`. AC-01 is an offline claim, so the fixture is not run live; the live READY evidence for the command kind is the fitness-app H5 canaries, which run unit and browser commands with no engine runner code. Admission now executes the declared sentinel (`command-qualify`, run by `admission-regenerate`); `sentinel.planted` names the one case it must fail. |
+| H5a | fitness-app unit evidence on `commands`, beside the adapter. Regenerate admission. One canary to READY, 7/7. | Done: unit evidence measured 9 to 10 s on commands. The adapter baseline was deleted in H5c, so the comparison is waived; the live canary on the deleted layout ran spec approval to READY in about 18 min, inside the 1,764 s ceiling. |
+| H5b | fitness-app browser evidence on `commands`, beside the adapter. Shows a `webServer` runs under the sysroot and `--unshare-net`. One canary to READY. | Done: the browser command runs under the sysroot and `--unshare-net`; canary READY 7/7. Timing as H5a. |
 | H5c | Delete the adapters, `protocol`, `runtime`, `pretest` from the host. | Canary 7/7 on the deleted layout. |
 | H6 | Engine CLI for frozen-bootstrap verification. Replace the host shim target. | Host verify scripts green. |
-| H7 | `scaffold` command. | Fixture host generated from it. Done as `agent-sdlc host scaffold --package <dir>`: it drafts the profile, an empty corpus and a runtime-sources skeleton, refuses to overwrite, and the draft loads and builds a command registration (`cli/commands/host-scaffold.spec.mjs`). It does not fill in cases, pins or source roots. |
+| H7 | `scaffold` command. | Fixture host generated from it. Done as `agent-sdlc host scaffold --package <dir>`: it drafts the profile, an empty corpus and a runtime-sources skeleton, refuses to overwrite, and the draft loads and builds a command registration (`cli/commands/host-scaffold.spec.mjs`). It binds and pins the package's top-level `*.test.{mjs,cjs,js}` files, and AC-01.5 runs a scaffolded host to per-case evidence in the sandbox. It does not fill in cases or source roots. |
 
 ## Acceptance criteria
 

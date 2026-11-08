@@ -24,7 +24,15 @@ function defaultProfileId(rootDir: string): string {
 	return slug || 'host';
 }
 
-function draftFiles(profileId: string, packageRoot: string): Record<string, unknown> {
+// Top-level node:test files are what a plain `node --test` run discovers, so the draft binds and pins exactly those.
+function discoverTestFiles(rootDir: string, packageRoot: string): string[] {
+	return fs.readdirSync(path.join(rootDir, packageRoot), { withFileTypes: true })
+		.filter((entry) => entry.isFile() && /\.test\.(mjs|cjs|js)$/.test(entry.name))
+		.map((entry) => entry.name)
+		.sort();
+}
+
+function draftFiles(profileId: string, packageRoot: string, testFiles: string[]): Record<string, unknown> {
 	const profile = {
 		schemaVersion: HOST_PROFILE_SCHEMA_VERSION,
 		profileId,
@@ -43,9 +51,12 @@ function draftFiles(profileId: string, packageRoot: string): Record<string, unkn
 			caseManifest: `${EVIDENCE_DIR}/corpus.json`,
 			runtimeSources: `${EVIDENCE_DIR}/runtime.sources.json`,
 			package: { root: packageRoot },
-			sandbox: { readOnlyBinds: [] },
+			sandbox: { readOnlyBinds: testFiles },
 			commands: {
-				unit: { argv: ['node', '--test', '--test-reporter=junit', '--test-reporter-destination={reportPath}'] },
+				unit: {
+					argv: ['node', '--test', '--test-reporter=junit', '--test-reporter-destination={reportPath}', ...testFiles],
+					pins: testFiles.map((file) => ({ file })),
+				},
 			},
 		},
 	};
@@ -84,7 +95,7 @@ export function scaffoldHost(options: ScaffoldOptions): ScaffoldResult {
 	const profileId = options.profileId ?? defaultProfileId(root);
 	let files: Record<string, unknown>;
 	try {
-		files = draftFiles(profileId, packageRoot);
+		files = draftFiles(profileId, packageRoot, discoverTestFiles(root, packageRoot));
 	} catch (error) {
 		throw new SdlcError('INVALID_INPUT', `cannot scaffold profile '${profileId}': ${error instanceof Error ? error.message : String(error)}`);
 	}
