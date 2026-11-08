@@ -151,7 +151,7 @@ Each slice is its own commit with user approval, a full done bar, and no timing 
 
 | Slice | Change | Gate |
 |---|---|---|
-| H0 | Inventory every engine read of a host literal. Read the adapter bodies. Decide `verify-vitest-cache`. | Neutrality guard covers the list. |
+| H0 | Inventory every engine read of a host literal. Read the adapter bodies. Decide `verify-vitest-cache`. | Neutrality guard covers the list. Done: the guard scans for `vitest`, `playwright` and `chromium` with named exemptions for subsystems outside the evidence path; `verify-vitest-cache` dropped in H6. |
 | H1 | Delete `qualify`, `offline-receipt` from the host. | Host specs and conformance green. |
 | H2 | Closed report parsers, the pass predicate, freshness rules, and the `command` registration kind with its `evidence-port.ts` branch. | Specs fail on a missing, duplicate-identity, skipped, stale, pre-written or exit-contradicting report, and accept `node:test` shapes (top-level `testcase`, nested `testsuite`) and collapsed retries. |
 | H3 | Profile `1.6.0`, supervisor handler, `argv[0]` resolution and pin, sandbox `PATH` and `/bin`, script pins with `PINNED_FILE_MODIFIED`, placeholder validation, escape specs (`../`, absolute, symlink, placeholder abuse), `commandQualificationReceipt`. Spike `pnpm run` in the sandbox. | New escape specs fail on the old code. |

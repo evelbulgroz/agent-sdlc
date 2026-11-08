@@ -61,3 +61,38 @@ test('engine source, prompts, rubrics, profile, and docs reference no prior-host
 	}
 	assert.deepEqual(offenders, []);
 });
+
+// AC-03: the evidence path stays runner-agnostic. Each exemption is a subsystem outside it.
+const RUNNER_LITERAL = /\b(?:vitest|playwright|chromium)\b/i;
+const RUNNER_EXEMPT = [
+	/^docs\/specs\//,
+	/\.spec\.(?:mjs|ts)$/,
+	/^pnpm-lock\.yaml$/,
+	/^reflections\.md$/,
+	// Authoring hints for worker tasks in the target repo, not evidence.
+	/^execution\/task-verification-plan\.ts$/,
+	// Classifies critic-trend findings by the kind of check that produced them.
+	/^scripts\/aggregate-critic-trends\.ts$/,
+	// Prose about host convention auto-decisions.
+	/^host\/README\.md$/,
+	// A fixture target repo that happens to use a runner.
+	/^testing\/fixture-monorepo\//,
+];
+
+test('runner literal pattern matches runner names only as words', () => {
+	assert.equal(RUNNER_LITERAL.test('npx Playwright test'), true);
+	assert.equal(RUNNER_LITERAL.test('"test": "vitest run"'), true);
+	assert.equal(RUNNER_LITERAL.test('a runner-agnostic report'), false);
+});
+
+test('engine files outside the exempt subsystems reference no test-runner names', () => {
+	const offenders = [];
+	for (const file of trackedFiles()) {
+		if (RUNNER_EXEMPT.some((pattern) => pattern.test(file))) continue;
+		const text = fs.readFileSync(path.join(ENGINE_ROOT, file), 'utf8');
+		text.split('\n').forEach((line, index) => {
+			if (RUNNER_LITERAL.test(line)) offenders.push(`${file}:${index + 1}: ${line.trim().slice(0, 100)}`);
+		});
+	}
+	assert.deepEqual(offenders, []);
+});
