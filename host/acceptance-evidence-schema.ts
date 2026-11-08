@@ -50,7 +50,8 @@ const CommandBodyShape = {
 	// Evidence layer served; defaults to the command key. Lets a command run beside a runner of the same layer.
 	layer: z.enum(['unit', 'integration', 'browser', 'static']).optional(),
 };
-const CommandSchema = z.strictObject(CommandBodyShape);
+// Ids of the pretest steps this command runs first; omitted means all of them.
+const CommandSchema = z.strictObject({ ...CommandBodyShape, pretest: z.array(IdSchema).optional() });
 const PretestSchema = z.strictObject({ id: IdSchema, ...CommandBodyShape });
 
 const CanarySchema = z.strictObject({

@@ -36,12 +36,15 @@ export async function buildCommandRegistrations(root, config, { searchPath = pro
 	});
 	return Object.entries(config.commands).map(([layer, command]) => {
 		const { cwd, executable, pins } = frozen(command);
+		const known = new Set(pretest.map((step) => step.id));
+		for (const id of command.pretest ?? []) if (!known.has(id)) fail(`command ${layer} names unknown pretest step: ${id}`);
+		const steps = command.pretest ? pretest.filter((step) => command.pretest.includes(step.id)) : pretest;
 		pins.push({ kind: 'file', path: config.caseManifest, sha256: bytesHash(fs.readFileSync(regularFile(root, config.caseManifest))) });
 		return {
 			kind: 'command', adapterId: `${config.repositoryId}-${layer}`, protocolVersion: '1.0.0',
 			argv: [...command.argv], cwd, reportFormat: command.format ?? 'junit', retries: command.retries ?? 0,
-			executable, pins, ...(pretest.length ? { pretest } : {}),
-			commandSha256: commandBindingHash(command.argv, executable.sha256, pins, pretest),
+			executable, pins, ...(steps.length ? { pretest: steps } : {}),
+			commandSha256: commandBindingHash(command.argv, executable.sha256, pins, steps),
 			profiles: [{ profileId: layer, layers: [command.layer ?? layer], capabilities: command.capabilities ?? [] }],
 			limits: { timeoutMs: command.timeoutMs ?? 120000, maxReportBytes: MAX_REPORT_BYTES, maxArtifactBytes: 16777216, maxArtifacts: 8 },
 		};
