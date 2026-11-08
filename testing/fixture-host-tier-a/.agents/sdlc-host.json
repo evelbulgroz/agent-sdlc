@@ -1,0 +1,28 @@
+{
+	"schemaVersion": "1.6.0",
+	"profileId": "tier-a-fixture",
+	"repositoryId": "tier-a-fixture",
+	"adapter": "default",
+	"stateDir": "state",
+	"reviewDir": "review",
+	"specDraftDir": "docs/specs/drafts",
+	"hydration": [],
+	"workspace": { "directories": ["pkg"] },
+	"acceptanceEvidence": {
+		"canaryId": "canary-v1",
+		"slug": "tier-a-fixture",
+		"evidenceDir": "evidence",
+		"runtimeDir": "runtime",
+		"caseManifest": "corpus.json",
+		"runtimeSources": "runtime.sources.json",
+		"package": { "root": "pkg" },
+		"sandbox": { "readOnlyBinds": ["cases.test.mjs", "package.json"] },
+		"commands": {
+			"unit": {
+				"argv": ["node", "--test", "--test-reporter=junit", "--test-reporter-destination={reportPath}", "cases.test.mjs"],
+				"pins": [{ "file": "cases.test.mjs" }],
+				"timeoutMs": 60000
+			}
+		}
+	}
+}
