@@ -9,8 +9,9 @@ import { buildProposal } from './admission-proposal.mjs';
 import { buildAdmissionRecords } from './admission-records.mjs';
 import { assertCanaryExecutionCurrent, buildCanaryExecution, buildCaseMap } from './canary-execution.mjs';
 import { readiness } from './readiness.mjs';
+import { assertPinsOutsideWriteScope, buildCommandRegistrations } from './command-evidence.mjs';
 import { buildRegistrations, validateRegistrations } from './registrations.mjs';
-import { buildAuthorization, loadObligations } from './run-authorization.mjs';
+import { allowedPaths, buildAuthorization, loadObligations } from './run-authorization.mjs';
 import { dependencyManifest, expandedInventory, materialize } from './runtime-inventory.mjs';
 import { writeExperimentFiles } from './experiment-config.mjs';
 import { resolveGovernorRecord } from './governor-resolution.mjs';
@@ -71,7 +72,11 @@ const commands = {
     const args = argumentsFor(argv, ['--dependency-manifest', '--output']);
     const execution = readJson(regularFile(root, artifact(config, 'executionManifest')));
     assertCanaryExecutionCurrent(root, config, execution);
-    const registrations = buildRegistrations(root, config, { execution, dependencyManifest: reference(root, args['--dependency-manifest']) });
+    const commandRegistrations = await buildCommandRegistrations(root, config);
+    assertPinsOutsideWriteScope(commandRegistrations, allowedPaths(config));
+    const registrations = [...(Object.keys(config.runners).length
+      ? buildRegistrations(root, config, { execution, dependencyManifest: reference(root, args['--dependency-manifest']) }) : []),
+    ...commandRegistrations];
     const bindings = await validateRegistrations(root, registrations);
     writeJson(args['--output'], { schemaVersion: '1.0.0', registrations });
     process.stdout.write(`${JSON.stringify(bindings, null, 2)}\n`);

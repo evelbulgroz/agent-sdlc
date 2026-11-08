@@ -88,8 +88,8 @@ export async function verifyAdmission(root, config, manifest, { allowRunArtifact
     contracts.AdapterRegistrationSchema.parse(registration);
     verifyEvidenceRegistration(root, registration, () => fail('compact frozen dependency manifest required'), verifiedFiles);
   }
-  if (bindings.adapterRegistrations.registrations?.length !== Object.keys(config.runners).length) {
-    fail('every configured runner needs a qualified adapter');
+  if (bindings.adapterRegistrations.registrations?.length !== Object.keys(config.runners).length + Object.keys(config.commands).length) {
+    fail('every configured runner or command needs a qualified adapter');
   }
   for (const name of ['offlineQualificationReceipt', 'pretestEquivalenceReceipt',
     'controllerAndContainmentReceipts']) {
