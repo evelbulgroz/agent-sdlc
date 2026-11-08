@@ -39,7 +39,7 @@ export const AdapterQualificationReceiptSchema = z.object({
 });
 export type AdapterQualificationReceipt = z.infer<typeof AdapterQualificationReceiptSchema>;
 
-export const AdapterRegistrationSchema = z.strictObject({
+export const ExecutableRegistrationSchema = z.strictObject({
 	adapterId: Id,
 	protocolVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
 	bundleFiles: z.array(FileHash).min(1),
@@ -70,6 +70,35 @@ export const AdapterRegistrationSchema = z.strictObject({
 		ctx.addIssue({ code: 'custom', path: ['qualificationArtifact'], message: 'qualification artifact hash mismatch' });
 	}
 });
+export type ExecutableRegistration = z.infer<typeof ExecutableRegistrationSchema>;
+
+const CommandPin = z.union([
+	z.strictObject({ kind: z.literal('file'), path: RelPath, sha256: Hash }),
+	z.strictObject({ kind: z.literal('script'), file: RelPath, name: z.string().min(1), sha256: Hash }),
+]);
+export type CommandPinRecord = z.infer<typeof CommandPin>;
+
+// A host command that writes a neutral report; no adapter program, bundle or qualification artifact.
+export const CommandRegistrationSchema = z.strictObject({
+	kind: z.literal('command'),
+	adapterId: Id,
+	protocolVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
+	argv: z.array(z.string().min(1)).min(1),
+	cwd: RelPath,
+	reportFormat: z.enum(['junit', 'case-report']),
+	retries: z.number().int().min(0).max(5),
+	executable: z.strictObject({ path: z.string().refine((value) => value.startsWith('/') && !value.includes('\0')), sha256: Hash }),
+	pins: z.array(CommandPin),
+	// sha256 of { argv, executable.sha256, pins }.
+	commandSha256: Hash,
+	profiles: z.array(EvidenceAdapterProfileSchema).min(1),
+	limits: z.strictObject({
+		timeoutMs: PosInt, maxReportBytes: PosInt, maxArtifactBytes: PosInt, maxArtifacts: PosInt,
+	}),
+});
+export type CommandRegistration = z.infer<typeof CommandRegistrationSchema>;
+
+export const AdapterRegistrationSchema = z.union([ExecutableRegistrationSchema, CommandRegistrationSchema]);
 export type AdapterRegistration = z.infer<typeof AdapterRegistrationSchema>;
 
 export const EvidenceObligationSchema = z.strictObject({

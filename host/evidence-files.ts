@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AdapterRegistration, EvidenceReport } from '../policy/contracts/quality-schema.ts';
+import { isCommandRegistration, verifyCommandRegistration } from './command-evidence.ts';
 import {
 	AdapterQualificationReceiptSchema, EvidenceDependencyManifestSchema,
 } from '../policy/contracts/quality-evidence-schema.ts';
@@ -58,6 +59,7 @@ export function verifyEvidenceRegistration(
 	// Only for callers verifying several registrations in one pass: skips files already hashed in that pass.
 	verified?: Set<string>,
 ): void {
+	if (isCommandRegistration(registration)) return verifyCommandRegistration(root, registration);
 	const command = registration.argv[0];
 	if (!command || !path.isAbsolute(command) || path.resolve(command) !== command ||
 		!registration.executableSha256) throw new Error('unqualified-evidence-executable');

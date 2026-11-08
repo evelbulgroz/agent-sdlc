@@ -15,6 +15,7 @@ import { EngineConfigSchema } from './engine-config-schema.ts';
 import { ContractProducerRulesSchema, PolicyConfigSchema } from './policy-config-schema.ts';
 import { preparationContainmentPaths, VerificationPreparationSchema } from './verification-preparation-schema.ts';
 import { AdapterRegistrationSchema } from '../policy/contracts/quality-schema.ts';
+import { evidenceRegistrationFiles } from './command-evidence.ts';
 import { AcceptanceEvidenceSchema, acceptanceContainmentPaths, acceptanceVersionIssue } from './acceptance-evidence-schema.ts';
 import { invalidHostProfile, validateContainedRelativePath, validateRegexPattern } from './profile-validation.ts';
 
@@ -294,12 +295,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	checkRel(profile.specDraftDir, 'specDraftDir');
 	checkRel(profile.runsDir, 'runsDir');
 	for (const [index, registration] of (profile.evidenceAdapters ?? []).entries()) {
-		for (const file of [
-			...registration.bundleFiles,
-			...registration.dependencyFiles,
-			...(registration.dependencyManifest ? [registration.dependencyManifest] : []),
-			...registration.configurationFiles,
-		]) {
+		for (const file of evidenceRegistrationFiles(registration)) {
 			checkRel(file.path, `evidenceAdapters[${index}].files.path`);
 		}
 	}

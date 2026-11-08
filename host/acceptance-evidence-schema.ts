@@ -44,6 +44,9 @@ const CommandBodyShape = {
 	pins: z.array(PinSchema).optional(),
 	// Runner retry count declared by the host; attempts beyond retries + 1 fail closed.
 	retries: z.number().int().min(0).max(5).optional(),
+	// Neutral report the command writes to {reportPath}; defaults to junit.
+	format: z.enum(['junit', 'case-report']).optional(),
+	capabilities: z.array(z.string().min(1)).optional(),
 };
 const CommandSchema = z.strictObject(CommandBodyShape);
 const PretestSchema = z.strictObject({ id: IdSchema, ...CommandBodyShape });

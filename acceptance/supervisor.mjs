@@ -31,7 +31,7 @@ export async function superviseExperiment(options = {}) {
   const broker = await createLedgerBroker(ledger, scenario, recipes ? {
     recipe: recipeHandler({ root: recipes.root, config: recipes.config, reference: recipes.reference, runId }),
     evidence: evidenceHandler({ root: recipes.root, stateDir: recipes.config.stateDir,
-      registrations: recipes.registrations, runId }) } : {});
+      registrations: recipes.registrations, runId, config: recipes.config }) } : {});
   try {
     return await launchSupervised({ ...execution, deadline: clock.deadline, now: Date.now,
       env: { ...execution.env, AGENT_SDLC_CANARY_BROKER_SOCKET: broker.socketName,

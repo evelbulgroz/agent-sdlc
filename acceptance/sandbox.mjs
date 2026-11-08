@@ -12,7 +12,30 @@ function containedSource(base, name) {
 	return source;
 }
 
-export function namespaceArgv(config, argv, { writable = [], readOnly = [], env = {} } = {}) {
+// `command` adds what a host command needs: a /bin link into the closure, a fixed PATH, single-file binaries,
+// a package cwd, and the report directory mounted at /report. Everything else stays as for adapters.
+function commandMounts(args, root, { binaries = [], report, cwd }) {
+	args.push('--symlink', 'usr/bin', '/bin');
+	for (const { source, destination } of binaries) {
+		if (!path.isAbsolute(source) || !path.isAbsolute(destination) || path.resolve(destination) !== destination
+			|| ['/proc', '/dev', '/tmp', '/report'].some((prefix) => destination === prefix || destination.startsWith(`${prefix}/`))
+			|| !fs.statSync(source).isFile()) fail(`unsafe command binary: ${destination}`);
+		args.push('--ro-bind', source, destination);
+	}
+	if (report) {
+		if (!path.isAbsolute(report) || fs.realpathSync(report) !== report) fail('unsafe report directory');
+		args.push('--bind', report, '/report');
+	}
+	if (cwd) {
+		const source = path.join(root, relativePath(cwd));
+		if (fs.realpathSync(source) !== source) fail('unsafe command cwd');
+		args.push('--ro-bind', source, source);
+	}
+}
+
+export const COMMAND_PATH = '/bin:/opt/sdlc/bin';
+
+export function namespaceArgv(config, argv, { writable = [], readOnly = [], env = {}, command } = {}) {
 	const resolved = fs.realpathSync(config.root);
 	const directory = path.resolve(resolved, relativePath(config.runtime));
 	const sysroot = path.join(directory, 'sysroot');
@@ -25,6 +48,7 @@ export function namespaceArgv(config, argv, { writable = [], readOnly = [], env 
 	args.push('--ro-bind', path.join(sysroot, 'usr/lib'), '/lib',
 		'--proc', '/proc', '--dev', '/dev', '--size', String(16 * 1024 * 1024), '--tmpfs', '/dev/shm',
 		'--remount-ro', '/dev', '--size', String(128 * 1024 * 1024), '--tmpfs', '/tmp');
+	if (command) commandMounts(args, resolved, command);
 	if (config.helpers) {
 		const helpers = path.join(resolved, relativePath(config.helpers));
 		args.push('--ro-bind', helpers, helpers);
@@ -48,8 +72,8 @@ export function namespaceArgv(config, argv, { writable = [], readOnly = [], env 
 		args.push(writable.includes(relative) ? '--bind' : '--ro-bind', target, target);
 	}
 	args.push('--remount-ro', '/', '--clearenv', '--setenv', 'HOME', '/tmp',
-		'--setenv', 'TMPDIR', '/tmp', '--setenv', 'PATH', '/nonexistent',
-		'--setenv', 'LANG', 'C.UTF-8', '--chdir', packageRoot);
+		'--setenv', 'TMPDIR', '/tmp', '--setenv', 'PATH', command ? COMMAND_PATH : '/nonexistent',
+		'--setenv', 'LANG', 'C.UTF-8', '--chdir', command?.cwd ? path.join(resolved, command.cwd) : packageRoot);
 	for (const [key, value] of Object.entries(env)) {
 		if (!/^[A-Z_][A-Z_0-9]*$/.test(key) || typeof value !== 'string'
 			|| /TOKEN|KEY|SECRET|PASSWORD|CREDENTIAL/.test(key)) fail(`unsafe namespace environment: ${key}`);

@@ -5,10 +5,14 @@ import {
 	type AdapterRegistration, type EvidenceRequest, type EvidenceReport, type InvocationRecord,
 } from '../policy/contracts/quality-schema.ts';
 import { sha256 } from '../policy/contracts/primitives.ts';
+import type { CommandRegistration } from '../policy/contracts/quality-evidence-schema.ts';
 import {
 	assertEvidenceDirectory, hashEvidenceBytes, readEvidenceFile,
 	verifyEvidenceArtifacts, verifyEvidenceRegistration,
 } from './evidence-files.ts';
+import {
+	type CommandCaseResult, isCommandRegistration, selectedCaseIdentities, synthesizeCommandReport,
+} from './command-evidence.ts';
 import { sanitizeEvidenceDiagnostic, spawnEvidence } from './evidence-transport.ts';
 import type {
 	EvidenceCallbacks, EvidenceCompletion, EvidenceExecutionResult, EvidenceInvocationContext,
@@ -151,6 +155,7 @@ export async function executeEvidence(
 	let before: EvidenceSourceObservation | null = null;
 	let after: EvidenceSourceObservation | null = null;
 	let report: EvidenceReport | null = null;
+	let commandCases: CommandCaseResult[] | null = null;
 	let stdout: Buffer = Buffer.alloc(0);
 	let exitCode: number | null = null;
 	let signal: string | null = null;
@@ -182,11 +187,22 @@ export async function executeEvidence(
 		invocation = InvocationRecordSchema.parse({ ...invocation, status: 'running' });
 		await store.started(invocation);
 		phase('record-start');
-		const processResult = await spawnEvidence(
-			spawn, registration.argv, context.worktreeDir, stdin, runtimeLimits,
-			context.environment ?? {}, maxDiagnosticBytes, callbacks.onDiagnostics,
-		);
-		({ stdout, exitCode, signal, failureReason } = processResult);
+		if (isCommandRegistration(registration)) {
+			const runCommand = callbacks.runCommand ?? spawn.runCommand;
+			if (!runCommand) throw new Error('unqualified-evidence-executable');
+			selectedCaseIdentities(request);
+			const ran = await runCommand(registration, request, context.worktreeDir);
+			commandCases = ran.cases;
+			({ exitCode } = ran);
+			stdout = ran.reportBytes;
+			failureReason = ran.failureReason ?? null;
+		} else {
+			const processResult = await spawnEvidence(
+				spawn, registration.argv, context.worktreeDir, stdin, runtimeLimits,
+				context.environment ?? {}, maxDiagnosticBytes, callbacks.onDiagnostics,
+			);
+			({ stdout, exitCode, signal, failureReason } = processResult);
+		}
 		phase('adapter-process');
 		after = await context.observeSource();
 		assertSource(after, request, context);
@@ -194,9 +210,12 @@ export async function executeEvidence(
 		verifyEvidenceRegistration(context.worktreeDir, registration, assertAllowed);
 		phase('verify-after');
 		if (failureReason || signal || exitCode === null) throw new Error(failureReason ?? 'process-interrupted');
-		report = EvidenceReportSchema.parse(JSON.parse(stdout.toString('utf8')));
+		report = EvidenceReportSchema.parse(commandCases
+			? synthesizeCommandReport(registration as CommandRegistration, request, commandCases)
+			: JSON.parse(stdout.toString('utf8')));
 		assertQualifiedReport(report);
-		validateEvidenceReportForRequest(report, request, { ...invocation, exitCode });
+		// A command's exit code was already reconciled with its report; a non-zero exit still fails the status below.
+		validateEvidenceReportForRequest(report, request, { ...invocation, exitCode: commandCases ? 0 : exitCode });
 		verifyEvidenceArtifacts(context.artifactDirectory, report, registration);
 		phase('report-and-artifacts');
 		status = exitCode === 0 && report.cases.every((item) => item.outcome === 'passed') ? 'passed' :

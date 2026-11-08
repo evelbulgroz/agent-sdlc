@@ -171,21 +171,31 @@ export function collapseAttempts(rows, retries = 0) {
 }
 
 /**
- * The single pass predicate. `selected` lists corpus case identities (`AC-nn.m`). Returns the selected
- * rows and throws a typed error unless every selected case is present once and passed and the exit code
- * agrees with the unfiltered report.
+ * Structural checks plus per-case outcomes. `selected` lists corpus case identities (`AC-nn.m`). Throws on
+ * zero cases, duplicate identities and an exit code that contradicts the unfiltered report; a selected case
+ * that is absent is `not-run`, and any other non-passing row keeps its outcome.
  */
-export function evaluateReport({ rows, selected, exitCode, retries = 0 }) {
+export function selectCases({ rows, selected, exitCode, retries = 0 }) {
 	const collapsed = collapseAttempts(rows, retries);
 	if (!selected.length || !collapsed.length) reject('REPORT_ZERO_CASES');
 	const failing = collapsed.some((row) => row.outcome === 'failed' || row.outcome === 'error');
 	if ((exitCode === 0) === failing) reject('REPORT_EXIT_CONTRADICTION', `exit ${exitCode}, failing rows ${failing}`);
 	const byIdentity = new Map(collapsed.map((row) => [row.identity, row]));
-	return selected.map((expected) => {
-		const row = byIdentity.get(expected);
-		if (!row) reject('REPORT_CASE_MISSING', expected);
-		if (row.outcome !== 'passed') reject('REPORT_CASE_NOT_PASSED', `${expected} ${row.outcome}${row.message ? `: ${row.message}` : ''}`);
-		return row;
+	return selected.map((identity) => {
+		const row = byIdentity.get(identity);
+		if (!row) return { identity, outcome: 'not-run', message: '', attempts: 0 };
+		return { identity, outcome: row.outcome === 'error' ? 'failed' : row.outcome, message: row.message, attempts: row.attempts };
+	});
+}
+
+/** The single pass predicate: every selected case present once and passed, else a typed error. */
+export function evaluateReport(input) {
+	return selectCases(input).map((result) => {
+		if (result.outcome === 'not-run') reject('REPORT_CASE_MISSING', result.identity);
+		if (result.outcome !== 'passed') {
+			reject('REPORT_CASE_NOT_PASSED', `${result.identity} ${result.outcome}${result.message ? `: ${result.message}` : ''}`);
+		}
+		return result;
 	});
 }
 

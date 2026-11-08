@@ -43,3 +43,10 @@ Not yet moved: admission, authorization, qualification, supervisor, governor and
 ## Command-evidence report formats
 
 `report-formats.mjs` holds the runner-neutral parsers for command evidence: a closed JUnit subset (`parseJunit`), the engine `case-report` JSON (`parseCaseReport`), identity and retry collapse keyed on the `@case AC-nn.m` tag, the single pass predicate (`evaluateReport`), and report-file hygiene (`prepareReportDirectory`, `readReportFile`: regular file, no symlink, size cap, freshness). Failures are typed `EvidenceReportError` codes (`REPORT_MISSING`, `REPORT_UNKNOWN_ELEMENT`, `REPORT_DUPLICATE_IDENTITY`, `REPORT_ZERO_CASES`, `REPORT_CASE_NOT_PASSED`, `REPORT_EXIT_CONTRADICTION`, ...). The supervisor handler and `command` registration kind that consume them are not yet wired.
+
+## Command evidence runtime (H3)
+
+- `command-evidence.mjs` builds `kind: "command"` registrations (resolved argv[0] realpath + hash, pins, `commandSha256`), and runs the substituted argv in the bwrap namespace with the report directory mounted read-write at `/report`. The report is read from the file, never stdout.
+- `command-qualification.mjs` produces the offline `commandQualificationReceipt` from engine parser fixtures plus the host sentinel (must exit non-zero with exactly the planted case failed).
+- Sandbox spike: `node <script>` runs in the namespace (the sysroot needs `usr` and `lib64`). `pnpm run` via corepack fails in the sandbox because it has no network or package-manager cache, so a host needs a directly executable pnpm or a `node <script>` command.
+- Not yet wired: runner-or-command union in admission (`registrations.mjs`, `admission*.mjs`, `run-authorization.mjs`, `canary-execution.mjs`).

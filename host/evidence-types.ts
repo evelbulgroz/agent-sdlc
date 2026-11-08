@@ -2,6 +2,9 @@ import type { ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'n
 import type {
 	EvidenceReceipt, EvidenceReport, InvocationRecord,
 } from '../policy/contracts/quality-schema.ts';
+import type { CommandRegistration } from '../policy/contracts/quality-evidence-schema.ts';
+import type { EvidenceRequest } from '../policy/contracts/quality-schema.ts';
+import type { CommandCaseResult } from './command-evidence.ts';
 import type { RunAuthorizationRecord } from '../policy/contracts/run-authorization-schema.ts';
 
 export interface EvidenceSourceObservation {
@@ -30,7 +33,7 @@ export interface EvidenceInvocationContext {
 	executionDurationCeilingMs?: number;
 }
 
-export type EvidenceSpawn = (
+export type EvidenceSpawn = ((
 	command: string,
 	args: readonly string[],
 	options: SpawnOptionsWithoutStdio & {
@@ -38,7 +41,10 @@ export type EvidenceSpawn = (
 		shell: false;
 		stdio: ['pipe', 'pipe', 'pipe'];
 	},
-) => ChildProcessWithoutNullStreams;
+) => ChildProcessWithoutNullStreams) & {
+	/** Present on the supervised broker: runs command registrations outside the engine sandbox. */
+	runCommand?: CommandRunner;
+};
 
 export interface EvidenceCompletion {
 	invocation: InvocationRecord;
@@ -64,7 +70,16 @@ export interface EvidenceRecordStore {
 	complete(completion: EvidenceCompletion): Promise<void>;
 }
 
+/** Runs a command registration (outside the engine child) and returns the engine-parsed case results. */
+export type CommandRunner = (registration: CommandRegistration, request: EvidenceRequest, worktreeDir: string) => Promise<{
+	exitCode: number | null;
+	cases: CommandCaseResult[];
+	reportBytes: Buffer;
+	failureReason?: string | null;
+}>;
+
 export interface EvidenceCallbacks {
+	runCommand?: CommandRunner;
 	now?: () => Date;
 	onDiagnostics?: (sanitized: string) => void;
 }
