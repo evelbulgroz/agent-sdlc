@@ -125,13 +125,14 @@ function applyQualityAnswer(runtime: WorkflowRuntimeLike) {
 				return resumeAfterQualityRefutation(runtime, snapshot, answer, request);
 			}
 		}
+		const resumesExecution = answer.action === 'refute' && snapshot.qualityCheckpointKind === 'slice';
 		return { snapshot: runtime.transition(snapshot, {
-			to: answer.action === 'refute' && snapshot.qualityCheckpointKind === 'slice'
-				? 'EXECUTING_IMPLEMENTATION' : 'BLOCKED',
+			to: resumesExecution ? 'EXECUTING_IMPLEMENTATION' : 'BLOCKED',
 			eventType: 'RUN_BLOCKED', causalId: answer.answerId,
 			updates: {
 				pendingInterruptId: null,
-				blockedReason: answer.action === 'confirm' ? 'QUALITY_CONFIRMED' : 'QUALITY_REFUTED',
+				blockedReason: resumesExecution ? null
+					: answer.action === 'confirm' ? 'QUALITY_CONFIRMED' : 'QUALITY_REFUTED',
 				lastError: answer.action === 'confirm' && typeof request.failedCorrectionId === 'string'
 					? { code: 'QUALITY_CORRECTION_HALTED', message: 'Failed correction acknowledged; further execution is not authorized',
 						metadata: { qualityRecoveryAllowed: false, correctionId: request.failedCorrectionId } }

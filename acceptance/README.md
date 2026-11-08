@@ -1,6 +1,6 @@
 # acceptance
 
-Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` block of `.agents/sdlc-host.json` (`1.5.0`; see `host/README.md`). Plain `.mjs`, copied into `dist/acceptance` by the build. Migration of the prior host's modules is incremental; see `docs/specs/drafts/host-tooling-boundary.md`.
+Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` block of `.agents/sdlc-host.json` (`1.5.0`; see `host/README.md`). Plain `.mjs`, copied into `dist/acceptance` by the build. Migration of the prior host's modules is incremental; see `docs/specs/retired/host-tooling-boundary.md`.
 
 | File | Contents |
 |---|---|

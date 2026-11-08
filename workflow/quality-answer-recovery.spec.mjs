@@ -60,12 +60,14 @@ test(`a consumed ${action} answer replays after a failed transition without requ
 	await assert.rejects(apply({ snapshot, humanResponse: answer }), /injected transition crash/);
 	assert.equal(f.store.getPendingInterrupt(f.runId), null);
 	const result = await apply({ snapshot, humanResponse: answer });
-	assert.equal(result.snapshot.blockedReason, action === 'refute' ? 'QUALITY_REFUTED' : 'QUALITY_CONFIRMED');
+	assert.equal(result.snapshot.pendingInterruptId, null);
 	if (action === 'refute') {
+		assert.equal(result.snapshot.blockedReason, null);
 		assert.equal(result.snapshot.state, 'EXECUTING_IMPLEMENTATION');
 		assert.equal(f.store.quality.getClosure(f.runId, 'vertical', 0).status, 'accepted');
+	} else {
+		assert.equal(result.snapshot.blockedReason, 'QUALITY_CONFIRMED');
 	}
-	assert.equal(result.snapshot.pendingInterruptId, null);
 	const beforeStaleAnswer = f.store.getRun(f.runId);
 	await assert.rejects(apply({ snapshot, humanResponse: { ...answer, rationale: 'Changed answer' } }),
 		/collision|changed/i);
