@@ -112,7 +112,7 @@ A Tier A host's evidence block is `1.5.0`'s required fields minus the three that
 }
 ```
 
-`helpersDir`, `nodeExecutable` and `runners` become optional. `helpersDir` is bound only when set. A command sandbox also binds `runtimeDir` read-only, so a runtime-vendored browser needs no helpers mount. `nodeExecutable` defaults to the realpath of the running engine's node. `cwd` defaults to `package.root` and must lie inside it. `timeoutMs` defaults to the global evidence limit. `pins` default to the script pin implied by a `pnpm run` argv, or none for `node <file>` plus the files the corpus names. H3 may derive `evidenceDir` and `runtimeDir` from `stateDir` if `config.mjs` can do so without a literal. If not, they stay explicit.
+`helpersDir`, `nodeExecutable` and `runners` become optional. `helpersDir` is bound only when set. Every sandbox, including task-verification recipes, also binds `runtimeDir` read-only, so a runtime-vendored browser needs no helpers mount. `nodeExecutable` defaults to the realpath of the running engine's node. `cwd` defaults to `package.root` and must lie inside it. `timeoutMs` defaults to the global evidence limit. `pins` default to the script pin implied by a `pnpm run` argv, or none for `node <file>` plus the files the corpus names. H3 may derive `evidenceDir` and `runtimeDir` from `stateDir` if `config.mjs` can do so without a literal. If not, they stay explicit.
 
 The host removes `evidenceAdapters` (3 KB in fitness-app), `bundleFiles`, hash pins, qualification artifact paths and `runners`; the engine derives them into admission.
 

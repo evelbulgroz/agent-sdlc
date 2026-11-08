@@ -21,7 +21,7 @@ function tree(t) {
 const pairs = (argv, flag) => argv.flatMap((value, index) => value === flag ? [[argv[index + 1], argv[index + 2]]] : []);
 const NODE = fs.realpathSync(process.execPath);
 
-test('@ac AC-05 @case AC-05.1 command namespace mounts /bin, a fixed PATH, binaries, the runtime dir, cwd and a writable /report', (t) => {
+test('@ac AC-05 @case AC-05.1 command namespace mounts /bin, a fixed PATH, binaries, cwd and a writable /report', (t) => {
   const { root, config, report } = tree(t);
   const argv = namespaceArgv(config, ['/opt/sdlc/bin/node', 't.mjs'], {
     command: { binaries: [{ source: NODE, destination: '/opt/sdlc/bin/node' }], report, cwd: 'pkg' },
@@ -29,10 +29,17 @@ test('@ac AC-05 @case AC-05.1 command namespace mounts /bin, a fixed PATH, binar
   assert.deepEqual(pairs(argv, '--symlink')[0], ['usr/bin', '/bin']);
   assert.ok(pairs(argv, '--ro-bind').some(([source, destination]) => source === NODE && destination === '/opt/sdlc/bin/node'));
   assert.ok(pairs(argv, '--bind').some(([source, destination]) => source === report && destination === '/report'));
-  assert.ok(pairs(argv, '--ro-bind').some(([source, destination]) => source === path.join(root, 'rt') && destination === source));
   assert.equal(argv[argv.indexOf('PATH') + 1], '/bin:/opt/sdlc/bin');
   assert.equal(argv[argv.indexOf('--chdir') + 1], path.join(root, 'pkg'));
   assert.deepEqual(argv.slice(-3), ['--', '/opt/sdlc/bin/node', 't.mjs'].slice(-3));
+});
+
+test('@ac AC-05 @case AC-05.3 every namespace binds the runtime dir read-only without a helpers mount', (t) => {
+  const { root, config } = tree(t);
+  for (const options of [{}, { command: { report: path.join(root, 'out'), cwd: 'pkg' } }]) {
+    const argv = namespaceArgv(config, ['/x'], options);
+    assert.ok(pairs(argv, '--ro-bind').some(([source, destination]) => source === path.join(root, 'rt') && destination === source));
+  }
 });
 
 test('@ac AC-05 @case AC-05.2 command mounts reject escapes, reserved destinations and unsafe cwd or report paths', (t) => {
