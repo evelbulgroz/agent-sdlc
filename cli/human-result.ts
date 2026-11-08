@@ -206,6 +206,10 @@ export function humanResult(
 			adapter: resultInput.adapter,
 		});
 	}
+	if (command === 'host scaffold') {
+		const files = Array.isArray(resultInput.files) ? resultInput.files.map(String) : [];
+		return [`host scaffold: ${resultInput.written === true ? 'wrote' : 'would write'} ${files.length} drafts for '${String(resultInput.profileId)}'`, ...files.map((file) => `  ${file}`)].join('\n');
+	}
 	if (command === 'shell start' && typeof result.ready === 'boolean') {
 		if (!result.ready) {
 			return `shell start: not ready, missing=[${(result.missingFields ?? []).join(', ')}]`;

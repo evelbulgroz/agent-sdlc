@@ -57,6 +57,7 @@ agent-sdlc cancel --run <run-id> [--json]
 agent-sdlc export --run <run-id> --dest export.json [--overwrite] [--json]
 agent-sdlc prune-runs [--dry-run] [--json]
 agent-sdlc host check [--root <dir>] [--json]
+agent-sdlc host scaffold --package <dir> [--profile-id <id>] [--root <dir>] [--overwrite] [--dry-run] [--json]
 
 # Project learnings store (`.agents/sdlc-host.json` `learnings`); `validate` exits 2 on any invalid line
 agent-sdlc learnings search --query <text> [--scope <s>] [--limit <n>] [--root <dir>] [--store <path>] [--json]

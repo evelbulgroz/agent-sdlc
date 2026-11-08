@@ -187,6 +187,7 @@ agent-sdlc shell status --run <run-id> --json
 ```bash
 # Validate .agents/sdlc-host.json profile
 agent-sdlc host check [--root <dir>] [--json]
+agent-sdlc host scaffold --package <dir> [--profile-id <id>] [--root <dir>] [--overwrite] [--dry-run] [--json]
 
 # Sweep merged worktrees (< 7d, landed-check.ts / run-cleanup.ts) and compact idle runs
 # (>= 7d, run-retention.ts / run-compaction.ts / run-archive.ts; auto-triggered by auto-prune.ts

@@ -160,7 +160,7 @@ Each slice is its own commit with user approval, a full done bar, and no timing 
 | H5b | fitness-app browser evidence on `commands`, beside the adapter. Shows a `webServer` runs under the sysroot and `--unshare-net`. One canary to READY. | Same. |
 | H5c | Delete the adapters, `protocol`, `runtime`, `pretest` from the host. | Canary 7/7 on the deleted layout. |
 | H6 | Engine CLI for frozen-bootstrap verification. Replace the host shim target. | Host verify scripts green. |
-| H7 | `scaffold` command. | Fixture host generated from it. |
+| H7 | `scaffold` command. | Fixture host generated from it. Done as `agent-sdlc host scaffold --package <dir>`: it drafts the profile, an empty corpus and a runtime-sources skeleton, refuses to overwrite, and the draft loads and builds a command registration (`cli/commands/host-scaffold.spec.mjs`). It does not fill in cases, pins or source roots. |
 
 ## Acceptance criteria
 
