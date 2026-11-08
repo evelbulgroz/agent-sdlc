@@ -214,13 +214,16 @@ export async function executeEvidence(
 			? synthesizeCommandReport(registration as CommandRegistration, request, commandCases)
 			: JSON.parse(stdout.toString('utf8')));
 		assertQualifiedReport(report);
-		// A command's exit code was already reconciled with its report; a non-zero exit still fails the status below.
+		// A command's exit code was already reconciled with its unfiltered report, so a non-zero exit only means some
+		// row failed; the status below judges the selected cases alone.
 		validateEvidenceReportForRequest(report, request, { ...invocation, exitCode: commandCases ? 0 : exitCode });
 		verifyEvidenceArtifacts(context.artifactDirectory, report, registration);
 		phase('report-and-artifacts');
-		status = exitCode === 0 && report.cases.every((item) => item.outcome === 'passed') ? 'passed' :
+		status = (commandCases || exitCode === 0) && report.cases.every((item) => item.outcome === 'passed') ? 'passed' :
 			report.cases.some((item) => item.outcome === 'incomplete' || item.outcome === 'not-run') ? 'incomplete' : 'failed';
 		if (status === 'failed') failureReason = 'evidence-cases-failed';
+		// The record's completed status requires exit 0; a command's non-zero exit was already reconciled above.
+		if (commandCases && status === 'passed') exitCode = 0;
 	} catch (error) {
 		// Never persist attacker-controlled reports, diagnostics, or exception messages as reasons.
 		const known = new Set([

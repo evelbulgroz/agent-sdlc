@@ -51,8 +51,8 @@ test('@ac AC-04 @case AC-04.2 a passing command case discharges its obligation t
 	});
 });
 
-test('@ac AC-04 @case AC-04.3 failed cases, a non-zero exit and a missing runner never discharge', async () => {
-	for (const [outcome, exitCode] of [['failed', 1], ['passed', 1], ['not-run', 1]]) {
+test('@ac AC-04 @case AC-04.3 failed or not-run selected cases and a missing runner never discharge', async () => {
+	for (const [outcome, exitCode] of [['failed', 1], ['not-run', 1]]) {
 		await fixture(async (f) => {
 			const registration = commandFixture(f);
 			const spawn = Object.assign(() => assert.fail('no spawn'), { runCommand: ran(outcome, exitCode) });
@@ -65,6 +65,16 @@ test('@ac AC-04 @case AC-04.3 failed cases, a non-zero exit and a missing runner
 		const registration = commandFixture(f);
 		const result = await executeEvidence(f.request, registration, f.context, () => assert.fail('no spawn'), f.store);
 		assert.equal(f.completion().invocation.failureReason, 'unqualified-evidence-executable');
+	});
+});
+
+test('@ac AC-04 @case AC-04.4 a non-zero exit caused only by unselected failing cases still discharges selected passes', async () => {
+	await fixture(async (f) => {
+		const registration = commandFixture(f);
+		const spawn = Object.assign(() => assert.fail('no spawn'), { runCommand: ran('passed', 1) });
+		const result = await executeEvidence(f.request, registration, f.context, spawn, f.store);
+		assert.equal(result.receipt.status, 'passed');
+		assert.deepEqual(result.receipt.dischargedObligationIds, ['obligation-1']);
 	});
 });
 

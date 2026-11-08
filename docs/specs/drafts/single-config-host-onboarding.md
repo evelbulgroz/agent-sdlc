@@ -74,7 +74,7 @@ Identity follows the engine's existing convention: the testcase `name` carries t
 Pass predicate, one definition:
 
 - Every corpus-selected case is present once after attempt collapse and reports `passed`. `skipped`, `todo` and `only` count as not passed.
-- The exit status is zero exactly when the unfiltered report has no `failed` or `error` row. This keeps `evidence-port.ts`'s exit-0 invariant meaningful.
+- The exit status is zero exactly when the unfiltered report has no `failed` or `error` row. The exit code is reconciled with the unfiltered report, then discharge is judged on the selected cases alone: a non-zero exit caused only by unselected failing cases (work-in-progress tests of later tasks) does not fail a checkpoint, and a non-zero exit with no failing row, or exit 0 with one, is a contradiction.
 - A missing report, unknown element, oversized file or symlinked path fails.
 
 Failure text comes from the report's message fields, so the repair loop needs no runner code.
