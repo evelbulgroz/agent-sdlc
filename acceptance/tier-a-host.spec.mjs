@@ -88,6 +88,7 @@ test('@ac AC-08 @case AC-08.3 admission runs the declared sentinel once and writ
   assert.equal(receipt.status, 'passed');
   assert.deepEqual(receipt.sentinel, { planted: 'AC-99.1' });
   assert.equal(receiptOf(root, config).status, 'passed');
+  assert.equal((await qualifyCommands(root, config)).status, 'passed');
 });
 
 test('@ac AC-08 @case AC-08.4 a sentinel that fails a different case than the planted one writes a blocked receipt', async (t) => {

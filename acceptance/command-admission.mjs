@@ -33,6 +33,9 @@ export async function qualifyCommands(root, config, { run = runCommandInSandbox 
     sentinel = { rows: parseReport(registration.reportFormat, result.reportBytes.toString('utf8')), exitCode: result.code, planted };
   }
   const receipt = commandQualificationReceipt({ registrations, sentinelDeclared: Boolean(config.sentinel), sentinel });
-  writeJson(path.join(root, artifact(config, 'offlineQualification')), receipt);
+  // writeJson refuses to replace a file, and a stale receipt from an earlier admission must not survive.
+  const target = path.join(root, artifact(config, 'offlineQualification'));
+  fs.rmSync(target, { force: true });
+  writeJson(target, receipt);
   return receipt;
 }
