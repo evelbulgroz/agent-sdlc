@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadHostProfile } from '../host/host-profile.ts';
+import { qualifyCommands, sentinelRegistration } from './command-admission.mjs';
 import { assertPinsOutsideWriteScope, buildCommandRegistrations, casesFromReport, runCommandInSandbox } from './command-evidence.mjs';
 import { commandQualificationReceipt } from './command-qualification.mjs';
 import { acceptanceConfig } from './config.mjs';
@@ -72,4 +73,44 @@ test('@ac AC-08 @case AC-08.2 the sentinel check accepts the planted failing cas
   assert.equal(receipt('AC-01.2').status, 'passed');
   assert.equal(receipt('AC-01.1').status, 'blocked');
   assert.equal(receipt('AC-01.2', 0).status, 'blocked');
+});
+
+const configFor = (root, edit = (profile) => profile) => {
+  const profile = structuredClone(loadHostProfile(root));
+  return acceptanceConfig(edit(profile), root);
+};
+const receiptOf = (root, config) => JSON.parse(fs.readFileSync(path.join(root, config.output, 'offline/offline-qualification.json'), 'utf8'));
+
+test('@ac AC-08 @case AC-08.3 admission runs the declared sentinel once and writes a passed receipt', async (t) => {
+  const root = hostRepo(t);
+  const config = configFor(root);
+  const receipt = await qualifyCommands(root, config);
+  assert.equal(receipt.status, 'passed');
+  assert.deepEqual(receipt.sentinel, { planted: 'AC-99.1' });
+  assert.equal(receiptOf(root, config).status, 'passed');
+});
+
+test('@ac AC-08 @case AC-08.4 a sentinel that fails a different case than the planted one writes a blocked receipt', async (t) => {
+  const root = hostRepo(t);
+  const config = configFor(root, (profile) => {
+    profile.acceptanceEvidence.sentinel.planted = 'AC-99.2';
+    return profile;
+  });
+  const receipt = await qualifyCommands(root, config);
+  assert.equal(receipt.status, 'blocked');
+  assert.match(receipt.failures.join('\n'), /failed AC-99\.1/);
+  assert.equal(receiptOf(root, config).status, 'blocked');
+});
+
+test('@ac AC-08 @case AC-08.5 a sentinel that exits zero writes a blocked receipt', async (t) => {
+  const root = hostRepo(t);
+  const config = configFor(root);
+  const receipt = await qualifyCommands(root, config, { run: async (input) => ({ ...(await runCommandInSandbox(input)), code: 0 }) });
+  assert.equal(receipt.status, 'blocked');
+});
+
+test('@ac AC-06 @case AC-06.4 a sentinel file inside the write scope fails admission', async (t) => {
+  const root = hostRepo(t);
+  const { registration } = await sentinelRegistration(root, configFor(root));
+  assert.throws(() => assertPinsOutsideWriteScope([registration], ['pkg']), /pinned file inside write scope/);
 });

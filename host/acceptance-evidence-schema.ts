@@ -52,6 +52,8 @@ const CommandBodyShape = {
 };
 // Ids of the pretest steps this command runs first; omitted means all of them.
 const CommandSchema = z.strictObject({ ...CommandBodyShape, pretest: z.array(IdSchema).optional() });
+// The planted case must be the only one the sentinel run fails.
+const SentinelSchema = CommandSchema.extend({ planted: z.string().min(1) });
 const PretestSchema = z.strictObject({ id: IdSchema, ...CommandBodyShape });
 
 const CanarySchema = z.strictObject({
@@ -90,7 +92,7 @@ export const AcceptanceEvidenceSchema = z.strictObject({
 	commands: z.record(IdSchema, CommandSchema).optional(),
 	pretest: z.array(PretestSchema).optional(),
 	// Admission-time tripwire: must exit non-zero with exactly its planted case failed.
-	sentinel: CommandSchema.optional(),
+	sentinel: SentinelSchema.optional(),
 }).superRefine((block, context) => {
 	const runners = Object.keys(block.runners ?? {});
 	const commands = Object.keys(block.commands ?? {});

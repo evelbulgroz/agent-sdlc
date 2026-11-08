@@ -16,13 +16,19 @@
 		"caseManifest": "corpus.json",
 		"runtimeSources": "runtime.sources.json",
 		"package": { "root": "pkg" },
-		"sandbox": { "readOnlyBinds": ["cases.test.mjs", "package.json"] },
+		"sandbox": { "readOnlyBinds": ["cases.test.mjs", "sentinel.test.mjs", "package.json"] },
 		"commands": {
 			"unit": {
 				"argv": ["node", "--test", "--test-reporter=junit", "--test-reporter-destination={reportPath}", "cases.test.mjs"],
 				"pins": [{ "file": "cases.test.mjs" }],
 				"timeoutMs": 60000
 			}
+		},
+		"sentinel": {
+			"argv": ["node", "--test", "--test-reporter=junit", "--test-reporter-destination={reportPath}", "sentinel.test.mjs"],
+			"pins": [{ "file": "sentinel.test.mjs" }],
+			"planted": "AC-99.1",
+			"timeoutMs": 60000
 		}
 	}
 }

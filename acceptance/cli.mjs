@@ -9,6 +9,7 @@ import { buildProposal } from './admission-proposal.mjs';
 import { buildAdmissionRecords } from './admission-records.mjs';
 import { assertCanaryExecutionCurrent, buildCanaryExecution, buildCaseMap } from './canary-execution.mjs';
 import { readiness } from './readiness.mjs';
+import { qualifyCommands, sentinelRegistration } from './command-admission.mjs';
 import { assertPinsOutsideWriteScope, buildCommandRegistrations } from './command-evidence.mjs';
 import { buildRegistrations, validateRegistrations } from './registrations.mjs';
 import { allowedPaths, buildAuthorization, loadObligations } from './run-authorization.mjs';
@@ -69,12 +70,18 @@ const commands = {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     if (!report.ready) process.exitCode = 1;
   },
+  'command-qualify': async ({ root, config }) => {
+    const receipt = await qualifyCommands(root, config);
+    if (!receipt) return process.stdout.write('command qualification: not applicable (runners configured)\n');
+    process.stdout.write(`command qualification: ${receipt.status}${receipt.failures.length ? `\n${receipt.failures.join('\n')}` : ''}\n`);
+    if (receipt.status !== 'passed') process.exitCode = 1;
+  },
   registrations: async ({ root, config, argv }) => {
     const args = argumentsFor(argv, ['--dependency-manifest', '--output']);
     const execution = readJson(regularFile(root, artifact(config, 'executionManifest')));
     assertCanaryExecutionCurrent(root, config, execution);
     const commandRegistrations = await buildCommandRegistrations(root, config);
-    assertPinsOutsideWriteScope(commandRegistrations, allowedPaths(config));
+    assertPinsOutsideWriteScope([...commandRegistrations, ...(config.sentinel ? [(await sentinelRegistration(root, config)).registration] : [])], allowedPaths(config));
     const registrations = [...(Object.keys(config.runners).length
       ? buildRegistrations(root, config, { execution, dependencyManifest: reference(root, args['--dependency-manifest']) }) : []),
     ...commandRegistrations];
