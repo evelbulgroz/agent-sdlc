@@ -1,4 +1,4 @@
-Status: draft for approval, revised after two independent reviews (each claim below was checked against engine `ae2d205` and host `f9efbba1`). Owner: engine maintainers. Follows `single-config-host-onboarding.md` (retired, implemented H0 to H7).
+Status: ready for implementation (approved by the operator on 2026-11-08), revised after two independent reviews (each claim below was checked against engine `ae2d205` and host `f9efbba1`). Owner: engine maintainers. Follows `single-config-host-onboarding.md` (retired, implemented H0 to H7).
 
 ## Goal
 
@@ -31,7 +31,7 @@ Each slice is its own commit per repo with user approval and a full done bar in 
 
 - **Telemetry commands.** `agent-sdlc telemetry record [--run <slug>] [--stdin] [--root <dir>]` and `agent-sdlc telemetry export --slug <slug>`. Flags only: `parseArguments` rejects positional arguments, so `<slug>` is `--slug`, and `telemetry` joins the two-word command list. It prints nothing to stdout on success and has no progress sink, so preflight can discard its output.
 - **Write location.** A new optional profile block `telemetry: { dir }`, repository-relative and contained, default `<stateDir>/telemetry`. The engine carries no literal `tools/.telemetry`. The host sets `dir` to `tools/.telemetry`, which it already gitignores. A write outside a gitignored path is out of contract: the spec for the default asserts a clean tree after a record.
-- **Runs directory.** From the profile `specDraftDir` sibling convention already used by the engine for runs; the exact field is the one `start.ts` resolves, reused rather than duplicated.
+- **Runs directory.** The profile's existing `runsDir` (default `docs/specs/runs`).
 - **Size.** The 555-line module is split before landing (selector and containment, lock and atomic write, export), each file within 500 lines and 20,480 bytes.
 - **`run init`.** `agent-sdlc run init --slug <slug> [--owner <id>] [--orchestrated]`, with the script's kebab-case grammar, atomic create and cleanup on failure, git metadata, and validation. Templates come from the host `<runsDir>/_example`, falling back to bundled defaults in `run-templates/`, which the `build` script copies into `dist/`. `--orchestrated` only sets `activeOwner` to `orchestrator:agent-sdlc`. It writes no `orchestration` object, because the validator requires `retry.source: runtime.sqlite` and a full projection whenever one is present. `run init` is for manual run folders. It is not a prerequisite for `agent-sdlc start`, which fails with `RUN_ALREADY_EXISTS` on an existing `<date>-<slug>` folder.
 - **Host.** `agent:telemetry`, `agent:run-init` and `agent-preflight.sh` call the engine. Delete the recorder, its spec and `agent-run-init.sh`. Move `atomic-file-state.spec.mjs` to `model-usage-govenor`.
