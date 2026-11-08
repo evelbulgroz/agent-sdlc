@@ -18,6 +18,7 @@ import { resolveGovernorRecord } from './governor-resolution.mjs';
 import { measurePromptFit } from './prompt-fit.mjs';
 import { resolveRoleRecord } from './role-definitions.mjs';
 import { approveAdmission, regenerateAdmission } from './regenerate.mjs';
+import { verifyWorkspaceBootstrap } from './workspace-bootstrap.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // The control record reruns these engine specs against the host, so the engine, not the host, owns them.
@@ -131,6 +132,13 @@ const commands = {
         implementationScope: args['--implementation-scope'], liveScope: args['--live-scope'] },
       verify: (manifest) => commands['admission-verify']({ root, config, argv: ['--manifest', manifest] }) });
     process.stdout.write(`approved manifest: ${done.manifest} (run ${done.runId})\n`);
+  },
+  // Verifies the frozen workspace bootstrap named by AGENT_SDLC_CANARY_BOOTSTRAP[_SHA256] without installing anything.
+  'workspace-bootstrap-verify': async ({ config, argv }) => {
+    if (argv.length !== 1) fail('expected workspace bootstrap root');
+    const result = await verifyWorkspaceBootstrap(argv[0], config, {
+      path: process.env.AGENT_SDLC_CANARY_BOOTSTRAP, sha256: process.env.AGENT_SDLC_CANARY_BOOTSTRAP_SHA256 });
+    process.stdout.write(`${JSON.stringify(result)}\n`);
   },
   'runtime-inventory': ({ root, argv }) => {
     const args = argumentsFor(argv, ['--sources', '--output']);

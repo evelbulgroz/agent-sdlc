@@ -37,7 +37,7 @@ test('the dispatcher names every moved host command and refuses anything else', 
   assert.deepEqual([...COMMANDS].sort(), ['admission-approve', 'admission-assemble', 'admission-proposal', 'admission-records',
     'admission-regenerate', 'admission-verify', 'authorize', 'canary-execution', 'experiment-config', 'governor-resolution',
     'prompt-fit', 'readiness', 'registrations', 'role-definitions', 'runtime-dependencies',
-    'runtime-inventory', 'runtime-materialize']);
+    'runtime-inventory', 'runtime-materialize', 'workspace-bootstrap-verify']);
   const result = cli(hostRoot(t), 'bogus');
   assert.equal(result.status, 1);
   assert.match(result.stderr, /expected one of: admission-assemble/);
@@ -60,4 +60,12 @@ test('canary-dependent commands fail closed when the profile has no canary block
     assert.equal(result.status, 1);
     assert.match(result.stderr, /acceptanceEvidence\.canary is not configured/);
   }
+});
+
+test('workspace-bootstrap-verify needs a root and a bound, unchanged bootstrap record', (t) => {
+  const root = hostRoot(t);
+  assert.match(cli(root, 'workspace-bootstrap-verify').stderr, /expected workspace bootstrap root/);
+  const unbound = cli(root, 'workspace-bootstrap-verify', root);
+  assert.equal(unbound.status, 1);
+  assert.equal(unbound.stdout, '');
 });

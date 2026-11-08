@@ -131,7 +131,7 @@ Admission, its pins, the experiment budget and governor, run authorization, the 
 | `pretest.mjs` | Delete. Becomes `pretest` commands that call package scripts. |
 | `corpus.json`, `canary.*.json`, `runtime.sources.json`, `runtime/` | Keep (host data and config). |
 | `lib/verify-bootstrap.{sh,mjs}` | Replace with a call to an engine CLI command that verifies the frozen bootstrap. The host `verify-*.sh` files source a one-line shim. |
-| `lib/verify-vitest-cache.mjs` | Host runner glue. Decouple from `protocol.mjs`, or drop if the cache hook is no longer needed. Decide in H0. |
+| `lib/verify-vitest-cache.mjs` | Dropped in H6: nothing loaded the preload once the adapters went. |
 | `lib/atomic-file-state.*` | Not an engine matter. It re-exports the governor package for host telemetry. Import the governor directly. |
 | `lib/affected-packages.sh`, `verify-pool*.sh`, `verify-pool-deps.mjs`, `preflight-command.sh` | Keep in the host. These are deterministic QA and the pnpm-monorepo toolkit question is resolved: the engine ships no monorepo toolkit. The host may publish them as a template. |
 
