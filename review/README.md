@@ -10,7 +10,7 @@ Heterogeneous adversarial critic review (`spec`, `plan`, `code`, `qa`), uncommit
 - `review/critic-input-packing.ts`, `review/critic-prompt.ts` & `review/excerpt-extractor.ts` — Rubric loading (`.agents/review-rubrics/*.md`), 24 KB / 1,000-line context ceiling, secret stripping, and compact test assertion excerpt packing.
 - `review/critic-report-store.ts` & `review/citation-verifier.ts` — Report persistence under `tools/.review/<run-id>/` and finding citation checks.
 - `review/review-generation.ts`, `review/review-execution.ts` & `review/semantic-review-evidence.ts` — Uncommitted tree materialization (`git write-tree`), scope fingerprints, and adversarial semantic review validation.
-- `review/verifier.ts` & `review/failure-packet.ts` — Deterministic host verification (`verify.argv` via `host/verify-runner.ts` and `host/verify-config.ts`: `npm test` exit-code default, custom `verify.argv`, or receipt-backed `pnpm run verify:receipt`), 5-point evidence binding, and sanitized failure-packet construction.
+- `review/verifier.ts` & `review/failure-packet.ts` — Deterministic host verification (`verify.argv` via `host/verify-runner.ts` and `host/verify-config.ts`: `npm test` exit-code default, custom `verify.argv`, or receipt-backed `pnpm run verify:receipt`), 5-point evidence binding, and sanitized failure-packet construction. On a failed verify, the packet keeps snippets only; the full sanitized output (last 64 KiB) is stored as a `failure-raw-output` artifact, surfaced as `rawOutputArtifact`.
 
 ## Core Invariants
 

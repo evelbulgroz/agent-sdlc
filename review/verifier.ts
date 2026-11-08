@@ -14,6 +14,7 @@ import {
 	failureReferencesAuthorizedPackage,
 	isEnvironmentFailure,
 } from './failure-packet.ts';
+import { sanitize } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 
 export interface VerifierArtifactStoreLike {
 	writeJson(prefix: string, payload: unknown): string;
@@ -35,8 +36,12 @@ export interface PreflightFailResult {
 	exitCode: number;
 	failurePacket: Readonly<FailurePacketRecord>;
 	outputArtifact: string | null;
+	/** Sanitized, size-capped full verifier output; the failure packet keeps only snippets. */
+	rawOutputArtifact?: string | null;
 	repairable?: boolean;
 }
+
+const RAW_OUTPUT_CAP = 65_536;
 
 export interface PreflightPassResult {
 	status: 'PASS';
@@ -79,17 +84,27 @@ function failResult({
 	failurePacket,
 	exitCode,
 	repairable,
+	rawOutput,
 }: {
 	artifactStore?: VerifierArtifactStoreLike | null;
 	failurePacket: Readonly<FailurePacketRecord>;
 	exitCode: number;
 	repairable?: boolean;
+	rawOutput?: unknown;
 }): PreflightFailResult {
+	const rawText = typeof rawOutput === 'string' ? rawOutput : '';
 	return {
 		status: 'FAIL',
 		exitCode,
 		failurePacket,
 		outputArtifact: artifactStore ? artifactStore.writeJson('failure-packet', failurePacket) : null,
+		rawOutputArtifact:
+			artifactStore && rawText.length > 0
+				? artifactStore.writeJson('failure-raw-output', {
+						failedCommand: failurePacket.failedCommand,
+						output: sanitize(rawText).slice(-RAW_OUTPUT_CAP),
+					})
+				: null,
 		...(repairable !== undefined ? { repairable } : {}),
 	};
 }
@@ -171,6 +186,7 @@ async function runPreflightAndBind({
 				artifactStore,
 				failurePacket,
 				exitCode: outcome.exitCode,
+				rawOutput: outcome.output,
 				repairable:
 					!isEnvironmentFailure(failurePacket.sanitizedOutput) &&
 					failureReferencesAuthorizedPackage({
@@ -183,6 +199,7 @@ async function runPreflightAndBind({
 			artifactStore,
 			failurePacket,
 			exitCode: outcome.exitCode,
+			rawOutput: outcome.output,
 		});
 	}
 

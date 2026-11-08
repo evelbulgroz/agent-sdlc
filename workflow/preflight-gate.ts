@@ -339,11 +339,13 @@ export async function executePreflightForSnapshot(
 								: 'Canonical preflight failed only in packages outside the authorized task scope',
 						metadata: {
 							failurePacketArtifact: verifierResult.outputArtifact,
+							rawOutputArtifact: verifierResult.rawOutputArtifact ?? null,
 						},
 					},
 				},
 				payload: {
 					failurePacketArtifact: verifierResult.outputArtifact,
+					rawOutputArtifact: verifierResult.rawOutputArtifact ?? null,
 					failurePacket: verifierResult.failurePacket,
 				},
 			});

@@ -96,6 +96,11 @@ test('executePreflightVerifier handles failing preflight and generates failure p
 		const storedPacket = fixture.artifacts.readJson(result.outputArtifact);
 		assert.equal(storedPacket.runId, fixture.runId);
 		assert.equal(storedPacket.classification, 'test_failure');
+
+		// The packet keeps snippets only; the full output stays inspectable.
+		assert.ok(result.rawOutputArtifact);
+		const raw = fixture.artifacts.readJson(result.rawOutputArtifact);
+		assert.match(raw.output, /ERR: preflight failed/);
 	} finally {
 		fixture.close();
 	}
