@@ -12,11 +12,11 @@ export const runIdFor = (config, now) => `${now.toISOString().slice(0, 10)}-${co
 
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 
-// Every { path, sha256 } object in a record; paths under a sandbox mount ('@worktree/…') are not host files.
+// Every { path, sha256 } object in a record; paths under a sandbox mount ('@worktree/…') and absolute executable paths are not host files.
 export function pinnedReferences(value, found = []) {
 	if (Array.isArray(value)) value.forEach((item) => pinnedReferences(item, found));
 	else if (value && typeof value === 'object') {
-		if (typeof value.path === 'string' && HASH.test(value.sha256 ?? '') && !value.path.startsWith('@')) found.push(value);
+		if (typeof value.path === 'string' && HASH.test(value.sha256 ?? '') && !value.path.startsWith('@') && !path.isAbsolute(value.path)) found.push(value);
 		else Object.values(value).forEach((item) => pinnedReferences(item, found));
 	}
 	return found;

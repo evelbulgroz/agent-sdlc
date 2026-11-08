@@ -20,11 +20,11 @@ function repo(t) {
 	return { root, head: git('rev-parse', 'HEAD') };
 }
 
-test('pinned references skip sandbox mounts and report missing or changed files', (t) => {
+test('pinned references skip sandbox mounts, absolute executables and report missing or changed files', (t) => {
 	const { root } = repo(t);
 	const good = bytesHash(Buffer.from('a'));
 	const value = { x: [{ path: 'a.txt', sha256: good }, { path: 'gone.txt', sha256: good }, { path: 'a.txt', sha256: 'b'.repeat(64) },
-		{ path: '@worktree/skip.js', sha256: good }], note: { path: 'no-hash' } };
+		{ path: '@worktree/skip.js', sha256: good }, { path: '/opt/node/bin/node', sha256: good }], note: { path: 'no-hash' } };
 	assert.equal(pinnedReferences(value).length, 3);
 	assert.deepEqual(stalePins(root, 'r', value), ['r: missing gone.txt', 'r: changed a.txt']);
 });
