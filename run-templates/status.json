@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "runId": "_template",
+  "revision": 1,
+  "updatedAt": "1970-01-01T00:00:00.000Z",
+  "git": { "branch": "unknown", "headSha": "unknown", "worktreePath": null, "dirty": false },
+  "lane": "agent",
+  "phase": "spec",
+  "activeOwner": "role:spec",
+  "risk": "normal",
+  "blockedReason": null,
+  "retry": { "count": 0, "maxRetries": 2, "source": "status.json" },
+  "packages": [],
+  "changeClass": "A",
+  "skillsUsed": [],
+  "verification": {
+    "lastCommand": null,
+    "lastResult": "not_run",
+    "lastExitCode": null,
+    "lastRanAt": null,
+    "preflight": { "status": null, "changeClass": null, "gitHeadSha": null, "resultFile": null, "finishedAt": null }
+  },
+  "tasks": [
+    { "id": "t1", "title": "Refine scope and acceptance criteria", "owner": "role:spec", "status": "pending", "packages": [] },
+    { "id": "t2", "title": "Implement change", "owner": "role:implement", "status": "pending", "packages": [] },
+    { "id": "t3", "title": "Run the host done bar", "owner": "role:verify", "status": "pending", "packages": [] }
+  ]
+}

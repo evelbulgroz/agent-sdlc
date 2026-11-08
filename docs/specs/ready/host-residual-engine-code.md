@@ -29,7 +29,7 @@ Each slice is its own commit per repo with user approval and a full done bar in 
 
 ### S1. Telemetry and run init
 
-- **Telemetry commands.** `agent-sdlc telemetry record [--run <slug>] [--stdin] [--root <dir>]` and `agent-sdlc telemetry export --slug <slug>`. Flags only: `parseArguments` rejects positional arguments, so `<slug>` is `--slug`, and `telemetry` joins the two-word command list. It prints nothing to stdout on success and has no progress sink, so preflight can discard its output.
+- **Telemetry commands.** `agent-sdlc telemetry record [--run <slug>] [--stdin] [--root <dir>]` and `agent-sdlc telemetry export --slug <slug>`. Flags only: `parseArguments` rejects positional arguments, so `<slug>` is `--slug`, and `telemetry` joins the two-word command list. It prints one short line and has no progress sink, so preflight can discard its output. `telemetry.dir` (profile `1.7.0`) sets the write location, defaulting to `<stateDir>/telemetry`.
 - **Write location.** A new optional profile block `telemetry: { dir }`, repository-relative and contained, default `<stateDir>/telemetry`. The engine carries no literal `tools/.telemetry`. The host sets `dir` to `tools/.telemetry`, which it already gitignores. A write outside a gitignored path is out of contract: the spec for the default asserts a clean tree after a record.
 - **Runs directory.** The profile's existing `runsDir` (default `docs/specs/runs`).
 - **Size.** The 555-line module is split before landing (selector and containment, lock and atomic write, export), each file within 500 lines and 20,480 bytes.
@@ -41,7 +41,7 @@ Gate: ported specs cover selector precedence, containment, concurrent appends, t
 ### S2. Learnings graduations
 
 - **Command.** `agent-sdlc learnings graduations [--advisory]`, reading entries through `resolveLearningStorePath` and `loadLearningStore` like the other `learnings` subcommands. The JSONL store is kept as is. Nothing is migrated or dropped.
-- **Profile.** The schema bump to `1.7.0` moves here, so S2 and S3 do not mutate `1.6.0` in place. Under `learnings`, a closed `graduations` block: `identifierPrefix` (the match token, `fitnessapp` for the host), `semgrepRules` and `dependencyCruiserConfig` (contained, repository-relative file paths), and `testGlobs`, `handbookDirs` and `skillDirs` (contained directories or globs). Every field is optional, and a graduation target whose source is unset reports no match. Validation reuses `validateContainedRelativePath`. `1.6.0` profiles load unchanged.
+- **Profile.** The `1.7.0` schema bump landed in S1 (with `telemetry.dir`); S2 adds `graduations` to `1.7.0` rather than mutating `1.6.0`. Under `learnings`, a closed `graduations` block: `identifierPrefix` (the match token, `fitnessapp` for the host), `semgrepRules` and `dependencyCruiserConfig` (contained, repository-relative file paths), and `testGlobs`, `handbookDirs` and `skillDirs` (contained directories or globs). Every field is optional, and a graduation target whose source is unset reports no match. Validation reuses `validateContainedRelativePath`. `1.6.0` profiles load unchanged.
 - **Neutrality.** The engine carries no `fitnessapp` literal. The prefix and every path come from the profile, so AC-05 holds with no new exemption.
 - **Host.** `check:learnings-graduations` and `quality-static-gates.mjs` call the engine. Delete the checker and its spec. The host profile gains the `graduations` block.
 

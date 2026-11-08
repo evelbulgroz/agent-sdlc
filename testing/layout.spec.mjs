@@ -45,6 +45,8 @@ const ALLOWED_CHILDREN = new Set([
 	'ledger',
 	'prompts',
 	'acceptance',
+	'telemetry',
+	'run-templates',
 ]);
 
 test('@ac AC-01 the factory root holds only allowlisted children', () => {

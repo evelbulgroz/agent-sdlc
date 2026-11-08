@@ -41,6 +41,8 @@ const VALUE_FLAGS = new Set([
 	'--file',
 	'--package',
 	'--profile-id',
+	'--result',
+	'--owner',
 ]);
 
 const BOOLEAN_FLAGS = new Set([
@@ -60,6 +62,7 @@ const BOOLEAN_FLAGS = new Set([
 	'--yes',
 	'--retry',
 	'--dry-run',
+	'--orchestrated',
 ]);
 
 const COMMAND_FLAGS = new Map<string, Set<string>>([
@@ -170,6 +173,9 @@ const COMMAND_FLAGS = new Map<string, Set<string>>([
 	['learnings prune', new Set(['--root', '--store', '--key', '--missing-files', '--apply', '--json'])],
 	['learnings validate', new Set(['--root', '--store', '--json'])],
 	['learnings stats', new Set(['--root', '--store', '--json'])],
+	['run init', new Set(['--root', '--slug', '--owner', '--orchestrated', '--json'])],
+	['telemetry record', new Set(['--root', '--run', '--result', '--stdin', '--json'])],
+	['telemetry export', new Set(['--root', '--slug', '--dest', '--json'])],
 ]);
 
 /**
@@ -205,6 +211,8 @@ export function parseArguments(args: readonly string[]): ParsedArguments {
 			command === 'canary' ||
 			command === 'shell' ||
 			command === 'learnings' ||
+			command === 'telemetry' ||
+			command === 'run' ||
 			command === 'host') &&
 		typeof normalizedArgs[1] === 'string' &&
 		!normalizedArgs[1].startsWith('-')
@@ -308,6 +316,9 @@ export function usage(): string {
 		'               --run <run-id> --response-file <path> [--json]',
 		'  shell watch  Operator shell: replay mechanical continuation cards until a human gate is reached',
 		'               --run <run-id> [--json]',
+		'  run init Create a manual run folder --slug <kebab-slug> [--owner <id>] [--orchestrated]',
+		'  telemetry record Record a preflight run for a run folder [--run <slug>] [--stdin|--result <file>]',
+		'  telemetry export Export a run\'s telemetry [--slug <slug>] [--dest <file>]',
 		'  host scaffold Draft a Tier A host profile and data files [--package <dir>] [--dry-run]',
 		'  learnings search|add|prune|validate|stats',
 		'               Project learnings store [--root <dir>] [--store <path>]; search --query <text> [--scope <s>] [--limit <n>];',

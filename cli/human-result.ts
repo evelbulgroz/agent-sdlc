@@ -206,6 +206,18 @@ export function humanResult(
 			adapter: resultInput.adapter,
 		});
 	}
+	if (command === 'run init') {
+		return `run init: created '${String(resultInput.runDir)}' (owner=${String(resultInput.activeOwner)})`;
+	}
+	if (command === 'telemetry record') {
+		const record = resultInput.record as { preflightStatus?: unknown; exitCode?: unknown } | null;
+		if (resultInput.recorded !== true || !record) return resultInput.ok === false ? `telemetry record: ${String(resultInput.error)}` : 'telemetry record: no run selected';
+		return `telemetry record: ${resultInput.deduplicated === true ? 'already recorded' : `recorded ${String(record.preflightStatus)} (exit=${String(record.exitCode)})`}`;
+	}
+	if (command === 'telemetry export') {
+		const count = Array.isArray(resultInput.records) ? resultInput.records.length : 0;
+		return resultInput.exported ? `telemetry export: ${count} records to '${String(resultInput.exported)}'` : JSON.stringify(resultInput, null, 2);
+	}
 	if (command === 'host scaffold') {
 		const files = Array.isArray(resultInput.files) ? resultInput.files.map(String) : [];
 		return [`host scaffold: ${resultInput.written === true ? 'wrote' : 'would write'} ${files.length} drafts for '${String(resultInput.profileId)}'`, ...files.map((file) => `  ${file}`)].join('\n');

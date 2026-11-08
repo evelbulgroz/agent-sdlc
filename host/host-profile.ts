@@ -17,6 +17,10 @@ import { preparationContainmentPaths, VerificationPreparationSchema } from './ve
 import { AdapterRegistrationSchema } from '../policy/contracts/quality-schema.ts';
 import { evidenceRegistrationFiles } from './command-evidence.ts';
 import { AcceptanceEvidenceSchema, acceptanceContainmentPaths, acceptanceVersionIssue } from './acceptance-evidence-schema.ts';
+import {
+	ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION, ADAPTERS_HOST_PROFILE_SCHEMA_VERSION, assertProfileVersionGates, COMMANDS_HOST_PROFILE_SCHEMA_VERSION,
+	HOST_PROFILE_SCHEMA_VERSION, LEGACY_HOST_PROFILE_SCHEMA_VERSION, PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
+} from './profile-version-gates.ts';
 import { invalidHostProfile, validateContainedRelativePath, validateRegexPattern } from './profile-validation.ts';
 
 export {
@@ -29,11 +33,10 @@ export {
 };
 
 export const HOST_PROFILE_RELATIVE_PATH = '.agents/sdlc-host.json';
-export const HOST_PROFILE_SCHEMA_VERSION = '1.6.0';
-export const ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION = '1.5.0';
-export const ADAPTERS_HOST_PROFILE_SCHEMA_VERSION = '1.4.0';
-export const PREVIOUS_HOST_PROFILE_SCHEMA_VERSION = '1.3.0';
-export const LEGACY_HOST_PROFILE_SCHEMA_VERSION = '1.2.0';
+export {
+	ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION, ADAPTERS_HOST_PROFILE_SCHEMA_VERSION, COMMANDS_HOST_PROFILE_SCHEMA_VERSION,
+	HOST_PROFILE_SCHEMA_VERSION, LEGACY_HOST_PROFILE_SCHEMA_VERSION, PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
+};
 export const MAX_HOST_PROFILE_BYTES = 65_536;
 
 const NonEmptyTokenSchema = z.string().min(1);
@@ -41,6 +44,7 @@ const ArgvSchema = z.array(NonEmptyTokenSchema).min(1);
 const CriticPhaseSchema = z.enum(['spec', 'plan', 'code', 'qa']);
 const SupportedSchemaVersionSchema = z.enum([
 	HOST_PROFILE_SCHEMA_VERSION,
+	COMMANDS_HOST_PROFILE_SCHEMA_VERSION,
 	ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION,
 	ADAPTERS_HOST_PROFILE_SCHEMA_VERSION,
 	PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
@@ -106,6 +110,8 @@ const LearningScopeInferenceRuleSchema = z.strictObject({
 	scope: NonEmptyTokenSchema.optional(), extractSegment: z.boolean().optional(),
 });
 
+const TelemetryConfigSchema = z.strictObject({ dir: NonEmptyTokenSchema.optional() });
+
 const LearningsConfigSchema = z.strictObject({
 	filePath: NonEmptyTokenSchema.optional(), scopes: z.array(NonEmptyTokenSchema).optional(),
 	scopeInference: z.array(LearningScopeInferenceRuleSchema).optional(),
@@ -118,7 +124,7 @@ const BaseProfileFields = {
 	prompts: PromptsConfigSchema.optional(), git: GitConfigSchema.optional(), workspace: DeclarativeWorkspaceSchema.optional(),
 	hydration: HydrationConfigSchema.optional(), policy: PolicyConfigSchema.optional(),
 	architecture: ArchitectureConfigSchema.optional(), qualityGate: QualityGateConfigSchema.optional(),
-	learnings: LearningsConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
+	learnings: LearningsConfigSchema.optional(), telemetry: TelemetryConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
 	engine: EngineConfigSchema.optional(), verificationPreparation: VerificationPreparationSchema.optional(),
 	evidenceAdapters: z.array(AdapterRegistrationSchema).optional(), acceptanceEvidence: AcceptanceEvidenceSchema.optional(),
 };
@@ -196,68 +202,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	}
 
 	const rawRecord = parsedJson as Record<string, unknown>;
-	if (!(SupportedSchemaVersionSchema.options as readonly unknown[]).includes(rawRecord.schemaVersion)) {
-		invalidHostProfile(
-			`Expected schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}', got '${String(rawRecord.schemaVersion)}'`,
-			{ schemaVersion: String(rawRecord.schemaVersion ?? '') },
-		);
-	}
-
-	if (rawRecord.schemaVersion === LEGACY_HOST_PROFILE_SCHEMA_VERSION) {
-		for (const requiredKey of ['stateDir', 'reviewDir', 'specDraftDir']) {
-			if (typeof rawRecord[requiredKey] !== 'string' || rawRecord[requiredKey].length === 0) {
-				invalidHostProfile(
-					`Field '${requiredKey}' is required at schemaVersion '${LEGACY_HOST_PROFILE_SCHEMA_VERSION}'`,
-					{ fieldName: requiredKey, schemaVersion: rawRecord.schemaVersion },
-				);
-			}
-		}
-		for (const key of ['runsDir', 'git', 'policy', 'architecture', 'qualityGate', 'learnings', 'commandPolicy', 'engine', 'verificationPreparation']) {
-			if (rawRecord[key] !== undefined) {
-				invalidHostProfile(`Field '${key}' requires schemaVersion '${PREVIOUS_HOST_PROFILE_SCHEMA_VERSION}'`, {
-					fieldName: key,
-					schemaVersion: rawRecord.schemaVersion,
-				});
-			}
-			if (rawRecord.evidenceAdapters !== undefined) {
-				invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${ADAPTERS_HOST_PROFILE_SCHEMA_VERSION}'`, {
-					fieldName: 'evidenceAdapters',
-					schemaVersion: rawRecord.schemaVersion,
-				});
-			}
-		}
-		if (rawRecord.adapter === 'default') {
-			for (const forbidden of ['hydration', 'commands', 'workspace']) {
-				if (rawRecord[forbidden] !== undefined) {
-					invalidHostProfile(
-						`default profile at schemaVersion '${LEGACY_HOST_PROFILE_SCHEMA_VERSION}' cannot include '${forbidden}'`,
-						{ fieldName: forbidden },
-					);
-				}
-			}
-		}
-	} else {
-		if (
-			rawRecord.schemaVersion === PREVIOUS_HOST_PROFILE_SCHEMA_VERSION &&
-			rawRecord.evidenceAdapters !== undefined
-		) {
-			invalidHostProfile(`Field 'evidenceAdapters' requires schemaVersion '${ADAPTERS_HOST_PROFILE_SCHEMA_VERSION}'`, {
-				fieldName: 'evidenceAdapters',
-				schemaVersion: rawRecord.schemaVersion,
-			});
-		}
-		if (rawRecord.adapter === 'default' && rawRecord.commands !== undefined) {
-			invalidHostProfile("default profile cannot include 'commands'", { fieldName: 'commands' });
-		}
-	}
-
-	if (rawRecord.acceptanceEvidence !== undefined && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION &&
-		rawRecord.schemaVersion !== ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION) {
-		invalidHostProfile(`Field 'acceptanceEvidence' requires schemaVersion '${ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION}'`, {
-			fieldName: 'acceptanceEvidence',
-			schemaVersion: String(rawRecord.schemaVersion),
-		});
-	}
+	assertProfileVersionGates(rawRecord);
 
 	const parsed = HostProfileSchema.safeParse(parsedJson);
 	if (!parsed.success) {
@@ -294,6 +239,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	checkRel(profile.reviewDir, 'reviewDir');
 	checkRel(profile.specDraftDir, 'specDraftDir');
 	checkRel(profile.runsDir, 'runsDir');
+	checkRel(profile.telemetry?.dir, 'telemetry.dir');
 	for (const [index, registration] of (profile.evidenceAdapters ?? []).entries()) {
 		for (const file of evidenceRegistrationFiles(registration)) {
 			checkRel(file.path, `evidenceAdapters[${index}].files.path`);

@@ -57,6 +57,9 @@ agent-sdlc cancel --run <run-id> [--json]
 agent-sdlc export --run <run-id> --dest export.json [--overwrite] [--json]
 agent-sdlc prune-runs [--dry-run] [--json]
 agent-sdlc host check [--root <dir>] [--json]
+agent-sdlc run init --slug <kebab-slug> [--owner <id>] [--orchestrated] [--root <dir>] [--json]
+agent-sdlc telemetry record [--run <slug>] [--stdin | --result <file>] [--root <dir>] [--json]
+agent-sdlc telemetry export --slug <slug> [--dest <file>] [--root <dir>] [--json]
 agent-sdlc host scaffold --package <dir> [--profile-id <id>] [--root <dir>] [--overwrite] [--dry-run] [--json]
 
 # Project learnings store (`.agents/sdlc-host.json` `learnings`); `validate` exits 2 on any invalid line

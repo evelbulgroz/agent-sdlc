@@ -21,6 +21,8 @@ import { authorizeRun } from './authorize.ts';
 import { executePostMortem } from './candidate-learning.ts';
 import { assertStartHostProfile, hostCheck } from './host-check.ts';
 import { hostScaffold } from './host-scaffold.ts';
+import { runInit } from './run-init.ts';
+import { telemetryExport, telemetryRecord } from './telemetry.ts';
 import {
 	canaryCheck,
 	canaryStep,
@@ -210,6 +212,9 @@ const COMMAND_TABLE: Readonly<Record<string, CommandEntry>> = {
 	},
 	'host check': { handler: hostCheck, progressSink: false },
 	'host scaffold': { handler: hostScaffold, progressSink: false },
+	'run init': { handler: runInit, progressSink: false },
+	'telemetry record': { handler: telemetryRecord, progressSink: false },
+	'telemetry export': { handler: telemetryExport, progressSink: false },
 	'learnings search': { handler: learningsHandler('search'), progressSink: false },
 	'learnings add': { handler: learningsHandler('add'), progressSink: false },
 	'learnings prune': { handler: learningsHandler('prune'), progressSink: false },
