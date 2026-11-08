@@ -21,6 +21,7 @@ import {
 	ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION, ADAPTERS_HOST_PROFILE_SCHEMA_VERSION, assertProfileVersionGates, COMMANDS_HOST_PROFILE_SCHEMA_VERSION,
 	HOST_PROFILE_SCHEMA_VERSION, LEGACY_HOST_PROFILE_SCHEMA_VERSION, PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
 } from './profile-version-gates.ts';
+import { GraduationsConfigSchema } from './graduations-config.ts';
 import { invalidHostProfile, validateContainedRelativePath, validateRegexPattern } from './profile-validation.ts';
 
 export {
@@ -114,7 +115,7 @@ const TelemetryConfigSchema = z.strictObject({ dir: NonEmptyTokenSchema.optional
 
 const LearningsConfigSchema = z.strictObject({
 	filePath: NonEmptyTokenSchema.optional(), scopes: z.array(NonEmptyTokenSchema).optional(),
-	scopeInference: z.array(LearningScopeInferenceRuleSchema).optional(),
+	scopeInference: z.array(LearningScopeInferenceRuleSchema).optional(), graduations: GraduationsConfigSchema.optional(),
 });
 
 const BaseProfileFields = {
@@ -312,6 +313,12 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 
 	if (profile.learnings) {
 		checkRel(profile.learnings.filePath, 'learnings.filePath');
+		const grads = profile.learnings.graduations;
+		if (grads) {
+			checkRel(grads.semgrepRules, 'learnings.graduations.semgrepRules');
+			checkRel(grads.dependencyCruiserConfig, 'learnings.graduations.dependencyCruiserConfig');
+			for (const field of ['testDirs', 'handbookDirs', 'skillDirs'] as const) checkRelList(grads[field], `learnings.graduations.${field}`, true);
+		}
 		for (const rule of profile.learnings.scopeInference ?? []) {
 			checkRel(rule.exact, 'learnings.scopeInference.exact', true);
 			for (const [key, val] of [['prefix', rule.prefix], ['pathPrefix', rule.pathPrefix]] as const) {

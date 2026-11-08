@@ -79,6 +79,15 @@ export function assertProfileVersionGates(rawRecord: Record<string, unknown>): v
 		});
 	}
 
+	const rawLearnings = rawRecord.learnings;
+	const hasGraduations = typeof rawLearnings === 'object' && rawLearnings !== null && 'graduations' in rawLearnings;
+	if (hasGraduations && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION) {
+		invalidHostProfile(`Field 'learnings.graduations' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+			fieldName: 'learnings.graduations',
+			schemaVersion: String(rawRecord.schemaVersion),
+		});
+	}
+
 	if (rawRecord.acceptanceEvidence !== undefined && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION &&
 		rawRecord.schemaVersion !== COMMANDS_HOST_PROFILE_SCHEMA_VERSION &&
 		rawRecord.schemaVersion !== ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION) {

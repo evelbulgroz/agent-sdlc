@@ -63,6 +63,8 @@ const BOOLEAN_FLAGS = new Set([
 	'--retry',
 	'--dry-run',
 	'--orchestrated',
+	'--advisory',
+	'--warn-only',
 ]);
 
 const COMMAND_FLAGS = new Map<string, Set<string>>([
@@ -172,6 +174,7 @@ const COMMAND_FLAGS = new Map<string, Set<string>>([
 	['learnings add', new Set(['--root', '--store', '--file', '--stdin', '--upsert', '--json'])],
 	['learnings prune', new Set(['--root', '--store', '--key', '--missing-files', '--apply', '--json'])],
 	['learnings validate', new Set(['--root', '--store', '--json'])],
+	['learnings graduations', new Set(['--root', '--store', '--advisory', '--warn-only', '--json'])],
 	['learnings stats', new Set(['--root', '--store', '--json'])],
 	['run init', new Set(['--root', '--slug', '--owner', '--orchestrated', '--json'])],
 	['telemetry record', new Set(['--root', '--run', '--result', '--stdin', '--json'])],
@@ -320,7 +323,7 @@ export function usage(): string {
 		'  telemetry record Record a preflight run for a run folder [--run <slug>] [--stdin|--result <file>]',
 		'  telemetry export Export a run\'s telemetry [--slug <slug>] [--dest <file>]',
 		'  host scaffold Draft a Tier A host profile and data files [--package <dir>] [--dry-run]',
-		'  learnings search|add|prune|validate|stats',
+		'  learnings search|add|prune|validate|stats|graduations',
 		'               Project learnings store [--root <dir>] [--store <path>]; search --query <text> [--scope <s>] [--limit <n>];',
 		'               add --file <path> | --stdin [--upsert]; prune --key <key> | --missing-files [--apply]; [--json]',
 		'  help, -h     Show this help message',

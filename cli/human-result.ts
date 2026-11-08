@@ -206,6 +206,13 @@ export function humanResult(
 			adapter: resultInput.adapter,
 		});
 	}
+	if (command === 'learnings graduations') {
+		const candidates = Array.isArray(resultInput.candidates) ? resultInput.candidates as Array<{ key?: unknown; graduationTarget?: unknown; reason?: unknown }> : [];
+		if (candidates.length === 0) return `learnings graduations: OK (${String(resultInput.total)} entries, none graduated)`;
+		const label = resultInput.blocking === true ? 'FAIL' : 'ADVISORY';
+		const lines = candidates.map((c) => `  - ${String(c.key)} (${String(c.graduationTarget)}): ${String(c.reason)}\n    prune: agent-sdlc learnings prune --key ${String(c.key)} --apply`);
+		return `learnings graduations: ${label}: ${candidates.length} graduated entr${candidates.length === 1 ? 'y' : 'ies'} to prune\n${lines.join('\n')}`;
+	}
 	if (command === 'run init') {
 		return `run init: created '${String(resultInput.runDir)}' (owner=${String(resultInput.activeOwner)})`;
 	}

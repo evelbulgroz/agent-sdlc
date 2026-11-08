@@ -68,4 +68,5 @@ agent-sdlc learnings add --file <path> | --stdin [--upsert] [--json]
 agent-sdlc learnings prune --key <key> | --missing-files [--apply] [--json]
 agent-sdlc learnings validate [--json]
 agent-sdlc learnings stats [--json]
+agent-sdlc learnings graduations [--advisory|--warn-only] [--root <dir>] [--store <path>] [--json]   # exits 1 when graduated entries remain unless advisory
 ```

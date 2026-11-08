@@ -1,12 +1,14 @@
 import path from 'node:path';
 import { loadLearningStore, resolveLearningStorePath, searchLearningStore, addLearningBatch, addLearningEntry } from '../../host/learnings.ts';
 import { learningStoreStats, pruneLearningStore, validateLearningStore } from '../../host/learnings-admin.ts';
+import { loadHostProfileOrFallback } from '../../host/host-profile.ts';
+import { checkGraduations } from '../../host/learnings-graduations.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import type { ParsedArguments } from '../arguments.ts';
 import type { CommandDispatchOptions } from './index.ts';
 import { readFileSync } from 'node:fs';
 
-type LearningsAction = 'search' | 'add' | 'prune' | 'validate' | 'stats';
+type LearningsAction = 'search' | 'add' | 'prune' | 'validate' | 'stats' | 'graduations';
 
 async function readPayload(parsed: ParsedArguments, options: CommandDispatchOptions): Promise<unknown> {
 	const file = parsed.values.get('--file');
@@ -66,6 +68,11 @@ async function runAction(
 			})) };
 		case 'validate':
 			return { storePath, ...(await validateLearningStore(storePath, scopeOptions)) };
+		case 'graduations': {
+			const report = checkGraduations(await loadLearningStore(storePath), repoRoot, loadHostProfileOrFallback(repoRoot).learnings?.graduations);
+			const advisory = parsed.booleans.has('--advisory') || parsed.booleans.has('--warn-only');
+			return { storePath, ...report, advisory, blocking: !report.ok && !advisory };
+		}
 		case 'stats':
 			return { storePath, ...learningStoreStats(await loadLearningStore(storePath)) };
 	}
@@ -90,5 +97,6 @@ export function learningsHandler(action: LearningsAction) {
 }
 
 export function learningsExitCode(result: Record<string, unknown>): number {
+	if (result.blocking === true) return 1;
 	return result.valid === false ? 2 : 0;
 }

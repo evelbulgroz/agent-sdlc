@@ -11,6 +11,7 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
 - `host/verify-runner.ts` — Shared host verification command runner supporting both exit-code mode and structured JSON receipt mode (`resultPath`).
 - `host/workspace.ts` — Adapter-aware workspace package discovery (`discoverWorkspace`).
 - `host/learnings.ts` — Native project learnings store, validator, weighted scorer, and `inferRecallScopes` driven by `profile.learnings`.
+- `host/learnings-graduations.ts` / `host/graduations-config.ts` — `agent-sdlc learnings graduations` flags store entries whose `graduationTarget` already has a Semgrep rule, dependency-cruiser rule, prefixed test or handbook identifier, or skill. Sources and the match prefix come from the optional `learnings.graduations` profile block (`1.7.0`: `identifierPrefix`, `semgrepRules`, `dependencyCruiserConfig`, `testDirs`, `handbookDirs`, `skillDirs`); an unset source never matches.
 - `host/learnings-admin.ts` — Store maintenance behind `agent-sdlc learnings prune|validate|stats` (stale-file pruning, line-by-line validation, counts).
 - `host/default-adapter.ts` — Default host adapter (`hydrateWorktree`, `validateCommandAllowlist`, `scanWorkspacePackages`).
 - `host/learnings.ts` — Native project learnings store, validator, weighted scorer, and `inferRecallScopes` driven by `profile.learnings`.

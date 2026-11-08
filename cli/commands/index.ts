@@ -223,6 +223,11 @@ const COMMAND_TABLE: Readonly<Record<string, CommandEntry>> = {
 		progressSink: false,
 		exitCode: learningsExitCode,
 	},
+	'learnings graduations': {
+		handler: learningsHandler('graduations'),
+		progressSink: false,
+		exitCode: learningsExitCode,
+	},
 	'learnings stats': { handler: learningsHandler('stats'), progressSink: false },
 	resume: { handler: resumeRun, progressSink: true },
 	status: { handler: statusRun, progressSink: false },
