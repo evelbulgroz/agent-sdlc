@@ -229,7 +229,7 @@ export async function executeEvidence(
 			'candidate-source-or-preparation-changed', 'frozen-adapter-file-changed',
 			'artifact-directory-not-fresh', 'evidence-path-not-authorized', 'process-interrupted',
 			'artifact-count-limit', 'artifact-manifest-mismatch', 'undeclared-attempt-artifact',
-			'unsafe-directory', 'unsafe-file-path', 'invalid-file-size-or-kind',
+			'unsafe-directory', 'unsafe-file-path', 'invalid-file-size-or-kind', 'PINNED_FILE_MODIFIED',
 		]);
 		failureReason = error instanceof Error && known.has(error.message) ? error.message : 'invalid-evidence';
 		// The unclassified cause is operator-visible only through the diagnostics callback, never in durable evidence.
