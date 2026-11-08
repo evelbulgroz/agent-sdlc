@@ -47,4 +47,5 @@ Evidence is under the session `files/qualification/`.
 - N1 finding: the implementer did detect the contradiction. Each of its 3 `complete` actions said it was blocked by contradictory requirements and asked which rule wins. The engine recorded only `evidence-failed`, with no operator-visible question. See `docs/backlog.md`.
 - N2b (`…-df20ee16`, harder round-half-away spec, 8 hidden mutants, `round-half-away-oracle.mjs`): READY, 7/7, 502 s. The oracle killed all 8 mutants, so it is inconclusive again. The model writes thorough tests on these specs. Next: a subtler trap or a weaker implementer route.
 - Decide whether the clean unseen-spec canary lives in the engine fixtures or in a host.
+- N1b (spec reworked, not yet run live): the contradiction is now between the invariant ("halves round up") and AC-02 (`90.5` returns `{ minutes: 1, seconds: 30 }`). It is visible only when the implementer runs its own test, so an implementer that writes code should hit a failing check rather than refuse on reading. A live run needs fresh admission and approval.
 - Designed crash and resume cases (not yet in the suite).
