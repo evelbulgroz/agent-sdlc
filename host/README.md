@@ -4,8 +4,8 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
 
 ## Key Files & Entrypoints
 
-- `host/host-profile.ts` — Closed `1.5.0` schema validator and loader for `.agents/sdlc-host.json`, with explicit decoding for `1.4.0`, `1.3.0` and `1.2.0`.
-- `host/acceptance-evidence-schema.ts` — Closed `acceptanceEvidence` block (`1.5.0` only): canary id and slug, evidence dir, case manifest, runtime sources, package root, sandbox binds, and named adapter-command runners (`argv` with absolute `argv[0]`, `bundleFiles`). Every named path must be repository-relative and contained; `agent-sdlc host check` reports the block.
+- `host/host-profile.ts` — Closed `1.6.0` schema validator and loader for `.agents/sdlc-host.json`, with explicit decoding for `1.5.0`, `1.4.0`, `1.3.0` and `1.2.0`.
+- `host/acceptance-evidence-schema.ts` — Closed `acceptanceEvidence` block (`1.5.0` and `1.6.0`; `1.6.0` makes `runners`, `nodeExecutable` and `helpersDir` optional and adds `commands`, `pretest` and `sentinel`: no-shell host argv with `{reportPath}`/`{baseSha}` placeholders, `cwd` inside `package.root`, `pins`, `retries`; a layer may not set both `runners` and `commands`): canary id and slug, evidence dir, case manifest, runtime sources, package root, sandbox binds, and named adapter-command runners (`argv` with absolute `argv[0]`, `bundleFiles`). Every named path must be repository-relative and contained; `agent-sdlc host check` reports the block.
 - `host/verify-config.ts` — Progressive 3-tier `verify` schema (`VerifySchema`, `HostVerifyConfig`, `DEFAULT_VERIFY_ARGV`, `DEFAULT_VERIFY_REQUIRE`, `DEFAULT_VERIFY_HEAD_FIELD`, and `resolveHostVerifyConfig`).
 - `host/verify-runner.ts` — Shared host verification command runner supporting both exit-code mode and structured JSON receipt mode (`resultPath`).
 - `host/workspace.ts` — Adapter-aware workspace package discovery (`discoverWorkspace`).
@@ -19,7 +19,7 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
 ## Core Invariants
 
 1. **Closed Host Profile Contract (`host-profile.ts`, `verify-config.ts`):**
-   - `.agents/sdlc-host.json` (`schemaVersion: "1.5.0"`) declares `repositoryId` (bound into every `RunAuthorizationEnvelope`), the active adapter (`default` or `script`), progressive `verify` gate configuration, declarative hydration, workspace layout, policy/architecture/qualityGate rules, learnings scope inference, and optional 3-layer prompt/rubric composition (`prompts.preset`, `prompts.roleAddendaDir`, `prompts.rubricAddendaDir`, `prompts.pathScopedRules`). Optional `evidenceAdapters` bind versioned normalized case-level evidence protocols to explicit host argv, hashed adapter/configuration files, supported layers/capabilities, qualification evidence, and finite execution limits; the engine validates receipts without runner-specific report parsing.
+   - `.agents/sdlc-host.json` (`schemaVersion: "1.6.0"`) declares `repositoryId` (bound into every `RunAuthorizationEnvelope`), the active adapter (`default` or `script`), progressive `verify` gate configuration, declarative hydration, workspace layout, policy/architecture/qualityGate rules, learnings scope inference, and optional 3-layer prompt/rubric composition (`prompts.preset`, `prompts.roleAddendaDir`, `prompts.rubricAddendaDir`, `prompts.pathScopedRules`). Optional `evidenceAdapters` bind versioned normalized case-level evidence protocols to explicit host argv, hashed adapter/configuration files, supported layers/capabilities, qualification evidence, and finite execution limits; the engine validates receipts without runner-specific report parsing.
    - **Single-directory defaults (`1.3.0` to `1.5.0`):** In profiles at any of these versions, `stateDir`, `reviewDir`, `specDraftDir`, and `runsDir` are optional. When omitted, `loadHostProfile()` defaults `stateDir` to `".agent-sdlc"`, `reviewDir` to `"<stateDir>/reviews"` (`".agent-sdlc/reviews"`), and `specDraftDir` to `"<stateDir>/specs/drafts"`. When `runsDir` is omitted, `runsRootDir(rootDir)` defaults to `liveRunRoot(rootDir)` (`<stateDir>`), co-locating run projections inside `<stateDir>/<run-id>/` and copying them into `<stateDir>/.archive/<run-id>/` during `prune-runs` archival. Setting `runsDir` (e.g. `"docs/specs/runs"`) enables an opt-in separate compatibility projection directory. Legacy `schemaVersion: "1.2.0"` profiles continue to require explicit `stateDir`, `reviewDir`, and `specDraftDir` fields and resolve `runsRootDir` to `docs/specs/runs`.
    - **Secret paths (`policy.secretPaths`):** Optional list of host paths treated as secrets: an exact path or directory prefix (`vault/`), or a file-name suffix with a leading `*` (`*.security.config.ts`). They are excluded from review excerpts and contained-path inputs, flagged as irreversible in decisions, and listed in the PR checklist line. Built-in exclusions (`.env*`, keys/certs, build output) always apply; no host-specific path is baked in.
    - **Reversible decisions (`policy.reversibleDecisions`):** Optional list of `{ id, name, category, matcher, decision, assumption, rationale }` rules (`matcher` is a case-insensitive regex source) that auto-resolve spec questions. When present it replaces the neutral default, which has a single rule answering "how do we verify" from `verify.argv`. Hosts put their own handbook/convention references in `rationale`.
@@ -32,7 +32,7 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
    - Validate a host profile standalone via `agent-sdlc host check [--root <dir>] [--json]`, which returns `{ profileId, adapter }`.
 
 2. **Client Onboarding & `.gitignore` Guidance:**
-   - Minimal new-client onboarding requires only `.agents/sdlc-host.json` (`schemaVersion: "1.5.0"`) and adding `.agent-sdlc/` to the repository's `.gitignore` so machine-local SQLite databases, worktrees, critic reports, and archived runs are never committed. Evidence adapters are optional until a host explicitly qualifies and authorizes them.
+   - Minimal new-client onboarding requires only `.agents/sdlc-host.json` (`schemaVersion: "1.6.0"`) and adding `.agent-sdlc/` to the repository's `.gitignore` so machine-local SQLite databases, worktrees, critic reports, and archived runs are never committed. Evidence adapters are optional until a host explicitly qualifies and authorizes them.
    - Creating `.agents/workflows/` or `.agents/review-rubrics/` is optional; `roles/defaults/` and `review/defaults/` provide built-in workflow, role, and prompt/rubric defaults (see [`../roles/README.md`](../roles/README.md) and [`../prompts/README.md`](../prompts/README.md)).
 
 3. **Package Closure & Adapter Isolation (`learnings.ts`, `script.ts`):**
@@ -81,7 +81,7 @@ can escape the group. Host qualification must exclude such behavior or provide
 external containment (for example cgroups); process groups alone do not guarantee
 containment of hostile programs.
 
-Host repositories configure their deterministic verification gate across three progressive tiers in `.agents/sdlc-host.json` (`schemaVersion: "1.5.0"`):
+Host repositories configure their deterministic verification gate across three progressive tiers in `.agents/sdlc-host.json` (`schemaVersion: "1.6.0"`):
 
 | Tier | Configuration in `.agents/sdlc-host.json` (`1.3.0`) | Execution & Evidence Behavior |
 |---|---|---|

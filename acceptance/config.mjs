@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fail } from './primitives.mjs';
 
@@ -19,8 +20,8 @@ export function acceptanceConfig(profile, root) {
 		readOnlyBinds: Object.freeze([...block.sandbox.readOnlyBinds]),
 		output: `${block.evidenceDir}/${block.canaryId}`,
 		runtime: block.runtimeDir,
-		helpers: block.helpersDir,
-		node: block.nodeExecutable,
+		helpers: block.helpersDir ?? null,
+		node: block.nodeExecutable ?? fs.realpathSync(process.execPath),
 		packageManager: block.packageManager ?? null,
 		preflightCommand: block.preflightCommand ? Object.freeze([...block.preflightCommand]) : null,
 		taskVerificationCommand: block.taskVerificationCommand ? Object.freeze([...block.taskVerificationCommand]) : null,
@@ -33,6 +34,9 @@ export function acceptanceConfig(profile, root) {
 		canary: block.canary ? Object.freeze({ ...block.canary, files: Object.freeze(block.canary.files.map((file) => Object.freeze({ ...file }))) }) : null,
 		caseManifest: block.caseManifest,
 		runtimeSources: block.runtimeSources,
-		runners: block.runners,
+		runners: block.runners ?? {},
+		commands: block.commands ?? {},
+		pretest: block.pretest ?? [],
+		sentinel: block.sentinel ?? null,
 	});
 }

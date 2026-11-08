@@ -20,6 +20,6 @@ export function hostCheck(
 	return {
 		profileId: profile.profileId,
 		adapter: profile.adapter,
-		...(acceptance ? { acceptanceEvidence: { canaryId: acceptance.canaryId, runners: Object.keys(acceptance.runners) } } : {}),
+		...(acceptance ? { acceptanceEvidence: { canaryId: acceptance.canaryId, runners: [...Object.keys(acceptance.runners ?? {}), ...Object.keys(acceptance.commands ?? {})] } } : {}),
 	};
 }

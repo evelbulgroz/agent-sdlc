@@ -39,3 +39,7 @@ Host-neutral acceptance-evidence primitives, driven by the `acceptanceEvidence` 
 Specs: `acceptance-core.spec.mjs`. Bind escapes (`../`, absolute, symlink) are refused twice: by the profile loader and by `namespaceArgv` itself.
 
 Not yet moved: admission, authorization, qualification, supervisor, governor and live-run modules (S2b, S2c). Several of them hold host logic beyond path literals (canary file lists, pretest generation), so they need extra config keys or stay in the host.
+
+## Command-evidence report formats
+
+`report-formats.mjs` holds the runner-neutral parsers for command evidence: a closed JUnit subset (`parseJunit`), the engine `case-report` JSON (`parseCaseReport`), identity and retry collapse keyed on the `@case AC-nn.m` tag, the single pass predicate (`evaluateReport`), and report-file hygiene (`prepareReportDirectory`, `readReportFile`: regular file, no symlink, size cap, freshness). Failures are typed `EvidenceReportError` codes (`REPORT_MISSING`, `REPORT_UNKNOWN_ELEMENT`, `REPORT_DUPLICATE_IDENTITY`, `REPORT_ZERO_CASES`, `REPORT_CASE_NOT_PASSED`, `REPORT_EXIT_CONTRADICTION`, ...). The supervisor handler and `command` registration kind that consume them are not yet wired.

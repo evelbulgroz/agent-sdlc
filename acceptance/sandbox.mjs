@@ -25,8 +25,10 @@ export function namespaceArgv(config, argv, { writable = [], readOnly = [], env 
 	args.push('--ro-bind', path.join(sysroot, 'usr/lib'), '/lib',
 		'--proc', '/proc', '--dev', '/dev', '--size', String(16 * 1024 * 1024), '--tmpfs', '/dev/shm',
 		'--remount-ro', '/dev', '--size', String(128 * 1024 * 1024), '--tmpfs', '/tmp');
-	const helpers = path.join(resolved, relativePath(config.helpers));
-	args.push('--ro-bind', helpers, helpers);
+	if (config.helpers) {
+		const helpers = path.join(resolved, relativePath(config.helpers));
+		args.push('--ro-bind', helpers, helpers);
+	}
 	if (config.openApiPath) {
 		const openapi = containedSource(resolved, config.openApiPath);
 		if (openapi) args.push('--ro-bind', openapi, openapi);

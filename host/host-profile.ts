@@ -15,7 +15,7 @@ import { EngineConfigSchema } from './engine-config-schema.ts';
 import { ContractProducerRulesSchema, PolicyConfigSchema } from './policy-config-schema.ts';
 import { preparationContainmentPaths, VerificationPreparationSchema } from './verification-preparation-schema.ts';
 import { AdapterRegistrationSchema } from '../policy/contracts/quality-schema.ts';
-import { AcceptanceEvidenceSchema, acceptanceContainmentPaths } from './acceptance-evidence-schema.ts';
+import { AcceptanceEvidenceSchema, acceptanceContainmentPaths, acceptanceVersionIssue } from './acceptance-evidence-schema.ts';
 import { invalidHostProfile, validateContainedRelativePath, validateRegexPattern } from './profile-validation.ts';
 
 export {
@@ -28,7 +28,8 @@ export {
 };
 
 export const HOST_PROFILE_RELATIVE_PATH = '.agents/sdlc-host.json';
-export const HOST_PROFILE_SCHEMA_VERSION = '1.5.0';
+export const HOST_PROFILE_SCHEMA_VERSION = '1.6.0';
+export const ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION = '1.5.0';
 export const ADAPTERS_HOST_PROFILE_SCHEMA_VERSION = '1.4.0';
 export const PREVIOUS_HOST_PROFILE_SCHEMA_VERSION = '1.3.0';
 export const LEGACY_HOST_PROFILE_SCHEMA_VERSION = '1.2.0';
@@ -39,6 +40,7 @@ const ArgvSchema = z.array(NonEmptyTokenSchema).min(1);
 const CriticPhaseSchema = z.enum(['spec', 'plan', 'code', 'qa']);
 const SupportedSchemaVersionSchema = z.enum([
 	HOST_PROFILE_SCHEMA_VERSION,
+	ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION,
 	ADAPTERS_HOST_PROFILE_SCHEMA_VERSION,
 	PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
 	LEGACY_HOST_PROFILE_SCHEMA_VERSION,
@@ -193,12 +195,7 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	}
 
 	const rawRecord = parsedJson as Record<string, unknown>;
-	if (
-		rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION &&
-		rawRecord.schemaVersion !== ADAPTERS_HOST_PROFILE_SCHEMA_VERSION &&
-		rawRecord.schemaVersion !== PREVIOUS_HOST_PROFILE_SCHEMA_VERSION &&
-		rawRecord.schemaVersion !== LEGACY_HOST_PROFILE_SCHEMA_VERSION
-	) {
+	if (!(SupportedSchemaVersionSchema.options as readonly unknown[]).includes(rawRecord.schemaVersion)) {
 		invalidHostProfile(
 			`Expected schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}', got '${String(rawRecord.schemaVersion)}'`,
 			{ schemaVersion: String(rawRecord.schemaVersion ?? '') },
@@ -253,8 +250,9 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 		}
 	}
 
-	if (rawRecord.acceptanceEvidence !== undefined && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION) {
-		invalidHostProfile(`Field 'acceptanceEvidence' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+	if (rawRecord.acceptanceEvidence !== undefined && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION &&
+		rawRecord.schemaVersion !== ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION) {
+		invalidHostProfile(`Field 'acceptanceEvidence' requires schemaVersion '${ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION}'`, {
 			fieldName: 'acceptanceEvidence',
 			schemaVersion: String(rawRecord.schemaVersion),
 		});
@@ -267,6 +265,10 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 			.join('; ');
 		invalidHostProfile(issueSummary, { profilePath });
 	}
+
+	const versionIssue = parsed.data.acceptanceEvidence &&
+		acceptanceVersionIssue(parsed.data.acceptanceEvidence, parsed.data.schemaVersion);
+	if (versionIssue) invalidHostProfile(versionIssue, { profilePath });
 
 	const checkRel = (candidate: string | undefined, field: string, allowDot = false): void => {
 		if (candidate !== undefined) validateContainedRelativePath(rootDir, candidate, field, { allowDot });

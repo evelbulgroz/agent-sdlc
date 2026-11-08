@@ -26,7 +26,7 @@ function withProfile(overrides, fn) {
 	fs.mkdirSync(path.join(dir, '.agents'));
 	fs.writeFileSync(
 		path.join(dir, '.agents/sdlc-host.json'),
-		JSON.stringify({ schemaVersion: '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default', ...overrides }),
+		JSON.stringify({ schemaVersion: overrides.schemaVersion ?? '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default', ...overrides }),
 	);
 	try {
 		const result = fn(dir);
@@ -148,5 +148,55 @@ test('host check reports the acceptance block and omits it when absent', async (
 	await withProfile({}, async (dir) => {
 		const outcome = await runCli(['host', 'check', '--root', dir, '--json'], { rootDir: REPOSITORY_ROOT });
 		assert.equal('acceptanceEvidence' in outcome.result, false);
+	});
+});
+
+const TIER_A = (() => {
+	const { runners, helpersDir, nodeExecutable, ...rest } = BLOCK;
+	return { ...rest, commands: { unit: { argv: ['node', '--test', '--test-reporter-destination={reportPath}'] } } };
+})();
+const v16 = (acceptanceEvidence) => ({ schemaVersion: '1.6.0', acceptanceEvidence });
+
+test('a 1.6.0 Tier A block needs no runners, helpersDir or nodeExecutable', () => {
+	withProfile(v16(TIER_A), (dir) => {
+		const block = loadHostProfile(dir).acceptanceEvidence;
+		assert.equal(block.runners, undefined);
+		assert.deepEqual(Object.keys(block.commands), ['unit']);
+	});
+	withProfile(v16({ ...BLOCK, runners: undefined, commands: undefined }), (dir) => assert.throws(() => loadHostProfile(dir), /at least one runner or command/));
+});
+
+test('1.5.0 rejects commands and keeps its required fields; 1.6.0 loads 1.5.0 blocks', () => {
+	rejects({ acceptanceEvidence: { ...BLOCK, commands: { other: TIER_A.commands.unit } } }, /commands requires schemaVersion '1\.6\.0'/);
+	rejects({ acceptanceEvidence: { ...TIER_A } }, /requires schemaVersion '1\.6\.0'/);
+	withProfile(v16(BLOCK), (dir) => assert.ok(loadHostProfile(dir).acceptanceEvidence.runners.unit));
+});
+
+test('a layer cannot set both runners and commands', () => {
+	rejects(v16({ ...BLOCK, commands: TIER_A.commands }), /sets both runners and commands/);
+});
+
+test('command argv placeholders are validated', () => {
+	const argv = (value) => v16({ ...TIER_A, commands: { unit: { argv: value } } });
+	withProfile(argv(['node', 'run.mjs', '--outputFile={reportPath}', '{baseSha}']), (dir) => assert.ok(loadHostProfile(dir)));
+	for (const bad of [['node', '{other}'], ['{reportPath}'], ['node', 'x{reportPath}'], ['node', '{reportPath}{baseSha}'], ['node', '--a=$' + '{reportPath}x']]) {
+		rejects(argv(bad), /only \{reportPath\} or \{baseSha\}/);
+	}
+});
+
+test('command cwd and pins must be contained', () => {
+	const command = (extra) => v16({ ...TIER_A, commands: { unit: { argv: ['node', 'a.mjs'], ...extra } } });
+	withProfile(command({ cwd: 'apps/web/sub', pins: [{ file: 'package.json' }, { script: { file: 'package.json', name: 'test' } }] }), (dir) => assert.ok(loadHostProfile(dir)));
+	rejects(command({ cwd: 'apps/other' }), /cwd must lie inside package\.root/);
+	rejects(command({ cwd: '../x' }), /acceptanceEvidence\./);
+	rejects(command({ pins: [{ file: '../../secrets' }] }), /acceptanceEvidence\.commands\.unit\.pins/);
+	rejects(command({ pins: [{ file: 'a', extra: 1 }] }), /acceptanceEvidence/);
+	rejects(command({ retries: -1 }), /acceptanceEvidence/);
+});
+
+test('host check lists command layers', async () => {
+	await withProfile(v16(TIER_A), async (dir) => {
+		const outcome = await runCli(['host', 'check', '--root', dir, '--json'], { rootDir: REPOSITORY_ROOT });
+		assert.deepEqual(outcome.result.acceptanceEvidence.runners, ['unit']);
 	});
 });
