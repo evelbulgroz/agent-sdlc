@@ -106,3 +106,33 @@ test('@ac AC-04 @case AC-04.4 casesFromReport parses the brokered bytes and reje
   assert.equal(casesFromReport({ registration: reg, selected: ['AC-01.1'], code: 0, reportBytes: bytes })[0].outcome, 'passed');
   assert.throws(() => casesFromReport({ registration: reg, selected: ['AC-01.1'], code: 1, reportBytes: bytes }), /EXIT|contradict/i);
 });
+
+test('@ac AC-09 @case AC-09.1 pretest steps run first in the sandbox, must exit 0, and are bound into the registration hash', async (t) => {
+  const { root, config, report } = tree(t);
+  fs.mkdirSync(path.join(root, 'pkg'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'pkg/setup.mjs'), '1');
+  const { commandBindingHash, recordPins } = await import('../host/command-evidence.ts');
+  const { verifyCommandRegistration } = await import('../host/command-evidence.ts');
+  const sha = (await import('node:crypto')).createHash('sha256').update(fs.readFileSync(NODE)).digest('hex');
+  const step = { id: 'gen', argv: [NODE, 'setup.mjs'], cwd: 'pkg', timeoutMs: 500, executable: { path: NODE, sha256: sha },
+    pins: recordPins(root, 'pkg', [{ file: 'setup.mjs' }]) };
+  const argv = [NODE, 'run.mjs', '--out={reportPath}'];
+  const reg = registration({ argv, executable: { path: NODE, sha256: sha }, pins: [], pretest: [step],
+    commandSha256: commandBindingHash(argv, sha, [], [step]) });
+  assert.notEqual(reg.commandSha256, commandBindingHash(argv, sha, []));
+  verifyCommandRegistration(root, reg);
+  const order = [];
+  const base = { worktree: root, config: { ...config, node: NODE }, registration: reg, baseSha: 'abc', reportDirectory: report, timeoutMs: 1000 };
+  const execute = (code) => async (namespaced) => {
+    order.push(namespaced.includes('setup.mjs') ? 'pretest' : 'command');
+    if (order.at(-1) === 'command') fs.writeFileSync(path.join(report, 'unit.xml'), '<testsuites/>');
+    return { code: order.at(-1) === 'pretest' ? code : 0, stderr: 'boom' };
+  };
+  await runCommandInSandbox({ ...base, execute: execute(0) });
+  assert.deepEqual(order, ['pretest', 'command']);
+  order.length = 0;
+  await assert.rejects(runCommandInSandbox({ ...base, execute: execute(2) }), /pretest step failed: gen \(exit 2\)/);
+  assert.deepEqual(order, ['pretest']);
+  fs.writeFileSync(path.join(root, 'pkg/setup.mjs'), '2');
+  assert.throws(() => verifyCommandRegistration(root, reg), /PINNED_FILE_MODIFIED/);
+});

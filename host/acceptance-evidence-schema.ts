@@ -47,6 +47,8 @@ const CommandBodyShape = {
 	// Neutral report the command writes to {reportPath}; defaults to junit.
 	format: z.enum(['junit', 'case-report']).optional(),
 	capabilities: z.array(z.string().min(1)).optional(),
+	// Evidence layer served; defaults to the command key. Lets a command run beside a runner of the same layer.
+	layer: z.enum(['unit', 'integration', 'browser', 'static']).optional(),
 };
 const CommandSchema = z.strictObject(CommandBodyShape);
 const PretestSchema = z.strictObject({ id: IdSchema, ...CommandBodyShape });

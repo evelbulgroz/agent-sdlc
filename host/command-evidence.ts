@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sha256 } from '../policy/contracts/primitives.ts';
 import type {
-	AdapterRegistration, EvidenceReport, EvidenceRequest, CommandPinRecord, CommandRegistration, ExecutableRegistration,
+	AdapterRegistration, EvidenceReport, EvidenceRequest, CommandPinRecord, CommandPretestStep, CommandRegistration, ExecutableRegistration,
 } from '../policy/contracts/quality-evidence-schema.ts';
 import { hashEvidenceBytes, readEvidenceFile } from './evidence-files.ts';
 
@@ -15,7 +15,8 @@ export const isCommandRegistration = (registration: AdapterRegistration): regist
 /** Repository-relative files an evidence registration freezes, for containment checks. */
 export function evidenceRegistrationFiles(registration: AdapterRegistration): { path: string }[] {
 	if (isCommandRegistration(registration)) {
-		return registration.pins.map((pin) => ({ path: pin.kind === 'file' ? pin.path : pin.file }));
+		return [...registration.pins, ...(registration.pretest ?? []).flatMap((step) => step.pins)]
+			.map((pin) => ({ path: pin.kind === 'file' ? pin.path : pin.file }));
 	}
 	const executable = registration as ExecutableRegistration;
 	return [
@@ -88,19 +89,29 @@ export function verifyPins(root: string, pins: readonly CommandPinRecord[]): voi
 
 export const commandBindingHash = (
 	argv: readonly string[], executableSha256: string, pins: readonly CommandPinRecord[],
-): string => sha256({ argv, executableSha256, pins });
+	pretest: readonly CommandPretestStep[] = [],
+): string => sha256(pretest.length ? { argv, executableSha256, pins, pretest } : { argv, executableSha256, pins });
+
+function verifyExecutable(executable: { path: string; sha256: string }): void {
+	const real = executable.path;
+	const bytes = readEvidenceFile(path.parse(real).root, real.slice(path.parse(real).root.length), Number.MAX_SAFE_INTEGER);
+	if (fs.realpathSync.native(real) !== real || hashEvidenceBytes(bytes) !== executable.sha256) {
+		throw new Error('frozen-adapter-file-changed');
+	}
+}
 
 /** Frozen-state check shared by the before-run and after-run verification. */
 export function verifyCommandRegistration(root: string, registration: CommandRegistration): void {
-	if (registration.commandSha256 !== commandBindingHash(registration.argv, registration.executable.sha256, registration.pins)) {
+	const pretest = registration.pretest ?? [];
+	if (registration.commandSha256 !== commandBindingHash(registration.argv, registration.executable.sha256, registration.pins, pretest)) {
 		throw new Error('frozen-adapter-file-changed');
 	}
-	const real = registration.executable.path;
-	const bytes = readEvidenceFile(path.parse(real).root, real.slice(path.parse(real).root.length), Number.MAX_SAFE_INTEGER);
-	if (fs.realpathSync.native(real) !== real || hashEvidenceBytes(bytes) !== registration.executable.sha256) {
-		throw new Error('frozen-adapter-file-changed');
-	}
+	verifyExecutable(registration.executable);
 	verifyPins(root, registration.pins);
+	for (const step of pretest) {
+		verifyExecutable(step.executable);
+		verifyPins(root, step.pins);
+	}
 }
 
 export interface CommandCaseResult {

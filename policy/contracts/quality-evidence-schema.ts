@@ -78,6 +78,17 @@ const CommandPin = z.union([
 ]);
 export type CommandPinRecord = z.infer<typeof CommandPin>;
 
+// A frozen setup step run in the same sandbox before the command; it must exit 0 and has no report.
+const CommandPretestStep = z.strictObject({
+	id: Id,
+	argv: z.array(z.string().min(1)).min(1),
+	cwd: RelPath,
+	timeoutMs: PosInt,
+	executable: z.strictObject({ path: z.string().refine((value) => value.startsWith('/') && !value.includes('\0')), sha256: Hash }),
+	pins: z.array(CommandPin),
+});
+export type CommandPretestStep = z.infer<typeof CommandPretestStep>;
+
 // A host command that writes a neutral report; no adapter program, bundle or qualification artifact.
 export const CommandRegistrationSchema = z.strictObject({
 	kind: z.literal('command'),
@@ -89,7 +100,8 @@ export const CommandRegistrationSchema = z.strictObject({
 	retries: z.number().int().min(0).max(5),
 	executable: z.strictObject({ path: z.string().refine((value) => value.startsWith('/') && !value.includes('\0')), sha256: Hash }),
 	pins: z.array(CommandPin),
-	// sha256 of { argv, executable.sha256, pins }.
+	pretest: z.array(CommandPretestStep).optional(),
+	// sha256 of { argv, executable.sha256, pins }, plus the pretest steps when present.
 	commandSha256: Hash,
 	profiles: z.array(EvidenceAdapterProfileSchema).min(1),
 	limits: z.strictObject({

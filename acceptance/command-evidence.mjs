@@ -25,16 +25,24 @@ function defaultPins(argv) {
  */
 export async function buildCommandRegistrations(root, config, { searchPath = process.env.PATH ?? '' } = {}) {
 	const { resolveExecutable, recordPins, commandBindingHash } = await engineModule('host/command-evidence');
-	return Object.entries(config.commands).map(([layer, command]) => {
+	const frozen = (command) => {
 		const cwd = command.cwd ?? config.packageRoot;
-		const executable = resolveExecutable(command.argv[0], searchPath);
-		const pins = [...recordPins(root, cwd, command.pins ?? defaultPins(command.argv))];
+		return { cwd, executable: resolveExecutable(command.argv[0], searchPath),
+			pins: [...recordPins(root, cwd, command.pins ?? defaultPins(command.argv))] };
+	};
+	const pretest = config.pretest.map((step) => {
+		if (step.argv.some((token) => /\{[^{}]*\}/.test(token))) fail(`pretest step takes no placeholders: ${step.id}`);
+		return { id: step.id, argv: [...step.argv], timeoutMs: step.timeoutMs ?? 120000, ...frozen(step) };
+	});
+	return Object.entries(config.commands).map(([layer, command]) => {
+		const { cwd, executable, pins } = frozen(command);
 		pins.push({ kind: 'file', path: config.caseManifest, sha256: bytesHash(fs.readFileSync(regularFile(root, config.caseManifest))) });
 		return {
 			kind: 'command', adapterId: `${config.repositoryId}-${layer}`, protocolVersion: '1.0.0',
 			argv: [...command.argv], cwd, reportFormat: command.format ?? 'junit', retries: command.retries ?? 0,
-			executable, pins, commandSha256: commandBindingHash(command.argv, executable.sha256, pins),
-			profiles: [{ profileId: layer, layers: [layer], capabilities: command.capabilities ?? [] }],
+			executable, pins, ...(pretest.length ? { pretest } : {}),
+			commandSha256: commandBindingHash(command.argv, executable.sha256, pins, pretest),
+			profiles: [{ profileId: layer, layers: [command.layer ?? layer], capabilities: command.capabilities ?? [] }],
 			limits: { timeoutMs: command.timeoutMs ?? 120000, maxReportBytes: MAX_REPORT_BYTES, maxArtifactBytes: 16777216, maxArtifacts: 8 },
 		};
 	});
@@ -47,7 +55,7 @@ export function assertPinsOutsideWriteScope(registrations, allowedPathPrefixes) 
 		return base === '.' || file === base || file.startsWith(`${base}/`);
 	});
 	for (const registration of registrations) {
-		for (const pin of registration.pins) if (pin.kind === 'file' && inside(pin.path)) fail(`pinned file inside write scope: ${pin.path}`);
+		for (const pin of [...registration.pins, ...(registration.pretest ?? []).flatMap((step) => step.pins)]) if (pin.kind === 'file' && inside(pin.path)) fail(`pinned file inside write scope: ${pin.path}`);
 	}
 }
 
@@ -61,17 +69,25 @@ export async function runCommandInSandbox({ worktree, config, registration, base
 	verifyCommandRegistration(worktree, registration);
 	const layer = registration.profiles[0].profileId;
 	const name = `${layer}.${EXTENSIONS[registration.reportFormat]}`;
-	const argv = substituteArgv(registration.argv, { reportPath: `/report/${name}`, baseSha });
-	const executable = registration.executable.path;
-	const isNode = executable === fs.realpathSync(config.node);
-	const destination = isNode ? NODE_DESTINATION : executable;
-	const binaries = [{ source: fs.realpathSync(config.node), destination: NODE_DESTINATION }];
-	if (!isNode) binaries.push({ source: executable, destination });
+	const nodeReal = fs.realpathSync(config.node);
+	const launch = (frozen, argv, limit) => {
+		const isNode = frozen.executable.path === nodeReal;
+		const destination = isNode ? NODE_DESTINATION : frozen.executable.path;
+		const binaries = [{ source: nodeReal, destination: NODE_DESTINATION }];
+		if (!isNode) binaries.push({ source: frozen.executable.path, destination });
+		return execute(namespaceArgv({ ...config, root: worktree }, [destination, ...argv.slice(1)], {
+			command: { binaries, report: reportDirectory, cwd: frozen.cwd },
+		}), { cwd: worktree, timeoutMs: limit, maxBytes: 1048576 });
+	};
 	prepareReportDirectory(reportDirectory);
+	// Setup steps run first in the same sandbox; any failure stops the run before the command and its report.
+	for (const step of registration.pretest ?? []) {
+		const setup = await launch(step, step.argv, Math.min(step.timeoutMs, timeoutMs));
+		if (setup.code !== 0) fail(`pretest step failed: ${step.id} (exit ${setup.code}) ${String(setup.stderr ?? '').slice(-512)}`);
+	}
+	const argv = substituteArgv(registration.argv, { reportPath: `/report/${name}`, baseSha });
 	const startedMs = Date.now();
-	const result = await execute(namespaceArgv({ ...config, root: worktree }, [destination, ...argv.slice(1)], {
-		command: { binaries, report: reportDirectory, cwd: registration.cwd },
-	}), { cwd: worktree, timeoutMs, maxBytes: 1048576 });
+	const result = await launch(registration, argv, timeoutMs);
 	verifyCommandRegistration(worktree, registration);
 	const reportBytes = Buffer.from(readReportFile(reportDirectory, name, {
 		maxBytes: registration.limits.maxReportBytes, runStartedMs: startedMs - CLOCK_TOLERANCE_MS,

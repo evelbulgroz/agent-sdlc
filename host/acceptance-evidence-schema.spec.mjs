@@ -176,6 +176,12 @@ test('a layer cannot set both runners and commands', () => {
 	rejects(v16({ ...BLOCK, commands: TIER_A.commands }), /sets both runners and commands/);
 });
 
+test('a command may serve a layer beside a runner under its own key, and rejects unknown layers', () => {
+	const beside = (layer) => v16({ ...BLOCK, commands: { 'unit-cmd': { argv: ['node', 'a.mjs'], layer } } });
+	withProfile(beside('unit'), (dir) => assert.deepEqual(Object.keys(loadHostProfile(dir).acceptanceEvidence.commands), ['unit-cmd']));
+	rejects(beside('nonsense'), /acceptanceEvidence/);
+});
+
 test('command argv placeholders are validated', () => {
 	const argv = (value) => v16({ ...TIER_A, commands: { unit: { argv: value } } });
 	withProfile(argv(['node', 'run.mjs', '--outputFile={reportPath}', '{baseSha}']), (dir) => assert.ok(loadHostProfile(dir)));
