@@ -4,8 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { approveAdmission, assertPreflightCurrent, pinnedReferences, regenerateAdmission, runIdFor, stalePins } from './regenerate.mjs';
-import { bytesHash } from './primitives.mjs';
+import { approveAdmission, assertPreflightCurrent, pinnedReferences, regenerateAdmission, runIdFor, stalePins } from './regenerate.ts';
+import { bytesHash } from './primitives.ts';
 
 const config = { output: 'ev/c1', slug: 'canary-run', preflightResult: 'pre.json', preflightCommand: ['run', 'preflight'], canary: { spec: 's.md', tasks: 't.json' } };
 

@@ -25,7 +25,7 @@ import {
 import {
 	loopInput,
 	openLoop,
-} from '../testing/minimal-executor-fixtures.mjs';
+} from '../testing/minimal-executor-fixtures.ts';
 
 function createTempDir() {
 	return fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-tools-test-'));

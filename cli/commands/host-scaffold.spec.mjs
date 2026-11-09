@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { acceptanceConfig } from '../../acceptance/config.mjs';
-import { buildCommandRegistrations, casesFromReport, runCommandInSandbox } from '../../acceptance/command-evidence.mjs';
+import { acceptanceConfig } from '../../acceptance/config.ts';
+import { buildCommandRegistrations, casesFromReport, runCommandInSandbox } from '../../acceptance/command-evidence.ts';
 import { loadHostProfile } from '../../host/host-profile.ts';
 import { runCli } from '../cli.ts';
 

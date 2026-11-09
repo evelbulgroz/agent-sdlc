@@ -7,7 +7,7 @@ import { humanResult } from './human-result.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { shellStatus, shellReply, shellWatch } from './shell-driver.ts';
-import { makeTempDir, SILENT_STREAMS } from '../testing/shell-driver-support.mjs';
+import { makeTempDir, SILENT_STREAMS } from '../testing/shell-driver-support.ts';
 
 test('@ac AC-05: Mechanical continuation does not ask the operator', async () => {
 	const statuses = [

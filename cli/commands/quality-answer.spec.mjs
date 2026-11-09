@@ -4,7 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { runCli } from '../cli.ts';
 import { validatePendingResponse } from '../hitl.ts';
-import { taskQualityFixture } from '../../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../../testing/task-quality-fixture.ts';
 import { SdlcWorkflowRuntime } from '../../workflow/graph.ts';
 import { approvedInputHash, parseSpecification } from '../../workflow/specification.ts';
 import { SdlcError } from '../../policy/errors.ts';

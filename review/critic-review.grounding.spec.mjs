@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { CriticReviewAdapter } from './critic-review.ts';
-import { FakeGovernorForCritic } from '../testing/critic-fixtures.mjs';
+import { FakeGovernorForCritic } from '../testing/critic-fixtures.ts';
 
 test('executeReview weeds out findings citing nonexistent files (deterministic anti-fabrication gate)', async () => {
 	const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'critic-review-citation-'));

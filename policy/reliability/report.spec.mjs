@@ -10,7 +10,7 @@ import {
 	runSummary,
 	taskSummary,
 	verificationAttempt,
-} from '../../testing/reliability-fixtures.mjs';
+} from '../../testing/reliability-fixtures.ts';
 
 test('@ac AC-04 AC-05 AC-06 reports stable denominators and keeps invalid edits visible', () => {
 	const completed = taskSummary({

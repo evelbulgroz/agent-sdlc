@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { ExperimentLedger } from './experiment-ledger.mjs';
-import { ExperimentGovernor } from './experiment-governor.mjs';
-import { createLedgerBroker, RemoteExperimentLedger } from './experiment-broker.mjs';
+import { ExperimentLedger } from './experiment-ledger.ts';
+import { ExperimentGovernor } from './experiment-governor.ts';
+import { createLedgerBroker, RemoteExperimentLedger } from './experiment-broker.ts';
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'experiment-ledger-'));
@@ -82,7 +82,7 @@ test('concurrent recovery cannot retire a live provider reservation', (t) => {
 
 test('recovery of an exited owner retains its full charge across reopen', (t) => {
   const { ledger, file, configuration } = fixture(t);
-  const moduleUrl = new URL('./experiment-ledger.mjs', import.meta.url).href;
+  const moduleUrl = new URL('./experiment-ledger.ts', import.meta.url).href;
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   execFileSync(process.execPath, ['--input-type=module', '-e', `

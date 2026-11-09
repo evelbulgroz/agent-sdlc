@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { loopInput, openLoop, readTranscripts } from '../testing/minimal-executor-fixtures.mjs';
+import { loopInput, openLoop, readTranscripts } from '../testing/minimal-executor-fixtures.ts';
 
 for (const limit of [undefined, 1, 2]) {
 	test(`audit-required evidence failures consume the ${limit ?? 'default'} attempt allowance`, async () => {

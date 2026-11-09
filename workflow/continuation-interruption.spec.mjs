@@ -12,7 +12,7 @@ import {
 	checkpointState,
 	cleanupRun,
 	createSeedRun,
-} from '../testing/continuation-fixtures.mjs';
+} from '../testing/continuation-fixtures.ts';
 
 test('@ac AC-04 @ac AC-14 proven provider interruption continues task from checkpoint leaving sibling completed', async () => {
 	const fixture = await createSeedRun({

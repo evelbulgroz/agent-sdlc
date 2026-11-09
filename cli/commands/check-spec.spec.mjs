@@ -7,8 +7,8 @@ import test from 'node:test';
 import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { RoleRegistry } from '../../roles/role-registry.ts';
-import { slug, completeSpecMarkdown, completeSpecJson, runCheckSpec } from '../../testing/cli-test-support.mjs';
-import { pinnedToolsManifest } from '../../testing/task-planner-fixtures.mjs';
+import { slug, completeSpecMarkdown, completeSpecJson, runCheckSpec } from '../../testing/cli-test-support.ts';
+import { pinnedToolsManifest } from '../../testing/task-planner-fixtures.ts';
 
 test('CLI check-spec rejects a slice goal that would exceed the 256 character task title limit', async () => {
 	const manifest = pinnedToolsManifest();

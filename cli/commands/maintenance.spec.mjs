@@ -11,7 +11,7 @@ import {
 	archiveRoot,
 	liveRunRoot,
 } from '../../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
 import { createDetachedWorktree } from '../../workflow/worktrees.ts';
 import { runCli } from '../cli.ts';
 
@@ -113,8 +113,8 @@ test('CLI reliability replay is provider-free and canary check reports every exc
 	try {
 		const goalFile = path.join(tempDir, 'goal.json');
 		const manifestFile = path.join(tempDir, 'tasks.json');
-		const { completeSpecJson } = await import('../../testing/cli-test-support.mjs');
-		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.mjs');
+		const { completeSpecJson } = await import('../../testing/cli-test-support.ts');
+		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.ts');
 		fs.writeFileSync(
 			goalFile,
 			JSON.stringify(

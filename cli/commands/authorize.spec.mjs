@@ -4,9 +4,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
 import { citingSpecWriteAction, completeProposal, createMockExecCli, createMockGitCli, grammaticalAcceptance } from '../../testing/test-support.mjs';
-import { slug, cleanupRun, writeResponse } from '../../testing/cli-test-support.mjs';
+import { slug, cleanupRun, writeResponse } from '../../testing/cli-test-support.ts';
 
 test('CLI authorize command, status projection of worktree, and READY_FOR_GIT_APPROVAL presentation', async () => {
 	const testSlug = slug('authorize-lifecycle');

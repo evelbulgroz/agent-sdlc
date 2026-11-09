@@ -4,8 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { acceptanceConfig } from './config.mjs';
-import { assembleManifest, bindingRecords, unexpectedDirtyEntries, verifyAdmission } from './admission.mjs';
+import { acceptanceConfig } from './config.ts';
+import { assembleManifest, bindingRecords, unexpectedDirtyEntries, verifyAdmission } from './admission.ts';
 
 const config = (root) => acceptanceConfig({ profileId: 'p', repositoryId: 'repo', stateDir: 'state', reviewDir: 'rev', runsDir: 'runs',
   acceptanceEvidence: {

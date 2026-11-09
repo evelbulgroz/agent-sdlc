@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { COMMANDS } from './cli.mjs';
+import { COMMANDS } from './cli.ts';
 
-const CLI = path.resolve(import.meta.dirname, 'cli.mjs');
+const CLI = path.resolve(import.meta.dirname, 'cli.ts');
 
 function hostRoot(t) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-acceptance-cli-')));

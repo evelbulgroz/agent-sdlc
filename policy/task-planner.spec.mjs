@@ -12,7 +12,7 @@ import {
 	pinnedSinglePlanInput,
 	readinessDraft,
 	serialManifest,
-} from '../testing/task-planner-fixtures.mjs';
+} from '../testing/task-planner-fixtures.ts';
 
 const FROZEN_PLANNER_EXPORTS = [
 	'DEFAULT_SHADOW_PATHS',

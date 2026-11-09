@@ -3,7 +3,7 @@ import test from 'node:test';
 import fs from 'node:fs';
 import {
 	FakeModelGovernor,
-} from '../testing/fake-model-governor.mjs';
+} from '../testing/fake-model-governor.ts';
 import {
 	leanWriteAction,
 	makeFixture,

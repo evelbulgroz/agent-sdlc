@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateRunAuthorization } from './run-authorization-schema.ts';
 import { adapterBindingHash } from './quality-schema.ts';
-import { commandRegistrationFixture } from '../../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../../testing/command-registration-fixture.ts';
 
 test('run authorization contracts validate permissions, path boundaries, and immutability', () => {
 	const validAuth = {

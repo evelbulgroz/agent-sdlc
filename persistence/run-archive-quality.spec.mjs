@@ -5,12 +5,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
-import { policy as basePolicy } from '../testing/quality-test-support.mjs';
+import { policy as basePolicy } from '../testing/quality-test-support.ts';
 import { TaskPlanV2Schema, hashTaskPlanProjection, sha256 } from '../policy/contracts.ts';
 import { adapterBindingHash } from '../policy/contracts/quality-schema.ts';
 import { REPOSITORY_ROOT } from './run-paths.ts';
 import { buildUnlandedPatch } from './run-archive-patch.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 function git(cwd, args, input) {
 	return execFileSync('git', args, {

@@ -4,11 +4,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { ExperimentLedger } from './experiment-ledger.mjs';
-import { createLedgerBroker, RemoteExperimentLedger } from './experiment-broker.mjs';
-import { shellInvocations } from './live-records.mjs';
-import { assertShellInvocation, launchSupervised, superviseExperiment } from './supervisor.mjs';
-import { recipeHandler } from './supervisor-recipes.mjs';
+import { ExperimentLedger } from './experiment-ledger.ts';
+import { createLedgerBroker, RemoteExperimentLedger } from './experiment-broker.ts';
+import { shellInvocations } from './live-records.ts';
+import { assertShellInvocation, launchSupervised, superviseExperiment } from './supervisor.ts';
+import { recipeHandler } from './supervisor-recipes.ts';
 
 const NODE = process.execPath;
 const RUN_ID = '2026-11-03-recipe-broker';
@@ -125,7 +125,7 @@ function controller(t, maxElapsedMs) {
   const helpers = fs.realpathSync(path.dirname(new URL(import.meta.url).pathname));
   const readOnly = ['/usr', '/lib', '/lib64'].map(destination => ({ source: fs.realpathSync(destination), destination }));
   readOnly.push({ source: path.dirname(NODE), destination: path.dirname(NODE) }, { source: helpers, destination: helpers });
-  const url = new URL('./experiment-broker.mjs', import.meta.url).href;
+  const url = new URL('./experiment-broker.ts', import.meta.url).href;
   const program = `import {RemoteExperimentLedger} from ${JSON.stringify(url)};
     const ledger=new RemoteExperimentLedger({
       socketName:process.env.AGENT_SDLC_CANARY_BROKER_SOCKET,
@@ -183,6 +183,6 @@ test('invalid supervised experiment inputs never begin an execution window', asy
 });
 
 test('launchSupervised is re-exported unchanged', async () => {
-  const process_ = await import('./process.mjs');
+  const process_ = await import('./process.ts');
   assert.equal(launchSupervised, process_.launchSupervised);
 });

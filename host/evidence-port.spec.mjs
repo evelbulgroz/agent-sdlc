@@ -4,7 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { executeEvidence } from './evidence-port.ts';
 import { hashEvidenceBytes } from './evidence-files.ts';
-import { fixture, H } from './evidence-port-fixture.mjs';
+import { fixture, H } from './evidence-port-fixture.ts';
 import { createEvidenceRecordStore } from './evidence-store.ts';
 
 test('reserves before the injected command run and publishes raw byte hashes', async () => {

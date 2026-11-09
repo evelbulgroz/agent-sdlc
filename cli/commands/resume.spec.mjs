@@ -12,9 +12,9 @@ import { ArtifactStore } from '../../persistence/artifacts.ts';
 import { SdlcWorkflowRuntime } from '../../workflow/graph.ts';
 import { createEvent } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
 import { completeProposal, createMockExecCli, createMockGitCli, grammaticalAcceptance } from '../../testing/test-support.mjs';
-import { slug, cleanupRun, checkpointState, writeResponse } from '../../testing/cli-test-support.mjs';
+import { slug, cleanupRun, checkpointState, writeResponse } from '../../testing/cli-test-support.ts';
 
 test('CLI can resume a governor-blocked run when a route later becomes available', async () => {
 	const testSlug = slug('blocked-resume');

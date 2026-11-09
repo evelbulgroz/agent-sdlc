@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { CriticReviewAdapter, computeScopeDigest } from './critic-review.ts';
-import { FakeGovernorForCritic } from '../testing/critic-fixtures.mjs';
+import { FakeGovernorForCritic } from '../testing/critic-fixtures.ts';
 import { makeFixture } from '../testing/test-support.mjs';
 
 test('executeReview advances generation when a prior critic operation for the run and phase failed in the ledger', async (t) => {

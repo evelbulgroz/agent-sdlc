@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { computePreparationPolicyHash, computePreparationSelectionBinding } from '../host/verification-preparation.ts';
 import { finalPreparationHook } from '../execution/verification-preparation.ts';
-import { BUILDS, packageRunner, withFixture, writeFile } from '../testing/verification-preparation-fixture.mjs';
+import { BUILDS, packageRunner, withFixture, writeFile } from '../testing/verification-preparation-fixture.ts';
 import { executeCommittedPreflightVerifier, executePreflightVerifier } from './verifier.ts';
 
 const RUN_ID = '2026-11-01-prep-final';

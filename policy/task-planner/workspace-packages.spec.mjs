@@ -16,7 +16,7 @@ import {
 	evaluateDemo,
 	readinessDraft,
 	withDemoRoot,
-} from '../../testing/task-planner-fixtures.mjs';
+} from '../../testing/task-planner-fixtures.ts';
 
 test('readiness reports every exceeded task dimension and aggregate score', () => {
 	assert.throws(

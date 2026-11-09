@@ -3,8 +3,8 @@ import test from 'node:test';
 import {
   controlQualificationHash, validateCanaryQualityPolicy, validateExperimentConfiguration,
   validateExperimentRoleLimits,
-} from './experiment-budget.mjs';
-import { buildExperiment, buildQualityPolicy } from './experiment-config.mjs';
+} from './experiment-budget.ts';
+import { buildExperiment, buildQualityPolicy } from './experiment-config.ts';
 
 function configuration() {
   const scenarioCaps = { logicalCalls: 2, physicalCalls: 3, inputTokens: 60000,

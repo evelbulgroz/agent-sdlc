@@ -13,7 +13,7 @@ import {
 	makeGraphFixture,
 	reachSpecApproved,
 	slice4ImplementerScript,
-} from '../testing/graph-fixtures.mjs';
+} from '../testing/graph-fixtures.ts';
 
 test('QA critic runs once after task verification PASS', async () => {
 	const execCalls = [];

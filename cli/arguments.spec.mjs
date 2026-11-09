@@ -6,9 +6,9 @@ import test from 'node:test';
 import { parseArguments, requiredValue } from './arguments.ts';
 import { runCli } from './cli.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
 import { completeProposal } from '../testing/test-support.mjs';
-import { slug, throwingGovernor } from '../testing/cli-test-support.mjs';
+import { slug, throwingGovernor } from '../testing/cli-test-support.ts';
 
 test('@ac AC-01: Removed interactive CLI surfaces fail closed and name the shell replacement', async () => {
 	const governor = new FakeModelGovernor([completeProposal()]);

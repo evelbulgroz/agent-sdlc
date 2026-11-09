@@ -8,7 +8,7 @@ import { qaCheckpointAttemptKey } from '../review/critic-budget.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { resolveCheckpointQualityContext } from '../workflow/quality-context.ts';
 import { assertQualityDeliveryAllowed } from '../workflow/quality-delivery.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 const hash = (letter = 'a') => letter.repeat(64);
 const tree = (letter = 'b') => letter.repeat(40);

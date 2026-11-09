@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
 	FakeModelGovernor,
-} from '../testing/fake-model-governor.mjs';
+} from '../testing/fake-model-governor.ts';
 import {
 	makeFixture,
 } from '../testing/test-support.mjs';

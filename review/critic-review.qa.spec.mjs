@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { CriticReviewAdapter } from './critic-review.ts';
-import { FakeGovernorForCritic } from '../testing/critic-fixtures.mjs';
+import { FakeGovernorForCritic } from '../testing/critic-fixtures.ts';
 import { makeFixture } from '../testing/test-support.mjs';
 
 test('AC-08: QA critic output is a per-AC divergence brief omitting COVERED rows', async () => {

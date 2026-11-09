@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import test from 'node:test';
 import { computePreparationPolicyHash, computePreparationSelectionBinding } from '../host/verification-preparation.ts';
-import { BUILDS, TASKS, packageRunner, withFixture, writeFile } from '../testing/verification-preparation-fixture.mjs';
+import { BUILDS, TASKS, packageRunner, withFixture, writeFile } from '../testing/verification-preparation-fixture.ts';
 import { executeTool } from './tools.ts';
 import { taskPreparationHooks } from './verification-preparation.ts';
 

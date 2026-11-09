@@ -11,7 +11,7 @@ import { hashTaskPlanProjection } from '../policy/contracts/dag-schema.ts';
 import { makeFixture } from '../testing/test-support.mjs';
 import { CommandRegistrationSchema } from '../policy/contracts/quality-evidence-schema.ts';
 import { commandBindingHash } from '../host/command-evidence.ts';
-import { policy as defaultPolicy } from '../testing/quality-test-support.mjs';
+import { policy as defaultPolicy } from '../testing/quality-test-support.ts';
 import { SdlcWorkflowRuntime } from './graph.ts';
 import { createExecuteQaCriticNode } from './nodes/review-qa.ts';
 import { applyAcCoverageGate } from './preflight-gate.ts';

@@ -7,7 +7,7 @@ import {
 	reachSpecApproved,
 	seedSlice4Worktree,
 	twoTaskScript,
-} from '../testing/graph-fixtures.mjs';
+} from '../testing/graph-fixtures.ts';
 
 test('Slice 4 reconciliation conflict halts at interrupt and handles escalation response (AC 39)', async () => {
 	const surfaces = [

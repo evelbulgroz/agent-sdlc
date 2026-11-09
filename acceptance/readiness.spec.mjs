@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { acceptanceConfig } from './config.mjs';
-import { artifact } from './artifacts.mjs';
-import { candidates, readiness } from './readiness.mjs';
+import { acceptanceConfig } from './config.ts';
+import { artifact } from './artifacts.ts';
+import { candidates, readiness } from './readiness.ts';
 
 const config = acceptanceConfig({ profileId: 'p', repositoryId: 'repo', stateDir: 'state',
   acceptanceEvidence: {

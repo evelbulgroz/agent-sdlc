@@ -205,7 +205,7 @@ test('copyPackageArtifacts copies artifacts for present, non-excluded packages',
 });
 
 test('@ac AC-05 @case AC-05.1 repeated verification records new build evidence while cached installation is reused', async () => {
-	const { withFixture, packageRunner, BUILDS, TASKS } = await import('../testing/verification-preparation-fixture.mjs');
+	const { withFixture, packageRunner, BUILDS, TASKS } = await import('../testing/verification-preparation-fixture.ts');
 	const { computePreparationPolicyHash, computePreparationSelectionBinding } = await import('../host/verification-preparation.ts');
 	const { prepareForVerification } = await import('../execution/verification-preparation.ts');
 	await withFixture(async (root) => {

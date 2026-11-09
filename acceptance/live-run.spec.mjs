@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { providerEnvironment, sandboxLayout, childEnvironment } from './live-run.mjs';
-import { launchSupervised } from './supervisor.mjs';
+import { providerEnvironment, sandboxLayout, childEnvironment } from './live-run.ts';
+import { launchSupervised } from './supervisor.ts';
 
 const NODE = process.execPath;
 const config = (root, extra = {}) => ({ root, node: NODE, stateDir: 'state', runsDir: 'runs', reviewDir: 'review',

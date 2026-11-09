@@ -7,7 +7,7 @@ import { CommandRegistrationSchema } from '../policy/contracts/quality-evidence-
 import { commandBindingHash, recordPins } from './command-evidence.ts';
 import { hashEvidenceBytes } from './evidence-files.ts';
 import { executeEvidence } from './evidence-port.ts';
-import { fixture } from './evidence-port-fixture.mjs';
+import { fixture } from './evidence-port-fixture.ts';
 
 // Rebinds the standard fixture to a `command` registration that needs no bundle files or qualification artifact.
 function commandFixture(f) {

@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { bytesHash } from './primitives.mjs';
-import { dependencyManifest } from './runtime-inventory.mjs';
-import { boundRunner, noInstallRunner } from './supervisor-runner.mjs';
+import { bytesHash } from './primitives.ts';
+import { dependencyManifest } from './runtime-inventory.ts';
+import { boundRunner, noInstallRunner } from './supervisor-runner.ts';
 
 const PACKAGE = 'pkg';
 const RUNTIME = 'state/runtime';

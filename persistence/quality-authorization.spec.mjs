@@ -3,9 +3,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { sha256 } from '../policy/contracts/primitives.ts';
-import { H, T, initialize, makeFixture, policy } from '../testing/quality-test-support.mjs';
+import { H, T, initialize, makeFixture, policy } from '../testing/quality-test-support.ts';
 import { RuntimeStore } from './runtime-store.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 test('approved quality authorization survives reopening and rejects changed contents under the same policy hash', () => {
 	const fixture = makeFixture('quality-authorization');

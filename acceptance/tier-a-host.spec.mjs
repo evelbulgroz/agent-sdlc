@@ -6,11 +6,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadHostProfile } from '../host/host-profile.ts';
-import { qualifyCommands, sentinelRegistration } from './command-admission.mjs';
-import { assertPinsOutsideWriteScope, buildCommandRegistrations, casesFromReport, runCommandInSandbox } from './command-evidence.mjs';
-import { commandQualificationReceipt } from './command-qualification.mjs';
-import { acceptanceConfig } from './config.mjs';
-import { parseReport } from './report-formats.mjs';
+import { qualifyCommands, sentinelRegistration } from './command-admission.ts';
+import { assertPinsOutsideWriteScope, buildCommandRegistrations, casesFromReport, runCommandInSandbox } from './command-evidence.ts';
+import { commandQualificationReceipt } from './command-qualification.ts';
+import { acceptanceConfig } from './config.ts';
+import { parseReport } from './report-formats.ts';
 
 const FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), '../testing/fixture-host-tier-a');
 

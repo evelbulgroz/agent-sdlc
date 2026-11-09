@@ -5,7 +5,7 @@ import test from 'node:test';
 import { captureTaskDelta } from '../execution/task-tree-delta.ts';
 import { liveRunRoot } from '../persistence/run-paths.ts';
 import { sha256 } from '../policy/contracts.ts';
-import { taskQualityFixture } from '../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../testing/task-quality-fixture.ts';
 import { SdlcWorkflowRuntime } from './graph.ts';
 import { materializeCorrectedFinal } from './corrected-final-materialization.ts';
 import { blockFailedCorrection } from './quality-correction-failure.ts';

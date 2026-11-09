@@ -6,9 +6,9 @@ import test from 'node:test';
 import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { RuntimeStore } from '../../persistence/runtime-store.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
 import { completeProposal, grammaticalAcceptance } from '../../testing/test-support.mjs';
-import { slug, cleanupRun, writeResponse } from '../../testing/cli-test-support.mjs';
+import { slug, cleanupRun, writeResponse } from '../../testing/cli-test-support.ts';
 
 test('CLI start, status, list, answer, export, and exact approval lifecycle', async () => {
 	const testSlug = slug('lifecycle');

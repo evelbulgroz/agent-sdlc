@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { taskQualityFixture as fixture } from '../testing/task-quality-fixture.mjs';
+import { taskQualityFixture as fixture } from '../testing/task-quality-fixture.ts';
 
 test('enabling task proof persists and reuses an exact receipt without running verification twice', async t => {
 	const f = fixture(t);

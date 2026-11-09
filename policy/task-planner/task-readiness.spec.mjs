@@ -8,7 +8,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { canonicalJson, sha256 } from '../contracts.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
-import { completeSpecJson } from '../../testing/cli-test-support.mjs';
+import { completeSpecJson } from '../../testing/cli-test-support.ts';
 import { deriveTaskId, evaluateTaskReadiness } from './task-readiness.ts';
 import {
 	nineAuthoredPathReadinessInput,
@@ -16,7 +16,7 @@ import {
 	pinnedManifestlessReadinessInput,
 	readinessDraft,
 	serialManifest,
-} from '../../testing/task-planner-fixtures.mjs';
+} from '../../testing/task-planner-fixtures.ts';
 
 function runCheckSpecCli(args) {
 	const result = spawnSync(

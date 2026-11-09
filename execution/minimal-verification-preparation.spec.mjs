@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { computePreparationPolicyHash, computePreparationSelectionBinding } from '../host/verification-preparation.ts';
 import { hydrateWorktree } from '../workflow/hydration.ts';
-import { BUILDS, TASKS, packageRunner, withFixture, writeFile } from '../testing/verification-preparation-fixture.mjs';
+import { BUILDS, TASKS, packageRunner, withFixture, writeFile } from '../testing/verification-preparation-fixture.ts';
 import { runVerification } from './minimal-verification.ts';
 import { taskPreparationHook } from './verification-preparation.ts';
 

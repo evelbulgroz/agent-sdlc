@@ -8,9 +8,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { runCli } from './cli.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
 import { completeProposal, grammaticalAcceptance } from '../testing/test-support.mjs';
-import { slug, cleanupRun, writeResponse } from '../testing/cli-test-support.mjs';
+import { slug, cleanupRun, writeResponse } from '../testing/cli-test-support.ts';
 
 test('projection retry reuses one durable event and regenerates missing status', async () => {
 	const testSlug = slug('projection-retry');

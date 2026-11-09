@@ -4,13 +4,13 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import * as continuationFixtures from './continuation-fixtures.mjs';
+import * as continuationFixtures from './continuation-fixtures.ts';
 import {
 	findNavigabilityViolations,
 	NAVIGABILITY_BYTE_CEILING,
 	NAVIGABILITY_LINE_CEILING,
 } from './navigability-support.mjs';
-import * as recoveryFixtures from './recovery-fixtures.mjs';
+import * as recoveryFixtures from './recovery-fixtures.ts';
 
 const FROZEN_RECOVERY_TITLES = Object.freeze(
 	[

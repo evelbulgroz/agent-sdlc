@@ -5,7 +5,7 @@ import test from 'node:test';
 import { validateOperationRequest } from '@evelbulgroz/model-usage-govenor/policy';
 import { sha256 } from '../policy/contracts.ts';
 import { makeFixture } from '../testing/test-support.mjs';
-import { policy as baseline } from '../testing/quality-test-support.mjs';
+import { policy as baseline } from '../testing/quality-test-support.ts';
 import { runCheckpointQaCritic } from './qa-checkpoint.ts';
 
 function fixture(t, options = {}) {

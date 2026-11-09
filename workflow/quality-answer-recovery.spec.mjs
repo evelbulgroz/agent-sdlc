@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { taskQualityFixture } from '../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../testing/task-quality-fixture.ts';
 import { createApplyQualityAnswerNode } from './nodes/quality-answer.ts';
 import { sha256 } from '../policy/contracts.ts';
 

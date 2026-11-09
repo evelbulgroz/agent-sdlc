@@ -5,7 +5,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import {
 	FakeModelGovernor,
-} from '../testing/fake-model-governor.mjs';
+} from '../testing/fake-model-governor.ts';
 import {
 	makeFixture,
 } from '../testing/test-support.mjs';

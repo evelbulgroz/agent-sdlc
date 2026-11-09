@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
-import { brokerCommandRunner, brokerEvidenceSpawn, evidenceHandler } from './evidence-broker.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
+import { brokerCommandRunner, brokerEvidenceSpawn, evidenceHandler } from './evidence-broker.ts';
 
 const RUN_ID = '2026-11-03-evidence-broker';
 const NODE_BIN = process.execPath;

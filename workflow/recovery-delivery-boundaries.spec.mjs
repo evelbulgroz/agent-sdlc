@@ -13,7 +13,7 @@ import {
 	seedSlice4CrashWorktree,
 	startSpecApproved,
 	waitForBoundary,
-} from '../testing/recovery-fixtures.mjs';
+} from '../testing/recovery-fixtures.ts';
 import {
 	createMockExecCli,
 	createMockGitCli,

@@ -26,7 +26,7 @@ import {
 	operationRows,
 	readTranscripts,
 	seedRun,
-} from '../testing/minimal-executor-fixtures.mjs';
+} from '../testing/minimal-executor-fixtures.ts';
 
 test('@ac AC-06 five identical reads stay open and can still complete', async () => {
 	const loop = openLoop({

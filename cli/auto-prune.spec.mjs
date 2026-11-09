@@ -1,4 +1,4 @@
-import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.ts';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';

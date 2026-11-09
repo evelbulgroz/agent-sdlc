@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { copyFrozenFiles } from './prepare-files.mjs';
-import { bytesHash } from './primitives.mjs';
+import { copyFrozenFiles } from './prepare-files.ts';
+import { bytesHash } from './primitives.ts';
 
 function fixture(t, count) {
   const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'prepare-files-')));

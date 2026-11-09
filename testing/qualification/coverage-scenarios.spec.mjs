@@ -8,7 +8,7 @@ import {
 	implementerScript,
 	makeGraphFixture,
 	reachSpecApproved,
-} from '../graph-fixtures.mjs';
+} from '../graph-fixtures.ts';
 
 async function authorizeRun(fixture) {
 	const approved = await reachSpecApproved(fixture);

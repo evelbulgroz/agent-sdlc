@@ -4,8 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
-import { writeSyntheticHostProfile as writeShellSyntheticHostProfile } from '../testing/shell-driver-support.mjs';
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.ts';
+import { writeSyntheticHostProfile as writeShellSyntheticHostProfile } from '../testing/shell-driver-support.ts';
 import { HOST_PROFILE_RELATIVE_PATH, loadHostProfile } from './host-profile.ts';
 
 function withTempRoot(fn) {
@@ -73,8 +73,8 @@ const PACKAGE_ROOT = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine')
 
 test('@ac AC-04 @case AC-04.2 none of the 6 host and CLI test support/spec files contains forbidden service names', () => {
 	const files = [
-		'packages/engine/testing/cli-test-support.mjs',
-		'packages/engine/testing/shell-driver-support.mjs',
+		'packages/engine/testing/cli-test-support.ts',
+		'packages/engine/testing/shell-driver-support.ts',
 		'packages/engine/host/default-profile.spec.mjs',
 		'packages/engine/host/command-policy.spec.mjs',
 		'packages/engine/host/workspace.spec.mjs',

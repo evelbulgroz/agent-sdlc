@@ -23,7 +23,7 @@ import {
 	eligibleReadiness,
 	mutationAttempt,
 	verificationAttempt,
-} from '../../testing/reliability-fixtures.mjs';
+} from '../../testing/reliability-fixtures.ts';
 
 test('canary qualification rejects runs started without task manifest evidence', () => {
 	assert.throws(

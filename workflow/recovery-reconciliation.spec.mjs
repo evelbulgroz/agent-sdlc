@@ -7,8 +7,8 @@ import { runCli } from '../cli/cli.ts';
 import { canonicalJson, createEvent, sha256 } from '../policy/contracts.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
-import { cleanupRun } from '../testing/recovery-fixtures.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
+import { cleanupRun } from '../testing/recovery-fixtures.ts';
 import { completeProposal, trackTestRun } from '../testing/test-support.mjs';
 
 test('comprehensive reconciliation fails closed for every canonical record family', async (t) => {

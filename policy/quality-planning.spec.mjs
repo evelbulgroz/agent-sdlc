@@ -4,7 +4,7 @@ import { attachApprovedQualityPlan } from './quality-planning.ts';
 import { adapterBindingHash, qualityPolicyHash } from './contracts/quality-schema.ts';
 import { hashTaskPlanProjection, projectTaskPlan } from './contracts/dag-schema.ts';
 import { sha256 } from './contracts/primitives.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 const hash = (letter = 'a') => letter.repeat(64);
 const tree = (letter = 'b') => letter.repeat(40);

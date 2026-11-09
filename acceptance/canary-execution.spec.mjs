@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildCanaryExecution, buildCaseMap } from './canary-execution.mjs';
+import { buildCanaryExecution, buildCaseMap } from './canary-execution.ts';
 
 const config = { packageRoot: 'pkg', commands: { unit: { argv: ['node'] }, browser: { argv: ['node'] } } };
 const rows = [

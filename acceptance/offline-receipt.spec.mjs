@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { composeReceipt } from './offline-receipt.mjs';
+import { composeReceipt } from './offline-receipt.ts';
 
 const inventory = { blockingRequirements: ['Audit native loader and shared libraries',
   'Exclude process escape or obtain explicit external containment approval'] };

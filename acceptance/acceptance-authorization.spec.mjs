@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { acceptanceConfig } from './config.mjs';
-import { allowedPaths, buildQualityPlan, loadObligations } from './run-authorization.mjs';
+import { acceptanceConfig } from './config.ts';
+import { allowedPaths, buildQualityPlan, loadObligations } from './run-authorization.ts';
 
 const CANARY = { spec: 'spec.md', tasks: 'tasks.json', corpus: 'corpus.json', obligations: 'obligations.json',
   files: [{ path: 'pkg/a.spec.ts', kind: 'unit' }, { path: 'pkg/b.spec.ts', kind: 'browser' }] };

@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import {
 	evaluateReport, parseCaseReport, parseJunit, prepareReportDirectory, readReportFile,
-} from './report-formats.mjs';
+} from './report-formats.ts';
 
 const suite = (body) => `<?xml version="1.0"?>\n<testsuites>${body}</testsuites>`;
 const ok = (name) => `<testcase name="${name}" time="0.1"/>`;

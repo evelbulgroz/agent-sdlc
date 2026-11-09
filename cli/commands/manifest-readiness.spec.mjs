@@ -9,7 +9,7 @@ import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { buildTaskPromptContexts } from '../../workflow/nodes/execute-tasks.ts';
 import { planTaskDag } from '../../policy/task-planner.ts';
-import { slug, throwingGovernor, runInventory, completeSpecJson, runCheckSpec } from '../../testing/cli-test-support.mjs';
+import { slug, throwingGovernor, runInventory, completeSpecJson, runCheckSpec } from '../../testing/cli-test-support.ts';
 
 test('@ac AC-02 bounded manifest readiness reports score, change class, and risk without model dispatch', async () => {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-bounded-ready-'));

@@ -68,7 +68,7 @@ test('@ac AC-05 @case AC-05.3 liveRunRoot falls back to .agent-sdlc when .agents
 });
 
 test('a custom stateDir is honoured by run paths, archive paths, and the PR-body message', async () => {
-	const { writeSyntheticHostProfile } = await import('./cli-test-support.mjs');
+	const { writeSyntheticHostProfile } = await import('./cli-test-support.ts');
 	const { stateDirRelative, archivedRunRelativePath } = await import('../persistence/run-paths.ts');
 	const { humanResult } = await import('../cli/human-result.ts');
 	await withTempDir(async (dir) => {

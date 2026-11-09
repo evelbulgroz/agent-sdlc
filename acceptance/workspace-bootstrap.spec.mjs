@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { bytesHash } from './primitives.mjs';
-import { frozenWorkspacePreparation, snapshotWorkspace, verifyWorkspaceBootstrap } from './workspace-bootstrap.mjs';
-import { taskQualityFixture } from '../testing/task-quality-fixture.mjs';
+import { bytesHash } from './primitives.ts';
+import { frozenWorkspacePreparation, snapshotWorkspace, verifyWorkspaceBootstrap } from './workspace-bootstrap.ts';
+import { taskQualityFixture } from '../testing/task-quality-fixture.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { checkpointHydrationBinding } from '../workflow/checkpoint-hydration.ts';
 

@@ -6,7 +6,7 @@ import { Writable } from 'node:stream';
 import test from 'node:test';
 import { runCli } from './cli.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
 import {
 	citingSpecWriteAction,
 	completeProposal,

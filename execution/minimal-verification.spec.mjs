@@ -14,7 +14,7 @@ import {
 	openLoop,
 	readTranscripts,
 	sizedLog,
-} from '../testing/minimal-executor-fixtures.mjs';
+} from '../testing/minimal-executor-fixtures.ts';
 
 test('@ac AC-04 @case AC-04.1 a 12000 byte verification log is inlined in the next prompt', async () => {
 	const log = sizedLog(12_000);

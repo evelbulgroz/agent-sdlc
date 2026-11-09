@@ -7,8 +7,8 @@ import test from 'node:test';
 import { runCli } from '../cli/cli.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
-import { cleanupRun, waitForBoundary } from '../testing/recovery-fixtures.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
+import { cleanupRun, waitForBoundary } from '../testing/recovery-fixtures.ts';
 import {
 	completeProposal,
 	grammaticalAcceptance,

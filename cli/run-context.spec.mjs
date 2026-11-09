@@ -5,7 +5,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import test from 'node:test';
 import { archiveRoot, archivedRunRelativePath } from '../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
 import { runCli } from './cli.ts';
 import { openContext, readBoundedFile, readStdin, resolveGoalText } from './run-context.ts';
 

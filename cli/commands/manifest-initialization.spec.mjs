@@ -11,8 +11,8 @@ import { SdlcWorkflowRuntime } from '../../workflow/graph.ts';
 import { readBoundTaskManifest } from '../../workflow/nodes/planning.ts';
 import { planTaskDag } from '../../policy/task-planner.ts';
 import { approvedInputHash, taskManifestHash } from '../../workflow/specification.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
-import { cleanupRun, completeSpecJson } from '../../testing/cli-test-support.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
+import { cleanupRun, completeSpecJson } from '../../testing/cli-test-support.ts';
 
 test('@ac AC-03 manifest initialization persists immutable hash-bound input', () => {
 	const runId = `${new Date().toISOString().slice(0, 10)}-manifest-binding-${crypto.randomUUID().slice(0, 8)}`;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HostProfileSchema } from './host-profile.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 test('HostProfileSchema accepts 1.4.0 evidence adapter registrations and legacy profile versions', () => {
 	const profile = {

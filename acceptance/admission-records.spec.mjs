@@ -4,10 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { acceptanceConfig } from './config.mjs';
-import { LAUNCHER } from './primitives.mjs';
-import { controlQualificationHash } from './experiment-budget.mjs';
-import { commandsRecord, controlRecord, engineRecord, ownershipRecord, priceRecord, semanticPackets } from './admission-records.mjs';
+import { acceptanceConfig } from './config.ts';
+import { LAUNCHER } from './primitives.ts';
+import { controlQualificationHash } from './experiment-budget.ts';
+import { commandsRecord, controlRecord, engineRecord, ownershipRecord, priceRecord, semanticPackets } from './admission-records.ts';
 
 const block = (extra = {}) => ({ profileId: 'p', repositoryId: 'r', stateDir: 'state', acceptanceEvidence: {
   canaryId: 'c1', slug: 's', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'h', nodeExecutable: process.execPath,

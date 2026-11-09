@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { taskQualityFixture } from '../../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../../testing/task-quality-fixture.ts';
 import { sha256 } from '../../policy/contracts.ts';
 import { createDefaultAuthorizationEnvelope } from '../../policy/authorization.ts';
 import { qaCheckpointAttemptKey } from '../../review/critic-budget.ts';

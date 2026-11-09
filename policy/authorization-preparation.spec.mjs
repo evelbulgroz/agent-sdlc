@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.ts';
 import { createDefaultAuthorizationEnvelope, validateAuthorizationEnvelope } from './authorization.ts';
 import { sha256, validateRunAuthorization } from './contracts.ts';
 

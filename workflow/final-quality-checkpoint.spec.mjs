@@ -7,10 +7,10 @@ import test from 'node:test';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { adapterBindingHash } from '../policy/contracts/quality-schema.ts';
-import { policy } from '../testing/quality-test-support.mjs';
+import { policy } from '../testing/quality-test-support.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { prepareFinalQualityCheckpoint } from './final-quality-checkpoint.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 function git(cwd, args) {
 	return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();

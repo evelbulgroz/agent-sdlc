@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { taskQualityFixture } from '../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../testing/task-quality-fixture.ts';
 import { sha256 } from '../policy/contracts.ts';
 import {
 	checkpointHydrationBinding, checkpointPreparationSelection,

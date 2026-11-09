@@ -13,7 +13,7 @@ import {
 	cleanupRun,
 	createSeedRun,
 	sampleEnvelope,
-} from '../testing/continuation-fixtures.mjs';
+} from '../testing/continuation-fixtures.ts';
 
 test('@ac AC-02 @ac AC-14 a stored envelope admits planning and a plan-critic residual waits for a human answer', async () => {
 	const fixture = await createSeedRun({ label: 'envelope-planning', stateName: 'SPEC_APPROVED' });

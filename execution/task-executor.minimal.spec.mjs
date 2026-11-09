@@ -7,7 +7,7 @@ import {
 } from '../policy/errors.ts';
 import {
 	FakeModelGovernor,
-} from '../testing/fake-model-governor.mjs';
+} from '../testing/fake-model-governor.ts';
 import {
 	leanWriteAction,
 	makeFixture,
@@ -21,7 +21,7 @@ import {
 	PRODUCT_IMPLEMENTER_PATH,
 	failingVerificationExec,
 	runProductImplementer,
-} from '../testing/task-executor-fixtures.mjs';
+} from '../testing/task-executor-fixtures.ts';
 
 test('TaskExecutor completes an empty delta when post-hoc verification passed', async () => {
 	const fixture = makeFixture('empty-delta-task-exec', []);

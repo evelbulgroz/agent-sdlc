@@ -5,7 +5,7 @@ import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import * as reliability from './reliability.ts';
 import { recordVerificationAttempt } from './reliability.ts';
-import { verificationAttempt } from '../testing/reliability-fixtures.mjs';
+import { verificationAttempt } from '../testing/reliability-fixtures.ts';
 
 const FROZEN_RELIABILITY_EXPORTS = [
 	'CANARY_LIMITS',

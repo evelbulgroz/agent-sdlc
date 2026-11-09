@@ -18,7 +18,7 @@ import {
 	implementerScript,
 	makeGraphFixture,
 	reachSpecApproved,
-} from '../testing/graph-fixtures.mjs';
+} from '../testing/graph-fixtures.ts';
 
 test('Slice 3 authorized local commits complete through DONE', async () => {
 	const fixture = makeGraphFixture('slice3-done', implementerScript(), { profile: 'slice3' });

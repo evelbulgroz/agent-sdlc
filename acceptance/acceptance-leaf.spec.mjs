@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { engineModule } from './primitives.mjs';
-import { resolveRoleRecord } from './role-definitions.mjs';
+import { engineModule } from './primitives.ts';
+import { resolveRoleRecord } from './role-definitions.ts';
 
 const ENGINE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 

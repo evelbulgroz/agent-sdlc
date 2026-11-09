@@ -3,14 +3,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { acceptanceConfig as resolveConfig } from './config.mjs';
+import { acceptanceConfig as resolveConfig } from './config.ts';
 import { loadHostProfile } from '../host/host-profile.ts';
-import { caseSelections } from './contracts.mjs';
-import { executeOwned } from './process.mjs';
+import { caseSelections } from './contracts.ts';
+import { executeOwned } from './process.ts';
 import {
 	argumentsFor, normalizedCase, regularFile, relativePath, runnerOutcome, selectionGrep, titleMatches, verifyFile, bytesHash,
-} from './primitives.mjs';
-import { namespaceArgv } from './sandbox.mjs';
+} from './primitives.ts';
+import { namespaceArgv } from './sandbox.ts';
 
 const acceptanceConfig = (root) => resolveConfig(loadHostProfile(root), root);
 

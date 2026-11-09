@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { acceptanceConfig } from './config.mjs';
-import { artifact } from './artifacts.mjs';
-import { scenarioRecords, shellInvocations, verifyScenarioBindings } from './live-records.mjs';
+import { acceptanceConfig } from './config.ts';
+import { artifact } from './artifacts.ts';
+import { scenarioRecords, shellInvocations, verifyScenarioBindings } from './live-records.ts';
 
 const config = acceptanceConfig({ profileId: 'p', repositoryId: 'r', stateDir: 'state', reviewDir: 'rev', runsDir: 'runs',
   acceptanceEvidence: {

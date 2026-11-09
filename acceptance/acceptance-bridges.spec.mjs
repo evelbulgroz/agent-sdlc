@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { writeBinShims } from './bin-shims.mjs';
-import { isCanonicalPreflight, runCanonicalPreflight } from './preflight-bridge.mjs';
-import { validateRecipe } from './recipes.mjs';
+import { writeBinShims } from './bin-shims.ts';
+import { isCanonicalPreflight, runCanonicalPreflight } from './preflight-bridge.ts';
+import { validateRecipe } from './recipes.ts';
 
 const SHA = 'c9bd300a3ff5bd72ca089f843afa3c230dc8d2c2';
 const PREFLIGHT = ['pm', 'run', 'verify', '--', '--base'];

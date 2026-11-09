@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.ts';
 import {
 	BUILDS, COMPILE, TASKS, consumerSees, packageRunner, withFixture, writeFile,
-} from '../testing/verification-preparation-fixture.mjs';
+} from '../testing/verification-preparation-fixture.ts';
 import { computePreparationPolicyHash, computePreparationSelectionBinding } from '../host/verification-preparation.ts';
 import {
 	isPreparationEvidenceCurrent,

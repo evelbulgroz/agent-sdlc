@@ -10,8 +10,8 @@ import { isCheckpointWorktree } from './quality-worktree-reader.ts';
 import { compactRunDatabase } from './run-compaction.ts';
 import { createEvidenceRecordStore } from '../host/evidence-store.ts';
 import { hashTaskPlanProjection } from '../policy/contracts/dag-schema.ts';
-import { H, T, TIME, policy, makeFixture, initialize, binding } from '../testing/quality-test-support.mjs';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { H, T, TIME, policy, makeFixture, initialize, binding } from '../testing/quality-test-support.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 function completion(fixture, id, candidate = binding(fixture)) {
 	const q = fixture.store.quality;
 	q.registerWorktree({ runId: fixture.runId, registryId: `registry-${id}`, kind: 'slice', ownerId: 'slice-a',

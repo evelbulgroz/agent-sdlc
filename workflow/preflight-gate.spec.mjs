@@ -9,7 +9,7 @@ import { adapterBindingHash, qualityPolicyHash } from '../policy/contracts/quali
 import { createMockExecCli, makeFixture } from '../testing/test-support.mjs';
 import { collectQaBriefAndAdvisories } from './node-helpers.ts';
 import { applyAcCoverageGate, blockFinalCoverageFailure, executePreflightForSnapshot } from './preflight-gate.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 function persistRuntimeSnapshot(fixture, snapshot) {
 	fixture.store.database

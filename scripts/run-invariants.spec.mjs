@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT, liveRunRoot } from '../persistence/run-paths.ts';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
-import { implementerScript, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
+import { implementerScript, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.ts';
 import { main, parseInvariantArgs } from './run-invariants.ts';
 
 function captureMain(args) {

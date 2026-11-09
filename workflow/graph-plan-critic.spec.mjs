@@ -6,9 +6,9 @@ import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { planTaskDag } from '../policy/task-planner.ts';
 import { parseAcceptanceCriterion } from './acceptance-criteria.ts';
-import { policy as checkpointPolicy } from '../testing/quality-test-support.mjs';
-import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { policy as checkpointPolicy } from '../testing/quality-test-support.ts';
+import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 function qualityAuthorization(fixture, approved, now, policyVariant = false) {
 	const draft = fixture.artifacts.readJson(approved.draftArtifact);

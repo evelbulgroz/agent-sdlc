@@ -10,8 +10,8 @@ import { RoleRegistry } from '../../roles/role-registry.ts';
 import { ArtifactStore } from '../../persistence/artifacts.ts';
 import { SdlcWorkflowRuntime } from '../../workflow/graph.ts';
 import { createEvent } from '../../policy/contracts.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
-import { slug, cleanupRun, checkpointState } from '../../testing/cli-test-support.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
+import { slug, cleanupRun, checkpointState } from '../../testing/cli-test-support.ts';
 
 test('CLI post-mortem command records candidate learning and drains outbox', async () => {
 	const testSlug = slug('post-mortem');

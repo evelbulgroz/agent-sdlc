@@ -8,7 +8,7 @@ import {
 	validateCommandAllowlist,
 	validateHostCommand,
 } from '../execution/tool-commands.ts';
-import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.ts';
 import { validateCommand as validateDefaultCommand } from './default-adapter.ts';
 import { loadHostProfile } from './host-profile.ts';
 import { validateScriptCommand } from './script.ts';

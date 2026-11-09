@@ -6,7 +6,7 @@ import { Writable } from 'node:stream';
 import test from 'node:test';
 import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
-import { seedSkillsRun } from '../../testing/cli-test-support.mjs';
+import { seedSkillsRun } from '../../testing/cli-test-support.ts';
 
 test('AC-08: skills --apply on provisional key (runCount < 3) throws POLICY_VIOLATION with exitCode 70', async () => {
 	const tempRoot = path.join(

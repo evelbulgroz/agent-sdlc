@@ -7,7 +7,7 @@ import test from 'node:test';
 import { runCli } from '../cli/cli.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
-import { FakeModelGovernor } from './fake-model-governor.mjs';
+import { FakeModelGovernor } from './fake-model-governor.ts';
 import { completeProposal } from './test-support.mjs';
 
 const IS_STANDALONE = !fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));

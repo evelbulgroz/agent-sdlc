@@ -11,7 +11,7 @@ import { getCapability, hasCapability } from './capability-registry.ts';
 import { getEvaluator } from '../review/evaluator-registry.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
 import { completeProposal } from '../testing/test-support.mjs';
 
 test('@ac AC-02 @case AC-02.1 loads and hashes configured workflow, role, prompt, capability, and evaluator from PACKAGE_ROLE_DEFAULTS_ROOT with Layer 3 addenda', () => {

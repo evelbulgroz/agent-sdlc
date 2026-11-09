@@ -3,8 +3,8 @@ import test from 'node:test';
 import { createDefaultAuthorizationEnvelope } from '../../policy/authorization.ts';
 import { assertTaskPlanHash, hashTaskPlanProjection, sha256 } from '../../policy/contracts.ts';
 import { planTaskDag } from '../../policy/task-planner.ts';
-import { policy } from '../../testing/quality-test-support.mjs';
-import { readinessDraft, BASE_COMMIT_SHA } from '../../testing/task-planner-fixtures.mjs';
+import { policy } from '../../testing/quality-test-support.ts';
+import { readinessDraft, BASE_COMMIT_SHA } from '../../testing/task-planner-fixtures.ts';
 import { makeFixture } from '../../testing/test-support.mjs';
 import { runPlanCritic } from '../../review/critic-gate.ts';
 import {
@@ -14,7 +14,7 @@ import {
 	createAskPlanCriticNode,
 	createApplyPlanCriticNode,
 } from './planning.ts';
-import { commandRegistrationFixture } from '../../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../../testing/command-registration-fixture.ts';
 
 test('createPlanTasksNode returns the stored snapshot when the run already advanced', async () => {
 	const fixture = makeFixture('createPlanTasksNode');

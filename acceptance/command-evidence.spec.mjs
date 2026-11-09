@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { casesFromReport, runCommandInSandbox } from './command-evidence.mjs';
-import { evidenceHandler } from './evidence-broker.mjs';
-import { namespaceArgv } from './sandbox.mjs';
+import { casesFromReport, runCommandInSandbox } from './command-evidence.ts';
+import { evidenceHandler } from './evidence-broker.ts';
+import { namespaceArgv } from './sandbox.ts';
 
 const RUN_ID = 'run-1';
 const STATE_DIR = 'state/runs';

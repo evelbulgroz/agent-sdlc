@@ -13,8 +13,8 @@ import { createEvent, emptyDraft } from '../../policy/contracts.ts';
 import { specificationHash } from '../../workflow/specification.ts';
 import { estimatePromptTokens } from '@evelbulgroz/model-usage-govenor/tokenizer';
 import { SdlcError } from '../../policy/errors.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
-import { slug, cleanupRun, checkpointState } from '../../testing/cli-test-support.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
+import { slug, cleanupRun, checkpointState } from '../../testing/cli-test-support.ts';
 
 test('CLI resumes a reviewer prompt-budget denial from the next materialized generation', async () => {
 	const testSlug = slug('resume-reviewer-budget');

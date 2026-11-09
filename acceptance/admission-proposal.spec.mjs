@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { acceptanceConfig } from './config.mjs';
-import { artifact } from './artifacts.mjs';
-import { buildProposal } from './admission-proposal.mjs';
+import { acceptanceConfig } from './config.ts';
+import { artifact } from './artifacts.ts';
+import { buildProposal } from './admission-proposal.ts';
 
 const profile = (extra = {}) => ({ profileId: 'p', repositoryId: 'repo', stateDir: 'state', reviewDir: 'rev', runsDir: 'runs',
   acceptanceEvidence: {

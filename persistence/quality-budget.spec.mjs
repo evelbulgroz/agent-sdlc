@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { makeFixture, initialize } from '../testing/quality-test-support.mjs';
+import { makeFixture, initialize } from '../testing/quality-test-support.ts';
 
 test('budget reservations are idempotent, interrupted dispatch remains charged, and overrun blocks new calls', () => {
 	const fixture = makeFixture('quality-budgets');

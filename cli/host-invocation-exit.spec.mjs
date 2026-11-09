@@ -5,7 +5,7 @@ import { validateStatus } from '../agent-status-validate.ts';
 import { exitCodeForResult } from './exit-codes.ts';
 import { projectHostInvocation } from './host-invocation.ts';
 import { computeContinuation } from './continuation.ts';
-import { RUN_ID, INTERRUPT_ID, STATE_HASH, APPROVAL_HASH, DRAFT_HASH, assertClosed, project } from '../testing/host-card-fixtures.mjs';
+import { RUN_ID, INTERRUPT_ID, STATE_HASH, APPROVAL_HASH, DRAFT_HASH, assertClosed, project } from '../testing/host-card-fixtures.ts';
 
 test('card exit matches the process exit for every continuation action', () => {
 	const approvalInterrupt = {

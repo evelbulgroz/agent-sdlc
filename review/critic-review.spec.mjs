@@ -11,7 +11,7 @@ import { ReviewGenerationAdapter } from './review-generation.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { SdlcError } from '../policy/errors.ts';
-import { FakeGovernorForCritic } from '../testing/critic-fixtures.mjs';
+import { FakeGovernorForCritic } from '../testing/critic-fixtures.ts';
 import { makeFixture } from '../testing/test-support.mjs';
 
 test('computeScopeDigest and buildCriticOperationId are deterministic', () => {

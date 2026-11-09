@@ -5,8 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { commandBindingHash, recordPins } from '../host/command-evidence.ts';
-import { engineContracts } from './contracts.mjs';
-import { validateRegistrations } from './registrations.mjs';
+import { engineContracts } from './contracts.ts';
+import { validateRegistrations } from './registrations.ts';
 
 function tree() {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'registrations-')));

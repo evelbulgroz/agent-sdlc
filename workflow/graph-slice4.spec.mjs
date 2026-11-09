@@ -15,7 +15,7 @@ import {
 	seedSlice4Worktree,
 	slice4ImplementerScript,
 	twoTaskScript,
-} from '../testing/graph-fixtures.mjs';
+} from '../testing/graph-fixtures.ts';
 
 test('Slice 4 disjoint parallel tasks execute, reconcile, and reach DONE with authorized commits', async () => {
 	const surfaces = [

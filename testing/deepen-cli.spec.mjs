@@ -4,7 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import * as cliEntry from '../cli/cli.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { cleanupRun, slug } from './cli-test-support.mjs';
+import { cleanupRun, slug } from './cli-test-support.ts';
 import {
 	NAVIGABILITY_BYTE_CEILING,
 	NAVIGABILITY_LINE_CEILING,

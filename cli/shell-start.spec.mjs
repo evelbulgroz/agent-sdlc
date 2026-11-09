@@ -7,7 +7,7 @@ import { humanResult } from './human-result.ts';
 import { exitCodeForResult } from './exit-codes.ts';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { shellStart } from './shell-driver.ts';
-import { makeTempDir, writeGoalFile, SILENT_STREAMS, throwingGovernor, spyOnRunCli } from '../testing/shell-driver-support.mjs';
+import { makeTempDir, writeGoalFile, SILENT_STREAMS, throwingGovernor, spyOnRunCli } from '../testing/shell-driver-support.ts';
 
 test('@ac AC-03: An unready draft does not start a run', async () => {
 	const dir = makeTempDir('ac03');

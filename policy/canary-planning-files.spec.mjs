@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { listBoundedPlanningFiles, resolveBoundedPlanningFilePath } from './canary-planning-files.ts';
-import { writeSyntheticHostProfile } from '../testing/cli-test-support.mjs';
+import { writeSyntheticHostProfile } from '../testing/cli-test-support.ts';
 import { currentCanaryBindings, evaluateCurrentCanaryGate } from './reliability.ts';
 
 const FIXED = [

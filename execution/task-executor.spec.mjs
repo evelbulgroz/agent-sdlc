@@ -7,7 +7,7 @@ import {
 } from '../policy/errors.ts';
 import {
 	FakeModelGovernor,
-} from '../testing/fake-model-governor.mjs';
+} from '../testing/fake-model-governor.ts';
 import {
 	leanWriteAction,
 	makeFixture,
@@ -23,7 +23,7 @@ import {
 	POST_IMPLEMENT_RUNTIME,
 	PRODUCT_IMPLEMENTER_PATH,
 	runProductImplementer,
-} from '../testing/task-executor-fixtures.mjs';
+} from '../testing/task-executor-fixtures.ts';
 import {
 	DEFAULT_EXECUTOR_STEP_CEILING,
 	TaskExecutor,

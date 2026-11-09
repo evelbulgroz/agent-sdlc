@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { computeIsParallel, sortTasksTopologically } from './task-graph.ts';
-import { BASE_COMMIT_SHA } from '../../testing/task-planner-fixtures.mjs';
+import { BASE_COMMIT_SHA } from '../../testing/task-planner-fixtures.ts';
 
 test('sortTasksTopologically detects cycles and throws POLICY_VIOLATION', () => {
 	const cyclicTasks = [

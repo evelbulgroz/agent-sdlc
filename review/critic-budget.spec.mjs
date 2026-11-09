@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { sha256 } from '../policy/contracts.ts';
-import { reviewRecord } from '../testing/critic-fixtures.mjs';
+import { reviewRecord } from '../testing/critic-fixtures.ts';
 import { makeFixture } from '../testing/test-support.mjs';
 import {
 	SPEC_CRITIC_CAP,

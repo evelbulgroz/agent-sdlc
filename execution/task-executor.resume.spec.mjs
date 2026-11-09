@@ -4,7 +4,7 @@ import test from 'node:test';
 import fs from 'node:fs';
 import {
 	FakeModelGovernor,
-} from '../testing/fake-model-governor.mjs';
+} from '../testing/fake-model-governor.ts';
 import {
 	leanReplaceAction,
 	leanWriteAction,
@@ -14,7 +14,7 @@ import {
 	PRODUCT_IMPLEMENTER_ORIGINAL,
 	PRODUCT_IMPLEMENTER_PATH,
 	runProductImplementer,
-} from '../testing/task-executor-fixtures.mjs';
+} from '../testing/task-executor-fixtures.ts';
 import {
 	TaskExecutor,
 } from './task-executor.ts';

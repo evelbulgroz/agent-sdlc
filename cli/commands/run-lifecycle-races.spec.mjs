@@ -5,9 +5,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { runCli } from '../cli.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
 import { completeProposal } from '../../testing/test-support.mjs';
-import { slug, cleanupRun } from '../../testing/cli-test-support.mjs';
+import { slug, cleanupRun } from '../../testing/cli-test-support.ts';
 
 test('concurrent cancellation persists when an in-flight start later loses its transition race', async () => {
 	const testSlug = slug('start-cancel-race');

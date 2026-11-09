@@ -7,7 +7,7 @@ import { validatePendingResponse } from './hitl.ts';
 import { projectHostInvocation } from './host-invocation.ts';
 import { computeContinuation, isInfrastructureContinuation } from './continuation.ts';
 import { projectTasks } from './status-document.ts';
-import { RUN_ID, INTERRUPT_ID, STATE_HASH, APPROVAL_HASH, DRAFT_HASH, TARGETS, resumeArgv, responseArgv, assertClosed, project } from '../testing/host-card-fixtures.mjs';
+import { RUN_ID, INTERRUPT_ID, STATE_HASH, APPROVAL_HASH, DRAFT_HASH, TARGETS, resumeArgv, responseArgv, assertClosed, project } from '../testing/host-card-fixtures.ts';
 
 test('@ac AC-01 @ac AC-14 continuation stays a sibling of the closed host card', () => {
 	const pendingInterrupt = {

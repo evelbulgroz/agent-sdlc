@@ -2,9 +2,9 @@ import '../testing/use-fixture-monorepo.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { sha256 } from '../policy/contracts.ts';
-import { policy } from '../testing/quality-test-support.mjs';
+import { policy } from '../testing/quality-test-support.ts';
 import { packPlanDocument, packQaExcerpts, packSpecDocument, PLAN_DOCUMENT_MAX_BYTES } from './critic-input-packing.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 const v2Plan = () => {
 	const adapter = commandRegistrationFixture({ adapterId: 'planning-test', limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } });

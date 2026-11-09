@@ -8,9 +8,9 @@ import { runCli } from '../cli.ts';
 import { resolveExecutorSelection } from './start.ts';
 import { REPOSITORY_ROOT } from '../../persistence/run-paths.ts';
 import { RuntimeStore } from '../../persistence/runtime-store.ts';
-import { FakeModelGovernor } from '../../testing/fake-model-governor.mjs';
+import { FakeModelGovernor } from '../../testing/fake-model-governor.ts';
 import { completeProposal } from '../../testing/test-support.mjs';
-import { slug, cleanupRun, readyGoalFile, readStoredExecutor, completeSpecJson } from '../../testing/cli-test-support.mjs';
+import { slug, cleanupRun, readyGoalFile, readStoredExecutor, completeSpecJson } from '../../testing/cli-test-support.ts';
 
 test('CLI start accepts --author-vendor flag and persists canonical vendor', async () => {
 	const testSlug = slug('author-vendor');
@@ -58,7 +58,7 @@ test('CLI blocks a larger task manifest before governor dispatch when canary evi
 		: null;
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-start-canary-'));
 	try {
-		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.mjs');
+		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.ts');
 		const goalFile = path.join(tempDir, 'goal.json');
 		const manifestFile = path.join(tempDir, 'tasks.json');
 		fs.writeFileSync(goalFile, JSON.stringify(completeSpecJson({ touchedSurfaces: ['tools/agent-sdlc'] })));
@@ -109,7 +109,7 @@ test('CLI --skip-canary passes a larger manifest through the canary gate', async
 	};
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-skip-canary-'));
 	try {
-		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.mjs');
+		const { pinnedToolsManifest } = await import('../../testing/task-planner-fixtures.ts');
 		const goalFile = path.join(tempDir, 'goal.json');
 		const manifestFile = path.join(tempDir, 'tasks.json');
 		fs.writeFileSync(goalFile, JSON.stringify(completeSpecJson({ touchedSurfaces: ['tools/agent-sdlc'] })));

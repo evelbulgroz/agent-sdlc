@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { H, T, initialize, makeFixture } from '../testing/quality-test-support.mjs';
+import { H, T, initialize, makeFixture } from '../testing/quality-test-support.ts';
 
 test('task revision lifecycle preserves identity, keeps selections separate, and freezes completed contents', () => {
 	const fixture = makeFixture('quality-lifecycle');

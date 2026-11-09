@@ -2,20 +2,20 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { taskQualityFixture } from '../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../testing/task-quality-fixture.ts';
 import { qaCheckpointAttemptKey } from '../review/critic-budget.ts';
 import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { hashTaskPlanProjection } from '../policy/contracts/dag-schema.ts';
 import { SdlcError } from '../policy/errors.ts';
-import { policy } from '../testing/quality-test-support.mjs';
+import { policy } from '../testing/quality-test-support.ts';
 import { makeFixture } from '../testing/test-support.mjs';
 import {
 	collectQaBriefAndAdvisories,
 	deferUnavailableCritic,
 	getAndValidateAuthorization,
 } from './node-helpers.ts';
-import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.ts';
 
 test('@ac AC-03 @case AC-03.1 graph getAndValidateAuthorization allows in-flight execution when repository HEAD moves after authorization', () => {
 	const fixture = makeFixture('graph-head-drift');

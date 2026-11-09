@@ -4,8 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { PINNED_FILE_MODIFIED, recordPins, substituteArgv, verifyPins } from './command-evidence.ts';
-import { assertPinsOutsideWriteScope } from '../acceptance/command-evidence.mjs';
-import { commandQualificationReceipt } from '../acceptance/command-qualification.mjs';
+import { assertPinsOutsideWriteScope } from '../acceptance/command-evidence.ts';
+import { commandQualificationReceipt } from '../acceptance/command-qualification.ts';
 
 const fixture = () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cmd-evidence-'));

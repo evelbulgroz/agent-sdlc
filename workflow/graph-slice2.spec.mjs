@@ -10,7 +10,7 @@ import {
 	completeProposal,
 	leanWriteAction,
 } from '../testing/test-support.mjs';
-import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
+import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.ts';
 
 test('Slice 2 graph end-to-end execution completes through READY_FOR_GIT_APPROVAL', async () => {
 	const script = [

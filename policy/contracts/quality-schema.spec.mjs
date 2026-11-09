@@ -29,7 +29,7 @@ import {
 	validateTaskPlan,
 } from './dag-schema.ts';
 import { sha256 } from './primitives.ts';
-import { commandRegistrationFixture } from '../../testing/command-registration-fixture.mjs';
+import { commandRegistrationFixture } from '../../testing/command-registration-fixture.ts';
 
 const hash = (letter = 'a') => letter.repeat(64);
 const tree = (letter = 'b') => letter.repeat(40);

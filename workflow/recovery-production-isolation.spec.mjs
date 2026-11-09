@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import test from 'node:test';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
-import { cleanupRun, collectLocalImportGraph } from '../testing/recovery-fixtures.mjs';
+import { cleanupRun, collectLocalImportGraph } from '../testing/recovery-fixtures.ts';
 import { trackTestRun } from '../testing/test-support.mjs';
 
 const IS_MONOREPO = fs.existsSync(path.join(REPOSITORY_ROOT, 'packages/engine'));

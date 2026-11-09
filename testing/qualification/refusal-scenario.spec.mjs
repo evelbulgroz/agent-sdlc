@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { FakeModelGovernor } from '../fake-model-governor.mjs';
+import { FakeModelGovernor } from '../fake-model-governor.ts';
 import { makeFixture } from '../test-support.mjs';
 import { TaskExecutor } from '../../execution/task-executor.ts';
 import { projectTasks } from '../../cli/status-document.ts';

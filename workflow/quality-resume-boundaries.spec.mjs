@@ -4,7 +4,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { prepareTaskWorktree } from '../execution/task-worktree-preparation.ts';
-import { taskQualityFixture } from '../testing/task-quality-fixture.mjs';
+import { taskQualityFixture } from '../testing/task-quality-fixture.ts';
 import { createDetachedWorktree, createSyntheticCommit } from './worktrees.ts';
 
 test('active quality task retains parent provenance across unrelated SQLite status updates', t => {

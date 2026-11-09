@@ -14,8 +14,8 @@ import {
 	createSeedRun,
 	slug,
 	writeResponse,
-} from '../testing/continuation-fixtures.mjs';
-import { FakeModelGovernor } from '../testing/fake-model-governor.mjs';
+} from '../testing/continuation-fixtures.ts';
+import { FakeModelGovernor } from '../testing/fake-model-governor.ts';
 import { completeProposal, grammaticalAcceptance } from '../testing/test-support.mjs';
 import { createApprovalBinding } from './specification.ts';
 import { createDetachedWorktree } from './worktrees.ts';

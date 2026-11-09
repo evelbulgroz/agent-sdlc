@@ -3,10 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { bytesHash, verifyFile } from './primitives.mjs';
+import { bytesHash, verifyFile } from './primitives.ts';
 import {
   dependencyManifest, elfInterpreter, inventorySources, materialize, packageSources, verifyRuntime,
-} from './runtime-inventory.mjs';
+} from './runtime-inventory.ts';
 
 const RUNTIME = 'state/runtime';
 

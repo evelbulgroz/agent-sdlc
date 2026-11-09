@@ -10,7 +10,7 @@ import {
 	advanceSeed,
 	cleanupRun,
 	createSeedRun,
-} from '../testing/continuation-fixtures.mjs';
+} from '../testing/continuation-fixtures.ts';
 import {
 	computeHydrationFingerprint,
 	hydrateWorktree,

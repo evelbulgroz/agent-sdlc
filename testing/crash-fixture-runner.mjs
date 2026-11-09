@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runCli } from '../cli/cli.ts';
 import { SdlcError } from '../policy/errors.ts';
-import { FakeModelGovernor } from './fake-model-governor.mjs';
+import { FakeModelGovernor } from './fake-model-governor.ts';
 import {
 	completeProposal,
 	createMockExecCli,
