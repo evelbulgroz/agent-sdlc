@@ -15,6 +15,7 @@ import {
 	deferUnavailableCritic,
 	getAndValidateAuthorization,
 } from './node-helpers.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 test('@ac AC-03 @case AC-03.1 graph getAndValidateAuthorization allows in-flight execution when repository HEAD moves after authorization', () => {
 	const fixture = makeFixture('graph-head-drift');
@@ -59,17 +60,7 @@ test('getAndValidateAuthorization rejects a policy changed outside explicit reau
 	const fixture = makeFixture('node-helpers-policy-swap');
 	try {
 		fixture.runtime.initialize({ runId: fixture.runId, goal: 'Reject policy swap' });
-		const adapter = {
-			adapterId: 'policy-swap-test',
-			protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'services/billing/adapter.mjs', sha256: 'b'.repeat(64) }],
-			dependencyFiles: [],
-			configurationFiles: [],
-			argv: ['node', 'services/billing/adapter.mjs'],
-			profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: 'c'.repeat(64),
-			limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 },
-		};
+		const adapter = commandRegistrationFixture({ adapterId: 'policy-swap-test', limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } });
 		const qualityPlan = {
 			qualityPolicy: policy,
 			adapterBindings: [adapter],

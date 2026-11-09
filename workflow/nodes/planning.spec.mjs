@@ -14,6 +14,7 @@ import {
 	createAskPlanCriticNode,
 	createApplyPlanCriticNode,
 } from './planning.ts';
+import { commandRegistrationFixture } from '../../testing/command-registration-fixture.mjs';
 
 test('createPlanTasksNode returns the stored snapshot when the run already advanced', async () => {
 	const fixture = makeFixture('createPlanTasksNode');
@@ -49,17 +50,7 @@ test('createPlanTasksNode freezes and binds the full v2 plan projection before p
 			authorization: planningAuthorization,
 			now: () => '2026-11-01T10:00:00.000Z',
 		});
-		const adapter = {
-			adapterId: 'planning-test',
-			protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'tools/adapter.mjs', sha256: 'b'.repeat(64) }],
-			dependencyFiles: [],
-			configurationFiles: [],
-			argv: ['node', 'tools/adapter.mjs'],
-			profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: 'c'.repeat(64),
-			limits: { timeoutMs: 1_000, maxReportBytes: 10_000, maxArtifactBytes: 1_000, maxArtifacts: 1 },
-		};
+		const adapter = commandRegistrationFixture({ adapterId: 'planning-test', limits: { timeoutMs: 1_000, maxReportBytes: 10_000, maxArtifactBytes: 1_000, maxArtifacts: 1 } });
 		const qualityPlan = {
 			qualityPolicy: policy,
 			adapterBindings: [adapter],
@@ -171,7 +162,7 @@ test('createPlanTasksNode freezes and binds the full v2 plan projection before p
 		assert.throws(() => assertTaskPlanHash(changedObligation, planHash), /TaskPlan hash/);
 
 		const changedAdapter = structuredClone(plan);
-		changedAdapter.adapterBindings[0].bundleFiles[0].sha256 = 'd'.repeat(64);
+		changedAdapter.adapterBindings[0].commandSha256 = 'd'.repeat(64);
 		changedAdapter.evidenceObligations[0].adapterBindingHash = sha256(
 			changedAdapter.adapterBindings[0],
 		);

@@ -11,7 +11,7 @@ const CANARY = { spec: 'spec.md', tasks: 'tasks.json', corpus: 'corpus.json', ob
 const config = acceptanceConfig({ profileId: 'p', repositoryId: 'r', acceptanceEvidence: {
   canaryId: 'c1', slug: 's', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'h', nodeExecutable: '/usr/bin/node',
   caseManifest: 'cm.json', runtimeSources: 'rs.json', package: { root: 'pkg' }, sandbox: { readOnlyBinds: [] },
-  runners: { unit: { argv: ['/usr/bin/node', 'u'], bundleFiles: [] }, browser: { argv: ['/usr/bin/node', 'b'], bundleFiles: [] } },
+  commands: { unit: { argv: ['/usr/bin/node', 'u'] }, browser: { argv: ['/usr/bin/node', 'b'] } },
   canary: CANARY } }, '/repo');
 
 const row = (overrides = {}) => ({ criterionId: 'AC-01', caseId: 'AC-01.1', caseKey: 'case-one', taskId: 't1', layer: 'unit',
@@ -28,7 +28,7 @@ test('allowed paths are exactly the configured canary files', () => {
   assert.throws(() => allowedPaths({ ...config, canary: null }), /canary is not configured/);
 });
 
-test('obligations load only when closed, unique and bound to configured files and runners', () => {
+test('obligations load only when closed, unique and bound to configured files and commands', () => {
   withObligations([row(), row({ caseKey: 'case-two', file: 'pkg/b.spec.ts', profileId: 'browser', layer: 'browser' })],
     (root) => assert.equal(loadObligations(root, config).length, 2));
   for (const [rows, pattern] of [
@@ -36,12 +36,12 @@ test('obligations load only when closed, unique and bound to configured files an
     [[{ ...row(), extra: 1 }], /invalid obligation keys/],
     [[row({ expectedResult: '' })], /invalid obligation$/],
     [[row({ file: 'pkg/other.ts' })], /not a configured canary file/],
-    [[row({ profileId: 'missing' })], /not a configured runner/],
+    [[row({ profileId: 'missing' })], /not a configured command/],
     [[row(), row()], /duplicate obligation/],
   ]) withObligations(rows, (root) => assert.throws(() => loadObligations(root, config), pattern));
 });
 
-test('quality plan binds each obligation to its runner registration hash', () => {
+test('quality plan binds each obligation to its command registration hash', () => {
   const registrations = [{ profiles: [{ profileId: 'unit' }], id: 1 }];
   const contracts = { sha256: (entry) => `hash-${entry.id}` };
   const plan = buildQualityPlan(contracts, { policy: { p: 1 }, registrations, obligations: [row()] });

@@ -2,10 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AdapterRegistration, EvidenceReport } from '../policy/contracts/quality-schema.ts';
-import { isCommandRegistration, verifyCommandRegistration } from './command-evidence.ts';
-import {
-	AdapterQualificationReceiptSchema, EvidenceDependencyManifestSchema,
-} from '../policy/contracts/quality-evidence-schema.ts';
+import { verifyCommandRegistration } from './command-evidence.ts';
 
 export function hashEvidenceBytes(bytes: Buffer): string {
 	return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -52,62 +49,8 @@ export function readEvidenceFile(root: string, relative: string, maxBytes: numbe
 	}
 }
 
-export function verifyEvidenceRegistration(
-	root: string,
-	registration: AdapterRegistration,
-	assertAllowed: (relative: string) => void,
-	// Only for callers verifying several registrations in one pass: skips files already hashed in that pass.
-	verified?: Set<string>,
-): void {
-	if (isCommandRegistration(registration)) return verifyCommandRegistration(root, registration);
-	const command = registration.argv[0];
-	if (!command || !path.isAbsolute(command) || path.resolve(command) !== command ||
-		!registration.executableSha256) throw new Error('unqualified-evidence-executable');
-	const executable = readEvidenceFile(path.parse(command).root,
-		command.slice(path.parse(command).root.length), Number.MAX_SAFE_INTEGER);
-	if (hashEvidenceBytes(executable) !== registration.executableSha256 ||
-		(fs.statSync(command).mode & 0o111) === 0) throw new Error('frozen-adapter-file-changed');
-	let manifestFiles: { path: string; sha256: string }[] = [];
-	if (registration.dependencyManifest) {
-		const file = registration.dependencyManifest;
-		const bytes = readEvidenceFile(root, file.path, 20 * 1024 * 1024);
-		if (hashEvidenceBytes(bytes) !== file.sha256) throw new Error('frozen-adapter-file-changed');
-		manifestFiles = EvidenceDependencyManifestSchema.parse(JSON.parse(bytes.toString('utf8'))).files;
-	}
-	for (const file of [
-		...registration.bundleFiles, ...registration.dependencyFiles, ...registration.configurationFiles,
-		...manifestFiles,
-	]) {
-		// A manifest-backed registration grants frozen read inputs, never model write scope.
-		if (!registration.dependencyManifest) assertAllowed(file.path);
-		const key = `${file.path}\0${file.sha256}`;
-		if (verified?.has(key)) continue;
-		// The schema has no bundle-size ceiling; read and hash exact regular-file bytes.
-		if (hashEvidenceBytes(readEvidenceFile(root, file.path, Number.MAX_SAFE_INTEGER)) !== file.sha256) {
-			throw new Error('frozen-adapter-file-changed');
-		}
-		verified?.add(key);
-	}
-	const qualification = registration.qualificationArtifact;
-	if (!qualification || qualification.sha256 !== registration.qualificationArtifactHash) {
-		throw new Error('unqualified-evidence-adapter');
-	}
-	if (!registration.dependencyManifest) assertAllowed(qualification.path);
-	const qualificationBytes = readEvidenceFile(root, qualification.path, 1024 * 1024);
-	if (hashEvidenceBytes(qualificationBytes) !== registration.qualificationArtifactHash) {
-		throw new Error('frozen-adapter-file-changed');
-	}
-	let qualificationInput: unknown;
-	try {
-		qualificationInput = JSON.parse(qualificationBytes.toString('utf8'));
-	} catch (error) {
-		if (error instanceof SyntaxError) throw new Error('unqualified-evidence-adapter');
-		throw error;
-	}
-	const receipt = AdapterQualificationReceiptSchema.safeParse(qualificationInput);
-	if (!receipt.success) {
-		throw new Error('unqualified-evidence-adapter');
-	}
+export function verifyEvidenceRegistration(root: string, registration: AdapterRegistration): void {
+	verifyCommandRegistration(root, registration);
 }
 
 export function verifyEvidenceArtifacts(

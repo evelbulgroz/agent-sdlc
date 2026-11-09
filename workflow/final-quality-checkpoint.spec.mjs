@@ -10,6 +10,7 @@ import { adapterBindingHash } from '../policy/contracts/quality-schema.ts';
 import { policy } from '../testing/quality-test-support.mjs';
 import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { prepareFinalQualityCheckpoint } from './final-quality-checkpoint.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 function git(cwd, args) {
 	return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -30,17 +31,7 @@ test('final quality checkpoint rejects a tree outside the selected task delta cl
 		const baseCommitSha = git(rootDir, ['rev-parse', 'HEAD']);
 		const baseTreeSha = git(rootDir, ['rev-parse', 'HEAD^{tree}']);
 		const patchHash = crypto.createHash('sha256').update('').digest('hex');
-		const adapter = {
-			adapterId: 'checkpoint-unit',
-			protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'src/adapter.mjs', sha256: 'd'.repeat(64) }],
-			dependencyFiles: [],
-			configurationFiles: [],
-			argv: ['node', 'src/adapter.mjs'],
-			profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: 'e'.repeat(64),
-			limits: { timeoutMs: 1_000, maxReportBytes: 10_000, maxArtifactBytes: 1_000, maxArtifacts: 1 },
-		};
+		const adapter = commandRegistrationFixture({ adapterId: 'checkpoint-unit', limits: { timeoutMs: 1_000, maxReportBytes: 10_000, maxArtifactBytes: 1_000, maxArtifacts: 1 } });
 		const task = {
 			taskId: 'task-one',
 			sliceId: 'slice-one',

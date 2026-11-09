@@ -13,7 +13,7 @@ import {
 import {
 	type CommandCaseResult, isCommandRegistration, selectedCaseIdentities, synthesizeCommandReport,
 } from './command-evidence.ts';
-import { sanitizeEvidenceDiagnostic, spawnEvidence } from './evidence-transport.ts';
+import { sanitizeEvidenceDiagnostic } from './evidence-transport.ts';
 import type {
 	EvidenceCallbacks, EvidenceCompletion, EvidenceExecutionResult, EvidenceInvocationContext,
 	EvidenceRecordStore, EvidenceSourceObservation, EvidenceSpawn,
@@ -70,10 +70,6 @@ export async function executeEvidence(
 	if (durationCeiling !== undefined && (!Number.isSafeInteger(durationCeiling) || durationCeiling <= 0)) {
 		throw new Error('evidence-execution-duration-exhausted-or-invalid');
 	}
-	const runtimeLimits = {
-		...registration.limits,
-		timeoutMs: Math.min(registration.limits.timeoutMs, durationCeiling ?? registration.limits.timeoutMs),
-	};
 	const now = callbacks.now ?? (() => new Date());
 	assertAuthorization(request, context, now());
 	if (request.artifactDirectory !== context.artifactDirectory ||
@@ -142,7 +138,7 @@ export async function executeEvidence(
 		const report = EvidenceReportSchema.parse(completion.report);
 		assertQualifiedReport(report);
 		assertSource(await context.observeSource(), request, context);
-		verifyEvidenceRegistration(context.worktreeDir, registration, assertAllowed);
+		verifyEvidenceRegistration(context.worktreeDir, registration);
 		validateEvidenceReportForRequest(report, request, previous);
 		verifyEvidenceArtifacts(context.artifactDirectory, report, registration);
 		if (sha256(report.artifacts) !== receipt.artifactManifestHash ||
@@ -174,7 +170,7 @@ export async function executeEvidence(
 		assertEvidenceDirectory(context.worktreeDir);
 		assertEvidenceDirectory(context.artifactDirectory);
 		if (fs.readdirSync(context.artifactDirectory).length !== 0) throw new Error('artifact-directory-not-fresh');
-		verifyEvidenceRegistration(context.worktreeDir, registration, assertAllowed);
+		verifyEvidenceRegistration(context.worktreeDir, registration);
 		for (const obligation of request.obligations) {
 			for (const file of [...obligation.implementationPaths, ...obligation.testCases.map((item) => item.file)]) {
 				readEvidenceFile(context.worktreeDir, file, Number.MAX_SAFE_INTEGER);
@@ -187,27 +183,19 @@ export async function executeEvidence(
 		invocation = InvocationRecordSchema.parse({ ...invocation, status: 'running' });
 		await store.started(invocation);
 		phase('record-start');
-		if (isCommandRegistration(registration)) {
-			const runCommand = callbacks.runCommand ?? spawn.runCommand;
-			if (!runCommand) throw new Error('unqualified-evidence-executable');
-			selectedCaseIdentities(request);
-			const ran = await runCommand(registration, request, context.worktreeDir);
-			commandCases = ran.cases;
-			({ exitCode } = ran);
-			stdout = ran.reportBytes;
-			failureReason = ran.failureReason ?? null;
-		} else {
-			const processResult = await spawnEvidence(
-				spawn, registration.argv, context.worktreeDir, stdin, runtimeLimits,
-				context.environment ?? {}, maxDiagnosticBytes, callbacks.onDiagnostics,
-			);
-			({ stdout, exitCode, signal, failureReason } = processResult);
-		}
+		const runCommand = callbacks.runCommand ?? spawn.runCommand;
+		if (!runCommand) throw new Error('unqualified-evidence-executable');
+		selectedCaseIdentities(request);
+		const ran = await runCommand(registration, request, context.worktreeDir);
+		commandCases = ran.cases;
+		({ exitCode } = ran);
+		stdout = ran.reportBytes;
+		failureReason = ran.failureReason ?? null;
 		phase('adapter-process');
 		after = await context.observeSource();
 		assertSource(after, request, context);
 		phase('observe-after');
-		verifyEvidenceRegistration(context.worktreeDir, registration, assertAllowed);
+		verifyEvidenceRegistration(context.worktreeDir, registration);
 		phase('verify-after');
 		if (failureReason || signal || exitCode === null) throw new Error(failureReason ?? 'process-interrupted');
 		report = EvidenceReportSchema.parse(commandCases

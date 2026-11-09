@@ -17,10 +17,10 @@ export async function sentinelRegistration(root, config) {
 
 /**
  * Offline, provider-free admission receipt for a command-only host. Runs the declared sentinel once in the same
- * sandbox as live evidence, then writes the receipt admission requires. Returns null when the host still uses runners.
+ * sandbox as live evidence, then writes the receipt admission requires. Returns null when no commands are configured.
  */
 export async function qualifyCommands(root, config, { run = runCommandInSandbox } = {}) {
-  if (Object.keys(config.runners).length || !Object.keys(config.commands).length) return null;
+  if (!Object.keys(config.commands).length) return null;
   const registrations = await buildCommandRegistrations(root, config);
   let sentinel;
   if (config.sentinel) {

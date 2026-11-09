@@ -83,13 +83,12 @@ export async function verifyAdmission(root, config, manifest, { allowRunArtifact
   if (dirty.length) fail('host worktree is dirty');
   validateExperimentRoleLimits(experiment, bindings.resolvedRoleDefinitions);
   const { verifyEvidenceRegistration } = await engineModule('host/evidence-files');
-  const verifiedFiles = new Set();
   for (const registration of bindings.adapterRegistrations.registrations ?? []) {
     contracts.AdapterRegistrationSchema.parse(registration);
-    verifyEvidenceRegistration(root, registration, () => fail('compact frozen dependency manifest required'), verifiedFiles);
+    verifyEvidenceRegistration(root, registration);
   }
-  if (bindings.adapterRegistrations.registrations?.length !== Object.keys(config.runners).length + Object.keys(config.commands).length) {
-    fail('every configured runner or command needs a qualified adapter');
+  if (bindings.adapterRegistrations.registrations?.length !== Object.keys(config.commands).length) {
+    fail('every configured command needs a qualified adapter');
   }
   for (const name of ['offlineQualificationReceipt', 'pretestEquivalenceReceipt',
     'controllerAndContainmentReceipts']) {

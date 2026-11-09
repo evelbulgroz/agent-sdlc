@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateRunAuthorization } from './run-authorization-schema.ts';
 import { adapterBindingHash } from './quality-schema.ts';
+import { commandRegistrationFixture } from '../../testing/command-registration-fixture.mjs';
 
 test('run authorization contracts validate permissions, path boundaries, and immutability', () => {
 	const validAuth = {
@@ -49,17 +50,7 @@ test('run authorization contracts validate permissions, path boundaries, and imm
 		execution: { maxInvocations: 2, maxTotalDurationMs: 10_000 },
 		review: { maxLogicalDispatches: 1, maxPhysicalCalls: 1, maxInputTokens: 100, maxOutputTokens: 100 },
 	};
-	const adapter = {
-		adapterId: 'unit-adapter',
-		protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'tools/adapter.mjs', sha256: 'd'.repeat(64) }],
-		dependencyFiles: [],
-		configurationFiles: [],
-		argv: ['node', 'tools/adapter.mjs'],
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: 'e'.repeat(64),
-		limits: { timeoutMs: 5_000, maxReportBytes: 10_000, maxArtifactBytes: 10_000, maxArtifacts: 2 },
-	};
+	const adapter = commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 10_000, maxArtifactBytes: 10_000, maxArtifacts: 2 } });
 	const qualityPlan = {
 		qualityPolicy,
 		adapterBindings: [adapter],

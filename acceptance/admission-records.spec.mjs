@@ -12,7 +12,7 @@ import { commandsRecord, controlRecord, engineRecord, ownershipRecord, priceReco
 const block = (extra = {}) => ({ profileId: 'p', repositoryId: 'r', stateDir: 'state', acceptanceEvidence: {
   canaryId: 'c1', slug: 's', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'h', nodeExecutable: process.execPath,
   caseManifest: 'cm.json', runtimeSources: 'rs.json', package: { root: 'pkg' }, sandbox: { readOnlyBinds: [] },
-  runners: { unit: { argv: [process.execPath, 'u'], bundleFiles: [] } },
+  commands: { unit: { argv: [process.execPath, 'u'] } },
   taskVerificationCommand: ['pm', 'run', 'lint'],
   canary: { spec: 's.md', tasks: 't.json', corpus: 'c.json', obligations: 'o.json', files: [{ path: 'pkg/a.spec.ts', kind: 'unit' }] },
   ...extra } });

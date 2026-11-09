@@ -7,11 +7,11 @@ import { artifact } from './artifacts.mjs';
 import { assembleManifest, verifyAdmission } from './admission.mjs';
 import { buildProposal } from './admission-proposal.mjs';
 import { buildAdmissionRecords } from './admission-records.mjs';
-import { assertCanaryExecutionCurrent, buildCanaryExecution, buildCaseMap } from './canary-execution.mjs';
+import { buildCanaryExecution, buildCaseMap } from './canary-execution.mjs';
 import { readiness } from './readiness.mjs';
 import { qualifyCommands, sentinelRegistration } from './command-admission.mjs';
 import { assertPinsOutsideWriteScope, buildCommandRegistrations } from './command-evidence.mjs';
-import { buildRegistrations, validateRegistrations } from './registrations.mjs';
+import { validateRegistrations } from './registrations.mjs';
 import { allowedPaths, buildAuthorization, loadObligations } from './run-authorization.mjs';
 import { dependencyManifest, expandedInventory, materialize } from './runtime-inventory.mjs';
 import { writeExperimentFiles } from './experiment-config.mjs';
@@ -62,7 +62,7 @@ const commands = {
     const caseMap = artifact(config, 'caseMap'), output = artifact(config, 'executionManifest');
     writeJson(path.join(root, caseMap), buildCaseMap(config, loadObligations(root, config)));
     const source = readJson(regularFile(root, args['--source']));
-    writeJson(path.join(root, output), buildCanaryExecution(root, config, source, reference(root, caseMap)));
+    writeJson(path.join(root, output), buildCanaryExecution(source, reference(root, caseMap)));
     process.stdout.write(`canary execution: ${output}\n`);
   },
   readiness: ({ root, config }) => {
@@ -72,19 +72,15 @@ const commands = {
   },
   'command-qualify': async ({ root, config }) => {
     const receipt = await qualifyCommands(root, config);
-    if (!receipt) return process.stdout.write('command qualification: not applicable (runners configured)\n');
+    if (!receipt) return process.stdout.write('command qualification: not applicable (no commands configured)\n');
     process.stdout.write(`command qualification: ${receipt.status}${receipt.failures.length ? `\n${receipt.failures.join('\n')}` : ''}\n`);
     if (receipt.status !== 'passed') process.exitCode = 1;
   },
   registrations: async ({ root, config, argv }) => {
-    const args = argumentsFor(argv, ['--dependency-manifest', '--output']);
-    const execution = readJson(regularFile(root, artifact(config, 'executionManifest')));
-    assertCanaryExecutionCurrent(root, config, execution);
+    const args = argumentsFor(argv, ['--output']);
     const commandRegistrations = await buildCommandRegistrations(root, config);
     assertPinsOutsideWriteScope([...commandRegistrations, ...(config.sentinel ? [(await sentinelRegistration(root, config)).registration] : [])], allowedPaths(config));
-    const registrations = [...(Object.keys(config.runners).length
-      ? buildRegistrations(root, config, { execution, dependencyManifest: reference(root, args['--dependency-manifest']) }) : []),
-    ...commandRegistrations];
+    const registrations = commandRegistrations;
     const bindings = await validateRegistrations(root, registrations);
     writeJson(args['--output'], { schemaVersion: '1.0.0', registrations });
     process.stdout.write(`${JSON.stringify(bindings, null, 2)}\n`);

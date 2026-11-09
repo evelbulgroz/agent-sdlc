@@ -26,7 +26,7 @@ export function loadObligations(root, config) {
       'setupAction', 'expectedResult'].every((key) => text(row[key]))
       || !Array.isArray(row.capabilities) || row.capabilities.some((entry) => !text(entry))) fail('invalid obligation');
     if (!files.has(row.file)) fail(`obligation file is not a configured canary file: ${row.file}`);
-    if (!Object.hasOwn(config.runners, row.profileId) && !Object.hasOwn(config.commands, row.profileId)) fail(`obligation profile is not a configured runner or command: ${row.profileId}`);
+    if (!Object.hasOwn(config.commands, row.profileId)) fail(`obligation profile is not a configured command: ${row.profileId}`);
     if (seen.has(row.caseKey)) fail(`duplicate obligation: ${row.caseKey}`);
     seen.add(row.caseKey);
   }

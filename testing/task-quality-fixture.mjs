@@ -2,8 +2,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { EventEmitter } from 'node:events';
-import { PassThrough, Writable } from 'node:stream';
 import { ArtifactStore } from '../persistence/artifacts.ts';
 import { RuntimeStore } from '../persistence/runtime-store.ts';
 import { liveRunRoot } from '../persistence/run-paths.ts';
@@ -16,7 +14,8 @@ import { createTaskQualitySession } from '../workflow/task-quality-session.ts';
 import { initialize, policy, H, TIME } from './quality-test-support.mjs';
 import { FakeModelGovernor } from './fake-model-governor.mjs';
 import { createMockExecCli } from './test-support.mjs';
-import { qualify } from '../host/evidence-qualification-fixture.mjs';
+import { CommandRegistrationSchema } from '../policy/contracts/quality-evidence-schema.ts';
+import { commandBindingHash } from '../host/command-evidence.ts';
 
 export function taskQualityFixture(t, { withConsumer = false, overlappingConsumer = false } = {}) {
 	const fixtureParent = path.resolve('tools/.agent-sdlc/test-fixtures');
@@ -36,8 +35,6 @@ export function taskQualityFixture(t, { withConsumer = false, overlappingConsume
 		`${path.relative(rootDir, liveRunRoot(rootDir))}/\nnode_modules/\ntools/.agent-preflight-last.json\n`);
 	fs.mkdirSync(path.join(rootDir, 'src'));
 	fs.writeFileSync(path.join(rootDir, 'src/a.ts'), 'export const value = 1;\n');
-	fs.writeFileSync(path.join(rootDir, 'src/adapter.mjs'), 'fixture protocol adapter\n');
-	const qualification = qualify(rootDir, 'src/qualification.json', 'b'.repeat(40), H);
 	git(['add', '.']);
 	git(['-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'fixture']);
 	const base = git(['rev-parse', 'HEAD']), tree = git(['rev-parse', 'HEAD^{tree}']);
@@ -49,13 +46,14 @@ export function taskQualityFixture(t, { withConsumer = false, overlappingConsume
 	const frozenPolicy = { ...policy, execution: { maxInvocations: 100, maxTotalDurationMs: 100000 },
 		review: { ...policy.review, maxLogicalDispatches: 16, maxInputTokens: 100_000 } };
 	initialize({ store, runId }, frozenPolicy);
-	const adapter = { adapterId: 'fixture-unit', protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'src/adapter.mjs',
-			sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(rootDir, 'src/adapter.mjs'))).digest('hex') }],
-		dependencyFiles: [], configurationFiles: [], argv: [fs.realpathSync(process.execPath)],
-		executableSha256: crypto.createHash('sha256').update(fs.readFileSync(process.execPath)).digest('hex'),
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }], ...qualification,
-		limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } };
+	const executable = { path: fs.realpathSync(process.execPath),
+		sha256: crypto.createHash('sha256').update(fs.readFileSync(process.execPath)).digest('hex') };
+	const adapterArgv = [executable.path, 'run.mjs'];
+	const adapter = CommandRegistrationSchema.parse({ kind: 'command', adapterId: 'fixture-unit', protocolVersion: '1.0.0',
+		argv: adapterArgv, cwd: 'src', reportFormat: 'junit', retries: 0, executable, pins: [],
+		commandSha256: commandBindingHash(adapterArgv, executable.sha256, [], []),
+		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
+		limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } });
 	const obligation = (id, taskId, stem, criterionId) => ({
 		obligationId: id, criterionId, caseId: `${criterionId}.1`, owner: { kind: 'task', id: taskId },
 		observableOutcome: `${stem} is visible`, setupAction: `Read ${stem}`, expectedResult: `${stem} equals expected`,
@@ -101,7 +99,7 @@ export function taskQualityFixture(t, { withConsumer = false, overlappingConsume
 	const runtime = { rootDir, runtimeStore: store, artifactStore: artifacts, registry: new RoleRegistry({ rootDir }),
 		governor: new FakeModelGovernor(), now: () => new Date(TIME), onBoundary: async () => {},
 		gitCli: execFileSync, execCli: (...args) => { commands++; return verify(...args); },
-		evidenceSpawn: passingEvidenceSpawn, transition: (current, options) => ({
+		evidenceSpawn: passingEvidenceSpawn(), transition: (current, options) => ({
 			...current, ...options.updates, state: options.to, runtimeRevision: current.runtimeRevision + 1,
 		}) };
 	const candidate = { ...plan.tasks[0], parentTreeSha: tree, targetTreeSha: tree,
@@ -111,28 +109,11 @@ export function taskQualityFixture(t, { withConsumer = false, overlappingConsume
 }
 
 function passingEvidenceSpawn() {
-	const child = new EventEmitter();
-	child.stdout = new PassThrough();
-	child.stderr = new PassThrough();
-	child.kill = signal => { queueMicrotask(() => child.emit('close', null, signal)); return true; };
-	let input = '';
-	child.stdin = new Writable({
-		write(chunk, _, callback) { input += chunk.toString(); callback(); },
-		final(callback) {
-			const request = JSON.parse(input);
-			callback();
-			queueMicrotask(() => {
-				child.stdout.write(JSON.stringify({
-					schemaVersion: '1.0.0', operationId: request.operationId, requestHash: sha256(request),
-					adapterBindingHash: request.adapterBindingHash, profileId: request.profileId,
-					cases: request.obligations.flatMap(obligation => obligation.testCases.map(testCase => ({
-						...testCase, obligationIds: [obligation.obligationId], exercisedCapabilities: [],
-						outcome: 'passed', attempts: [{ index: 0, outcome: 'passed', durationMs: 1, artifactPaths: [] }],
-					}))), artifacts: [],
-				}));
-				child.emit('close', 0, null);
-			});
-		},
+	return Object.assign(() => { throw new Error('command evidence must not spawn an adapter'); }, {
+		runCommand: async (_registration, request) => ({
+			exitCode: 0, reportBytes: Buffer.from('<testsuites/>'),
+			cases: [...new Set(request.obligations.map(obligation => obligation.caseId))]
+				.map(identity => ({ identity, outcome: 'passed', message: '', attempts: 1 })),
+		}),
 	});
-	return child;
 }

@@ -15,12 +15,12 @@ function hostRoot(t) {
     fs.mkdirSync(path.join(root, dir), { recursive: true });
   }
   fs.writeFileSync(path.join(root, '.agents/sdlc-host.json'), JSON.stringify({
-    schemaVersion: '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default',
+    schemaVersion: '1.6.0', profileId: 'p', repositoryId: 'r', adapter: 'default',
     acceptanceEvidence: {
       canaryId: 'c1', slug: 's', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'helpers',
       nodeExecutable: process.execPath, caseManifest: 'cases.json', runtimeSources: 'sources.json',
       package: { root: 'pkg' }, sandbox: { readOnlyBinds: ['pkg/src'] },
-      runners: { unit: { argv: [process.execPath, 'adapter.mjs'], bundleFiles: [] } },
+      commands: { unit: { argv: [process.execPath, 'run.mjs'] } },
     },
   }));
   fs.writeFileSync(path.join(root, 'package.json'), '{}');

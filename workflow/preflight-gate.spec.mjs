@@ -9,6 +9,7 @@ import { adapterBindingHash, qualityPolicyHash } from '../policy/contracts/quali
 import { createMockExecCli, makeFixture } from '../testing/test-support.mjs';
 import { collectQaBriefAndAdvisories } from './node-helpers.ts';
 import { applyAcCoverageGate, blockFinalCoverageFailure, executePreflightForSnapshot } from './preflight-gate.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 function persistRuntimeSnapshot(fixture, snapshot) {
 	fixture.store.database
@@ -147,17 +148,7 @@ test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FA
 			execution: { maxInvocations: 2, maxTotalDurationMs: 10_000 },
 			review: { maxLogicalDispatches: 2, maxPhysicalCalls: 2, maxInputTokens: 1_000, maxOutputTokens: 1_000 },
 		};
-		const adapter = {
-			adapterId: 'unit-adapter',
-			protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'tools/adapter.mjs', sha256: 'f'.repeat(64) }],
-			dependencyFiles: [],
-			configurationFiles: [],
-			argv: ['node', 'tools/adapter.mjs'],
-			profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: 'e'.repeat(64),
-			limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 },
-		};
+		const adapter = commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 } });
 		const bindingHash = adapterBindingHash(adapter);
 		const initial = fixture.runtime.initialize({ runId: fixture.runId, goal: 'New policy coverage' });
 		fixture.store.saveTaskPlan({
@@ -341,12 +332,7 @@ test('@ac AC-03 @case AC-03.6 a preflight FAIL while bound to an accepted slice 
 			execution: { maxInvocations: 2, maxTotalDurationMs: 10_000 },
 			review: { maxLogicalDispatches: 2, maxPhysicalCalls: 2, maxInputTokens: 1_000, maxOutputTokens: 1_000 },
 		};
-		const adapter = {
-			adapterId: 'unit-adapter', protocolVersion: '1.0.0', bundleFiles: [{ path: 'tools/adapter.mjs', sha256: 'f'.repeat(64) }],
-			dependencyFiles: [], configurationFiles: [], argv: ['node', 'tools/adapter.mjs'],
-			profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }], qualificationArtifactHash: 'e'.repeat(64),
-			limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 },
-		};
+		const adapter = commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 } });
 		const taskPlanHash = 'd'.repeat(64);
 		const binding = {
 			runId: fixture.runId, approvedSpecHash: snapshot.approvedSpecHash, taskPlanHash,

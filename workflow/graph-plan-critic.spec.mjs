@@ -8,6 +8,7 @@ import { planTaskDag } from '../policy/task-planner.ts';
 import { parseAcceptanceCriterion } from './acceptance-criteria.ts';
 import { policy as checkpointPolicy } from '../testing/quality-test-support.mjs';
 import { billingProposal, makeGraphFixture, reachSpecApproved } from '../testing/graph-fixtures.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 function qualityAuthorization(fixture, approved, now, policyVariant = false) {
 	const draft = fixture.artifacts.readJson(approved.draftArtifact);
@@ -36,17 +37,7 @@ function qualityAuthorization(fixture, approved, now, policyVariant = false) {
 			...(policyVariant ? { maxOutputTokens: checkpointPolicy.review.maxOutputTokens + 1 } : {}),
 		},
 	};
-	const adapter = {
-		adapterId: 'plan-recovery-test',
-		protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'services/billing/adapter.mjs', sha256: 'b'.repeat(64) }],
-		dependencyFiles: [],
-		configurationFiles: [],
-		argv: ['node', 'services/billing/adapter.mjs'],
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: 'c'.repeat(64),
-		limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 },
-	};
+	const adapter = commandRegistrationFixture({ adapterId: 'plan-recovery-test', limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } });
 	const obligations = [];
 	for (const [index, text] of draft.acceptanceCriteria.entries()) {
 		const parsed = parseAcceptanceCriterion(text, index);

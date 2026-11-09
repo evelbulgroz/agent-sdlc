@@ -4,19 +4,10 @@ import test from 'node:test';
 import { sha256 } from '../policy/contracts.ts';
 import { policy } from '../testing/quality-test-support.mjs';
 import { packPlanDocument, packQaExcerpts, packSpecDocument, PLAN_DOCUMENT_MAX_BYTES } from './critic-input-packing.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 const v2Plan = () => {
-	const adapter = {
-		adapterId: 'planning-test',
-		protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'adapter.mjs', sha256: 'b'.repeat(64) }],
-		dependencyFiles: [],
-		configurationFiles: [],
-		argv: ['node', 'adapter.mjs'],
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: 'c'.repeat(64),
-		limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 },
-	};
+	const adapter = commandRegistrationFixture({ adapterId: 'planning-test', limits: { timeoutMs: 1000, maxReportBytes: 10000, maxArtifactBytes: 1000, maxArtifacts: 1 } });
 	return {
 		schemaVersion: '2.0.0',
 		runId: '2026-11-02-packing-test',

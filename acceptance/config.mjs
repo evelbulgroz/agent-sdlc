@@ -34,7 +34,6 @@ export function acceptanceConfig(profile, root) {
 		canary: block.canary ? Object.freeze({ ...block.canary, files: Object.freeze(block.canary.files.map((file) => Object.freeze({ ...file }))) }) : null,
 		caseManifest: block.caseManifest,
 		runtimeSources: block.runtimeSources,
-		runners: block.runners ?? {},
 		commands: block.commands ?? {},
 		pretest: block.pretest ?? [],
 		sentinel: block.sentinel ?? null,

@@ -12,7 +12,7 @@ const profile = (extra = {}) => ({ profileId: 'p', repositoryId: 'repo', stateDi
   acceptanceEvidence: {
     canaryId: 'c1', slug: 'healthy', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'h', nodeExecutable: process.execPath,
     caseManifest: 'cm.json', runtimeSources: 'rs.json', package: { root: 'pkg' }, sandbox: { readOnlyBinds: [] },
-    runners: { unit: { argv: [process.execPath, 'u'], bundleFiles: [] } }, preflightResult: 'pf.json',
+    commands: { unit: { argv: [process.execPath, 'u'] } }, preflightResult: 'pf.json',
     canary: { spec: 's.md', tasks: 't.json', corpus: 'c.json', obligations: 'o.json', files: [{ path: 'pkg/a.spec.ts', kind: 'unit' }] },
     ...extra } });
 

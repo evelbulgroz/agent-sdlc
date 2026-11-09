@@ -4,20 +4,6 @@ import { z } from 'zod';
 const IdSchema = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'must be lowercase alphanumerics and hyphens');
 const PathSchema = z.string().min(1);
 
-const AdapterCommandSchema = z.strictObject({
-	argv: z.array(z.string().min(1)).min(1).refine((argv) => path.isAbsolute(argv[0] as string), {
-		message: 'argv[0] must be an absolute executable path',
-	}),
-	bundleFiles: z.array(PathSchema),
-	// Runner config file, relative to package.root; the canary execution manifest pins it.
-	config: PathSchema.optional(),
-	// Runner project name recorded in the case map (e.g. a browser project).
-	project: z.string().min(1).optional(),
-	// Capabilities the runner qualifies for, and its per-operation timeout (default 120000 ms).
-	capabilities: z.array(z.string().min(1)).optional(),
-	timeoutMs: z.number().int().positive().optional(),
-});
-
 const PLACEHOLDER = /\{[^{}]*\}/g;
 const KNOWN_PLACEHOLDERS = new Set(['{reportPath}', '{baseSha}']);
 // Placeholders are whole-token or `key=value` substitutions; anything else in braces is rejected.
@@ -87,20 +73,19 @@ export const AcceptanceEvidenceSchema = z.strictObject({
 	runtimeSources: PathSchema,
 	package: z.strictObject({ root: PathSchema, openApiPath: PathSchema.optional() }),
 	sandbox: z.strictObject({ readOnlyBinds: z.array(PathSchema) }),
-	runners: z.record(IdSchema, AdapterCommandSchema).optional(),
+	// Removed executable-adapter shape; declared only so the superRefine below can name the migration.
+	runners: z.unknown().optional(),
 	// Command evidence (1.6.0): one host command per layer, a neutral report instead of an adapter program.
 	commands: z.record(IdSchema, CommandSchema).optional(),
 	pretest: z.array(PretestSchema).optional(),
 	// Admission-time tripwire: must exit non-zero with exactly its planted case failed.
 	sentinel: SentinelSchema.optional(),
 }).superRefine((block, context) => {
-	const runners = Object.keys(block.runners ?? {});
-	const commands = Object.keys(block.commands ?? {});
-	if (runners.length + commands.length === 0) {
-		context.addIssue({ code: 'custom', path: ['runners'], message: 'at least one runner or command is required' });
+	if (block.runners !== undefined) {
+		context.addIssue({ code: 'custom', path: ['runners'], message: "acceptanceEvidence.runners was removed; declare each layer under acceptanceEvidence.commands (see host/README.md, 'Command evidence')" });
 	}
-	for (const layer of runners.filter((name) => commands.includes(name))) {
-		context.addIssue({ code: 'custom', path: ['commands', layer], message: `layer '${layer}' sets both runners and commands` });
+	if (Object.keys(block.commands ?? {}).length === 0) {
+		context.addIssue({ code: 'custom', path: ['commands'], message: 'at least one command is required' });
 	}
 	const root = block.package.root;
 	const inside = (cwd: string | undefined) => cwd === undefined || cwd === root || cwd.startsWith(`${root}/`);
@@ -147,21 +132,10 @@ export function acceptanceContainmentPaths(config: AcceptanceEvidenceConfig | un
 			paths.push([`${cwd}/${file}`, `acceptanceEvidence.commands.${name}.pins`]);
 		}
 	}
-	for (const [name, runner] of Object.entries(config.runners ?? {})) {
-		for (const file of runner.bundleFiles) paths.push([file, `acceptanceEvidence.runners.${name}.bundleFiles`]);
-		if (runner.config) paths.push([`${config.package.root}/${runner.config}`, `acceptanceEvidence.runners.${name}.config`]);
-	}
 	return paths;
 }
 
-/** Fields that only exist from schemaVersion 1.6.0, or that 1.5.0 still required. */
-export function acceptanceVersionIssue(block: AcceptanceEvidenceConfig, schemaVersion: string): string | undefined {
-	if (schemaVersion !== '1.5.0') return undefined;
-	for (const key of ['commands', 'pretest', 'sentinel'] as const) {
-		if (block[key] !== undefined) return `acceptanceEvidence.${key} requires schemaVersion '1.6.0'`;
-	}
-	for (const key of ['helpersDir', 'nodeExecutable', 'runners'] as const) {
-		if (block[key] === undefined) return `acceptanceEvidence.${key} is required below schemaVersion '1.6.0'`;
-	}
-	return undefined;
+/** acceptanceEvidence needs commands, which exist from schemaVersion 1.6.0; 1.5.0 blocks relied on removed runners. */
+export function acceptanceVersionIssue(_block: AcceptanceEvidenceConfig, schemaVersion: string): string | undefined {
+	return schemaVersion === '1.5.0' ? "acceptanceEvidence requires schemaVersion '1.6.0' or later; 1.5.0 runners were removed" : undefined;
 }

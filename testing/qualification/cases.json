@@ -4,12 +4,12 @@
 		{
 			"id": "N3",
 			"tier": 1,
-			"seededDefect": "A frozen evidence dependency file is altered after admission",
+			"seededDefect": "A pinned evidence file is altered after admission",
 			"expectedOutcome": "evidence verification fails closed",
-			"expectedCode": "frozen-adapter-file-changed",
+			"expectedCode": "PINNED_FILE_MODIFIED",
 			"proof": {
-				"file": "host/evidence-executable.spec.mjs",
-				"test": "hash-bound manifest verifies every frozen dependency without granting model write scope"
+				"file": "host/command-port.spec.mjs",
+				"test": "@ac AC-06 @case AC-06.3 a pinned file changed by the run fails the evidence closed"
 			}
 		},
 		{

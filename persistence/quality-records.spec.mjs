@@ -11,6 +11,7 @@ import { compactRunDatabase } from './run-compaction.ts';
 import { createEvidenceRecordStore } from '../host/evidence-store.ts';
 import { hashTaskPlanProjection } from '../policy/contracts/dag-schema.ts';
 import { H, T, TIME, policy, makeFixture, initialize, binding } from '../testing/quality-test-support.mjs';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 function completion(fixture, id, candidate = binding(fixture)) {
 	const q = fixture.store.quality;
 	q.registerWorktree({ runId: fixture.runId, registryId: `registry-${id}`, kind: 'slice', ownerId: 'slice-a',
@@ -231,10 +232,7 @@ test('v2 plans retain policy and hydrate eligible revisions', () => {
 	const fixture = makeFixture('quality-plan');
 	try {
 		initialize(fixture);
-		const adapter = { adapterId: 'offline', protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'adapter.mjs', sha256: H }], dependencyFiles: [], configurationFiles: [],
-			argv: ['offline'], profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: H, limits: { timeoutMs: 100, maxReportBytes: 1000, maxArtifactBytes: 1000, maxArtifacts: 1 } };
+		const adapter = commandRegistrationFixture({ adapterId: 'offline', limits: { timeoutMs: 100, maxReportBytes: 1000, maxArtifactBytes: 1000, maxArtifacts: 1 } });
 		const plan = {
 			schemaVersion: '2.0.0', runId: fixture.runId, planPolicyHash: H, baseCommitSha: T,
 			slices: [{ sliceId: 'slice-a', kind: 'vertical', goal: 'Prepare boundary', acceptanceCriteria: ['AC-01'], dependsOn: [] }],

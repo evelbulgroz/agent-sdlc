@@ -8,6 +8,7 @@ import { qaCheckpointAttemptKey } from '../review/critic-budget.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { resolveCheckpointQualityContext } from '../workflow/quality-context.ts';
 import { assertQualityDeliveryAllowed } from '../workflow/quality-delivery.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 const hash = (letter = 'a') => letter.repeat(64);
 const tree = (letter = 'b') => letter.repeat(40);
@@ -28,17 +29,7 @@ function qualityFixture() {
 		execution: { maxInvocations: 2, maxTotalDurationMs: 10_000 },
 		review: { maxLogicalDispatches: 2, maxPhysicalCalls: 2, maxInputTokens: 1_000, maxOutputTokens: 1_000 },
 	};
-	const adapter = {
-		adapterId: 'unit-adapter',
-		protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'tools/adapter.mjs', sha256: hash() }],
-		dependencyFiles: [],
-		configurationFiles: [],
-		argv: ['node', 'tools/adapter.mjs'],
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: hash('c'),
-		limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 },
-	};
+	const adapter = commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 } });
 	const adapterHash = adapterBindingHash(adapter);
 	const plan = {
 		schemaVersion: '2.0.0',

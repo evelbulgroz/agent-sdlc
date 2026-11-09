@@ -6,7 +6,7 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
 
 - `host/host-profile.ts` — Closed `1.7.0` schema validator and loader for `.agents/sdlc-host.json` (`1.7.0` adds the optional `telemetry.dir` write location for `agent-sdlc telemetry record|export`, default `<stateDir>/telemetry`; version gates live in `host/profile-version-gates.ts`), with explicit decoding for `1.6.0`, `1.5.0`, `1.4.0`, `1.3.0` and `1.2.0`.
 - `host/scaffold.ts` — `agent-sdlc host scaffold --package <dir>` proposes a Tier A draft: `.agents/sdlc-host.json` (`1.7.0`, one `node --test` JUnit command), an empty `corpus.json` and a `runtime.sources.json` skeleton with no source roots. The draft binds and pins the package's top-level `*.test.{mjs,cjs,js}` files. It never overwrites without `--overwrite` and invents no policy, cases or machine paths.
-- `host/acceptance-evidence-schema.ts` — Closed `acceptanceEvidence` block (`1.5.0` and `1.6.0`; `1.6.0` makes `runners`, `nodeExecutable` and `helpersDir` optional and adds `commands`, `pretest` and `sentinel` (a command plus a required `planted` case id, run once by `command-qualify` at admission): no-shell host argv with `{reportPath}`/`{baseSha}` placeholders, `cwd` inside `package.root`, `pins`, `retries`; a layer may not set both `runners` and `commands`; a command key that is not a layer name sets `layer` explicitly, and `pretest` steps run first in the same sandbox, are pinned in the registration binding, and fail the evidence run on a non-zero exit; a command's own `pretest` list of step ids selects a subset, default all): canary id and slug, evidence dir, case manifest, runtime sources, package root, sandbox binds, and named adapter-command runners (`argv` with absolute `argv[0]`, `bundleFiles`). Every named path must be repository-relative and contained; `agent-sdlc host check` reports the block.
+- `host/acceptance-evidence-schema.ts` — Closed `acceptanceEvidence` block (`1.6.0` and later; `runners` was removed and is rejected; `nodeExecutable` and `helpersDir` are optional; `commands`, `pretest` and `sentinel` (a command plus a required `planted` case id, run once by `command-qualify` at admission): no-shell host argv with `{reportPath}`/`{baseSha}` placeholders, `cwd` inside `package.root`, `pins`, `retries`; a command key that is not a layer name sets `layer` explicitly, and `pretest` steps run first in the same sandbox, are pinned in the registration binding, and fail the evidence run on a non-zero exit; a command's own `pretest` list of step ids selects a subset, default all): canary id and slug, evidence dir, case manifest, runtime sources, package root, sandbox binds. Every named path must be repository-relative and contained; `agent-sdlc host check` reports the block.
 - `host/verify-config.ts` — Progressive 3-tier `verify` schema (`VerifySchema`, `HostVerifyConfig`, `DEFAULT_VERIFY_ARGV`, `DEFAULT_VERIFY_REQUIRE`, `DEFAULT_VERIFY_HEAD_FIELD`, and `resolveHostVerifyConfig`).
 - `host/verify-runner.ts` — Shared host verification command runner supporting both exit-code mode and structured JSON receipt mode (`resultPath`).
 - `host/workspace.ts` — Adapter-aware workspace package discovery (`discoverWorkspace`).
@@ -43,37 +43,18 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
 
 ## Progressive 3-Tier Verification Gate (`verify-config.ts`, `verify-runner.ts`)
 
-### Frozen evidence executable qualification
+### Frozen command evidence
 
-Evidence adapter execution (including receipt reuse) requires canonical absolute
-`argv[0]` and `executableSha256`, the SHA-256 of that regular executable's exact
-bytes. Symlink aliases, relative names/PATH discovery, missing hashes and changed
-executable bytes fail closed. For an interpreter, qualify its canonical absolute
-binary separately from the adapter script: the script belongs in `bundleFiles`,
-and its dependencies/configuration belong in their respective hashed lists.
-All these values enter the frozen adapter binding, authorization and v2 plan hash.
-Hosts must qualify the exact offline deployment binary before approving a run;
-the engine never discovers or substitutes one. Structural historical registrations
-may omit the additive field so their hashes remain readable unchanged, but cannot
-execute or reuse evidence until explicitly requalified and reapproved. Legacy
-`verify.argv` execution is unchanged.
-
-Execution and reuse also require `qualificationArtifact: {path, sha256}` whose
-hash equals `qualificationArtifactHash`. Its regular JSON receipt must be
-`{schemaVersion, kind, status:"passed", liveQualified:false, providerOperations:0,
-[sourceCommitSha, inventorySha256]}`. The optional SHAs are retained provenance, not
-checked against the run base (a committed receipt cannot name its own commit). Blocked,
-live-claiming, provider-using, malformed or missing receipts fail with `unqualified-evidence-adapter`. This
-proves provider-free offline qualification only, never semantic adequacy.
-
-Large frozen closures can use optional `dependencyManifest: {path, sha256}`.
-Its repository-relative regular JSON file has the closed shape
-`{schemaVersion:"1.0.0", files:[{path,sha256}]}`: 1–100,000 unique paths,
-at most 20 MiB. The engine verifies its exact bytes and every listed regular file
-before/after execution and on receipt reuse, rejecting symlinked parents too.
-The approved manifest-backed registration grants frozen read inputs outside model
-edit scope; it never broadens authorized writes. Inline registrations retain
-their existing hashes and path-scope checks; no stored-data migration is needed.
+Evidence runs are host commands declared under `acceptanceEvidence.commands`. Each
+registration is `kind: "command"` and freezes the resolved absolute `argv[0]`
+realpath with its SHA-256 (`executable`), the pinned files and `pretest` steps, and
+`commandSha256 = sha256({argv, executable.sha256, pins[, pretest]})`. Symlink aliases,
+relative names and changed executable bytes fail closed. The engine verifies the
+registration before and after each run and on receipt reuse. The former executable
+adapter kind (`bundleFiles`, `qualificationArtifact`, `acceptanceEvidence.runners`)
+was removed; a profile that still declares `runners` fails validation and must move
+each layer to `commands`. Hosts on `1.6.0` that already use `commands` load
+unchanged and keep their `commandSha256`.
 
 On Linux, evidence commands run in a detached process group. Success, timeout and
 error cleanup kill remaining group members and wait until they are no longer

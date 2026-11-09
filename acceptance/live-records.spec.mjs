@@ -11,7 +11,7 @@ const config = acceptanceConfig({ profileId: 'p', repositoryId: 'r', stateDir: '
   acceptanceEvidence: {
     canaryId: 'c1', slug: 'healthy', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'h', nodeExecutable: '/usr/bin/node',
     caseManifest: 'cm.json', runtimeSources: 'rs.json', package: { root: 'pkg' }, sandbox: { readOnlyBinds: [] },
-    runners: { unit: { argv: ['/usr/bin/node', 'u'], bundleFiles: [] } },
+    commands: { unit: { argv: ['/usr/bin/node', 'u'] } },
     canary: { spec: 's.md', tasks: 't.json', corpus: 'c.json', obligations: 'o.json', providerCredentials: ['KEY_A'],
       files: [{ path: 'pkg/a.spec.ts', kind: 'unit' }] } } }, '/repo');
 

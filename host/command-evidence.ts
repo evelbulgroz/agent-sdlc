@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sha256 } from '../policy/contracts/primitives.ts';
 import type {
-	AdapterRegistration, EvidenceReport, EvidenceRequest, CommandPinRecord, CommandPretestStep, CommandRegistration, ExecutableRegistration,
+	AdapterRegistration, EvidenceReport, EvidenceRequest, CommandPinRecord, CommandPretestStep, CommandRegistration,
 } from '../policy/contracts/quality-evidence-schema.ts';
 import { hashEvidenceBytes, readEvidenceFile } from './evidence-files.ts';
 
@@ -10,19 +10,12 @@ export type PinSpec = { file: string } | { script: { file: string; name: string 
 export const PINNED_FILE_MODIFIED = 'PINNED_FILE_MODIFIED';
 
 export const isCommandRegistration = (registration: AdapterRegistration): registration is CommandRegistration =>
-	'kind' in registration && registration.kind === 'command';
+	registration.kind === 'command';
 
 /** Repository-relative files an evidence registration freezes, for containment checks. */
 export function evidenceRegistrationFiles(registration: AdapterRegistration): { path: string }[] {
-	if (isCommandRegistration(registration)) {
-		return [...registration.pins, ...(registration.pretest ?? []).flatMap((step) => step.pins)]
-			.map((pin) => ({ path: pin.kind === 'file' ? pin.path : pin.file }));
-	}
-	const executable = registration as ExecutableRegistration;
-	return [
-		...executable.bundleFiles, ...executable.dependencyFiles, ...executable.configurationFiles,
-		...(executable.dependencyManifest ? [executable.dependencyManifest] : []),
-	];
+	return [...registration.pins, ...(registration.pretest ?? []).flatMap((step) => step.pins)]
+		.map((pin) => ({ path: pin.kind === 'file' ? pin.path : pin.file }));
 }
 
 const PLACEHOLDER = /\{[^{}]*\}/g;

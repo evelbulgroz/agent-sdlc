@@ -29,6 +29,7 @@ import {
 	validateTaskPlan,
 } from './dag-schema.ts';
 import { sha256 } from './primitives.ts';
+import { commandRegistrationFixture } from '../../testing/command-registration-fixture.mjs';
 
 const hash = (letter = 'a') => letter.repeat(64);
 const tree = (letter = 'b') => letter.repeat(40);
@@ -53,18 +54,7 @@ function qualityPolicy(overrides = {}) {
 }
 
 function registration(overrides = {}) {
-	return {
-		adapterId: 'unit-adapter',
-		protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'tools/adapter.mjs', sha256: hash() }],
-		dependencyFiles: [],
-		configurationFiles: [],
-		argv: ['node', 'tools/adapter.mjs'],
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: hash('c'),
-		limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 },
-		...overrides,
-	};
+	return commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 }, ...overrides });
 }
 
 function obligation(bindingHash, overrides = {}) {
@@ -177,7 +167,12 @@ test('policy and plan validation rejects missing, unknown, mismatched and under-
 test('adapter and obligation boundaries reject unsupported capabilities, empty payloads and escaping paths', () => {
 	const adapter = registration();
 	assert.equal(AdapterRegistrationSchema.safeParse({ ...adapter, argv: [] }).success, false);
-	assert.equal(AdapterRegistrationSchema.safeParse({ ...adapter, bundleFiles: [] }).success, false);
+	assert.equal(AdapterRegistrationSchema.safeParse({ ...adapter, argv: [], executable: { ...adapter.executable, path: 'relative' } }).success, false);
+	const { kind, executable, pins, commandSha256, ...legacy } = adapter;
+	assert.equal(AdapterRegistrationSchema.safeParse({
+		...legacy, bundleFiles: [{ path: 'tools/adapter.mjs', sha256: hash() }], dependencyFiles: [], configurationFiles: [],
+		qualificationArtifactHash: hash('c'),
+	}).success, false);
 	assert.equal(AdapterRegistrationSchema.safeParse({ ...adapter, surprise: true }).success, false);
 	assert.equal(AdapterRegistrationSchema.safeParse({
 		...adapter,

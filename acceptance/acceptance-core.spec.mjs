@@ -18,7 +18,7 @@ const BLOCK = {
 	canaryId: 'canary-v1', slug: 'healthy', evidenceDir: 'ev', runtimeDir: 'rt', helpersDir: 'helpers',
 	nodeExecutable: process.execPath, caseManifest: 'cases.json', runtimeSources: 'sources.json',
 	package: { root: 'pkg', openApiPath: 'api/openapi.json' }, sandbox: { readOnlyBinds: ['src', 'package.json'] },
-	runners: { unit: { argv: [process.execPath, 'adapter.mjs'], bundleFiles: [] } },
+	commands: { unit: { argv: [process.execPath, 'run.mjs'] } },
 };
 
 function withRepo(fn, block = BLOCK) {
@@ -27,7 +27,7 @@ function withRepo(fn, block = BLOCK) {
 		fs.mkdirSync(path.join(root, dir), { recursive: true });
 	}
 	fs.writeFileSync(path.join(root, '.agents/sdlc-host.json'), JSON.stringify({
-		schemaVersion: '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default', acceptanceEvidence: block,
+		schemaVersion: '1.6.0', profileId: 'p', repositoryId: 'r', adapter: 'default', acceptanceEvidence: block,
 	}));
 	for (const file of ['package.json', 'pkg/package.json', 'api/openapi.json']) fs.writeFileSync(path.join(root, file), '{}');
 	try { return fn(root); } finally { fs.rmSync(root, { recursive: true, force: true }); }
@@ -59,7 +59,7 @@ test('acceptanceConfig derives output from evidenceDir and canaryId and fails cl
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-acceptance-none-'));
 	fs.mkdirSync(path.join(root, '.agents'));
 	fs.writeFileSync(path.join(root, '.agents/sdlc-host.json'), JSON.stringify({
-		schemaVersion: '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default',
+		schemaVersion: '1.6.0', profileId: 'p', repositoryId: 'r', adapter: 'default',
 	}));
 	try { assert.throws(() => acceptanceConfig(root), /acceptanceEvidence is not configured/); }
 	finally { fs.rmSync(root, { recursive: true, force: true }); }
@@ -146,7 +146,7 @@ test('a symlinked bind that leaves the package is refused by the loader and by n
 			fs.symlinkSync(outside, path.join(root, 'pkg/linked'));
 			assert.throws(() => namespaceArgv({ ...config, readOnlyBinds: ['linked'] }, [process.execPath]), /bind escapes its base: linked/);
 			fs.writeFileSync(path.join(root, '.agents/sdlc-host.json'), JSON.stringify({
-				schemaVersion: '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default',
+				schemaVersion: '1.6.0', profileId: 'p', repositoryId: 'r', adapter: 'default',
 				acceptanceEvidence: { ...BLOCK, sandbox: { readOnlyBinds: ['linked'] } },
 			}));
 			assert.throws(() => acceptanceConfig(root), /escapes rootDir via symlink/);

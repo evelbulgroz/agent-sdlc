@@ -4,6 +4,7 @@ import { attachApprovedQualityPlan } from './quality-planning.ts';
 import { adapterBindingHash, qualityPolicyHash } from './contracts/quality-schema.ts';
 import { hashTaskPlanProjection, projectTaskPlan } from './contracts/dag-schema.ts';
 import { sha256 } from './contracts/primitives.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 const hash = (letter = 'a') => letter.repeat(64);
 const tree = (letter = 'b') => letter.repeat(40);
@@ -67,17 +68,7 @@ function approvedQuality(overrides = {}) {
 		execution: { maxInvocations: 4, maxTotalDurationMs: 20_000 },
 		review: { maxLogicalDispatches: 2, maxPhysicalCalls: 2, maxInputTokens: 1_000, maxOutputTokens: 1_000 },
 	};
-	const adapter = {
-		adapterId: 'unit-adapter',
-		protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'tools/adapter.mjs', sha256: hash() }],
-		dependencyFiles: [],
-		configurationFiles: [],
-		argv: ['node', 'tools/adapter.mjs'],
-		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		qualificationArtifactHash: hash('d'),
-		limits: { timeoutMs: 5_000, maxReportBytes: 10_000, maxArtifactBytes: 10_000, maxArtifacts: 2 },
-	};
+	const adapter = commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 10_000, maxArtifactBytes: 10_000, maxArtifacts: 2 } });
 	const bindingHash = adapterBindingHash(adapter);
 	const evidenceObligations = ['AC-01.1', 'AC-01.2'].map((caseId, index) => ({
 		obligationId: `obligation-${index + 1}`,

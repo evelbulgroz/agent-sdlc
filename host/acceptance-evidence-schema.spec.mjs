@@ -18,7 +18,7 @@ const BLOCK = {
 	runtimeSources: 'tools/runtime.sources.json',
 	package: { root: 'apps/web', openApiPath: 'apps/api/openapi.json' },
 	sandbox: { readOnlyBinds: ['src', 'package.json'] },
-	runners: { unit: { argv: ['/usr/bin/node', 'tools/unit-adapter.mjs'], bundleFiles: ['unit.config.ts'] } },
+	commands: { unit: { argv: ['node', '--test', '--test-reporter-destination={reportPath}'], pins: [{ file: 'package.json' }] } },
 };
 
 function withProfile(overrides, fn) {
@@ -26,7 +26,7 @@ function withProfile(overrides, fn) {
 	fs.mkdirSync(path.join(dir, '.agents'));
 	fs.writeFileSync(
 		path.join(dir, '.agents/sdlc-host.json'),
-		JSON.stringify({ schemaVersion: overrides.schemaVersion ?? '1.5.0', profileId: 'p', repositoryId: 'r', adapter: 'default', ...overrides }),
+		JSON.stringify({ schemaVersion: overrides.schemaVersion ?? '1.6.0', profileId: 'p', repositoryId: 'r', adapter: 'default', ...overrides }),
 	);
 	try {
 		const result = fn(dir);
@@ -41,9 +41,9 @@ const clone = () => structuredClone(BLOCK);
 const rejects = (overrides, pattern) =>
 	withProfile(overrides, (dir) => assert.throws(() => loadHostProfile(dir), pattern));
 
-test('a 1.5.0 profile with a valid acceptanceEvidence block loads', () => {
+test('a 1.6.0 profile with a valid command acceptanceEvidence block loads', () => {
 	withProfile({ acceptanceEvidence: BLOCK }, (dir) => {
-		assert.deepEqual(loadHostProfile(dir).acceptanceEvidence?.runners.unit.bundleFiles, ['unit.config.ts']);
+		assert.deepEqual(loadHostProfile(dir).acceptanceEvidence?.commands.unit.pins, [{ file: 'package.json' }]);
 	});
 });
 
@@ -53,9 +53,10 @@ test('1.4.0 and 1.3.0 profiles still load and decode with acceptanceEvidence abs
 	}
 });
 
-test('acceptanceEvidence is rejected below 1.5.0', () => {
+test('acceptanceEvidence is rejected below 1.6.0', () => {
 	rejects({ schemaVersion: '1.4.0', acceptanceEvidence: BLOCK }, /requires schemaVersion '1\.5\.0'/);
 	rejects({ schemaVersion: '1.3.0', acceptanceEvidence: BLOCK }, /requires schemaVersion '1\.5\.0'/);
+	rejects({ schemaVersion: '1.5.0', acceptanceEvidence: BLOCK }, /requires schemaVersion '1\.6\.0' or later/);
 });
 
 test('evidenceAdapters is still rejected below 1.4.0', () => {
@@ -67,7 +68,7 @@ test('the block is closed: unknown keys fail at every level', () => {
 		(b) => { b.extra = 1; },
 		(b) => { b.package.extra = 1; },
 		(b) => { b.sandbox.extra = 1; },
-		(b) => { b.runners.unit.plugin = 'vitest'; },
+		(b) => { b.commands.unit.plugin = 'vitest'; },
 	]) {
 		const block = clone();
 		mutate(block);
@@ -76,7 +77,7 @@ test('the block is closed: unknown keys fail at every level', () => {
 });
 
 test('each required key is enforced', () => {
-	for (const key of ['canaryId', 'slug', 'evidenceDir', 'runtimeDir', 'helpersDir', 'nodeExecutable', 'caseManifest', 'runtimeSources', 'package', 'sandbox', 'runners']) {
+	for (const key of ['canaryId', 'slug', 'evidenceDir', 'runtimeDir', 'caseManifest', 'runtimeSources', 'package', 'sandbox', 'commands']) {
 		const block = clone();
 		delete block[key];
 		rejects({ acceptanceEvidence: block }, new RegExp(`acceptanceEvidence\\.${key}`));
@@ -86,14 +87,13 @@ test('each required key is enforced', () => {
 	rejects({ acceptanceEvidence: noRoot }, /acceptanceEvidence\.package\.root/);
 });
 
-test('ids must be lowercase tokens, runners non-empty, and adapter argv[0] absolute', () => {
+test('ids must be lowercase tokens, commands non-empty, and the removed runners key is rejected', () => {
 	for (const bad of ['Canary V1', '../x', '']) {
 		rejects({ acceptanceEvidence: { ...clone(), canaryId: bad } }, /acceptanceEvidence\.canaryId/);
 	}
-	rejects({ acceptanceEvidence: { ...clone(), runners: {} } }, /at least one runner/);
-	const relative = clone();
-	relative.runners.unit.argv = ['node', 'a.mjs'];
-	rejects({ acceptanceEvidence: relative }, /absolute executable path/);
+	rejects({ acceptanceEvidence: { ...clone(), commands: {} } }, /at least one command/);
+	rejects({ acceptanceEvidence: { ...clone(), runners: { unit: { argv: ['/usr/bin/node', 'a.mjs'], bundleFiles: [] } } } },
+		/acceptanceEvidence\.runners was removed/);
 });
 
 test('every named path must be repository-relative and contained', () => {
@@ -107,8 +107,8 @@ test('every named path must be repository-relative and contained', () => {
 		(b) => { b.package.root = '/abs'; },
 		(b) => { b.package.openApiPath = '../x.json'; },
 		(b) => { b.sandbox.readOnlyBinds = ['../secrets']; },
-		(b) => { b.runners.unit.bundleFiles = ['/abs/config.ts']; },
-		(b) => { b.runners.unit.config = '../outside.config.ts'; },
+		(b) => { b.commands.unit.pins = [{ file: '../../../outside.config.ts' }]; },
+		(b) => { b.commands.unit.cwd = '../outside'; },
 	]) {
 		const block = clone();
 		mutate(block);
@@ -151,39 +151,29 @@ test('host check reports the acceptance block and omits it when absent', async (
 	});
 });
 
-const TIER_A = (() => {
-	const { runners, helpersDir, nodeExecutable, ...rest } = BLOCK;
-	return { ...rest, commands: { unit: { argv: ['node', '--test', '--test-reporter-destination={reportPath}'] } } };
-})();
-const v16 = (acceptanceEvidence) => ({ schemaVersion: '1.6.0', acceptanceEvidence });
+const { helpersDir, nodeExecutable, ...WITHOUT_HELPERS } = BLOCK;
 
-test('a 1.6.0 Tier A block needs no runners, helpersDir or nodeExecutable', () => {
-	withProfile(v16(TIER_A), (dir) => {
+test('a block needs no helpersDir or nodeExecutable', () => {
+	withProfile({ acceptanceEvidence: WITHOUT_HELPERS }, (dir) => {
 		const block = loadHostProfile(dir).acceptanceEvidence;
 		assert.equal(block.runners, undefined);
 		assert.deepEqual(Object.keys(block.commands), ['unit']);
 	});
-	withProfile(v16({ ...BLOCK, runners: undefined, commands: undefined }), (dir) => assert.throws(() => loadHostProfile(dir), /at least one runner or command/));
 });
 
-test('1.5.0 rejects commands and keeps its required fields; 1.6.0 loads 1.5.0 blocks', () => {
-	rejects({ acceptanceEvidence: { ...BLOCK, commands: { other: TIER_A.commands.unit } } }, /commands requires schemaVersion '1\.6\.0'/);
-	rejects({ acceptanceEvidence: { ...TIER_A } }, /requires schemaVersion '1\.6\.0'/);
-	withProfile(v16(BLOCK), (dir) => assert.ok(loadHostProfile(dir).acceptanceEvidence.runners.unit));
+test('1.5.0 acceptanceEvidence is rejected whatever it declares; 1.6.0 requires at least one command', () => {
+	rejects({ schemaVersion: '1.5.0', acceptanceEvidence: WITHOUT_HELPERS }, /requires schemaVersion '1\.6\.0' or later/);
+	rejects({ acceptanceEvidence: { ...BLOCK, commands: undefined } }, /at least one command is required/);
 });
 
-test('a layer cannot set both runners and commands', () => {
-	rejects(v16({ ...BLOCK, commands: TIER_A.commands }), /sets both runners and commands/);
-});
-
-test('a command may serve a layer beside a runner under its own key, and rejects unknown layers', () => {
-	const beside = (layer) => v16({ ...BLOCK, commands: { 'unit-cmd': { argv: ['node', 'a.mjs'], layer } } });
-	withProfile(beside('unit'), (dir) => assert.deepEqual(Object.keys(loadHostProfile(dir).acceptanceEvidence.commands), ['unit-cmd']));
+test('a command may serve a layer beside another command under its own key, and rejects unknown layers', () => {
+	const beside = (layer) => ({ acceptanceEvidence: { ...BLOCK, commands: { ...BLOCK.commands, 'unit-cmd': { argv: ['node', 'a.mjs'], layer } } } });
+	withProfile(beside('unit'), (dir) => assert.deepEqual(Object.keys(loadHostProfile(dir).acceptanceEvidence.commands), ['unit', 'unit-cmd']));
 	rejects(beside('nonsense'), /acceptanceEvidence/);
 });
 
 test('command argv placeholders are validated', () => {
-	const argv = (value) => v16({ ...TIER_A, commands: { unit: { argv: value } } });
+	const argv = (value) => ({ acceptanceEvidence: { ...BLOCK, commands: { unit: { argv: value } } } });
 	withProfile(argv(['node', 'run.mjs', '--outputFile={reportPath}', '{baseSha}']), (dir) => assert.ok(loadHostProfile(dir)));
 	for (const bad of [['node', '{other}'], ['{reportPath}'], ['node', 'x{reportPath}'], ['node', '{reportPath}{baseSha}'], ['node', '--a=$' + '{reportPath}x']]) {
 		rejects(argv(bad), /only \{reportPath\} or \{baseSha\}/);
@@ -191,18 +181,11 @@ test('command argv placeholders are validated', () => {
 });
 
 test('command cwd and pins must be contained', () => {
-	const command = (extra) => v16({ ...TIER_A, commands: { unit: { argv: ['node', 'a.mjs'], ...extra } } });
+	const command = (extra) => ({ acceptanceEvidence: { ...BLOCK, commands: { unit: { argv: ['node', 'a.mjs'], ...extra } } } });
 	withProfile(command({ cwd: 'apps/web/sub', pins: [{ file: 'package.json' }, { script: { file: 'package.json', name: 'test' } }] }), (dir) => assert.ok(loadHostProfile(dir)));
 	rejects(command({ cwd: 'apps/other' }), /cwd must lie inside package\.root/);
 	rejects(command({ cwd: '../x' }), /acceptanceEvidence\./);
 	rejects(command({ pins: [{ file: '../../secrets' }] }), /acceptanceEvidence\.commands\.unit\.pins/);
 	rejects(command({ pins: [{ file: 'a', extra: 1 }] }), /acceptanceEvidence/);
 	rejects(command({ retries: -1 }), /acceptanceEvidence/);
-});
-
-test('host check lists command layers', async () => {
-	await withProfile(v16(TIER_A), async (dir) => {
-		const outcome = await runCli(['host', 'check', '--root', dir, '--json'], { rootDir: REPOSITORY_ROOT });
-		assert.deepEqual(outcome.result.acceptanceEvidence.runners, ['unit']);
-	});
 });

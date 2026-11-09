@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Capability, FileHash, Hash, Id, Layer, NonNegativeInt, Outcome, PosInt, RelPath, Time, Tree, UniqueStrings, QUALITY_RECORD_SCHEMA_VERSION } from './quality-primitives.ts';
+import { Capability, Hash, Id, Layer, NonNegativeInt, Outcome, PosInt, RelPath, Time, Tree, UniqueStrings, QUALITY_RECORD_SCHEMA_VERSION } from './quality-primitives.ts';
 import { RUN_ID_PATTERN } from './primitives.ts';
 
 export const EvidenceAdapterProfileSchema = z.strictObject({
@@ -18,59 +18,6 @@ export const EvidenceAdapterProfileSchema = z.strictObject({
 	}
 });
 export type EvidenceAdapterProfile = z.infer<typeof EvidenceAdapterProfileSchema>;
-
-export const EvidenceDependencyManifestSchema = z.strictObject({
-	schemaVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
-	files: z.array(FileHash).min(1).max(100_000),
-}).superRefine((manifest, ctx) => {
-	if (new Set(manifest.files.map(file => file.path)).size !== manifest.files.length) {
-		ctx.addIssue({ code: 'custom', path: ['files'], message: 'dependency paths must be unique' });
-	}
-});
-
-export const AdapterQualificationReceiptSchema = z.object({
-	schemaVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
-	kind: Id,
-	status: z.literal('passed'),
-	liveQualified: z.literal(false),
-	providerOperations: z.literal(0),
-	sourceCommitSha: Tree.optional(),
-	inventorySha256: Hash.optional(),
-});
-export type AdapterQualificationReceipt = z.infer<typeof AdapterQualificationReceiptSchema>;
-
-export const ExecutableRegistrationSchema = z.strictObject({
-	adapterId: Id,
-	protocolVersion: z.literal(QUALITY_RECORD_SCHEMA_VERSION),
-	bundleFiles: z.array(FileHash).min(1),
-	dependencyFiles: z.array(FileHash),
-	dependencyManifest: FileHash.optional(),
-	configurationFiles: z.array(FileHash),
-	argv: z.array(z.string().min(1)).min(1),
-	executableSha256: Hash.optional(),
-	profiles: z.array(EvidenceAdapterProfileSchema).min(1),
-	qualificationArtifactHash: Hash,
-	qualificationArtifact: FileHash.optional(),
-	limits: z.strictObject({
-		timeoutMs: PosInt, maxReportBytes: PosInt, maxArtifactBytes: PosInt, maxArtifacts: PosInt,
-	}),
-}).superRefine((registration, ctx) => {
-	for (const [field, files] of Object.entries({
-		bundleFiles: registration.bundleFiles,
-		dependencyFiles: registration.dependencyFiles,
-		configurationFiles: registration.configurationFiles,
-	})) {
-		const paths = files.map((item) => item.path);
-		if (new Set(paths).size !== paths.length) ctx.addIssue({ code: 'custom', path: [field], message: 'paths must be unique' });
-	}
-	const profileIds = registration.profiles.map((profile) => profile.profileId);
-	if (new Set(profileIds).size !== profileIds.length) ctx.addIssue({ code: 'custom', path: ['profiles'], message: 'profile ids must be unique' });
-	if (registration.qualificationArtifact &&
-		registration.qualificationArtifact.sha256 !== registration.qualificationArtifactHash) {
-		ctx.addIssue({ code: 'custom', path: ['qualificationArtifact'], message: 'qualification artifact hash mismatch' });
-	}
-});
-export type ExecutableRegistration = z.infer<typeof ExecutableRegistrationSchema>;
 
 const CommandPin = z.union([
 	z.strictObject({ kind: z.literal('file'), path: RelPath, sha256: Hash }),
@@ -110,7 +57,7 @@ export const CommandRegistrationSchema = z.strictObject({
 });
 export type CommandRegistration = z.infer<typeof CommandRegistrationSchema>;
 
-export const AdapterRegistrationSchema = z.union([ExecutableRegistrationSchema, CommandRegistrationSchema]);
+export const AdapterRegistrationSchema = CommandRegistrationSchema;
 export type AdapterRegistration = z.infer<typeof AdapterRegistrationSchema>;
 
 export const EvidenceObligationSchema = z.strictObject({

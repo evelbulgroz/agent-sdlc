@@ -10,6 +10,7 @@ import { TaskPlanV2Schema, hashTaskPlanProjection, sha256 } from '../policy/cont
 import { adapterBindingHash } from '../policy/contracts/quality-schema.ts';
 import { REPOSITORY_ROOT } from './run-paths.ts';
 import { buildUnlandedPatch } from './run-archive-patch.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 function git(cwd, args, input) {
 	return execFileSync('git', args, {
@@ -71,17 +72,7 @@ test('quality archive reconstructs one patch from current selected task deltas, 
 		const finalTreeSha = git(rootDir, ['rev-parse', 'HEAD^{tree}']);
 		git(rootDir, ['checkout', 'main']);
 
-		const adapter = {
-			adapterId: 'archive-unit',
-			protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'src/adapter.mjs', sha256: 'd'.repeat(64) }],
-			dependencyFiles: [],
-			configurationFiles: [],
-			argv: ['node', 'src/adapter.mjs'],
-			profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: 'e'.repeat(64),
-			limits: { timeoutMs: 1_000, maxReportBytes: 10_000, maxArtifactBytes: 1_000, maxArtifacts: 1 },
-		};
+		const adapter = commandRegistrationFixture({ adapterId: 'archive-unit', limits: { timeoutMs: 1_000, maxReportBytes: 10_000, maxArtifactBytes: 1_000, maxArtifacts: 1 } });
 		const obligations = [1, 2].map(index => ({
 			obligationId: `obligation-${index}`,
 			criterionId: `AC-0${index}`,

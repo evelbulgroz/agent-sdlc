@@ -62,8 +62,8 @@ export async function regenerateAdmission({ root, config, engine, now = new Date
 	if (fs.existsSync(path.join(root, dir))) fail(`admission directory exists, move it aside: ${dir}`);
 	const { spec, tasks } = config.canary ?? fail('acceptanceEvidence.canary is not configured');
 	const roles = `${dir}/role-definitions.json`, registrations = `${dir}/adapter-registrations.json`;
-	if (!Object.keys(config.runners).length) await run('command-qualify', []);
-	await run('registrations', ['--dependency-manifest', artifact(config, 'runtimeDependencies'), '--output', registrations]);
+	await run('command-qualify', []);
+	await run('registrations', ['--output', registrations]);
 	const problems = stalePins(root, 'registrations', readJson(path.join(root, registrations)));
 	if (problems.length) fail(`stale pinned references:\n${problems.join('\n')}`);
 	await run('governor-resolution', ['--output', `${dir}/governor-resolution.json`]);

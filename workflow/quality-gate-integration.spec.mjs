@@ -2,8 +2,6 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { EventEmitter } from 'node:events';
-import { PassThrough, Writable } from 'node:stream';
 import test from 'node:test';
 import { TaskExecutor } from '../execution/task-executor.ts';
 import { liveRunRoot } from '../persistence/run-paths.ts';
@@ -11,7 +9,8 @@ import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { canonicalJson, sha256 } from '../policy/contracts.ts';
 import { hashTaskPlanProjection } from '../policy/contracts/dag-schema.ts';
 import { makeFixture } from '../testing/test-support.mjs';
-import { qualify } from '../host/evidence-qualification-fixture.mjs';
+import { CommandRegistrationSchema } from '../policy/contracts/quality-evidence-schema.ts';
+import { commandBindingHash } from '../host/command-evidence.ts';
 import { policy as defaultPolicy } from '../testing/quality-test-support.mjs';
 import { SdlcWorkflowRuntime } from './graph.ts';
 import { createExecuteQaCriticNode } from './nodes/review-qa.ts';
@@ -41,24 +40,22 @@ function fixture(t, finalReview) {
 			`import assert from 'node:assert/strict';\nimport test from 'node:test';\n` +
 			`test('@ac AC-0${index} @case AC-0${index}.1 visible', () => { assert.equal(true, true); });\n`);
 	}
-	fs.writeFileSync(path.join(worktreeDir, 'src/adapter.mjs'), 'frozen adapter\n');
-	const qualification = qualify(worktreeDir, 'src/qualification.json', BASE, H);
 	const policy = {
 		...defaultPolicy,
 		followUpDispatches: 0,
 		execution: { maxInvocations: 10, maxTotalDurationMs: 10_000 },
 		review: { maxLogicalDispatches: 6, maxPhysicalCalls: 6, maxInputTokens: 24_000, maxOutputTokens: 2_000 },
 	};
-	const adapter = {
-		adapterId: 'fixture-unit', protocolVersion: '1.0.0',
-		bundleFiles: [{ path: 'src/adapter.mjs',
-			sha256: crypto.createHash('sha256').update('frozen adapter\n').digest('hex') }],
-		dependencyFiles: [], configurationFiles: [], argv: [fs.realpathSync(process.execPath)],
-		executableSha256: crypto.createHash('sha256').update(fs.readFileSync(process.execPath)).digest('hex'),
+	const executable = { path: fs.realpathSync(process.execPath),
+		sha256: crypto.createHash('sha256').update(fs.readFileSync(process.execPath)).digest('hex') };
+	const adapterArgv = [executable.path, 'run.mjs'];
+	const adapter = CommandRegistrationSchema.parse({
+		kind: 'command', adapterId: 'fixture-unit', protocolVersion: '1.0.0', argv: adapterArgv, cwd: 'src',
+		reportFormat: 'junit', retries: 0, executable, pins: [],
+		commandSha256: commandBindingHash(adapterArgv, executable.sha256, [], []),
 		profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-		...qualification,
 		limits: { timeoutMs: 1_000, maxReportBytes: 16_384, maxArtifactBytes: 1_000, maxArtifacts: 1 },
-	};
+	});
 	const obligations = [1, 2].map(index => ({
 		obligationId: `obligation-${index}`, criterionId: `AC-0${index}`, caseId: `AC-0${index}.1`,
 		owner: { kind: 'slice', id: `slice-${index}` },
@@ -94,36 +91,16 @@ function fixture(t, finalReview) {
 		integrationOrder: ['task-1', 'task-2'], isParallel: false, createdAt: new Date().toISOString(),
 	};
 	const spawned = [], gitCalls = [];
-	const evidenceSpawn = (command, args, options) => {
-		assert.equal(command, fs.realpathSync(process.execPath));
-		assert.deepEqual(args, []);
-		assert.equal(options.shell, false);
-		const child = new EventEmitter();
-		child.stdout = new PassThrough();
-		child.stderr = new PassThrough();
-		child.kill = () => true;
-		let input = '';
-		child.stdin = new Writable({
-			write(chunk, encoding, callback) { input += chunk.toString(); callback(); },
-			final(callback) {
-				const request = JSON.parse(input);
-				spawned.push(request.binding.checkpointId);
-				callback();
-				queueMicrotask(() => {
-					child.stdout.write(JSON.stringify({
-						schemaVersion: '1.0.0', operationId: request.operationId, requestHash: sha256(request),
-						adapterBindingHash: request.adapterBindingHash, profileId: request.profileId,
-						cases: request.obligations.flatMap(obligation => obligation.testCases.map(entry => ({
-							...entry, obligationIds: [obligation.obligationId], exercisedCapabilities: [],
-							outcome: 'passed', attempts: [{ index: 0, outcome: 'passed', durationMs: 1, artifactPaths: [] }],
-						}))), artifacts: [],
-					}));
-					child.emit('close', 0, null);
-				});
-			},
-		});
-		return child;
-	};
+	const evidenceSpawn = Object.assign(() => assert.fail('command evidence must not spawn an adapter'), {
+		runCommand: async (_registration, request) => {
+			spawned.push(request.binding.checkpointId);
+			return {
+				exitCode: 0, reportBytes: Buffer.from('<testsuites/>'),
+				cases: [...new Set(request.obligations.map(obligation => obligation.caseId))]
+					.map(identity => ({ identity, outcome: 'passed', message: '', attempts: 1 })),
+			};
+		},
+	});
 	const runtime = new SdlcWorkflowRuntime({
 		runtimeStore: f.store, artifactStore: f.artifacts, registry: f.registry, governor: f.governor,
 		evidenceSpawn,

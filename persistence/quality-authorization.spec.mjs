@@ -5,15 +5,13 @@ import { createDefaultAuthorizationEnvelope } from '../policy/authorization.ts';
 import { sha256 } from '../policy/contracts/primitives.ts';
 import { H, T, initialize, makeFixture, policy } from '../testing/quality-test-support.mjs';
 import { RuntimeStore } from './runtime-store.ts';
+import { commandRegistrationFixture } from '../testing/command-registration-fixture.mjs';
 
 test('approved quality authorization survives reopening and rejects changed contents under the same policy hash', () => {
 	const fixture = makeFixture('quality-authorization');
 	try {
 		initialize(fixture);
-		const adapter = { adapterId: 'offline', protocolVersion: '1.0.0',
-			bundleFiles: [{ path: 'adapter.mjs', sha256: H }], dependencyFiles: [], configurationFiles: [],
-			argv: ['offline'], profiles: [{ profileId: 'unit', layers: ['unit'], capabilities: [] }],
-			qualificationArtifactHash: H, limits: { timeoutMs: 100, maxReportBytes: 1000, maxArtifactBytes: 1000, maxArtifacts: 1 } };
+		const adapter = commandRegistrationFixture({ adapterId: 'offline', limits: { timeoutMs: 100, maxReportBytes: 1000, maxArtifactBytes: 1000, maxArtifacts: 1 } });
 		const qualityPlan = { qualityPolicy: policy, adapterBindings: [adapter], evidenceObligations: [{
 			obligationId: 'obligation-a', criterionId: 'AC-01', caseId: null, owner: { kind: 'task', id: 'task-a' },
 			observableOutcome: 'Visible', setupAction: 'Exercise', expectedResult: 'Pass',
