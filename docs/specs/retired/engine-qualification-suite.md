@@ -1,6 +1,6 @@
 # Engine qualification suite: scripted scenarios and live fixture runs
 
-Status: ready for implementation (approved by the operator on 2026-11-09). Human-driven roadmap, like the retired hardening spec; it is not meant to be parsed by `agent-sdlc check-spec`. Owner: engine maintainers. Evidence base: live canary runs 3–10 on an external host (see `docs/backlog.md`). The first tier-1 suite is implemented and retired in `docs/specs/retired/engine-qualification-tier1.md`. Reviewed against engine `4b60026`.
+Status: retired 2026-11-09 (Q0–Q5 implemented; approved by the operator on 2026-11-09). Human-driven roadmap, like the retired hardening spec; it is not meant to be parsed by `agent-sdlc check-spec`. Owner: engine maintainers. Evidence base: live canary runs 3–10 on an external host (see `docs/backlog.md`). The first tier-1 suite is implemented and retired in `docs/specs/retired/engine-qualification-tier1.md`. Reviewed against engine `4b60026`.
 
 ## Principle
 

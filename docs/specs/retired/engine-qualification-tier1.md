@@ -1,4 +1,4 @@
-Status: retired. Implemented before 2026-11-09 and split out of `engine-qualification-suite.md`. Tier 2 continues in `docs/specs/ready/engine-qualification-suite.md`.
+Status: retired. Implemented before 2026-11-09 and split out of `engine-qualification-suite.md`. Tier 2 continues in `docs/specs/retired/engine-qualification-suite.md`.
 
 # Engine qualification, tier 1
 
