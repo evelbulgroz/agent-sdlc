@@ -63,6 +63,7 @@ Every tier 2 case has a kind, and a result takes one class valid for that kind.
 | seeded | `blocked-other` | Stopped for a different reason; the predicted gate is untested. |
 | seeded | `false-negative` | Reached `READY_FOR_GIT_APPROVAL` with the defect present. Fail. |
 | seeded | `inconclusive` | The model produced no defect. Neither pass nor fail; redesign the case. |
+| observational | `observed` | Recorded, not scored (for example N2 oracle results). |
 
 ## Tier 2 rules
 
@@ -103,6 +104,7 @@ These ran on the older host-canary path, before the acceptance-evidence, final-o
   - Make the proof finder accept `test`, `it` and any quote style.
   - Replace the host `spec` strings with `fixtureSpec`, add `kind` and the outcome-class values, and require them on tier 2 cases.
   - Mark N1 and N2 as observational or retired, and add N1b.
+  *Done 2026-11-09:* `cases.json` has N6a and N6b (`expectedMessages`), N7 asserts `READY_FOR_GIT_APPROVAL`, tier 2 cases carry `kind`, `fixtureSpec` and `scoring` (N1b, N2 observational, C1 clean, N8 crash), and `outcomeClasses` is a manifest field. `testing/qualification/proof-finder.mjs` replaces the literal search. The fixture spec files themselves come in Q3.
 - **Q2. Scripted scenarios.** Add S1 (as a proof), S2a, S2b, S4 and S5 in size-compliant specs under `testing/qualification/`. Known-gap scenarios assert today's behaviour and cite their backlog item.
 - **Q2b. Close the refusal item.** Resolved by Q0: `lastSummary` already reaches `tasks[].failureMetadata` in the status projection. What remains is to close the `docs/backlog.md` item (an N1 rerun on the current engine confirms it in tier 2) and to note the projection in `cli/README.md` if it is not already described. No engine change.
 - **Q3. Fixture project, scorer and runbook.**

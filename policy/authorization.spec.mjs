@@ -134,6 +134,20 @@ test('validateAuthorizationEnvelope enforces SHA equality, expiration, and path 
 			/Approved spec hash mismatch/.test(error.message),
 	);
 
+	// Mismatched run id fails closed
+	assert.throws(
+		() =>
+			validateAuthorizationEnvelope(valid, {
+				currentRunId: '2026-09-04-other-run',
+				currentBaseCommitSha: commitSha,
+				currentSpecHash: specHash,
+				now,
+			}),
+		(error) =>
+			error.code === 'AUTHORIZATION_INVALID' &&
+			/Run ID mismatch/.test(error.message),
+	);
+
 	// Expired envelope fails closed
 	const expiredNow = new Date('2026-09-06T12:00:00.000Z');
 	assert.throws(

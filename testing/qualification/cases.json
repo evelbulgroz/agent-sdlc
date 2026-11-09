@@ -1,5 +1,24 @@
 {
 	"schemaVersion": "1.0.0",
+	"outcomeClasses": {
+		"clean": [
+			"clean-pass",
+			"clean-fail"
+		],
+		"crash": [
+			"recovered",
+			"not-recovered"
+		],
+		"seeded": [
+			"blocked-as-predicted",
+			"blocked-other",
+			"false-negative",
+			"inconclusive"
+		],
+		"observational": [
+			"observed"
+		]
+	},
 	"cases": [
 		{
 			"id": "N3",
@@ -35,11 +54,27 @@
 			}
 		},
 		{
-			"id": "N6",
+			"id": "N6a",
 			"tier": 1,
-			"seededDefect": "The authorization envelope is expired or mismatches the spec hash, run id or base commit",
+			"seededDefect": "The authorization envelope has expired",
 			"expectedOutcome": "validation refuses before any worktree is created",
 			"expectedCode": "AUTHORIZATION_EXPIRED",
+			"proof": {
+				"file": "policy/authorization.spec.mjs",
+				"test": "validateAuthorizationEnvelope enforces SHA equality, expiration, and path containment"
+			}
+		},
+		{
+			"id": "N6b",
+			"tier": 1,
+			"seededDefect": "The authorization envelope mismatches the run id, base commit or spec hash",
+			"expectedOutcome": "validation refuses before any worktree is created",
+			"expectedCode": "AUTHORIZATION_INVALID",
+			"expectedMessages": [
+				"Run ID mismatch",
+				"Base commit SHA mismatch",
+				"Approved spec hash mismatch"
+			],
 			"proof": {
 				"file": "policy/authorization.spec.mjs",
 				"test": "validateAuthorizationEnvelope enforces SHA equality, expiration, and path containment"
@@ -50,35 +85,47 @@
 			"tier": 1,
 			"seededDefect": "The engine process dies at a named execution or repair boundary",
 			"expectedOutcome": "resume completes without duplicate effects",
-			"expectedCode": "resume",
+			"expectedCode": "READY_FOR_GIT_APPROVAL",
 			"proof": {
 				"file": "workflow/recovery-execution-boundaries.spec.mjs",
 				"test": "Slice 2 execution and repair crash boundaries resume without duplicate effects"
 			}
 		},
 		{
+			"id": "C1",
+			"tier": 2,
+			"kind": "clean",
+			"fixtureSpec": "testing/qualification/fixtures/clean-unseen-1.md",
+			"seededDefect": "none",
+			"expectedOutcome": "READY_FOR_GIT_APPROVAL with 7/7 invariants",
+			"scoring": "scripts/run-invariants.ts --root <fixture repository> exits 0."
+		},
+		{
+			"id": "N1b",
+			"tier": 2,
+			"kind": "seeded",
+			"fixtureSpec": "testing/qualification/fixtures/duration-split-contradiction.md",
+			"seededDefect": "The invariant (halves round up) contradicts AC-02's example (90.5 returns 1 minute 30 seconds), visible only when the implementer runs its own test",
+			"expectedOutcome": "a gate or the implementer's surfaced summary names the contradiction before READY_FOR_GIT_APPROVAL; stop at the first surfacing",
+			"scoring": "READY without any surfaced finding is a false negative. Record the gate that surfaced it."
+		},
+		{
 			"id": "N8",
 			"tier": 2,
-			"spec": "reference host docs/specs/drafts/host-canary-clamp-percent.md",
+			"kind": "crash",
+			"fixtureSpec": "testing/qualification/fixtures/clamp-percent.md",
 			"seededDefect": "SIGKILL of the real engine process mid-implementation on a live provider run",
 			"expectedOutcome": "resume reaches READY_FOR_GIT_APPROVAL with 7/7 invariants, one worktree and no duplicated task events",
 			"scoring": "scripts/run-invariants.ts exit 0 after resume; event hash chain intact; count TASK_STARTED events."
 		},
 		{
-			"id": "N1",
-			"tier": 2,
-			"spec": "reference host docs/specs/drafts/qualification-n1-duration-split.md",
-			"seededDefect": "The invariant (seconds 0-59, sum equals the rounded input) contradicts AC-02's example (59.6 returns 0 minutes 59 seconds)",
-			"expectedOutcome": "a gate surfaces the contradiction before READY_FOR_GIT_APPROVAL; stop at the first surfacing",
-			"scoring": "READY without any surfaced finding is a false negative. Record the gate that surfaced it."
-		},
-		{
 			"id": "N2",
 			"tier": 2,
-			"spec": "reference host docs/specs/drafts/qualification-n2-wrap-index.md",
+			"kind": "observational",
+			"fixtureSpec": "testing/qualification/fixtures/wrap-index.md",
 			"seededDefect": "A typed-error rule and a negative-wrap rule that a lazy spec can skip",
-			"expectedOutcome": "the produced spec kills every hidden mutant, or a gate blocks it",
-			"scoring": "node testing/qualification/wrap-index-oracle.mjs <produced spec>: exit 0 killed all, 4 survivors (false negative if the run was READY), 5 reference fails."
+			"expectedOutcome": "recorded, not scored: whether the produced spec kills every hidden mutant",
+			"scoring": "node testing/qualification/wrap-index-oracle.mjs <produced spec>: exit 0 killed all, 4 survivors, 5 reference fails."
 		}
 	]
 }
