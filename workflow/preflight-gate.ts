@@ -192,11 +192,11 @@ export function applyAcCoverageGate(
 		}
 	}
 	const coverageArtifact = runtime.artifactStore.writeJson('ac-coverage', coverage);
-	const failedNewPolicyCoverage = newPolicy && coverage.pass !== true;
+	const failedCoverage = coverage.pass !== true;
 	const next = runtime.transition(transitionFrom ?? snapshot, {
-		to: failedNewPolicyCoverage ? 'BLOCKED' : 'REVIEWING_QA',
-		eventType: failedNewPolicyCoverage ? 'AC_COVERAGE_FAILED' : 'AC_COVERAGE_PASSED',
-		causalId: `ac-coverage-${failedNewPolicyCoverage ? 'failed' : 'pass'}-${snapshot.runtimeRevision}`,
+		to: failedCoverage ? 'BLOCKED' : 'REVIEWING_QA',
+		eventType: failedCoverage ? 'AC_COVERAGE_FAILED' : 'AC_COVERAGE_PASSED',
+		causalId: `ac-coverage-${failedCoverage ? 'failed' : 'pass'}-${snapshot.runtimeRevision}`,
 		updates: {
 			preflightBindingArtifact,
 			...(qualityPolicy ? { qualityPolicy } : {}),
@@ -207,11 +207,11 @@ export function applyAcCoverageGate(
 				qualityCheckpointTreeSha: snapshot.qualityCheckpointTreeSha,
 				qualityCheckpointBindingHash: snapshot.qualityCheckpointBindingHash,
 			} : {}),
-			...(failedNewPolicyCoverage ? {
+			...(failedCoverage ? {
 				blockedReason: 'AC_COVERAGE_FAILED',
 				lastError: {
 					code: 'AC_COVERAGE_FAILED',
-					message: 'New-policy acceptance coverage failed; QA and delivery are blocked',
+					message: 'Acceptance coverage failed; QA and delivery are blocked',
 				},
 			} : {}),
 		},
@@ -229,7 +229,7 @@ export function applyAcCoverageGate(
 			preflightBindingArtifact,
 			verificationEvidenceHash,
 			canonical: true,
-			status: failedNewPolicyCoverage ? 'FAILED' : 'OK',
+			status: failedCoverage ? 'FAILED' : 'OK',
 			coverageArtifact,
 			coveragePass: coverage.pass,
 			uncoveredAcIds: coverage.uncoveredAcIds ?? [],

@@ -170,17 +170,19 @@ export function collectQaBriefAndAdvisories(
 	const qualityPolicy = getRunCheckpointQualityPolicy(runtime, snapshot);
 	let coverageAdvisories: CoverageAdvisory | null = null;
 	let covEvent: RuntimeEvent | undefined;
+	const isCoverageEvent = (event: RuntimeEvent) =>
+		event.eventType === 'AC_COVERAGE_PASSED' || event.eventType === 'AC_COVERAGE_FAILED';
 	if (qualityPolicy) {
 		const bindingHash = snapshot.qualityCheckpointBindingHash;
 		const treeSha = snapshot.qualityCheckpointTreeSha;
 		covEvent = events.slice().reverse().find((event) =>
-			(event.eventType === 'AC_COVERAGE_PASSED' || event.eventType === 'AC_COVERAGE_FAILED') &&
+			isCoverageEvent(event) &&
 			event.payload.qualityCheckpointBindingHash === bindingHash &&
 			event.payload.qualityCheckpointTreeSha === treeSha &&
 			event.payload.qualityPolicyHash === sha256(qualityPolicy),
 		);
 	} else {
-		covEvent = events.slice().reverse().find((event) => event.eventType === 'AC_COVERAGE_PASSED');
+		covEvent = events.slice().reverse().find(isCoverageEvent);
 	}
 	const covPayload =
 		covEvent?.payload && typeof covEvent.payload === 'object'

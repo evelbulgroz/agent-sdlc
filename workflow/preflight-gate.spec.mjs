@@ -42,7 +42,7 @@ function prepareVerifierSnapshot(fixture, state) {
 	return { snapshot, baseCommitSha, targetTreeSha };
 }
 
-test('@ac AC-03 @case AC-03.3 @ac AC-05 applyAcCoverageGate does not block completion or trigger REPAIRING_FAILURE when criteria are uncovered', async () => {
+test('@ac AC-08 applyAcCoverageGate blocks a legacy run with AC_COVERAGE_FAILED, not QA, when criteria are uncovered', async () => {
 	const fixture = makeFixture('graph-ac-05-advisory', []);
 	try {
 		const worktreeDir = fixture.rootDir;
@@ -88,14 +88,14 @@ test('@ac AC-03 @case AC-03.3 @ac AC-05 applyAcCoverageGate does not block compl
 			},
 		);
 
-		assert.equal(next.state, 'REVIEWING_QA');
+		assert.equal(next.state, 'BLOCKED');
+		assert.equal(next.blockedReason, 'AC_COVERAGE_FAILED');
 		const events = fixture.store.listEvents(fixture.runId);
-		assert.equal(events.some((e) => e.eventType === 'AC_COVERAGE_FAILED'), false);
-		assert.equal(events.some((e) => e.eventType === 'AC_COVERAGE_PASSED'), true);
-		const passEvent = events.find((e) => e.eventType === 'AC_COVERAGE_PASSED');
-		assert.equal(passEvent.payload.coveragePass, false);
-		assert.ok(passEvent.payload.coverageArtifact);
-		const savedArtifact = fixture.artifacts.readJson(passEvent.payload.coverageArtifact);
+		assert.equal(events.some((e) => e.eventType === 'AC_COVERAGE_PASSED'), false);
+		const failEvent = events.find((e) => e.eventType === 'AC_COVERAGE_FAILED');
+		assert.equal(failEvent.payload.coveragePass, false);
+		assert.ok(failEvent.payload.coverageArtifact);
+		const savedArtifact = fixture.artifacts.readJson(failEvent.payload.coverageArtifact);
 		assert.equal(savedArtifact.pass, false);
 		const { coverageAdvisories } = collectQaBriefAndAdvisories(fixture.runtime, next);
 		assert.equal(coverageAdvisories.coveragePass, false);
@@ -127,7 +127,7 @@ test('coverage transition chains its input hash from the persisted state, not th
 			fixture.rootDir,
 			{ verificationEvidenceHash: sha256('p'), transitionFrom: snapshot },
 		);
-		const event = fixture.store.listEvents(fixture.runId).find((e) => e.eventType === 'AC_COVERAGE_PASSED');
+		const event = fixture.store.listEvents(fixture.runId).find((e) => e.eventType === 'AC_COVERAGE_FAILED');
 		assert.equal(event.inputHash, sha256(snapshot));
 		assert.equal(next.semanticRepairsCount, snapshot.semanticRepairsCount);
 	} finally {

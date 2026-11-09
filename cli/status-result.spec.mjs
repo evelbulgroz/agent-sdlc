@@ -113,3 +113,25 @@ test('new-policy status uses current failed coverage and current QA instead of h
 	state.qualityCheckpointBindingHash = sha256(binding);
 	assert.deepEqual(assembleStatusResult(projection).qaDivergences, []);
 });
+
+test('@ac AC-08 legacy status shows a coverage miss recorded as AC_COVERAGE_FAILED', () => {
+	const state = {
+		runId: 'run-1', state: 'BLOCKED', runtimeRevision: 2, draftHash: null, approvedSpecHash: null,
+		completeness: null, blockedReason: 'AC_COVERAGE_FAILED', lastError: null,
+		semanticRepairsCount: 0, pendingInterruptId: null,
+	};
+	const events = [{ eventType: 'AC_COVERAGE_FAILED', payload: { coveragePass: false, uncoveredAcIds: ['AC-01'] } }];
+	const result = assembleStatusResult({
+		rootDir: '/tmp',
+		paths: { runId: 'run-1', runtimeDir: '/tmp/missing-runtime' },
+		runtimeStore: {
+			getRun: () => state, getMaxRecordedGeneration: () => 0, getGeneration: () => null,
+			listEvents: () => events, listCriticReviews: () => [], getGitCommit: () => null,
+			getPullRequest: () => null, getTaskPlan: () => null, listDiagnostics: () => [],
+			listOptionalRoleExecutions: () => [], getAuthorization: () => null,
+		},
+		continuationInputs: () => ({ authorization: null, pendingInterrupt: null, continuationAttempts: 0 }),
+	});
+	assert.equal(result.coverageAdvisories.coveragePass, false);
+	assert.deepEqual([...result.coverageAdvisories.uncoveredAcIds], ['AC-01']);
+});

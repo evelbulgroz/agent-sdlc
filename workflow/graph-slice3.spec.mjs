@@ -87,7 +87,7 @@ test('Slice 3 without local commits still halts at READY_FOR_GIT_APPROVAL', asyn
 	}
 });
 
-test('@ac AC-05 uncovered acceptance criteria do not block approval or burn a repair and proceed with advisory coverage artifact', async () => {
+test('@ac AC-08 uncovered acceptance criteria in a legacy run block with AC_COVERAGE_FAILED before QA', async () => {
 	const fixture = makeGraphFixture('slice3-ac-uncovered',  [
 		billingProposal(),
 		leanWriteAction(
@@ -119,28 +119,16 @@ test('@ac AC-05 uncovered acceptance criteria do not block approval or burn a re
 			maxSemanticRepairs: 0,
 		});
 		const terminal = await fixture.runtime.authorize(approved, envelope);
-		assert.equal(terminal.state, 'READY_FOR_GIT_APPROVAL');
+		assert.equal(terminal.state, 'BLOCKED');
+		assert.equal(terminal.blockedReason, 'AC_COVERAGE_FAILED');
 		const events = fixture.store.listEvents(fixture.runId);
-		assert.equal(
-			events.some((event) => event.eventType === 'AC_COVERAGE_FAILED'),
-			false,
-		);
-		assert.equal(
-			events.some((event) => event.eventType === 'AC_COVERAGE_PASSED'),
-			true,
-		);
-		const passed = events.find((event) => event.eventType === 'AC_COVERAGE_PASSED');
-		assert.ok(passed.payload.uncoveredAcIds.includes('AC-01'));
-		assert.equal(passed.payload.coveragePass, false);
-		assert.ok(passed.payload.coverageArtifact);
-		const qaReviews = fixture.store
-			.listCriticReviews(fixture.runId)
-			.filter((review) => review.phase === 'qa');
-		assert.equal(qaReviews.length, 1);
-		assert.equal(
-			events.some((event) => event.eventType === 'RUN_READY_FOR_GIT_APPROVAL'),
-			true,
-		);
+		assert.equal(events.some((event) => event.eventType === 'AC_COVERAGE_PASSED'), false);
+		const failed = events.find((event) => event.eventType === 'AC_COVERAGE_FAILED');
+		assert.ok(failed.payload.uncoveredAcIds.includes('AC-01'));
+		assert.equal(failed.payload.coveragePass, false);
+		assert.ok(failed.payload.coverageArtifact);
+		assert.equal(fixture.store.listCriticReviews(fixture.runId).filter((review) => review.phase === 'qa').length, 0);
+		assert.equal(events.some((event) => event.eventType === 'RUN_READY_FOR_GIT_APPROVAL'), false);
 	} finally {
 		fixture.close();
 	}

@@ -115,7 +115,7 @@ export function assembleStatusResult(projection: StatusProjectionLike) {
 					Boolean(state.qualityCheckpointBindingHash) &&
 					e.payload.qualityCheckpointBindingHash === state.qualityCheckpointBindingHash &&
 					e.payload.qualityCheckpointTreeSha === state.qualityCheckpointTreeSha
-				: e.eventType === 'AC_COVERAGE_PASSED');
+				: e.eventType === 'AC_COVERAGE_PASSED' || e.eventType === 'AC_COVERAGE_FAILED');
 		const covPayload = covEvent?.payload as Record<string, unknown> | undefined;
 		if (typeof covPayload?.coverageArtifact === 'string') {
 			try {
