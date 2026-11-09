@@ -107,7 +107,8 @@ export async function engineModule<T = Record<string, Function>>(name: string): 
 }
 
 export function isMain(url: string): boolean {
-	return Boolean(process.argv[1]) && pathToFileURL(path.resolve(process.argv[1] as string)).href === url;
+	const entry = process.argv[1];
+	return Boolean(entry) && pathToFileURL(fs.existsSync(entry) ? fs.realpathSync(entry) : path.resolve(entry)).href === url;
 }
 
 export async function main(action: () => unknown): Promise<void> {
