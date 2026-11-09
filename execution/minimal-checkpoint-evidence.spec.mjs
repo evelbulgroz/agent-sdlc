@@ -135,3 +135,38 @@ test('zero or expanded human edit approvals fail before any model call', async (
 		assert.equal(loop.governor.calls.length, 0);
 	} finally { await loop.close(); }
 });
+
+test('@ac AC-03 a static coverage miss skips the verification command and consumes a normal attempt', async () => {
+	let commands = 0;
+	let statics = 0;
+	const validator = Object.assign(() => ({ pass: true }), {
+		staticCheck: () => (++statics < 3 ? 'ac-coverage failed\n[uncovered] AC-01' : null),
+	});
+	const loop = openLoop({ label: 'static-precheck-repair',
+		script: Array.from({ length: 8 }, () => ({ action: { kind: 'complete', summary: 'candidate' } })),
+		execCli: () => { commands++; return ''; },
+		completionValidator: validator,
+	});
+	try {
+		const result = await loop.executor.execute(loopInput(loop.worktreeDir));
+		assert.deepEqual(result, { status: 'completed', failureReason: null, attempts: 3 });
+		assert.equal(statics, 3);
+		assert.match(loop.governor.calls[1].prompt, /\[uncovered\] AC-01/);
+		assert.equal(commands, 1);
+	} finally { await loop.close(); }
+});
+
+test('@ac AC-03 a persistent static coverage miss exhausts the two-repair budget without running verification', async () => {
+	let commands = 0;
+	const loop = openLoop({ label: 'static-precheck-exhausted',
+		script: Array.from({ length: 8 }, () => ({ action: { kind: 'complete', summary: 'candidate' } })),
+		execCli: () => { commands++; return ''; },
+		completionValidator: Object.assign(() => ({ pass: true }), { staticCheck: () => 'ac-coverage failed' }),
+	});
+	try {
+		const result = await loop.executor.execute(loopInput(loop.worktreeDir));
+		assert.deepEqual(result, { status: 'failed', failureReason: 'evidence-failed', attempts: 3, lastSummary: 'candidate' });
+		assert.equal(commands, 0);
+		assert.equal(loop.governor.calls.length, 3);
+	} finally { await loop.close(); }
+});

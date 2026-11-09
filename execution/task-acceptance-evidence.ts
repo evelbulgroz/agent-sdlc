@@ -52,7 +52,25 @@ export function createAcceptanceEvidenceValidator({
 	) {
 		return null;
 	}
-	return ({
+	const evaluateStatic = () =>
+		evaluateAcCoverageFromWorktree({
+			draft: { acceptanceCriteria },
+			knownAcceptanceCriteria,
+			baseCommitSha,
+			gitCli,
+			worktreeDir,
+			touchedTestFiles: authoredTestPaths,
+			allowedPathPrefixes,
+		});
+	const staticCheck = (): string | null => {
+		try {
+			const staticCoverage = evaluateStatic();
+			return staticCoverage.pass ? null : formatAcCoverageFailure(staticCoverage);
+		} catch {
+			return null; // The post-verification gate reports evaluation errors.
+		}
+	};
+	const validator = ({
 		state,
 	}: {
 		state: { toolHistory?: readonly MinimalToolCallRecord[]; lastSubstantiveWriteStep?: number };
@@ -94,15 +112,7 @@ export function createAcceptanceEvidenceValidator({
 					coverage: null,
 				};
 			}
-			const staticCoverage = evaluateAcCoverageFromWorktree({
-				draft: { acceptanceCriteria },
-				knownAcceptanceCriteria,
-				baseCommitSha,
-				gitCli,
-				worktreeDir,
-				touchedTestFiles: authoredTestPaths,
-				allowedPathPrefixes,
-			});
+			const staticCoverage = evaluateStatic();
 			const coverage = bindAcCoverageToExecution(
 				staticCoverage,
 				entryResult?.testExecutionEvidence ??
@@ -128,6 +138,7 @@ export function createAcceptanceEvidenceValidator({
 			};
 		}
 	};
+	return Object.assign(validator, { staticCheck });
 }
 
 export interface ComposeCompletionValidatorTask extends TaskScopeTaskLike {
@@ -150,7 +161,7 @@ export function composeCompletionValidator({
 }): CompletionValidatorFn | null {
 	const hasQualityConfig = hasTaskQualityGateConfig(worktreeDir);
 	if (!hasQualityConfig) return completionValidator;
-	return (validatorInput) => {
+	const composed: CompletionValidatorFn = (validatorInput) => {
 		const acResult =
 			typeof completionValidator === 'function' ? completionValidator(validatorInput) : null;
 		if (acResult && acResult.pass === false) return acResult;
@@ -164,4 +175,7 @@ export function composeCompletionValidator({
 		if (!qualityResult.pass) return qualityResult;
 		return acResult ?? { pass: true };
 	};
+	return completionValidator?.staticCheck
+		? Object.assign(composed, { staticCheck: completionValidator.staticCheck })
+		: composed;
 }

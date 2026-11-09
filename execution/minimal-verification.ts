@@ -52,13 +52,16 @@ export interface CompletionValidationResult {
 	readonly summary?: string;
 }
 
-export type CompletionValidatorFn = (input: {
+export type CompletionValidatorFn = ((input: {
 	state: {
 		toolHistory: MinimalToolCallRecord[];
 		lastSubstantiveWriteStep: number;
 	};
 	action: { kind: 'complete' };
-}) => CompletionValidationResult | null;
+}) => CompletionValidationResult | null) & {
+	// Cheap static coverage check, run before the verification command. Returns repair feedback on a miss.
+	readonly staticCheck?: () => string | null;
+};
 
 export interface VerificationRuntimeStoreLike {
 	readonly recordDiagnostic?: VerificationDiagnosticStore['recordDiagnostic'];

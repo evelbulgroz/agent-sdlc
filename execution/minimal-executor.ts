@@ -236,6 +236,15 @@ export class MinimalExecutor {
 			}
 			return { done: false, feedback: missing };
 		}
+		const staticMiss = this.completionValidator?.staticCheck?.() ?? null;
+		if (staticMiss) {
+			if (auditState) auditState.auditedDigest = null;
+			await this.writeTranscript(input, { attempt, prompt, toolCalls, failureReason: 'evidence-failed', passed: false, started });
+			if (attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
+				return { done: true, result: { status: 'failed', failureReason: 'evidence-failed', attempts: attempt } };
+			}
+			return { done: false, feedback: staticMiss };
+		}
 		const verification = runVerification({ execCli: this.execCli, runtimeStore: this.runtimeStore, clock: this.clock, input, attempt });
 		const recorded: MinimalToolCallRecord[] = [...toolCalls];
 		if (verification.output) {
