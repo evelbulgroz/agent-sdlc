@@ -48,3 +48,5 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 **Candidate:** when the implementer completes with no file edits, publish its summary as a diagnostic or interrupt on the failed snapshot. Fail-closed behaviour stays unchanged.
 
 **Done when:** an N1 rerun shows the implementer's question in `status.json`, and a test covers it.
+
+**Status (2026-11-09):** the engine already carries `lastSummary` on the failed result and the status projection shows it as `tasks[].failureMetadata.lastSummary`. `testing/qualification/refusal-scenario.spec.mjs` covers it. Remaining: an N1b rerun on the current engine (see `docs/specs/ready/engine-qualification-suite.md`).
