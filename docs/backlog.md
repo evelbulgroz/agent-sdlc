@@ -49,4 +49,14 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 **Done when:** an N1 rerun shows the implementer's question in `status.json`, and a test covers it.
 
-**Status (2026-11-09):** the engine already carries `lastSummary` on the failed result and the status projection shows it as `tasks[].failureMetadata.lastSummary`. `testing/qualification/refusal-scenario.spec.mjs` covers it. Remaining: an N1b rerun on the current engine (see `docs/specs/ready/engine-qualification-suite.md`).
+**Status (2026-11-09):** the engine already carries `lastSummary` on the failed result and the status projection shows it as `tasks[].failureMetadata.lastSummary`. `testing/qualification/refusal-scenario.spec.mjs` covers it. N1b live rerun (2026-11-09, run `2026-11-09-sdlc-92125131`): `FAILED` with `TASK_EXECUTION_FAILED`, and `status` showed `tasks[0].failureMetadata.lastSummary` naming the contradiction. **Closed.**
+
+## Plan critic P1 on boilerplate shadow paths
+
+**Origin:** qualification case C1 (2026-11-09, run `2026-11-09-sdlc-06451a1c`).
+
+**Observed:** on a clean two-file helper spec the plan critic raised one P1 (`tasks[0].shadowPaths` holds only category labels, no recovery action). The run stopped at `WAITING_FOR_PLAN_ACCEPTANCE` and reached `READY_FOR_GIT_APPROVAL` (7/7) only after `accept_residual`. N8 and N2 on similar specs raised none, so this is critic variance on engine-generated plan text, not a spec defect.
+
+**Candidate:** either the generated `shadowPaths` carry concrete recovery statements, or the plan critic rubric stops treating the generated labels as a defect. Measure the false-positive rate over several clean runs first.
+
+**Done when:** at least five clean tier 2 runs on unseen specs raise no plan critic P1, or each P1 names a real defect.

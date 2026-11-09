@@ -19,7 +19,7 @@ tools
 ## Touched surfaces
 
 - tools/lib/split-duration.mjs
-- tools/lib/split-duration.spec.mjs
+- tools/lib/split-duration.test.mjs
 
 ## Invariants and constraints
 
@@ -42,7 +42,7 @@ None. The helper is internal to `tools/` and is not imported by anything.
 
 ## Verification plan
 
-- The co-located spec `tools/lib/split-duration.spec.mjs` uses `node:test`, cites each criterion with `@ac AC-NN`, and asserts the examples above.
+- The co-located spec `tools/lib/split-duration.test.mjs` uses `node:test`, cites each criterion with `@ac AC-NN`, and asserts the examples above.
 - Run the fixture's done bar: `pnpm run test:unit`.
 
 ## Unresolved questions

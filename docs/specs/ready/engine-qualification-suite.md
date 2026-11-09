@@ -114,6 +114,16 @@ These ran on the older host-canary path, before the acceptance-evidence, final-o
   - Add `testing/qualification/README.md` with the archive convention, scoring commands and report template. The README must not name a host application (neutrality guard).
   *Done 2026-11-09:* `testing/qualification/fixtures/` holds four neutral specs (`clean-unseen-1`, `duration-split-contradiction`, `clamp-percent`, `wrap-index`) plus `pool.json` that tracks which specs a live model has seen; all pass `check-spec`, and a guard checks the manifest's `fixtureSpec` files exist. `scripts/run-invariants.ts` takes `--root <dir>` (`parseInvariantArgs`), and reports unreadable git as a failed check instead of crashing (`scripts/run-invariants.spec.mjs`, AC-07). `testing/qualification/README.md` is the runbook.
 - **Q4. Live runs.** Run the tier 2 cases on the current engine and record results here with their class.
+  *Run 2026-11-09 on engine `ee78285`, under the governor's configured limits (no separate ceiling; operator choice).* Fixture project: a temporary git repository with `package.json` (root `test` script, because the default verify is `npm test`), a committed `pnpm-lock.yaml`, `tools/package.json`, and a scaffolded `.agents/sdlc-host.json` with `tools` as the allowed root and repository scope. Fixture specs name `*.test.mjs` because `node --test` does not discover `*.spec.mjs`.
+
+  | Case | Class | Evidence |
+  |---|---|---|
+  | C1 (clean) | `clean-fail` | Attempts 1–4 stopped on fixture defects (spec files not discovered; lockfile missing, giving `PATH_CONTAINMENT_VIOLATION`; no verify script, twice), all fixed in the fixture project and runbook. Attempt 5 (`clean-unseen-4`) stopped at a plan critic P1 on boilerplate `shadowPaths`; after `accept_residual` it reached `READY_FOR_GIT_APPROVAL` with 7/7 via `run-invariants.ts --root`. The engine stop is the finding (backlog: plan critic P1). |
+  | N1b (seeded) | `blocked-as-predicted` | `FAILED`, `TASK_EXECUTION_FAILED`, `verification-failed`; the implementer's test failed and `lastSummary` named the AC-02 versus rounding-invariant contradiction in `status` (closes the refusal backlog item). 5/7 invariants, the two failures being the expected `terminal-state` and no target tree. S3 stays a known gap: nothing deterministic caught it, the implementer's own test did. |
+  | N8 (crash) | `recovered` | SIGKILL during `EXECUTING_IMPLEMENTATION`, `shell watch` resumed to `READY_FOR_GIT_APPROVAL`: 7/7, one worktree, one `TASK_STARTED`, one `TASK_COMPLETED`. |
+  | N2 (observational) | `observed` | Reached `READY_FOR_GIT_APPROVAL` 7/7. The produced tests killed 6/6 hidden mutants. The oracle's reference first failed the model's boundary test at length `2^53-1` because `(index % length) + length` loses precision; the reference now uses a float-exact form (a scorer fix, no assertion weakened). |
+
+  The `--root` scorer works against real fixture repositories: path-containment and canary-not-merged passed with the fixture HEAD as the base.
 - **Q5. Tier 3.** Reduce host canary guidance to the configuration smoke and cross-reference it in `docs/handbook/operator-shell-and-authorization.md`.
 
 ## Acceptance criteria

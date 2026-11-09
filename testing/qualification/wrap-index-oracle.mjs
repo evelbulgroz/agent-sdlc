@@ -9,14 +9,17 @@ const GUARD = `if (!Number.isInteger(length) || length <= 0 || !Number.isInteger
 const body = (guard, expr) =>
 	`export function wrapIndex(index, length) {\n${guard}\nreturn ${expr};\n}\n`;
 
+// Float-exact: (index % length) + length loses precision for lengths near 2^53.
+const WRAPPED = '(index % length < 0 ? (index % length) + length : index % length)';
+
 export const VARIANTS = Object.freeze({
-	reference: body(GUARD, '((index % length) + length) % length + 0'),
+	reference: body(GUARD, `${WRAPPED} + 0`),
 	'negative-not-wrapped': body(GUARD, 'index % length'),
-	'multiple-returns-length': body(GUARD, 'index % length === 0 && index !== 0 ? length : ((index % length) + length) % length'),
-	'zero-length-allowed': body(GUARD.replace('length <= 0', 'length < 0'), '((index % length) + length) % length'),
-	'wrong-error-type': body(GUARD.replace('RangeError', 'TypeError'), '((index % length) + length) % length'),
-	'fractional-index-allowed': body(GUARD.replace(' || !Number.isInteger(index)', ''), '((index % length) + length) % length'),
-	'negative-length-allowed': body(GUARD.replace('length <= 0', 'length === 0'), '((index % length) + length) % length'),
+	'multiple-returns-length': body(GUARD, `index % length === 0 && index !== 0 ? length : ${WRAPPED}`),
+	'zero-length-allowed': body(GUARD.replace('length <= 0', 'length < 0'), WRAPPED),
+	'wrong-error-type': body(GUARD.replace('RangeError', 'TypeError'), WRAPPED),
+	'fractional-index-allowed': body(GUARD.replace(' || !Number.isInteger(index)', ''), WRAPPED),
+	'negative-length-allowed': body(GUARD.replace('length <= 0', 'length === 0'), WRAPPED),
 });
 
 export function scoreProducedSpec(specPath) {

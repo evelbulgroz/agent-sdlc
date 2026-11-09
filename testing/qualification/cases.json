@@ -141,7 +141,7 @@
 			"id": "C1",
 			"tier": 2,
 			"kind": "clean",
-			"fixtureSpec": "testing/qualification/fixtures/clean-unseen-1.md",
+			"fixtureSpec": "testing/qualification/fixtures/clean-unseen-4.md",
 			"seededDefect": "none",
 			"expectedOutcome": "READY_FOR_GIT_APPROVAL with 7/7 invariants",
 			"scoring": "scripts/run-invariants.ts --root <fixture repository> exits 0."

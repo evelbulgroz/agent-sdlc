@@ -6,22 +6,51 @@
 		{
 			"file": "clean-unseen-1.md",
 			"case": "C1",
-			"usedIn": []
+			"usedIn": [
+				"2026-11-09 C1 attempt 1 (fixture defect: .spec.mjs not discovered by node --test)"
+			]
+		},
+		{
+			"file": "clean-unseen-2.md",
+			"case": "C1",
+			"usedIn": [
+				"2026-11-09 C1 attempts 2-3 (fixture defects: lockfile missing; no package test script)"
+			]
+		},
+		{
+			"file": "clean-unseen-3.md",
+			"case": "C1",
+			"usedIn": [
+				"2026-11-09 C1 attempt 4 (fixture defect: default verify runs npm test at repo root; no root test script)"
+			]
+		},
+		{
+			"file": "clean-unseen-4.md",
+			"case": "C1",
+			"usedIn": [
+				"2026-11-09 C1 attempt 5: READY after accept_residual of a plan-critic P1; 7/7"
+			]
 		},
 		{
 			"file": "duration-split-contradiction.md",
 			"case": "N1b",
-			"usedIn": []
+			"usedIn": [
+				"2026-11-09 N1b: FAILED TASK_EXECUTION_FAILED, contradiction named in lastSummary"
+			]
 		},
 		{
 			"file": "clamp-percent.md",
 			"case": "N8",
-			"usedIn": []
+			"usedIn": [
+				"2026-11-09 N8: SIGKILL in EXECUTING_IMPLEMENTATION, resumed to READY; 7/7"
+			]
 		},
 		{
 			"file": "wrap-index.md",
 			"case": "N2",
-			"usedIn": []
+			"usedIn": [
+				"2026-11-09 N2: READY; 6/6 hidden mutants killed"
+			]
 		}
 	]
 }

@@ -19,7 +19,7 @@ tools
 ## Touched surfaces
 
 - tools/lib/average-pace.mjs
-- tools/lib/average-pace.spec.mjs
+- tools/lib/average-pace.test.mjs
 
 ## Invariants and constraints
 
@@ -41,7 +41,7 @@ None. The helper is internal to `tools/` and is not imported by anything.
 
 ## Verification plan
 
-- The co-located spec `tools/lib/average-pace.spec.mjs` uses `node:test`, cites each criterion with `@ac AC-NN`, and asserts the examples above.
+- The co-located spec `tools/lib/average-pace.test.mjs` uses `node:test`, cites each criterion with `@ac AC-NN`, and asserts the examples above.
 - Run the fixture's done bar: `pnpm run test:unit`.
 
 ## Unresolved questions

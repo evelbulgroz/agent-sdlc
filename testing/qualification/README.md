@@ -5,7 +5,8 @@ Tier 1 runs in `pnpm run test:unit` (`cases.json`, `tier: 1`). Tier 2 runs live 
 ## Running a tier 2 case
 
 1. Pick the case in `cases.json` (`tier: 2`) and its `fixtureSpec`. Prefer a spec whose `usedIn` in `fixtures/pool.json` is empty; a spec a live model has seen is no longer unseen.
-2. Copy `testing/fixture-monorepo` to a temporary directory, `git init`, commit, and run `agent-sdlc shell start` there with an explicit authorization envelope.
+2. Build a temporary git repository with: a root `package.json` that has a `test` script (`node --test`; the default verify runs `npm test`), a committed `pnpm-lock.yaml` (`pnpm install --lockfile-only`), `tools/package.json`, a `.gitignore` for `tools/.agent-sdlc/`, and `agent-sdlc host scaffold --package tools` output whose `workspace` is `allowedPathRoots`/`repositoryScopes` `["tools"]`. Copy the fixture spec into `docs/specs/drafts/` and commit.
+   Run `agent-sdlc shell start` (brief, then confirm), `shell reply` with `approve`, then `shell watch`. A plan critic P1 stops at `WAITING_FOR_PLAN_ACCEPTANCE`; record it and reply `accept_residual` to continue. For N8, SIGKILL the watcher during `EXECUTING_IMPLEMENTATION` and run `shell watch` again.
 3. Drive the run to a terminal state (`READY_FOR_GIT_APPROVAL`, `FAILED`, `ESCALATED`). Never commit or merge the resulting worktree.
 4. Score:
    - `node scripts/run-invariants.ts --run <run-id> --root <fixture repository>` (exit 0 means all invariants hold).
