@@ -1,4 +1,4 @@
-Status: ready for implementation (approved by the operator on 2026-11-09). Queued after the retired `engine-host-cleanup.md` (its S1 turns the size gate on and splits `testing/test-support.mjs`; do that first so new specs land in compliant files, then this spec's S0). Findings come from two independent reviews, checked against engine `main` on 2026-11-09. Verify each claim before implementing.
+Status: retired. S0–S6 implemented 2026-11-09 (S6 warning-only; Finding 6 and live runs without a checkpoint policy deferred).
 
 ## Goal
 
