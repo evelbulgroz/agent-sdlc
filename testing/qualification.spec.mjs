@@ -56,6 +56,7 @@ test('every tier 2 case has a kind with outcome classes, an engine fixture spec,
 		assert.ok(manifest.outcomeClasses[c.kind].length > 0, `${c.id}: outcome classes`);
 		assert.match(c.fixtureSpec ?? '', /^testing\/qualification\/fixtures\/[\w.-]+\.md$/, `${c.id}: fixtureSpec`);
 		assert.ok(c.scoring, `${c.id}: scoring`);
+		assert.ok(fs.existsSync(path.join(AGENT_SDLC_PACKAGE_ROOT, c.fixtureSpec)), `${c.id}: fixtureSpec file exists`);
 		assert.equal('spec' in c, false, `${c.id}: host spec field is retired`);
 	}
 });

@@ -112,6 +112,7 @@ These ran on the older host-canary path, before the acceptance-evidence, final-o
   - Add the fixture pool.
   - Add `--root <dir>` to `scripts/run-invariants.ts` so it can open a fixture repository's store and compare that root's HEAD.
   - Add `testing/qualification/README.md` with the archive convention, scoring commands and report template. The README must not name a host application (neutrality guard).
+  *Done 2026-11-09:* `testing/qualification/fixtures/` holds four neutral specs (`clean-unseen-1`, `duration-split-contradiction`, `clamp-percent`, `wrap-index`) plus `pool.json` that tracks which specs a live model has seen; all pass `check-spec`, and a guard checks the manifest's `fixtureSpec` files exist. `scripts/run-invariants.ts` takes `--root <dir>` (`parseInvariantArgs`), and reports unreadable git as a failed check instead of crashing (`scripts/run-invariants.spec.mjs`, AC-07). `testing/qualification/README.md` is the runbook.
 - **Q4. Live runs.** Run the tier 2 cases on the current engine and record results here with their class.
 - **Q5. Tier 3.** Reduce host canary guidance to the configuration smoke and cross-reference it in `docs/handbook/operator-shell-and-authorization.md`.
 

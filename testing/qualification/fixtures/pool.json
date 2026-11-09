@@ -1,0 +1,27 @@
+{
+	"schemaVersion": "1.0.0",
+	"baseProject": "testing/fixture-monorepo",
+	"note": "A spec seen by a live model stays in usedIn and is no longer 'unseen'. Add a new spec for each fresh unseen run.",
+	"specs": [
+		{
+			"file": "clean-unseen-1.md",
+			"case": "C1",
+			"usedIn": []
+		},
+		{
+			"file": "duration-split-contradiction.md",
+			"case": "N1b",
+			"usedIn": []
+		},
+		{
+			"file": "clamp-percent.md",
+			"case": "N8",
+			"usedIn": []
+		},
+		{
+			"file": "wrap-index.md",
+			"case": "N2",
+			"usedIn": []
+		}
+	]
+}

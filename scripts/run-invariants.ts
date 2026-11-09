@@ -51,13 +51,17 @@ export function checkRunInvariants(databasePath: string, runId: string, rootDir:
 				`taskPlanHash=${state?.taskPlanHash?.slice(0, 12)} reviewed=${planReview?.artifact_hash?.slice(0, 12)}`);
 			const auth = reconciled?.authorization;
 			if (auth && state?.targetTreeSha) {
-				const changed = execFileSync('git', ['diff', '--name-only', `${auth.baseCommitSha}^{tree}`, state.targetTreeSha],
-					{ cwd: rootDir, encoding: 'utf8' }).split('\n').filter(Boolean);
-				const outside = changed.filter((file) => !auth.allowedPathPrefixes.some((prefix) => file === prefix || file.startsWith(prefix)));
-				check('path-containment', outside.length === 0, outside.length ? `outside: ${outside.join(', ')}` : `${changed.length} changed paths within allowed prefixes`);
-				const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: rootDir, encoding: 'utf8' }).trim();
-				check('canary-not-merged', head === auth.baseCommitSha && !auth.allowedOperations.createLocalCommits && !auth.allowedOperations.merge,
-					`host HEAD ${head.slice(0, 12)} base ${auth.baseCommitSha.slice(0, 12)}`);
+				try {
+					const changed = execFileSync('git', ['diff', '--name-only', `${auth.baseCommitSha}^{tree}`, state.targetTreeSha],
+						{ cwd: rootDir, encoding: 'utf8' }).split('\n').filter(Boolean);
+					const outside = changed.filter((file) => !auth.allowedPathPrefixes.some((prefix) => file === prefix || file.startsWith(prefix)));
+					check('path-containment', outside.length === 0, outside.length ? `outside: ${outside.join(', ')}` : `${changed.length} changed paths within allowed prefixes`);
+					const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: rootDir, encoding: 'utf8' }).trim();
+					check('canary-not-merged', head === auth.baseCommitSha && !auth.allowedOperations.createLocalCommits && !auth.allowedOperations.merge,
+						`repository HEAD ${head.slice(0, 12)} base ${auth.baseCommitSha.slice(0, 12)}`);
+				} catch (error) {
+					check('path-containment', false, `git unavailable in ${rootDir}: ${error instanceof Error ? error.message : String(error)}`);
+				}
 			} else {
 				check('path-containment', false, 'authorization or target tree missing');
 			}
@@ -79,21 +83,30 @@ export function checkRunInvariants(databasePath: string, runId: string, rootDir:
 	return results;
 }
 
+/** `--root <dir>` points the audit at a repository other than this checkout, such as a qualification fixture. */
+export function parseInvariantArgs(args: readonly string[]): { runId: string | undefined; rootDir: string } {
+	const valueAfter = (flag: string): string | undefined => {
+		const index = args.indexOf(flag);
+		return index >= 0 ? args[index + 1] : undefined;
+	};
+	const root = valueAfter('--root');
+	return { runId: valueAfter('--run'), rootDir: root ? path.resolve(root) : REPOSITORY_ROOT };
+}
+
 export function main(args: readonly string[] = process.argv.slice(2)): void {
-	const runIndex = args.indexOf('--run');
-	const runId = runIndex >= 0 ? args[runIndex + 1] : undefined;
+	const { runId, rootDir } = parseInvariantArgs(args);
 	if (!runId) {
-		console.error('usage: run-invariants --run <run-id> [--json]');
+		console.error('usage: run-invariants --run <run-id> [--root <dir>] [--json]');
 		process.exitCode = 64;
 		return;
 	}
-	const databasePath = path.join(resolveTraceRunDir(REPOSITORY_ROOT, runId), 'runtime.sqlite');
+	const databasePath = path.join(resolveTraceRunDir(rootDir, runId), 'runtime.sqlite');
 	if (!fs.existsSync(databasePath)) {
-		console.error(`No runtime store for run ${runId}`);
+		console.error(`No runtime store for run ${runId} under ${rootDir}`);
 		process.exitCode = 64;
 		return;
 	}
-	const results = checkRunInvariants(databasePath, runId, REPOSITORY_ROOT);
+	const results = checkRunInvariants(databasePath, runId, rootDir);
 	console.log(args.includes('--json') ? JSON.stringify(results, null, 2)
 		: results.map((r) => `${r.ok ? 'PASS' : 'FAIL'} ${r.name}: ${r.detail}`).join('\n'));
 	process.exitCode = results.every((r) => r.ok) ? 0 : 3;
