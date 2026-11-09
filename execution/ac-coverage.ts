@@ -17,6 +17,7 @@ export interface BaselineCitationObject {
 	readonly caseIds?: readonly string[];
 	readonly file?: string;
 	readonly title?: string;
+	readonly eachCaseId?: string;
 }
 
 export type BaselineCitationItem = string | BaselineCitationObject;
@@ -164,7 +165,9 @@ export function evaluateAcCoverage({
 	const baselineTests = new Set<string>();
 	for (const item of baselineTestCitations) {
 		if (item && typeof item === 'object' && item.file && item.title) {
-			baselineTests.add(`${item.file}\u0000${item.title}`);
+			baselineTests.add(
+				`${item.file}\u0000${item.title}${item.eachCaseId ? `\u0000${item.eachCaseId}` : ''}`,
+			);
 		}
 	}
 	const errors: AcCoverageError[] = [];
@@ -372,6 +375,18 @@ function isPreparsedExecutionEvidence(value: unknown): value is PreparsedExecuti
 	);
 }
 
+// Exact id match: `AC-01.1` must not match inside `AC-01.10`.
+function titleCitesCaseId(title: string, caseId: string): boolean {
+	let index = title.indexOf(caseId);
+	while (index !== -1) {
+		const before = title[index - 1] ?? '';
+		const after = title.slice(index + caseId.length, index + caseId.length + 2);
+		if (!/[\w.-]/.test(before) && !/^[\w-]/.test(after) && !/^\.\d/.test(after)) return true;
+		index = title.indexOf(caseId, index + 1);
+	}
+	return false;
+}
+
 export function bindAcCoverageToExecution(
 	coverage: Partial<AcCoverageReport> | null | undefined,
 	executionOutput: unknown,
@@ -390,7 +405,7 @@ export function bindAcCoverageToExecution(
 		const executed =
 			passedTitles.has(title) ||
 			(eachCaseId.length > 0 &&
-				passedTitleList.some((passedTitle) => passedTitle.includes(eachCaseId)));
+				passedTitleList.some((passedTitle) => titleCitesCaseId(passedTitle, eachCaseId)));
 		if (!executed) continue;
 		for (const id of row.acIds ?? []) executedAcIds.add(id);
 		for (const id of row.caseIds ?? []) executedCaseIds.add(id);
