@@ -195,12 +195,18 @@ function fixture(t, finalReview) {
 				qualityPolicy: policy, qualityCheckpointId: checkpointId, qualityCheckpointKind: kind,
 				qualityCheckpointSliceId: ownerId ?? undefined, qualityCheckpointTreeSha: TREE,
 				qualityCheckpointBindingHash: sha256(binding),
-				...(ownerId ? {} : { preflightBindingArtifact: f.artifacts.writeJson('canonical-preflight', {
-					status: 'OK', canonical: true, targetTreeSha: TREE, preflightResultHash: H,
-				}) }),
 			}, payload: { checkpointId },
 		});
-		if (!ownerId) snapshot = applyAcCoverageGate(runtime, snapshot, authorization, worktreeDir).snapshot;
+		if (!ownerId) {
+			assert.equal(snapshot.preflightBindingArtifact, undefined);
+			const preflightBindingArtifact = f.artifacts.writeJson('canonical-preflight', {
+				status: 'OK', canonical: true, targetTreeSha: TREE, preflightResultHash: H,
+			});
+			snapshot = applyAcCoverageGate(runtime, snapshot, authorization, worktreeDir, {
+				preflightBindingArtifact,
+			}).snapshot;
+			assert.equal(snapshot.preflightBindingArtifact, preflightBindingArtifact);
+		}
 	}
 	async function review() { snapshot = (await createExecuteQaCriticNode(runtime)({ snapshot })).snapshot; return snapshot; }
 	return { ...f, runtime, ran, spawned, gitCalls, schedule, bindCheckpoint, review, snapshot: () => snapshot };

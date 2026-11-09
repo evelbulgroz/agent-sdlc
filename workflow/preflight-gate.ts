@@ -178,7 +178,7 @@ export function applyAcCoverageGate(
 		};
 	}
 	if (newPolicy && coverage.pass === true) {
-		const context = boundQualityContext(runtime, snapshot);
+		const context = boundQualityContext(runtime, { ...snapshot, preflightBindingArtifact });
 		const failures = context
 			? checkFinalObligationEvidence({
 				acceptanceCriteria: Array.isArray(draft.acceptanceCriteria) ? draft.acceptanceCriteria : [],
@@ -400,7 +400,7 @@ export async function executePreflightForSnapshot(
 		}
 		throw error;
 	}
-	const candidateSnapshot = { ...snapshot, ...finalQualityFields };
+	const candidateSnapshot = { ...snapshot, ...finalQualityFields, preflightBindingArtifact: bindingArtifact };
 	const coverageResult = applyAcCoverageGate(runtime, candidateSnapshot, auth, worktreeDir, {
 		preflightBindingArtifact: bindingArtifact,
 		verificationEvidenceHash:
