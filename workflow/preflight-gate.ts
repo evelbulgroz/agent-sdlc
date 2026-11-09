@@ -23,6 +23,7 @@ import {
 	resolvePreflightWorktree,
 } from './node-helpers.ts';
 import { prepareFinalQualityCheckpoint } from './final-quality-checkpoint.ts';
+import { checkFinalObligationEvidence } from './final-obligation-evidence.ts';
 import { blockQualityCheckpoint } from './quality-interrupt.ts';
 import { timedSpan } from '../persistence/run-spans.ts';
 
@@ -175,6 +176,20 @@ export function applyAcCoverageGate(
 				message: error instanceof Error ? error.message : String(error),
 			}],
 		};
+	}
+	if (newPolicy && coverage.pass === true) {
+		const context = boundQualityContext(runtime, snapshot);
+		const failures = context
+			? checkFinalObligationEvidence({
+				acceptanceCriteria: Array.isArray(draft.acceptanceCriteria) ? draft.acceptanceCriteria : [],
+				obligations: context.plan.evidenceObligations,
+				receipts: context.closure.receiptHashes.map((receiptHash) =>
+					runtime.runtimeStore.quality?.getEvidenceCompletionByReceiptHash(snapshot.runId, receiptHash)?.receipt ?? null),
+			})
+			: [];
+		if (failures.length > 0) {
+			coverage = { ...coverage, pass: false, errors: [...(coverage.errors ?? []), ...failures] };
+		}
 	}
 	const coverageArtifact = runtime.artifactStore.writeJson('ac-coverage', coverage);
 	const failedNewPolicyCoverage = newPolicy && coverage.pass !== true;
