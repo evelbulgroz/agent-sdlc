@@ -3,9 +3,16 @@ export interface ExecutionEvidenceError {
 	readonly message: string;
 }
 
+export interface PassedTestEvidence {
+	readonly file: string | null;
+	readonly title: string;
+}
+
 export interface ParsedTestExecutionEvidence {
 	readonly format: 'json' | 'tap' | null;
 	readonly passedTitles: readonly string[];
+	// File is null when the reporter does not say which file a passed test ran in.
+	readonly passedTests?: readonly PassedTestEvidence[];
 	readonly errors: readonly ExecutionEvidenceError[];
 }
 
@@ -51,6 +58,7 @@ interface JsonAssertionResult {
 }
 
 interface JsonTestSuite {
+	readonly name?: unknown;
 	readonly assertionResults?: readonly JsonAssertionResult[];
 }
 
@@ -59,18 +67,23 @@ function toJsonExecutionEvidence(parsed: unknown): ParsedTestExecutionEvidence |
 	const testResults = parsed.testResults;
 	if (!Array.isArray(testResults)) return null;
 	const passedTitles: string[] = [];
+	const passedTests: PassedTestEvidence[] = [];
 	for (const suite of testResults as readonly JsonTestSuite[]) {
+		const file = typeof suite?.name === 'string' && suite.name.length > 0 ? suite.name : null;
 		for (const assertion of suite?.assertionResults ?? []) {
 			if (assertion?.status !== 'passed') continue;
 			const title = normalizeExecutedTitle(assertion.title);
 			const fullName = normalizeExecutedTitle(assertion.fullName);
 			if (title) passedTitles.push(title);
 			if (fullName && fullName !== title) passedTitles.push(fullName);
+			if (title) passedTests.push({ file, title });
+			if (fullName && fullName !== title) passedTests.push({ file, title: fullName });
 		}
 	}
 	return Object.freeze({
 		format: 'json',
 		passedTitles: Object.freeze([...new Set(passedTitles)]),
+		passedTests: Object.freeze(passedTests),
 		errors: Object.freeze([]),
 	});
 }
@@ -131,6 +144,7 @@ function parseTapExecutionEvidence(output: unknown): ParsedTestExecutionEvidence
 	return Object.freeze({
 		format: 'tap',
 		passedTitles: Object.freeze([...new Set(passedTitles)]),
+		passedTests: Object.freeze([...new Set(passedTitles)].map((title) => ({ file: null, title }))),
 		errors: Object.freeze([]),
 	});
 }

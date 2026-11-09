@@ -49,3 +49,58 @@ test('@ac AC-09 a baseline it.each citation at the base commit does not discharg
 	assert.equal(withBaseline.pass, false);
 	assert.equal(evaluateAcCoverage({ acceptanceCriteria: [ac], touchedFiles }).pass, true);
 });
+
+const FILE_AC = 'AC-01: Thing works. Given input. Then output. ';
+const FILE_CONTENT = "it('@ac AC-01 works', () => { expect(1).toBe(1); });";
+const jsonReport = (results) => ({
+	format: 'json',
+	passedTitles: results.filter((r) => r.status === 'passed').map((r) => r.title),
+	passedTests: results.filter((r) => r.status === 'passed').map((r) => ({ file: r.file, title: r.title })),
+	errors: [],
+});
+
+test('@ac AC-02 a passed title in a different file does not discharge the citation', () => {
+	const base = evaluateAcCoverage({
+		acceptanceCriteria: [FILE_AC],
+		touchedFiles: [{ path: 'src/a.spec.ts', content: FILE_CONTENT }],
+	});
+	const other = bindAcCoverageToExecution(
+		base,
+		jsonReport([{ status: 'passed', title: '@ac AC-01 works', file: '/wt/src/b.spec.ts' }]),
+	);
+	assert.equal(other.pass, false);
+	assert.deepEqual([...other.notExecutedAcIds], ['AC-01']);
+	assert.equal(other.executionEvidenceMatching, 'file');
+});
+
+test('@ac AC-02 absolute reporter paths match worktree-relative citation paths', () => {
+	const base = evaluateAcCoverage({
+		acceptanceCriteria: [FILE_AC],
+		touchedFiles: [{ path: 'src/a.spec.ts', content: FILE_CONTENT }],
+	});
+	const bound = bindAcCoverageToExecution(
+		base,
+		jsonReport([{ status: 'passed', title: '@ac AC-01 works', file: '/wt/pkg/src/a.spec.ts' }]),
+	);
+	assert.equal(bound.pass, true);
+	const suffixCollision = bindAcCoverageToExecution(
+		base,
+		jsonReport([{ status: 'passed', title: '@ac AC-01 works', file: '/wt/pkg/xsrc/a.spec.ts' }]),
+	);
+	assert.equal(suffixCollision.pass, false);
+});
+
+test('@ac AC-02 TAP evidence stays title-only and the report records it', () => {
+	const base = evaluateAcCoverage({
+		acceptanceCriteria: [FILE_AC],
+		touchedFiles: [{ path: 'src/a.spec.ts', content: FILE_CONTENT }],
+	});
+	const tap = [
+		'TAP version 13',
+		'# Subtest: @ac AC-01 works',
+		'ok 1 - @ac AC-01 works',
+	].join('\n');
+	const bound = bindAcCoverageToExecution(base, tap);
+	assert.equal(bound.pass, true);
+	assert.equal(bound.executionEvidenceMatching, 'title');
+});

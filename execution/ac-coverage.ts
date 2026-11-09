@@ -6,6 +6,7 @@ import {
 	parseTestCitations,
 } from './ac-citations.ts';
 import {
+	type PassedTestEvidence,
 	normalizeExecutedTitle,
 	parseTestExecutionEvidence,
 } from './test-execution-evidence.ts';
@@ -118,12 +119,15 @@ export interface AcCoverageReport {
 export interface PreparsedExecutionEvidence {
 	readonly format?: string | null;
 	readonly passedTitles: readonly string[];
+	readonly passedTests?: readonly PassedTestEvidence[];
 	readonly errors?: readonly AcCoverageError[];
 }
 
 export interface BoundAcCoverageReport extends Partial<AcCoverageReport> {
 	readonly pass: boolean;
 	readonly executionEvidenceFormat: string | null | undefined;
+	// 'file' when the reporter named files and matching was scoped to them, else 'title'.
+	readonly executionEvidenceMatching: 'file' | 'title';
 	readonly executedTestTitles: readonly string[];
 	readonly notExecutedAcIds: readonly string[];
 	readonly notExecutedCaseIds: readonly string[];
@@ -375,6 +379,19 @@ function isPreparsedExecutionEvidence(value: unknown): value is PreparsedExecuti
 	);
 }
 
+function normalizeEvidencePath(value: string): string {
+	return value.replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+// Reporters give absolute or package-relative paths; citation rows are worktree-relative.
+function pathsMatch(reported: string, cited: string): boolean {
+	return (
+		reported === cited ||
+		reported.endsWith(`/${cited}`) ||
+		cited.endsWith(`/${reported}`)
+	);
+}
+
 // Exact id match: `AC-01.1` must not match inside `AC-01.10`.
 function titleCitesCaseId(title: string, caseId: string): boolean {
 	let index = title.indexOf(caseId);
@@ -394,18 +411,26 @@ export function bindAcCoverageToExecution(
 	const evidence: PreparsedExecutionEvidence = isPreparsedExecutionEvidence(executionOutput)
 		? executionOutput
 		: parseTestExecutionEvidence(typeof executionOutput === 'string' ? executionOutput : '');
-	const passedTitles = new Set<string>(evidence.passedTitles.map(normalizeExecutedTitle));
-	const passedTitleList = [...passedTitles];
+	const passedTests: readonly PassedTestEvidence[] =
+		evidence.passedTests ?? evidence.passedTitles.map((title) => ({ file: null, title }));
+	const normalizedTests = passedTests.map((test) => ({
+		file: test.file === null ? null : normalizeEvidencePath(test.file),
+		title: normalizeExecutedTitle(test.title),
+	}));
+	const fileScoped = normalizedTests.some((test) => test.file !== null);
 	const executedAcIds = new Set<string>();
 	const executedCaseIds = new Set<string>();
 	for (const row of coverage?.rows ?? []) {
 		if (!row.hasAssertion) continue;
 		const title = normalizeExecutedTitle(row.title);
 		const eachCaseId = typeof row.eachCaseId === 'string' ? row.eachCaseId : '';
-		const executed =
-			passedTitles.has(title) ||
-			(eachCaseId.length > 0 &&
-				passedTitleList.some((passedTitle) => titleCitesCaseId(passedTitle, eachCaseId)));
+		const rowFile = normalizeEvidencePath(String(row.file ?? ''));
+		const executed = normalizedTests.some(
+			(test) =>
+				(test.file === null || pathsMatch(test.file, rowFile)) &&
+				(test.title === title ||
+					(eachCaseId.length > 0 && titleCitesCaseId(test.title, eachCaseId))),
+		);
 		if (!executed) continue;
 		for (const id of row.acIds ?? []) executedAcIds.add(id);
 		for (const id of row.caseIds ?? []) executedCaseIds.add(id);
@@ -429,6 +454,7 @@ export function bindAcCoverageToExecution(
 		...coverage,
 		pass,
 		executionEvidenceFormat: evidence.format,
+		executionEvidenceMatching: fileScoped ? 'file' : 'title',
 		executedTestTitles: evidence.passedTitles,
 		notExecutedAcIds: Object.freeze(notExecutedAcIds),
 		notExecutedCaseIds: Object.freeze(notExecutedCaseIds),

@@ -78,7 +78,7 @@ real host adapters or browser dependencies are installed by the engine.
    - When an authored test file is identified, an allowlisted targeted test command runs as a mandatory intermediate gate before the full declared task verification command.
 
 3. **Execution-Backed Acceptance Criteria & Human Intent Oracles (`ac-coverage.ts`):**
-   - Every frozen `AC-NN` (and `Cases: AC-NN.1; AC-NN.2` sub-oracle) must be cited by an asserting test (`@ac AC-NN` on the test or enclosing `describe(...)`, plus `@case AC-NN.N` for cases, including `it.each` / `test.each` rows) that executes and passes in machine-readable JSON or TAP test runner output after the latest mutation.
+   - Every frozen `AC-NN` (and `Cases: AC-NN.1; AC-NN.2` sub-oracle) must be cited by an asserting test (`@ac AC-NN` on the test or enclosing `describe(...)`, plus `@case AC-NN.N` for cases, including `it.each` / `test.each` rows) that executes and passes in machine-readable JSON or TAP test runner output after the latest mutation. JSON reporters that name test files scope matching to the cited file (absolute reporter paths match worktree-relative citations on a path-segment boundary); TAP does not name files for passing tests, so it matches by title only and the bound report records `executionEvidenceMatching: 'title'`.
    - **Human-Owned Intent Oracles (`*.oracle.spec.ts(x)`):** Pre-existing oracle files in `baseCommitSha` and oracles frozen on `oracleSnapshot` after implementation are immutable; any edit or deletion escalates immediately with 0 autonomous repairs (`isOraclePath`).
 
 4. **Verification Preparation Gate (`verification-preparation.ts`):**
