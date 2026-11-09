@@ -92,6 +92,52 @@
 			}
 		},
 		{
+			"id": "S1",
+			"tier": 1,
+			"seededDefect": "The implementation fails the task verification on every attempt",
+			"expectedOutcome": "the run ends FAILED without calling a repairer",
+			"expectedCode": "TASK_EXECUTION_FAILED",
+			"proof": {
+				"file": "workflow/graph-slice4.spec.mjs",
+				"test": "Slice 4 failing task verification ends FAILED without a repairer"
+			}
+		},
+		{
+			"id": "S2a",
+			"tier": 1,
+			"seededDefect": "A test cites an approved criterion but asserts nothing",
+			"expectedOutcome": "coverage blocks the run before QA",
+			"expectedCode": "AC_COVERAGE_FAILED",
+			"proof": {
+				"file": "testing/qualification/coverage-scenarios.spec.mjs",
+				"test": "@ac AC-03 @case AC-03.S2a a cited test with no assertion blocks the run with AC_COVERAGE_FAILED"
+			}
+		},
+		{
+			"id": "S2b",
+			"tier": 1,
+			"knownGap": true,
+			"gapRef": "docs/specs/retired/ac-coverage-hardening.md (S6 warning only; promotion waits for a clean reliability corpus)",
+			"seededDefect": "A test cites an approved criterion but asserts only a literal",
+			"expectedOutcome": "the run is not blocked; noopAssertionTests records the test as a warning",
+			"expectedCode": "noopAssertionTests",
+			"proof": {
+				"file": "testing/qualification/coverage-scenarios.spec.mjs",
+				"test": "@ac AC-04 @case AC-04.S2b a test asserting only a literal reaches READY with a no-op warning"
+			}
+		},
+		{
+			"id": "S4",
+			"tier": 1,
+			"seededDefect": "The implementer reports it is blocked on every attempt and writes nothing",
+			"expectedOutcome": "the run fails closed and the summary reaches the status projection",
+			"expectedCode": "TASK_EXECUTION_FAILED",
+			"proof": {
+				"file": "testing/qualification/refusal-scenario.spec.mjs",
+				"test": "@ac AC-03 @case AC-03.S4 a refusing implementer fails closed and its summary reaches the status projection"
+			}
+		},
+		{
 			"id": "C1",
 			"tier": 2,
 			"kind": "clean",

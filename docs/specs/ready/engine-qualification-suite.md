@@ -106,6 +106,7 @@ These ran on the older host-canary path, before the acceptance-evidence, final-o
   - Mark N1 and N2 as observational or retired, and add N1b.
   *Done 2026-11-09:* `cases.json` has N6a and N6b (`expectedMessages`), N7 asserts `READY_FOR_GIT_APPROVAL`, tier 2 cases carry `kind`, `fixtureSpec` and `scoring` (N1b, N2 observational, C1 clean, N8 crash), and `outcomeClasses` is a manifest field. `testing/qualification/proof-finder.mjs` replaces the literal search. The fixture spec files themselves come in Q3.
 - **Q2. Scripted scenarios.** Add S1 (as a proof), S2a, S2b, S4 and S5 in size-compliant specs under `testing/qualification/`. Known-gap scenarios assert today's behaviour and cite their backlog item.
+  *Done 2026-11-09:* S1 (existing graph proof), S2a, S2b and S4 are registered tier 1 proofs in `cases.json`; S2a, S2b and S4 live in `testing/qualification/coverage-scenarios.spec.mjs` and `refusal-scenario.spec.mjs`. S5 is the existing N7 proof (crash boundaries via `crash-fixture-runner.mjs`). S2b is a `knownGap` entry with a required `gapRef`. The default test fixture cites with `expect(true)`, so S2b is the engine's ordinary green path.
 - **Q2b. Close the refusal item.** Resolved by Q0: `lastSummary` already reaches `tasks[].failureMetadata` in the status projection. What remains is to close the `docs/backlog.md` item (an N1 rerun on the current engine confirms it in tier 2) and to note the projection in `cli/README.md` if it is not already described. No engine change.
 - **Q3. Fixture project, scorer and runbook.**
   - Add the fixture pool.

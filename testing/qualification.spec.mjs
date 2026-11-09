@@ -33,6 +33,12 @@ test('every tier 1 negative case is proven by a named test that asserts its expe
 	}
 });
 
+test('a known gap names the item that tracks it', () => {
+	for (const c of cases.filter((entry) => entry.knownGap === true)) {
+		assert.ok(typeof c.gapRef === 'string' && c.gapRef.length > 0, `${c.id}: gapRef`);
+	}
+});
+
 test('N6 is split so each mismatch path and the expiry are pinned', () => {
 	const byId = new Map(cases.map((c) => [c.id, c]));
 	assert.equal(byId.get('N6a')?.expectedCode, 'AUTHORIZATION_EXPIRED');
