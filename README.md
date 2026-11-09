@@ -32,7 +32,7 @@ Detailed subsystem documentation lives in co-located module READMEs:
 | `policy/` | `RunAuthorizationEnvelope`, Task DAG planner (`task-planner.ts`), `SdlcError` taxonomy (`errors.ts`), reliability/canary gates | [`policy/README.md`](./policy/README.md) |
 | `roles/` | Role/capability registries, cognitive tiering, upstream learning recall, closed-loop trace-skill learning (`scripts/`) | [`roles/README.md`](./roles/README.md) |
 | `adapters/` | Outbound ports to `@evelbulgroz/model-usage-govenor` (`model-governor.ts`) and GitHub draft PRs (`github-pr.ts`) | [`adapters/README.md`](./adapters/README.md) |
-| `host/` | `.agents/sdlc-host.json` (`1.3.0`) loader, 3-tier `verify` (`verify-config.ts`), 3-layer prompts, host adapters, `learnings.ts` | [`host/README.md`](./host/README.md) |
+| `host/` | `.agents/sdlc-host.json` (current `1.7.0`; `1.3.0`+ load) loader, 3-tier `verify` (`verify-config.ts`), 3-layer prompts, host adapters, `learnings.ts`, `learnings-graduations.ts`, command-evidence verification | [`host/README.md`](./host/README.md) |
 | `ledger/` | Run token/cost ledger snapshots and model-usage archive records (`persistence/run-ledger.ts`, `persistence/ledger-archive.ts`) | [`ledger/README.md`](./ledger/README.md) |
 | `prompts/` | 3-layer role prompt & critic rubric composition (`roles/role-registry.ts`, `review/critic-prompt.ts`, `roles/defaults/`, `review/defaults/`) | [`prompts/README.md`](./prompts/README.md) |
 
@@ -68,7 +68,7 @@ agent-sdlc/
 1. **Single Per-Machine Engine Installation:** Install this package once on your workstation and expose its CLI binaries (`agent-sdlc`, `agent-review`, `agent-sdlc-trace`, `agent-sdlc-trends`) on your user `PATH`.
    - **Zero dependency pollution in target repos:** Client repositories do not need LangGraph, Zod, or engine scripts in their own `package.json` or lockfiles.
    - **Centralized model & cost governance:** All runs share the single machine installation of [`@evelbulgroz/model-usage-govenor`](https://github.com/evelbulgroz/model-usage-govenor), enforcing unified provider credentials, circuit-breaker state, and 3-tier lower-only budget ceilings (committed `.agents/model-usage-policy.json` $\to$ machine-wide `~/.config/model-usage/local-policy.json` $\to$ per-project `.agent-sdlc/local-policy.json` or `tools/.model-usage/local-policy.json`).
-2. **Lightweight Per-Repository Onboarding:** Each target repository checks in a single declarative `.agents/sdlc-host.json` (`schemaVersion: "1.3.0"`) and gitignores `.agent-sdlc/`. Built-in workflow, role, and prompt defaults execute directly from the machine installation unless overridden locally.
+2. **Lightweight Per-Repository Onboarding:** Each target repository checks in a single declarative `.agents/sdlc-host.json` (current `schemaVersion` is `1.7.0`; the minimal `1.3.0` shape below still loads) and gitignores `.agent-sdlc/`. Built-in workflow, role, and prompt defaults execute directly from the machine installation unless overridden locally.
 
 ### Per-Machine Installation
 
@@ -188,6 +188,13 @@ agent-sdlc shell status --run <run-id> --json
 # Validate .agents/sdlc-host.json profile
 agent-sdlc host check [--root <dir>] [--json]
 agent-sdlc host scaffold --package <dir> [--profile-id <id>] [--root <dir>] [--overwrite] [--dry-run] [--json]
+
+# Run folders, telemetry and learnings (see cli/README.md and host/README.md; profile fields `telemetry.dir`
+# and `learnings.graduations` need schemaVersion 1.7.0)
+agent-sdlc run init --slug <kebab-slug> [--owner <id>] [--orchestrated] [--json]
+agent-sdlc telemetry record [--run <slug>] [--stdin | --result <file>] [--json]
+agent-sdlc telemetry export --slug <slug> [--dest <file>] [--json]
+agent-sdlc learnings graduations [--advisory|--warn-only] [--store <path>] [--json]
 
 # Sweep merged worktrees (< 7d, landed-check.ts / run-cleanup.ts) and compact idle runs
 # (>= 7d, run-retention.ts / run-compaction.ts / run-archive.ts; auto-triggered by auto-prune.ts

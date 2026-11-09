@@ -1,4 +1,4 @@
-Status: ready for implementation (approved by the operator on 2026-11-08), revised after two independent reviews (each claim below was checked against engine `ae2d205` and host `f9efbba1`). Owner: engine maintainers. Follows `single-config-host-onboarding.md` (retired, implemented H0 to H7).
+Status: retired, implemented S1 to S3 (live canary READY on 2026-11-09; approved by the operator on 2026-11-08), revised after two independent reviews (each claim below was checked against engine `ae2d205` and host `f9efbba1`). Owner: engine maintainers. Follows `single-config-host-onboarding.md` (retired, implemented H0 to H7).
 
 ## Goal
 
