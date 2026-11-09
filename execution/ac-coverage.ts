@@ -51,6 +51,7 @@ export interface ParsedTestCitationRow {
 	readonly regressionId: string | null;
 	readonly shadow: string | null;
 	readonly hasAssertion: boolean;
+	readonly noopAssertionsOnly?: boolean;
 	readonly oracle: boolean;
 }
 
@@ -112,6 +113,8 @@ export interface AcCoverageReport {
 	readonly uncitedTouchedTests: readonly UncitedTouchedTestFinding[];
 	readonly emptyAssertFiles: readonly string[];
 	readonly staleOracleCitations: readonly StaleOracleCitationFinding[];
+	// Warning only: approved citations whose test asserts nothing meaningful. Never affects `pass`.
+	readonly noopAssertionTests: readonly UncitedTouchedTestFinding[];
 	readonly rows: readonly ParsedTestCitationRow[];
 	readonly errors: readonly AcCoverageError[];
 }
@@ -349,6 +352,10 @@ export function evaluateAcCoverage({
 		citeWithoutAssertion.length === 0 &&
 		caseWithoutAssertion.length === 0;
 
+	const noopAssertionTests = rows
+		.filter((row) => row.noopAssertionsOnly === true && row.acIds.some((id) => approved.has(id)))
+		.map((row) => Object.freeze({ file: row.file, line: row.line, title: row.title }));
+
 	return Object.freeze({
 		pass,
 		approvedAcIds: Object.freeze(parsedIds),
@@ -365,6 +372,7 @@ export function evaluateAcCoverage({
 		uncitedTouchedTests: Object.freeze(uncitedTouchedTests),
 		emptyAssertFiles: Object.freeze(emptyAssertFiles),
 		staleOracleCitations: Object.freeze(staleOracleCitations),
+		noopAssertionTests: Object.freeze(noopAssertionTests),
 		rows: Object.freeze(rows),
 		errors: Object.freeze(errors),
 	});

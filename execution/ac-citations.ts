@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { SdlcError } from '../policy/errors.ts';
 import { parseAcceptanceCriterion } from '../workflow/acceptance-criteria.ts';
+import { hasOnlyNoopAssertions } from './ac-noop-assertions.ts';
 import type { ParsedTestCitationRow } from './ac-coverage.ts';
 
 const AC_TAG = /@ac\s+(AC-\d{2,})/gi;
@@ -164,6 +165,7 @@ export function parseTestCitations(
 		const regression = title.match(REGRESSION_TAG);
 		const shadow = title.match(SHADOW_TAG);
 		const hasAssertion = ASSERTION_RE.test(body);
+		const noopAssertionsOnly = hasAssertion && hasOnlyNoopAssertions(body);
 		const oracle = /@oracle\b/i.test(title) || isOraclePath(filePath);
 		if (tableCaseIds.length > 0) {
 			for (const eachCaseId of tableCaseIds) {
@@ -178,6 +180,7 @@ export function parseTestCitations(
 						regressionId: regression?.[1] ?? null,
 						shadow: shadow?.[1]?.toLowerCase() ?? null,
 						hasAssertion,
+						noopAssertionsOnly,
 						oracle,
 					}),
 				);
@@ -194,6 +197,7 @@ export function parseTestCitations(
 				regressionId: regression?.[1] ?? null,
 				shadow: shadow?.[1]?.toLowerCase() ?? null,
 				hasAssertion,
+				noopAssertionsOnly,
 				oracle,
 			}),
 		);

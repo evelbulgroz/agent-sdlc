@@ -104,3 +104,25 @@ test('@ac AC-02 TAP evidence stays title-only and the report records it', () => 
 	assert.equal(bound.pass, true);
 	assert.equal(bound.executionEvidenceMatching, 'title');
 });
+
+test('@ac AC-05 a test whose only assertions are no-ops is reported as a warning and never fails coverage', () => {
+	const bodies = {
+		literal: 'expect(true).toBe(true);',
+		existence: 'const value = make(); expect(value).toBeDefined();',
+		assertLiteral: 'assert.ok(true);',
+		mixed: 'expect(true).toBe(true); expect(make()).toEqual({ a: 1 });',
+		real: 'expect(make(1)).toBe(2);',
+	};
+	const content = Object.entries(bodies)
+		.map(([name, body]) => `it('@ac AC-01 ${name}', () => { ${body} });`)
+		.join('\n');
+	const report = evaluateAcCoverage({
+		acceptanceCriteria: [FILE_AC],
+		touchedFiles: [{ path: 'src/a.spec.ts', content }],
+	});
+	assert.equal(report.pass, true);
+	assert.deepEqual(
+		report.noopAssertionTests.map((test) => test.title),
+		['@ac AC-01 literal', '@ac AC-01 existence', '@ac AC-01 assertLiteral'],
+	);
+});
