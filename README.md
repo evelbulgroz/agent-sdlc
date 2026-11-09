@@ -245,6 +245,8 @@ pnpm run test:unit
 
 ### Qualify (Offline Replay & Hosted Canary)
 
+The engine is proven in this repository (tier 1 gates and scenarios, tier 2 live runs on an engine fixture; see [`testing/qualification/README.md`](./testing/qualification/README.md)). The hosted canary is a configuration smoke: it checks that your host's profile, verify command and governor work with an already-proven engine. A canary failure that does not reproduce on the engine fixture is a host configuration problem.
+
 Before running a multi-task DAG after modifying orchestration logic, qualify the engine in two stages (`policy/reliability/canary.ts`, documented in [`policy/README.md`](./policy/README.md)):
 
 - **Purpose (Why):** Any change to the workflow manifest (`workflowHash`), task-planning/execution modules (`boundedPlanningHash`, [`policy/canary-planning-files.ts`](./policy/canary-planning-files.ts)), the `implementer` role/prompts (`implementerRoleHash`), or committed `.agents/model-usage-policy.json` (`modelPolicyHash`) invalidates `<stateDir>/canary-qualification.json` (`CANARY_STALE` / `CANARY_REQUIRED`), blocking multi-task runs until a fresh canary passes. Documentation-only commits (`*.md`) do not mark the canary stale.

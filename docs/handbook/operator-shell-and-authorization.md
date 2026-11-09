@@ -52,3 +52,9 @@ To prevent repository corruption or concurrent git index contention:
 The engine permanently forbids autonomous merges and deployments. By default, upon passing preflight verification and QA review, the run halts cleanly at `READY_FOR_GIT_APPROVAL` (`exitCode: 0`).
 
 Branch creation, commits, pushes, and pull requests remain strictly human-operator authorized actions.
+
+---
+
+## 5. Qualification Boundary
+
+The engine is qualified in this repository: tier 1 deterministic gate proofs and scripted scenarios run in `pnpm run test:unit`, and tier 2 live runs use an engine-owned fixture (`testing/qualification/README.md`). A host canary (`agent-sdlc canary check` / `canary qualify`) is a tier 3 configuration smoke: one clean run on the host's own spec that checks admission, preflight and the 7/7 run invariants. A tier 3 failure reopens engine qualification only if it reproduces on the engine fixture; otherwise it is reported as host configuration.

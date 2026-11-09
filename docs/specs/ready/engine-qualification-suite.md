@@ -125,6 +125,7 @@ These ran on the older host-canary path, before the acceptance-evidence, final-o
 
   The `--root` scorer works against real fixture repositories: path-containment and canary-not-merged passed with the fixture HEAD as the base.
 - **Q5. Tier 3.** Reduce host canary guidance to the configuration smoke and cross-reference it in `docs/handbook/operator-shell-and-authorization.md`.
+  *Done 2026-11-09:* the README Qualify section opens with the tier boundary and links the runbook; the handbook has a new section 5, "Qualification Boundary". The canary commands and hash invalidation are unchanged.
 
 ## Acceptance criteria
 
@@ -141,9 +142,9 @@ These ran on the older host-canary path, before the acceptance-evidence, final-o
 
 ## Open
 
-- N1b needs a fixture rework so the contradiction appears only when the implementer runs its own test. It has not run live.
+- N1b ran live (Q4) and was blocked as predicted by the implementer's own test; a repeat needs a new unseen contradiction spec.
 - Contradiction detection (S3): add an invariant-versus-example check to the spec critic rubric and qualify it only in tier 2 (N1b). The critic is evidence, never trust. S3 stays a known gap in tier 1 until a live run shows the critic raising a finding.
 - A deterministic contradiction gate is deferred. Build one only if N1b and the corpus show repeated misses, because a blocking heuristic can reject valid specs.
 - Turning a refusal into a questions interrupt (`WAITING_FOR_ANSWERS`) is deferred. It needs a new transition, resume semantics, and a way to keep the repair budget from being bypassed.
 - Any gate added later gets its tier 1 proof in the same slice.
-- Whether the fixture pool needs a mechanism to retire specs after use.
+- Whether the fixture pool needs a mechanism to retire specs after use. `pool.json` `usedIn` records use; Q4 showed each reuse after a live run is no longer unseen.
