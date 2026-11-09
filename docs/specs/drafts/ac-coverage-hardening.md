@@ -1,4 +1,4 @@
-Status: draft, not approved. Queued after `engine-host-cleanup.md` (its S1 turns the size gate on and splits `testing/test-support.mjs`; do that first so new specs land in compliant files, then this spec's S0). Findings come from two independent reviews, checked against engine `main` on 2026-11-09. Verify each claim before implementing.
+Status: draft, not approved. Queued after the retired `engine-host-cleanup.md` (its S1 turns the size gate on and splits `testing/test-support.mjs`; do that first so new specs land in compliant files, then this spec's S0). Findings come from two independent reviews, checked against engine `main` on 2026-11-09. Verify each claim before implementing.
 
 ## Goal
 

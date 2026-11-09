@@ -1,4 +1,4 @@
-Status: ready for implementation (approved by the operator on 2026-11-09). Follows `retired/host-residual-engine-code.md`. Findings come from an audit of engine `main` and host `48756c30` on 2026-11-09; verify each claim before implementing.
+Status: retired, implemented S1 to S4 (2026-11-09). Follows `retired/host-residual-engine-code.md`. Findings come from an audit of engine `main` and host `48756c30` on 2026-11-09; verify each claim before implementing.
 
 ## Goal
 
