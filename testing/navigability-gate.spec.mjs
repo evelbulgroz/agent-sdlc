@@ -76,7 +76,7 @@ test('@ac AC-01 @case AC-01.3 a listed file within the ceiling and a missing lis
 	}
 });
 
-test('@ac AC-01 @case AC-01.4 exempt files are ignored and an oversized testing spec fails', () => {
+test('@ac AC-01 @case AC-01.4 only supporting files, data and dependencies are exempt; an oversized testing helper fails', () => {
 	const root = makeRoot();
 	try {
 		const oversized = `${'x\n'.repeat(501)}`;
@@ -86,7 +86,26 @@ test('@ac AC-01 @case AC-01.4 exempt files are ignored and an oversized testing 
 		writeFile(root, 'packages/engine/workflow/node_modules/pkg/big.mjs', oversized);
 		writeFile(root, 'packages/engine/testing/big.spec.mjs', oversized);
 		const violations = findNavigabilityViolations(root, {});
-		assert.deepEqual(names(violations), ['packages/engine/testing/big.spec.mjs']);
+		assert.deepEqual(names(violations), [
+			'packages/engine/testing/big.spec.mjs',
+			'packages/engine/testing/fixtures/big.mjs',
+		]);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test('@ac AC-01 @case AC-01.4 a standalone tree is scanned from its root, testing helpers included, and dot directories are skipped', () => {
+	const root = makeRoot();
+	try {
+		const oversized = `${'x\n'.repeat(501)}`;
+		writeFile(root, 'testing/support.mjs', oversized);
+		writeFile(root, 'workflow/big.ts', oversized);
+		writeFile(root, 'workflow/ok.ts', 'a\n');
+		writeFile(root, 'tools/.agent-sdlc/run/worktree/big.mjs', oversized);
+		writeFile(root, 'dist/big.mjs', oversized);
+		const violations = findNavigabilityViolations(root, {});
+		assert.deepEqual(names(violations), ['testing/support.mjs', 'workflow/big.ts']);
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
 	}

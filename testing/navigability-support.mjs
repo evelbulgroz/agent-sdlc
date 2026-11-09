@@ -1,4 +1,6 @@
-// Ceiling check for tools/agent-sdlc and tools/model-usage.
+// Ceiling check for the engine tree. A standalone checkout is scanned from its
+// root; the old monorepo layout (packages/engine, packages/model-usage) is
+// still recognised so tests can build a temporary tree in either shape.
 // A file is within the ceiling at 500 newline bytes and 20,480 bytes.
 // Callers pass the repository root and the exceptions object so tests can
 // prove the rules on a temporary tree.
@@ -9,7 +11,11 @@ import path from 'node:path';
 export const NAVIGABILITY_LINE_CEILING = 500;
 export const NAVIGABILITY_BYTE_CEILING = 20_480;
 
-const SCAN_ROOTS = ['packages/engine', 'packages/model-usage'];
+const MONOREPO_SCAN_ROOTS = ['packages/engine', 'packages/model-usage'];
+
+function scanRoots(rootDir) {
+	return fs.existsSync(path.join(rootDir, 'packages/engine')) ? MONOREPO_SCAN_ROOTS : [''];
+}
 
 function isSpecFile(name) {
 	return name.endsWith('.spec.mjs') || name.endsWith('.spec.ts');
@@ -21,7 +27,6 @@ function isCodeFile(name) {
 
 function isExempt(rel, name) {
 	if (isSpecFile(name)) return false;
-	if (rel.startsWith('packages/engine/testing/')) return true;
 	if (rel.startsWith('packages/model-usage/') && /-(support|child)\.(mjs|ts)$/.test(name)) return true;
 	return false;
 }
@@ -40,11 +45,11 @@ function walk(directory, relBase, files) {
 		if (entry.isSymbolicLink()) continue;
 		if (entry.isDirectory()) {
 			if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) continue;
-			walk(path.join(directory, entry.name), `${relBase}/${entry.name}`, files);
+			walk(path.join(directory, entry.name), relBase ? `${relBase}/${entry.name}` : entry.name, files);
 			continue;
 		}
 		if (!entry.isFile() || !isCodeFile(entry.name)) continue;
-		const rel = `${relBase}/${entry.name}`;
+		const rel = relBase ? `${relBase}/${entry.name}` : entry.name;
 		if (isExempt(rel, entry.name)) continue;
 		const data = fs.readFileSync(path.join(directory, entry.name));
 		files.push({ path: rel, lines: newlineCount(data), bytes: data.length });
@@ -61,7 +66,7 @@ export function findNavigabilityViolations(rootDir, exceptions) {
 		throw new TypeError('navigability exceptions must be an object');
 	}
 	const files = [];
-	for (const relRoot of SCAN_ROOTS) {
+	for (const relRoot of scanRoots(rootDir)) {
 		walk(path.join(rootDir, relRoot), relRoot, files);
 	}
 	const violations = [];
