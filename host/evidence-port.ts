@@ -13,7 +13,7 @@ import {
 import {
 	type CommandCaseResult, isCommandRegistration, selectedCaseIdentities, synthesizeCommandReport,
 } from './command-evidence.ts';
-import { sanitizeEvidenceDiagnostic } from './evidence-transport.ts';
+import { sanitizeEvidenceDiagnostic } from './evidence-diagnostic.ts';
 import type {
 	EvidenceCallbacks, EvidenceCompletion, EvidenceExecutionResult, EvidenceInvocationContext,
 	EvidenceRecordStore, EvidenceSourceObservation, EvidenceSpawn,

@@ -33,8 +33,7 @@ when binding the request, rather than a delta tree containing mutable outputs.
 Preparation is independently hashed from the frozen baseline/output declaration,
 `preparation.configuration` (hydration, runtime version, environment), and the
 verified byte hashes of `preparation.files`. Changed preparation inputs fail closed.
-`host/evidence-runtime.ts` exports asynchronous `defaultEvidenceSpawn`; synchronous
-`execCli` remains suitable for Git/preparation only, not the bounded evidence stream.
+Evidence runs through the bounded command runner; synchronous `execCli` is for Git and preparation only.
 
 The injected spawn receives exact argv with `shell: false`, one JSON stdin request,
 and bounded stdout/stderr. The host returns exactly one JSON report; opaque unit or

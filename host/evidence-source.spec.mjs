@@ -6,8 +6,6 @@ import path from 'node:path';
 import test from 'node:test';
 import { createEvidenceSourceObserver } from './evidence-source.ts';
 import { hashEvidenceBytes } from './evidence-files.ts';
-import { defaultEvidenceSpawn } from './evidence-runtime.ts';
-import { spawnEvidence } from './evidence-transport.ts';
 
 async function fixture(fn) {
 	const root = path.resolve(`.evidence-source-fixture-${crypto.randomUUID()}`);
@@ -204,13 +202,4 @@ test('validates nil, empty and traversal configuration and cleans failed index c
 		await assert.rejects(observer(), /injected-git-failure/);
 		assert.equal(fs.readdirSync(path.join(f.root, '.git')).some((name) => name.startsWith('sdlc-evidence-')), false);
 	});
-});
-
-test('default runtime spawn is asynchronous with stdin report transport, never an execCli wrapper', async () => {
-	const result = await spawnEvidence(defaultEvidenceSpawn,
-		[process.execPath, '-e', 'let input="";process.stdin.on("data",c=>input+=c);process.stdin.on("end",()=>process.stdout.write(JSON.stringify(JSON.parse(input))));'],
-		process.cwd(), Buffer.from('{"schemaVersion":"1.0.0"}'), { timeoutMs: 2000, maxReportBytes: 1024 }, {}, 0);
-	assert.equal(result.exitCode, 0);
-	assert.equal(result.failureReason, null);
-	assert.equal(result.stdout.toString(), '{"schemaVersion":"1.0.0"}');
 });
