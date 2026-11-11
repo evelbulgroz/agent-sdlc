@@ -1,5 +1,7 @@
 # Intent
 
+Status: retired 2026-11-11 (phase 1 implemented on `c5e6476`). This file is no longer a `check-spec` goal.
+
 ## Goal
 
 When integration preflight or committed-tree verification fails, project a deterministic failure record the operator can read. The record names the halt path, the existing failure-packet classification, a closed integration category, and the paths a structured host report supplied.

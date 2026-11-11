@@ -1,5 +1,7 @@
 # Intent
 
+Status: retired 2026-11-11 (phase 2 implemented on `c5e6476`). The package coverage gate stays deferred. This file is no longer a `check-spec` goal.
+
 ## Goal
 
 Before `taskPlanHash` freezes, run one static closure over the union of every task marked `retirement`. A sibling whose resolved importers all sit in that union is added to exactly one of those tasks. The operator accepts the expanded plan. A miss is a plan-critic P1 at `WAITING_FOR_PLAN_ACCEPTANCE`. Nothing is added after the hash freezes.
