@@ -9,6 +9,7 @@ import {
 	verifyPreflightEvidence,
 } from './verifier.ts';
 import { makeFixture } from '../testing/test-support.mjs';
+import { gitStub, writePreflightResult } from '../testing/verifier-spec-support.mjs';
 
 test('@ac AC-03 @case AC-03.1 executePreflightVerifier parses successful preflight and emits 5-point binding', async () => {
 	const fixture = makeFixture('verifier-test-2', []);
@@ -348,20 +349,6 @@ test('executeCommittedPreflightVerifier fails closed if worktree is dirty or tre
 	}
 });
 
-function writePreflightResult(worktreeDir, result) {
-	fs.mkdirSync(path.join(worktreeDir, 'tools'), { recursive: true });
-	fs.writeFileSync(path.join(worktreeDir, 'tools/.agent-preflight-last.json'), JSON.stringify(result));
-}
-
-function gitStub({ head, tree }) {
-	return (_cmd, args) => {
-		if (args[0] === 'status') return '';
-		if (args[1] === 'HEAD') return `${head}\n`;
-		if (args[1] === 'HEAD^{tree}') return `${tree}\n`;
-		throw new Error(`unexpected git ${args.join(' ')}`);
-	};
-}
-
 test('@ac AC-05 @case AC-05.1 executePreflightVerifier reports the full gitHeadSha mismatch message against the authorized base', async () => {
 	const fixture = makeFixture('verifier-ac05-1', []);
 	try {
@@ -490,4 +477,24 @@ test('@ac AC-03 @case AC-03.3 @case AC-03.5 runPreflightAndBind supports custom 
 	} finally {
 		fixture.close();
 	}
+});
+
+test('@ac AC-05 @case AC-05.5 both verifiers copy integrationDiagnostics from a failing result file', async () => {
+	const fixture = makeFixture('verifier-diagnostics-field', []);
+	try {
+		const worktreeDir = path.join(fixture.runtimeDir, 'worktree');
+		const base = '2'.repeat(40);
+		const commit = '3'.repeat(40);
+		const tree = '4'.repeat(40);
+		const diagnostics = { schemaVersion: '1', coverageFloor: { pass: false, paths: ['services/billing/src/orphan.ts'] } };
+		const fail = () => { const err = new Error('fail'); err.status = 1; err.stdout = 'FAIL'; err.stderr = ''; throw err; };
+		writePreflightResult(worktreeDir, { status: 'FAIL', canonical: false, exitCode: 1, base, gitHeadSha: base, integrationDiagnostics: diagnostics });
+		const worktree = await executePreflightVerifier({ runId: fixture.runId, worktreeDir, baseCommitSha: base, targetTreeSha: tree, artifactStore: fixture.artifacts, execCli: fail });
+		assert.equal(worktree.status, 'FAIL');
+		assert.equal(worktree.integrationDiagnostics.coverageFloor.paths[0], 'services/billing/src/orphan.ts');
+		writePreflightResult(worktreeDir, { status: 'FAIL', canonical: false, exitCode: 1, base, gitHeadSha: commit, integrationDiagnostics: diagnostics });
+		const committed = await executeCommittedPreflightVerifier({ runId: fixture.runId, worktreeDir, baseCommitSha: base, commitSha: commit, targetTreeSha: tree, artifactStore: fixture.artifacts, execCli: fail, gitCli: gitStub({ head: commit, tree }) });
+		assert.equal(committed.status, 'FAIL');
+		assert.equal(committed.integrationDiagnostics.schemaVersion, '1');
+	} finally { fixture.close(); }
 });

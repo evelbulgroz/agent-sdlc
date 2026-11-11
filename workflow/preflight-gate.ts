@@ -14,6 +14,7 @@ import {
 import { SdlcError } from '../policy/errors.ts';
 import { collectTouchedTestFiles, isTouchedTestFile } from '../review/critic-gate.ts';
 import { finalPreparationHook } from '../execution/verification-preparation.ts';
+import { buildIntegrationFailure } from '../cli/status-integration-failure.ts';
 import { executePreflightVerifier } from '../review/verifier.ts';
 import {
 	type WorkflowRuntimeLike,
@@ -249,10 +250,14 @@ export async function escalateAutonomousRepairRetired(
 		causalId = `repair-retired-${snapshot.runtimeRevision}`,
 		failurePacket = null,
 		failurePacketArtifact = null,
+		recordIntegrationFailure = false,
+		diagnostics = null,
 	}: {
 		causalId?: string;
 		failurePacket?: unknown;
 		failurePacketArtifact?: string | null;
+		recordIntegrationFailure?: boolean;
+		diagnostics?: unknown;
 	} = {},
 ): Promise<{ snapshot: Readonly<RuntimeState> }> {
 	let packet = failurePacket;
@@ -275,6 +280,13 @@ export async function escalateAutonomousRepairRetired(
 			}
 		}
 	}
+	const integrationFailure = recordIntegrationFailure
+		? buildIntegrationFailure({
+				haltPath: 'AUTONOMOUS_REPAIR_RETIRED',
+				failurePacket: packet,
+				diagnostics,
+			})
+		: null;
 	const next = runtime.transition(snapshot, {
 		to: 'ESCALATED',
 		eventType: 'RUN_BLOCKED',
@@ -286,6 +298,7 @@ export async function escalateAutonomousRepairRetired(
 				message: 'Autonomous repair is retired; the failure packet stays on this event',
 				metadata: {
 					failurePacketArtifact: artifact,
+					...(integrationFailure ? { integrationFailure } : {}),
 				},
 			},
 		},
@@ -293,6 +306,7 @@ export async function escalateAutonomousRepairRetired(
 			reason: 'AUTONOMOUS_REPAIR_RETIRED',
 			failurePacket: packet,
 			failurePacketArtifact: artifact,
+			...(integrationFailure ? { integrationFailure } : {}),
 		},
 	});
 	await runtime.onBoundary('autonomous-repair-retired-transition-recorded', {
@@ -336,10 +350,20 @@ export async function executePreflightForSnapshot(
 					status: 'PREFLIGHT_FAILED',
 					reason: 'Canonical final preflight failed for the bound quality candidate',
 					findings: verifierResult.failurePacket ? [verifierResult.failurePacket] : [],
+					integrationFailure: buildIntegrationFailure({
+						haltPath: 'QUALITY_CHECKPOINT_PREFLIGHT',
+						failurePacket: verifierResult.failurePacket,
+						diagnostics: verifierResult.integrationDiagnostics ?? null,
+					}),
 				}),
 			};
 		}
 		if (verifierResult.repairable === false) {
+			const integrationFailure = buildIntegrationFailure({
+				haltPath: 'VERIFICATION_OUTSIDE_AUTHORIZED_SCOPE',
+				failurePacket: verifierResult.failurePacket,
+				diagnostics: verifierResult.integrationDiagnostics ?? null,
+			});
 			const next = runtime.transition(snapshot, {
 				to: 'ESCALATED',
 				eventType: 'RUN_BLOCKED',
@@ -355,6 +379,7 @@ export async function executePreflightForSnapshot(
 						metadata: {
 							failurePacketArtifact: verifierResult.outputArtifact,
 							rawOutputArtifact: verifierResult.rawOutputArtifact ?? null,
+							integrationFailure,
 						},
 					},
 				},
@@ -362,6 +387,7 @@ export async function executePreflightForSnapshot(
 					failurePacketArtifact: verifierResult.outputArtifact,
 					rawOutputArtifact: verifierResult.rawOutputArtifact ?? null,
 					failurePacket: verifierResult.failurePacket,
+					integrationFailure,
 				},
 			});
 			await runtime.onBoundary('verification-out-of-scope-transition-recorded', {
@@ -374,6 +400,8 @@ export async function executePreflightForSnapshot(
 			causalId: `verifier-fail-${snapshot.runtimeRevision}`,
 			failurePacket: verifierResult.failurePacket,
 			failurePacketArtifact: verifierResult.outputArtifact,
+			recordIntegrationFailure: true,
+			diagnostics: verifierResult.integrationDiagnostics ?? null,
 		});
 	}
 

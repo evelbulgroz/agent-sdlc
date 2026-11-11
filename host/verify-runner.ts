@@ -42,6 +42,7 @@ export interface HostVerifyFailOutcome {
 	argv: readonly string[];
 	output: string;
 	processFailed: boolean;
+	preflightResult?: Record<string, unknown>;
 }
 
 export type HostVerifyOutcome = HostVerifyPassOutcome | HostVerifyFailOutcome;
@@ -178,7 +179,7 @@ export async function runHostVerify({
 	}
 
 	const resultFilePath = path.join(worktreeDir, verifyConfig.resultPath);
-	if (exitCode !== 0 || !fs.existsSync(resultFilePath)) {
+	if (!fs.existsSync(resultFilePath)) {
 		return {
 			status: 'FAIL',
 			ok: false,
@@ -186,7 +187,7 @@ export async function runHostVerify({
 			command,
 			argv,
 			output: `${stdout}\n${stderr}`,
-			processFailed: true,
+			processFailed: exitCode !== 0,
 		};
 	}
 
@@ -210,6 +211,33 @@ export async function runHostVerify({
 		};
 	}
 
+	const failParsed = ({
+		exitCode: failedExit,
+		output,
+		processFailed,
+	}: {
+		exitCode: number;
+		output: string;
+		processFailed: boolean;
+	}): HostVerifyFailOutcome => ({
+		status: 'FAIL',
+		ok: false,
+		exitCode: failedExit,
+		command,
+		argv,
+		output,
+		processFailed,
+		preflightResult,
+	});
+
+	if (exitCode !== 0) {
+		return failParsed({
+			exitCode,
+			output: `${stdout}\n${stderr}`,
+			processFailed: true,
+		});
+	}
+
 	const requiredOutcome = verifyConfig.require ?? DEFAULT_VERIFY_REQUIRE;
 	const headField = verifyConfig.headField ?? DEFAULT_VERIFY_HEAD_FIELD;
 
@@ -221,15 +249,11 @@ export async function runHostVerify({
 			typeof preflightResult.exitCode === 'number' && preflightResult.exitCode !== 0
 				? preflightResult.exitCode
 				: 1;
-		return {
-			status: 'FAIL',
-			ok: false,
+		return failParsed({
 			exitCode: resultExit,
-			command,
-			argv,
 			output: `Preflight reported non-canonical outcome: status=${String(preflightResult.status)}, canonical=${String(preflightResult.canonical)}`,
 			processFailed: false,
-		};
+		});
 	}
 
 	if (
@@ -238,28 +262,20 @@ export async function runHostVerify({
 		preflightResult.base !== undefined &&
 		preflightResult.base !== expectedBase
 	) {
-		return {
-			status: 'FAIL',
-			ok: false,
+		return failParsed({
 			exitCode: 1,
-			command,
-			argv,
 			output: `Preflight result base commit '${String(preflightResult.base)}' does not match authorized base '${expectedBase}'`,
 			processFailed: false,
-		};
+		});
 	}
 
 	const actualHead = preflightResult[headField];
 	if (resolvedExpectedHead.length > 0 && actualHead !== resolvedExpectedHead) {
-		return {
-			status: 'FAIL',
-			ok: false,
+		return failParsed({
 			exitCode: 1,
-			command,
-			argv,
 			output: `Preflight result ${headField} '${String(actualHead)}' does not match ${headLabel} '${resolvedExpectedHead}'`,
 			processFailed: false,
-		};
+		});
 	}
 
 	return {

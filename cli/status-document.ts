@@ -12,6 +12,7 @@ import {
 } from '../policy/contracts.ts';
 import type { GitCliFn } from '../workflow/git-manager.ts';
 import type { CandidateLearningItem } from './projection-artifacts.ts';
+import { integrationFailureFromState } from './status-integration-failure.ts';
 
 function gitText(
 	gitCli: GitCliFn,
@@ -202,6 +203,7 @@ function projectedOwner(
 
 function projectedBlockedReason(state: Readonly<RuntimeState>): string | null {
 	if (state.state === 'CANCELLED') return 'RUN_CANCELLED';
+	if (state.state === 'ESCALATED') return state.blockedReason ?? state.lastError?.code ?? null;
 	return ['BLOCKED', 'BUDGET_EXHAUSTED', 'FAILED'].includes(state.state)
 		? (state.blockedReason ?? state.lastError?.code ?? 'RUN_FAILED')
 		: null;
@@ -344,6 +346,13 @@ export function buildStatusDocument({
 		candidateLearnings?: readonly CandidateLearningItem[];
 		proposedLearnings?: Array<Record<string, unknown>>;
 		quality?: Readonly<Record<string, unknown>>;
+		integrationFailure?: {
+			haltPath: string;
+			classification: string;
+			category: string;
+			targetPaths: readonly string[];
+			continuation: string;
+		};
 	} = {
 		schemaVersion: 1,
 		runId: state.runId,
@@ -424,6 +433,8 @@ export function buildStatusDocument({
 			projectionHash: null,
 		},
 	};
+	const integrationFailure = integrationFailureFromState(state);
+	if (integrationFailure) baseStatus.integrationFailure = integrationFailure;
 	if (quality) baseStatus.quality = quality;
 	if (preparation) baseStatus.verification.preparation = preparation;
 	if (falseEconomyDiagnostics.length > 0) {

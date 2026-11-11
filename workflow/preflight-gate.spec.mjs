@@ -135,10 +135,8 @@ test('coverage transition chains its input hash from the persisted state, not th
 	}
 });
 
-test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FAILED and requests correction without QA', async () => {
-	const fixture = makeFixture('new-policy-coverage-fail', []);
-	try {
-		const policy = {
+function prepareReviewingFinalCheckpoint(fixture, checkpointId) {
+	const policy = {
 			schemaVersion: '1.0.0',
 			policyId: 'checkpoint-evidence-v1',
 			additionalCandidateReviews: 0,
@@ -150,7 +148,7 @@ test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FA
 		};
 		const adapter = commandRegistrationFixture({ adapterId: 'unit-adapter', limits: { timeoutMs: 5_000, maxReportBytes: 20_000, maxArtifactBytes: 10_000, maxArtifacts: 4 } });
 		const bindingHash = adapterBindingHash(adapter);
-		const initial = fixture.runtime.initialize({ runId: fixture.runId, goal: 'New policy coverage' });
+	const initial = fixture.runtime.initialize({ runId: fixture.runId, goal: 'New policy coverage' });
 		fixture.store.saveTaskPlan({
 			schemaVersion: '2.0.0',
 			runId: fixture.runId,
@@ -209,8 +207,7 @@ test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FA
 		const treeSha = 'e'.repeat(40);
 		const approvedSpecHash = 'c'.repeat(64);
 		const taskPlanHash = 'd'.repeat(64);
-		const checkpointId = 'final-coverage-fail';
-		const binding = {
+	const binding = {
 			runId: fixture.runId,
 			approvedSpecHash,
 			taskPlanHash,
@@ -270,7 +267,14 @@ test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FA
 			qualityCheckpointTreeSha: treeSha,
 			qualityCheckpointBindingHash: checkpointBindingHash,
 		};
-		persistRuntimeSnapshot(fixture, snapshot);
+	persistRuntimeSnapshot(fixture, snapshot);
+	return { snapshot, worktreeDir };
+}
+
+test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FAILED and requests correction without QA', async () => {
+	const fixture = makeFixture('new-policy-coverage-fail', []);
+	try {
+		const { snapshot, worktreeDir } = prepareReviewingFinalCheckpoint(fixture, 'final-coverage-fail');
 		const { snapshot: coverageBlocked } = applyAcCoverageGate(
 			fixture.runtime,
 			snapshot,
@@ -282,8 +286,10 @@ test('@ac AC-06 @case AC-06.1 new-policy uncovered coverage emits AC_COVERAGE_FA
 		assert.equal(next.state, 'BLOCKED');
 		assert.equal(next.blockedReason, 'QUALITY_REVIEW_BLOCKED');
 		const events = fixture.store.listEvents(fixture.runId);
-		assert.equal(events.some((event) => event.eventType === 'AC_COVERAGE_FAILED'), true);
-		assert.equal(events.find(event => event.eventType === 'AC_COVERAGE_FAILED').payload.status, 'FAILED');
+		const coverageEvent = events.find((event) => event.eventType === 'AC_COVERAGE_FAILED');
+		assert.equal(Boolean(coverageEvent), true);
+		assert.equal(coverageEvent.payload.status, 'FAILED');
+		assert.equal(coverageEvent.payload.integrationFailure, undefined);
 		assert.equal(events.some((event) => event.eventType === 'AC_COVERAGE_PASSED'), false);
 		assert.equal(events.some((event) => event.eventType === 'QA_CRITIC_COMPLETED'), false);
 		assert.equal(events.some((event) => event.eventType === 'RUN_READY_FOR_GIT_APPROVAL'), false);
@@ -316,6 +322,10 @@ test('@ac AC-03 @case AC-03.4 @ac AC-05 @case AC-05.1 a repairable preflight FAI
 		const blocked = fixture.store.listEvents(fixture.runId).filter((event) => event.eventType === 'RUN_BLOCKED').at(-1);
 		assert.equal(blocked.payload.reason, 'AUTONOMOUS_REPAIR_RETIRED');
 		assert.ok(blocked.payload.failurePacket);
+		assert.equal(blocked.payload.integrationFailure.haltPath, 'AUTONOMOUS_REPAIR_RETIRED');
+		assert.equal(blocked.payload.integrationFailure.category, 'unclassified');
+		assert.equal(blocked.payload.integrationFailure.continuation, 'stop');
+		assert.equal(result.snapshot.lastError.metadata.integrationFailure.category, 'unclassified');
 	} finally {
 		fixture.close();
 	}
@@ -378,3 +388,52 @@ test('@ac AC-03 @case AC-03.6 a preflight FAIL while bound to an accepted slice 
 		fixture.close();
 	}
 });
+
+test('@ac AC-02 @case AC-02.1 a checkpoint-bound preflight failure keeps approve-correction', async () => {
+	const fixture = makeFixture('checkpoint-preflight-fail', []);
+	try {
+		const { snapshot } = prepareReviewingFinalCheckpoint(fixture, 'final-preflight-fail');
+		const auth = createDefaultAuthorizationEnvelope({
+			runId: fixture.runId, approvedSpecHash: snapshot.approvedSpecHash, baseCommitSha: 'b'.repeat(40),
+			allowedPackages: ['services/billing'], allowedPathPrefixes: ['services/billing'],
+		});
+		fixture.store.saveAuthorization(auth);
+		const bound = { ...snapshot, approvedPlanPolicyHash: auth.approvedPlanPolicyHash };
+		persistRuntimeSnapshot(fixture, bound);
+		fixture.runtime.execCli = createMockExecCli({ preflightStatus: 'FAIL' });
+		const result = await executePreflightForSnapshot(fixture.runtime, bound);
+		assert.equal(result.snapshot.state, 'BLOCKED');
+		assert.equal(result.snapshot.blockedReason, 'QUALITY_REVIEW_BLOCKED');
+		const failure = result.snapshot.lastError.metadata.integrationFailure;
+		assert.equal(failure.haltPath, 'QUALITY_CHECKPOINT_PREFLIGHT');
+		assert.equal(failure.continuation, 'approve-correction');
+		const request = fixture.artifacts.readJson(result.snapshot.lastError.metadata.requestArtifact);
+		assert.deepEqual(request.allowedActions, ['approve-correction']);
+	} finally {
+		fixture.close();
+	}
+});
+
+test('@ac AC-01 @case AC-01.1 a repairable preflight failure records coverage_floor_regression from the result file', async () => {
+	const fixture = makeFixture('preflight-coverage-record', []);
+	try {
+		const { snapshot, baseCommitSha } = prepareVerifierSnapshot(fixture, 'VERIFYING_PREFLIGHT');
+		fixture.runtime.execCli = (cmd, args = [], opts = {}) => {
+			if (!(cmd === 'pnpm' && args.includes('agent:verify'))) return 'OK\n';
+			const cwd = typeof opts.cwd === 'string' ? opts.cwd : fixture.runtimeDir;
+			fs.mkdirSync(path.join(cwd, 'tools'), { recursive: true });
+			fs.writeFileSync(path.join(cwd, 'tools/.agent-preflight-last.json'), JSON.stringify({
+				status: 'FAIL', canonical: false, exitCode: 1, base: baseCommitSha, gitHeadSha: baseCommitSha,
+				integrationDiagnostics: { schemaVersion: '1', coverageFloor: { pass: false, paths: ['services/billing/src/orphan.ts'] } },
+			}));
+			throw Object.assign(new Error('fail'), { status: 1, stdout: 'FAIL services/billing\n', stderr: '' });
+		};
+		const failure = (await executePreflightForSnapshot(fixture.runtime, snapshot)).snapshot.lastError.metadata.integrationFailure;
+		assert.equal(failure.haltPath, 'AUTONOMOUS_REPAIR_RETIRED');
+		assert.equal(failure.category, 'coverage_floor_regression');
+		assert.deepEqual([...failure.targetPaths], ['services/billing/src/orphan.ts']);
+		assert.equal(failure.continuation, 'stop');
+	} finally { fixture.close(); }
+});
+
+

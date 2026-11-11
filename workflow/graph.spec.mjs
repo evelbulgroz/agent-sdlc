@@ -407,6 +407,10 @@ test('@ac AC-05 @case AC-05.2 a repairable committed-tree FAIL escalates with AU
 		assert.equal(result.snapshot.state, 'ESCALATED');
 		assert.equal(result.snapshot.blockedReason, 'AUTONOMOUS_REPAIR_RETIRED');
 		assert.equal(fixture.governor.calls.length, 0);
+		const blocked = fixture.store.listEvents(fixture.runId).filter((event) => event.eventType === 'RUN_BLOCKED').at(-1);
+		assert.equal(blocked.payload.integrationFailure.haltPath, 'AUTONOMOUS_REPAIR_RETIRED');
+		assert.equal(blocked.payload.integrationFailure.category, 'unclassified');
+		assert.equal(blocked.payload.integrationFailure.continuation, 'stop');
 	} finally {
 		fixture.close();
 	}
@@ -457,6 +461,8 @@ test('@ac AC-05 @case AC-05.4 a non-repairable preflight FAIL stays VERIFICATION
 		const result = await executePreflightForSnapshot(fixture.runtime, snapshot);
 		assert.equal(result.snapshot.state, 'ESCALATED');
 		assert.equal(result.snapshot.blockedReason, 'VERIFICATION_OUTSIDE_AUTHORIZED_SCOPE');
+		assert.equal(result.snapshot.lastError.metadata.integrationFailure.haltPath, 'VERIFICATION_OUTSIDE_AUTHORIZED_SCOPE');
+		assert.equal(result.snapshot.lastError.metadata.integrationFailure.category, 'unclassified');
 		assert.equal(fixture.governor.calls.length, 0);
 	} finally {
 		fixture.close();

@@ -21,6 +21,7 @@ import {
 	collectQaBriefAndAdvisories,
 	getAndValidateAuthorization,
 } from '../node-helpers.ts';
+import { buildIntegrationFailure } from '../../cli/status-integration-failure.ts';
 import { escalateAutonomousRepairRetired } from '../preflight-gate.ts';
 import { assertQualityDeliveryAllowed } from '../quality-delivery.ts';
 import { assertQualityCommitBinding } from '../quality-commit-binding.ts';
@@ -234,6 +235,11 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 
 		if (verifierResult.status === 'FAIL') {
 			if (verifierResult.repairable === false) {
+				const integrationFailure = buildIntegrationFailure({
+					haltPath: 'VERIFICATION_OUTSIDE_AUTHORIZED_SCOPE',
+					failurePacket: verifierResult.failurePacket,
+					diagnostics: verifierResult.integrationDiagnostics ?? null,
+				});
 				const next = runtime.transition(snapshot, {
 					to: 'ESCALATED',
 					eventType: 'RUN_BLOCKED',
@@ -248,12 +254,14 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 									: 'Committed preflight failed only in packages outside the authorized task scope',
 							metadata: {
 								failurePacketArtifact: verifierResult.outputArtifact,
+								integrationFailure,
 							},
 						},
 					},
 					payload: {
 						failurePacketArtifact: verifierResult.outputArtifact,
 						failurePacket: verifierResult.failurePacket,
+						integrationFailure,
 					},
 				});
 				await runtime.onBoundary('verification-out-of-scope-transition-recorded', {
@@ -266,6 +274,8 @@ export function createVerifyCommittedTreeNode(runtime: WorkflowRuntimeLike) {
 				causalId: `committed-verifier-fail-${snapshot.runtimeRevision}`,
 				failurePacket: verifierResult.failurePacket,
 				failurePacketArtifact: verifierResult.outputArtifact,
+				recordIntegrationFailure: true,
+				diagnostics: verifierResult.integrationDiagnostics ?? null,
 			});
 		}
 

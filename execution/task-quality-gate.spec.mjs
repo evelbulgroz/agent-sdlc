@@ -19,7 +19,7 @@ test('evaluateTaskQualityGate does not import the tool dispatcher', () => {
 	assert.equal(source.includes('task-executor.ts'), false);
 });
 
-test('evaluateTaskQualityGate fails when a baseline clone moves', () => {
+test('@ac AC-03 @case AC-03.2 evaluateTaskQualityGate fails when a baseline clone moves', () => {
 	const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quality-gate-'));
 	try {
 		const relFile = 'pkg/src/moved.ts';

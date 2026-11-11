@@ -14,6 +14,7 @@ import {
 	failureReferencesAuthorizedPackage,
 	isEnvironmentFailure,
 } from './failure-packet.ts';
+import { validIntegrationDiagnostics } from './integration-diagnostics.ts';
 import { sanitize } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 
 export interface VerifierArtifactStoreLike {
@@ -39,6 +40,8 @@ export interface PreflightFailResult {
 	/** Sanitized, size-capped full verifier output; the failure packet keeps only snippets. */
 	rawOutputArtifact?: string | null;
 	repairable?: boolean;
+	/** Closed host diagnostics. Absent when the result file omitted a valid object. */
+	integrationDiagnostics?: Record<string, unknown>;
 }
 
 const RAW_OUTPUT_CAP = 65_536;
@@ -85,12 +88,14 @@ function failResult({
 	exitCode,
 	repairable,
 	rawOutput,
+	integrationDiagnostics = null,
 }: {
 	artifactStore?: VerifierArtifactStoreLike | null;
 	failurePacket: Readonly<FailurePacketRecord>;
 	exitCode: number;
 	repairable?: boolean;
 	rawOutput?: unknown;
+	integrationDiagnostics?: Record<string, unknown> | null;
 }): PreflightFailResult {
 	const rawText = typeof rawOutput === 'string' ? rawOutput : '';
 	return {
@@ -106,6 +111,7 @@ function failResult({
 					})
 				: null,
 		...(repairable !== undefined ? { repairable } : {}),
+		...(integrationDiagnostics ? { integrationDiagnostics } : {}),
 	};
 }
 
@@ -181,12 +187,14 @@ async function runPreflightAndBind({
 			targetPaths,
 			baseCommitSha,
 		});
+		const integrationDiagnostics = validIntegrationDiagnostics(outcome.preflightResult);
 		if (outcome.processFailed) {
 			return failResult({
 				artifactStore,
 				failurePacket,
 				exitCode: outcome.exitCode,
 				rawOutput: outcome.output,
+				integrationDiagnostics,
 				repairable:
 					!isEnvironmentFailure(failurePacket.sanitizedOutput) &&
 					failureReferencesAuthorizedPackage({
@@ -200,6 +208,7 @@ async function runPreflightAndBind({
 			failurePacket,
 			exitCode: outcome.exitCode,
 			rawOutput: outcome.output,
+			integrationDiagnostics,
 		});
 	}
 

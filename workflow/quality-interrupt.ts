@@ -1,3 +1,4 @@
+import type { IntegrationFailureRecord } from '../cli/status-integration-failure.ts';
 import { sha256 } from '../policy/contracts.ts';
 import type { RuntimeState } from '../policy/contracts/runtime-vocabulary.ts';
 import { SdlcError } from '../policy/errors.ts';
@@ -38,6 +39,7 @@ export async function blockQualityCheckpoint({
 	status,
 	reason,
 	findings = [],
+	integrationFailure = null,
 }: {
 	runtime: WorkflowRuntimeLike;
 	snapshot: Readonly<RuntimeState>;
@@ -45,6 +47,7 @@ export async function blockQualityCheckpoint({
 	status: string;
 	reason: string;
 	findings?: readonly unknown[];
+	integrationFailure?: IntegrationFailureRecord | null;
 }): Promise<Readonly<RuntimeState>> {
 	if (context.correctionId) {
 		runtime.runtimeStore.quality.setCorrectionStatus(
@@ -122,7 +125,14 @@ export async function blockQualityCheckpoint({
 		updates: {
 			pendingInterruptId: interruptId,
 			blockedReason: 'QUALITY_REVIEW_BLOCKED',
-			lastError: { code: status, message: reason, metadata: { requestArtifact } },
+			lastError: {
+				code: status,
+				message: reason,
+				metadata: {
+					requestArtifact,
+					...(integrationFailure ? { integrationFailure } : {}),
+				},
+			},
 		},
 		payload: {
 			reason: 'QUALITY_REVIEW_BLOCKED',
@@ -131,6 +141,7 @@ export async function blockQualityCheckpoint({
 			requestArtifact,
 			bindingHash,
 			findingIds,
+			...(integrationFailure ? { integrationFailure } : {}),
 		},
 		effects: {
 			createInterrupt: {
