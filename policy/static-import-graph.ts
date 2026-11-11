@@ -1,4 +1,6 @@
 // One static import walk. Relative import, export-from, and import('literal') only.
+// node: and package subpaths that name no walked file are ignored. A bare
+// specifier that names a walked file stays unresolved.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,6 +10,7 @@ const SOURCE_EXTENSIONS = Object.freeze([
 ]);
 const SKIP_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '.git']);
 const PACKAGE_SPECIFIER = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
+const PACKAGE_SUBPATH = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*(?:\/[a-z0-9][\w.-]*)+$/;
 
 export interface ResolvedStaticImport {
 	readonly importer: string;
@@ -36,12 +39,19 @@ export function staticImportScanCount(): number {
 export function readStaticImportGraph({
 	rootDir,
 	roots,
+	extraNamedFiles = [],
 }: {
 	rootDir: string;
 	roots: readonly string[];
+	extraNamedFiles?: readonly string[];
 }): StaticImportGraph {
 	scans += 1;
 	const files = listSourceFiles(rootDir, Array.isArray(roots) ? roots : []);
+	const named = new Set(files);
+	for (const extra of extraNamedFiles) {
+		const rel = normalizeRel(extra);
+		if (rel && !rel.startsWith('..')) named.add(rel);
+	}
 	const imports: ResolvedStaticImport[] = [];
 	const unresolved: UnresolvedStaticImport[] = [];
 	for (const file of files) {
@@ -67,7 +77,12 @@ export function readStaticImportGraph({
 				}
 				continue;
 			}
-			if (PACKAGE_SPECIFIER.test(specifier)) continue;
+			if (specifier.startsWith('node:') || PACKAGE_SPECIFIER.test(specifier)) continue;
+			if (namesWalkedFile(specifier, named)) {
+				unresolved.push({ file, specifier, reason: 'non_relative' });
+				continue;
+			}
+			if (PACKAGE_SUBPATH.test(specifier)) continue;
 			unresolved.push({ file, specifier, reason: 'non_relative' });
 		}
 	}
@@ -76,6 +91,10 @@ export function readStaticImportGraph({
 		imports: Object.freeze(imports),
 		unresolved: Object.freeze(unresolved),
 	});
+}
+
+export function specifierNamesSource(specifier: string, file: string): boolean {
+	return namesWalkedFile(specifier, new Set([normalizeRel(file)]));
 }
 
 export function resolvedImporters(graph: StaticImportGraph, target: string): readonly string[] {
@@ -273,6 +292,20 @@ function keywordAt(source: string, index: number, word: string): boolean {
 	const before = index === 0 ? '' : (source[index - 1] ?? '');
 	const after = source[index + word.length] ?? '';
 	return !/[A-Za-z0-9_$]/.test(before) && !/[A-Za-z0-9_$]/.test(after);
+}
+
+function namesWalkedFile(specifier: string, named: ReadonlySet<string>): boolean {
+	const norm = normalizeRel(specifier);
+	if (!norm || norm.startsWith('node:')) return false;
+	if (named.has(norm)) return true;
+	for (const ext of SOURCE_EXTENSIONS) {
+		if (named.has(norm + ext) || named.has(`${norm}/index${ext}`)) return true;
+	}
+	const specExt = path.posix.extname(norm);
+	if (specExt === '.js' || specExt === '.jsx' || specExt === '.mjs' || specExt === '.cjs') {
+		return named.has(`${norm.slice(0, -specExt.length)}.ts`);
+	}
+	return false;
 }
 
 function normalizeRel(value: string): string {

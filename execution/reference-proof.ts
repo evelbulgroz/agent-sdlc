@@ -5,6 +5,7 @@ import { SdlcError } from '../policy/errors.ts';
 import {
 	readStaticImportGraph,
 	resolvedImporters,
+	specifierNamesSource,
 	type StaticImportGraph,
 } from '../policy/static-import-graph.ts';
 
@@ -36,7 +37,11 @@ export function proveReferences({
 	if ((deleted.length > 0 || methods.length > 0) && (!Array.isArray(roots) || roots.length === 0)) {
 		return proof(false, ['missing roots']);
 	}
-	const graph = readStaticImportGraph({ rootDir, roots: roots ?? [] });
+	const graph = readStaticImportGraph({
+		rootDir,
+		roots: roots ?? [],
+		extraNamedFiles: deleted,
+	});
 	const reasons: string[] = [];
 	const sources = readSources(rootDir, graph);
 	for (const deletedPath of deleted) {
@@ -46,7 +51,9 @@ export function proveReferences({
 		for (const hit of graph.unresolved) {
 			if (hit.file === deletedPath) continue;
 			if (hit.reason === 'non_literal') reasons.push(`non_literal ${hit.file}`);
-			else if (namesDeleted(hit.specifier, deletedPath)) reasons.push(`${hit.reason} ${hit.file}`);
+			else if (hit.reason === 'non_relative' && hit.specifier && specifierNamesSource(hit.specifier, deletedPath)) {
+				reasons.push(`${hit.reason} ${hit.file}`);
+			} else if (namesDeleted(hit.specifier, deletedPath)) reasons.push(`${hit.reason} ${hit.file}`);
 		}
 		const decorator = decoratorName(deletedPath);
 		for (const file of graph.files) {

@@ -11,7 +11,7 @@ import { freezePreparationSelection } from '../../host/verification-preparation.
 import { assertTaskPlanHash, hashTaskPlanProjection, type RuntimeState, type TaskManifest, validateTaskManifest } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import { evaluatePolicyGate } from '../../policy/policy-gate.ts';
-import { retirementBlockersFor } from '../../policy/retirement-paths.ts';
+import { retirementBlockersForStoredPlan } from '../../policy/retirement-paths.ts';
 import { planTaskDag } from '../../policy/task-planner.ts';
 import { latestPhaseReview, planAttemptKey } from '../../review/critic-budget.ts';
 import { runPlanCritic } from '../../review/critic-gate.ts';
@@ -190,7 +190,12 @@ export function createExecutePlanCriticNode(runtime: WorkflowRuntimeLike) {
 			throw new SdlcError('TASK_PLAN_INVALID', `Task plan not found for run ${current.runId}`);
 		}
 		assertTaskPlanHash(plan, current.taskPlanHash);
-		const retirementBlockers = retirementBlockersFor(plan.planPolicyHash);
+		const retirementBlockers = retirementBlockersForStoredPlan({
+			planPolicyHash: plan.planPolicyHash,
+			tasks: plan.tasks,
+			rootDir: runtime.rootDir,
+			allowedPathPrefixes: runtime.runtimeStore.getAuthorization(current.runId)?.allowedPathPrefixes ?? [],
+		});
 		let criticResult: {
 			status: string;
 			hasP1: boolean;

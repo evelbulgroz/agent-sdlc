@@ -144,6 +144,37 @@ function response(taskId = 'retire-route') {
 	return { action: 'approve-correction', taskId, paths: PATHS };
 }
 
+test('@ac AC-01 @case AC-01.7 action stop persists integrationCorrectionConsumed, leaves the run ESCALATED, and the next continuation action is stop', () => {
+	const ctx = prepare(true);
+	try {
+		const beforeTree = ctx.runtime.runtimeStore.getTaskPlan(ctx.fixture.runId).tasks[0].targetTreeSha;
+		const revised = applyPreflightTaskRevision({
+			runtime: ctx.runtime,
+			snapshot: ctx.state,
+			response: { action: 'stop' },
+		});
+		const stored = ctx.runtime.runtimeStore.getRun(ctx.fixture.runId);
+		const task = ctx.runtime.runtimeStore.getTaskPlan(ctx.fixture.runId).tasks[0];
+		assert.equal(stored.state, 'ESCALATED');
+		assert.equal(stored.blockedReason, 'AUTONOMOUS_REPAIR_RETIRED');
+		assert.equal(stored.lastError.metadata.integrationCorrectionConsumed, true);
+		assert.equal(stored.lastError.metadata.integrationFailure.category, 'coverage_floor_regression');
+		assert.equal(stored.semanticRepairsCount, 1);
+		assert.equal(task.repairCount, 0);
+		assert.equal(task.targetTreeSha, beforeTree);
+		assert.equal(revised.state, 'ESCALATED');
+		assert.deepEqual(computeContinuation(stored, {
+			authorization: { allowedPathPrefixes: ['pkg/billing'] },
+		}), { action: 'stop', reason: 'HALTED' });
+		assert.equal(projectHostInvocation(stored, {
+			authorization: { allowedPathPrefixes: ['pkg/billing'] },
+			highRiskPaths: [],
+		}).responseSlots, null);
+	} finally {
+		ctx.close();
+	}
+});
+
 test('@ac AC-02 @case AC-02.1 the task diff contains the deletion', () => {
 	const ctx = prepare(true);
 	try {

@@ -280,6 +280,47 @@ test('@ac AC-02 @case AC-02.1 a non-literal import is unresolved and adds no pat
 	}
 });
 
+test('@ac AC-02 @case AC-02.4 node:fs and @nestjs/common/interfaces add no blocker and no path', () => {
+	const root = tempTree({
+		'pkg/billing/src/retire.ts': "import fs from 'node:fs';\nimport { X } from '@nestjs/common/interfaces';\nimport get from 'lodash/get';\n",
+	});
+	try {
+		const before = task();
+		const result = expandRetirementPaths({
+			tasks: [before],
+			rootDir: root,
+			allowedPathPrefixes: ['pkg/billing'],
+		});
+		assert.deepEqual(result.blockers, []);
+		assert.deepEqual(result.tasks[0].pathPrefixes, before.pathPrefixes);
+		assert.deepEqual(result.tasks[0].authoredPaths, before.authoredPaths);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test('@ac AC-02 @case AC-02.5 a bare specifier that names a walked file is a non_relative P1 and adds no path', () => {
+	const root = tempTree({
+		'pkg/billing/src/retire.ts': "import orphan from 'pkg/billing/src/orphan';\n",
+		'pkg/billing/src/orphan.ts': 'export const orphan = 1;\n',
+	});
+	try {
+		const before = task();
+		const result = expandRetirementPaths({
+			tasks: [before],
+			rootDir: root,
+			allowedPathPrefixes: ['pkg/billing'],
+		});
+		assert.equal(result.tasks[0].pathPrefixes.includes('pkg/billing/src/orphan.ts'), false);
+		assert.equal(
+			result.blockers.some((blocker) => blocker.kind === 'unresolved_import' && blocker.path === 'pkg/billing/src/orphan'),
+			true,
+		);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test('@ac AC-02 @case AC-02.3 a sibling outside allowedPathPrefixes is refused and named on the P1', () => {
 	const root = tempTree({
 		'pkg/billing/src/retire.ts': "import { orphan } from './orphan.ts';\n",

@@ -97,7 +97,7 @@ export function applyPreflightTaskRevision({
 		throw new SdlcError('INVALID_INPUT', 'No integration correction card is open');
 	}
 	const accepted = acceptCorrectionResponse(offer, response);
-	if (accepted.action === 'stop') return snapshot;
+	if (accepted.action === 'stop') return consumeCorrectionStop(runtime, snapshot);
 	const auth = getAndValidateAuthorization(runtime, snapshot);
 	const plan = runtime.runtimeStore.getTaskPlan(snapshot.runId);
 	const tasks = ownerTasks(plan?.tasks);
@@ -202,6 +202,35 @@ export function applyPreflightTaskRevision({
 			fs.rmSync(worktreeDir, { recursive: true, force: true });
 		}
 	}
+}
+
+function consumeCorrectionStop(
+	runtime: WorkflowRuntimeLike,
+	snapshot: Readonly<RuntimeState>,
+): Readonly<RuntimeState> {
+	const metadata = snapshot.lastError?.metadata;
+	const prior = metadata && typeof metadata === 'object' ? metadata : {};
+	return runtime.transition(snapshot, {
+		to: 'ESCALATED',
+		eventType: 'RUN_BLOCKED',
+		causalId: `integration-correction-stop-${snapshot.runtimeRevision}`,
+		updates: {
+			blockedReason: 'AUTONOMOUS_REPAIR_RETIRED',
+			lastError: {
+				code: snapshot.lastError?.code ?? 'AUTONOMOUS_REPAIR_RETIRED',
+				message: snapshot.lastError?.message ?? 'Operator stopped the integration correction',
+				metadata: {
+					...prior,
+					integrationCorrectionConsumed: true,
+				},
+			},
+		},
+		payload: {
+			integrationCorrectionConsumed: true,
+			commit: false,
+			push: false,
+		},
+	});
 }
 
 function correctionOffer(snapshot: Readonly<RuntimeState>): CorrectionOffer | null {

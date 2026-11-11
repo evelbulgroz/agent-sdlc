@@ -85,6 +85,25 @@ test('@ac AC-03 @case AC-03.4 a private method that still has a reference is rej
 	}
 });
 
+test('a node import and a package subpath do not fail a deletion, and a bare walked specifier does', () => {
+	const ignored = tree({
+		'pkg/src/keep.ts': "import fs from 'node:fs';\nimport { X } from '@nestjs/common/interfaces';\n",
+	});
+	const named = tree({
+		'pkg/src/keep.ts': "import orphan from 'pkg/src/orphan';\n",
+	});
+	try {
+		const nodeImport = proveReferences({ rootDir: ignored, roots: ['pkg'], deletedPaths: ['pkg/src/orphan.ts'] });
+		assert.equal(nodeImport.pass, true);
+		const bare = proveReferences({ rootDir: named, roots: ['pkg'], deletedPaths: ['pkg/src/orphan.ts'] });
+		assert.equal(bare.pass, false);
+		assert.equal(bare.reasons.some((reason) => reason.startsWith('non_relative')), true);
+	} finally {
+		fs.rmSync(ignored, { recursive: true, force: true });
+		fs.rmSync(named, { recursive: true, force: true });
+	}
+});
+
 test('@ac AC-03 @case AC-03.5 a preflight pass without the proof artifact rejects the revision', () => {
 	assert.throws(() => requireStoredProof(null), (error) => error instanceof SdlcError && error.code === 'INVALID_CONTRACT');
 	assert.throws(() => requireStoredProof(''), (error) => error instanceof SdlcError);

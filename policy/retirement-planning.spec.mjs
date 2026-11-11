@@ -3,9 +3,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { retirementBlockersFor } from './retirement-paths.ts';
+import { rememberRetirementBlockers, retirementBlockersFor } from './retirement-paths.ts';
+import { staticImportScanCount } from './static-import-graph.ts';
 import { planTaskDag } from './task-planner.ts';
 import { makeFixture } from '../testing/test-support.mjs';
+import { SdlcWorkflowRuntime } from '../workflow/graph.ts';
 import {
 	createApplyPlanCriticNode,
 	createExecutePlanCriticNode,
@@ -73,7 +75,7 @@ function manifestFor(retirement) {
 	};
 }
 
-function planRetired(root, retirement) {
+function planRetired(root, retirement, runId = '2026-11-11-retirement-plan') {
 	return planTaskDag({
 		draft: {
 			goal: 'Retire one route',
@@ -84,7 +86,7 @@ function planRetired(root, retirement) {
 		},
 		taskManifest: manifestFor(retirement),
 		authorization: {
-			runId: '2026-11-11-retirement-plan',
+			runId,
 			baseCommitSha: SHA,
 			taskManifestHash: 'c'.repeat(64),
 			allowedPackages: ['pkg/billing'],
@@ -156,6 +158,102 @@ test('@ac AC-02 @case AC-02.2 accept_residual adds no path and does not change t
 		const after = fixture.store.getTaskPlan(fixture.runId);
 		assert.deepEqual(after.tasks[0].authoredPaths, ['pkg/billing/src/retire.ts']);
 		assert.equal(after.planPolicyHash, saved.planPolicyHash);
+	} finally {
+		fixture.close();
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+function criticRuntime(fixture, root) {
+	return new SdlcWorkflowRuntime({
+		runtimeStore: fixture.store,
+		artifactStore: fixture.artifacts,
+		registry: fixture.registry,
+		governor: fixture.governor,
+		rootDir: root,
+	});
+}
+
+function reviewingSnapshot(fixture, plan) {
+	let state = fixture.runtime.initialize({ runId: fixture.runId, goal: 'Retire the route' });
+	for (const to of [
+		'SPEC_DRAFTING',
+		'WAITING_FOR_APPROVAL',
+		'SPEC_APPROVED',
+		'PLANNING_TASKS',
+		'EVALUATING_POLICY',
+		'REVIEWING_PLAN',
+	]) {
+		state = fixture.runtime.transition(state, {
+			to,
+			eventType: 'RUN_AUTHORIZED',
+			causalId: `${to}-${state.runtimeRevision}`,
+			updates: {},
+			payload: {},
+		});
+	}
+	fixture.store.saveTaskPlan({ ...plan, runId: fixture.runId });
+	const saved = fixture.store.getTaskPlan(fixture.runId);
+	return {
+		saved,
+		reviewing: {
+			...state,
+			taskPlanHash: saved.planPolicyHash,
+			approvedPlanPolicyHash: 'b'.repeat(64),
+		},
+	};
+}
+
+test('@ac AC-05 @case AC-05.1 the recomputed P1 stops at WAITING_FOR_PLAN_ACCEPTANCE and names the blocker paths', async () => {
+	const root = tempTree({
+		'pkg/billing/src/retire.ts': 'export const value = import(name);\n',
+	});
+	const fixture = makeFixture('retirement-recompute-blockers');
+	try {
+		const plan = planRetired(root, true, '2026-11-11-retirement-recompute');
+		const hash = plan.planPolicyHash;
+		assert.equal(retirementBlockersFor(hash).length > 0, true);
+		rememberRetirementBlockers(hash, []);
+		assert.deepEqual(retirementBlockersFor(hash), []);
+		const { saved, reviewing } = reviewingSnapshot(fixture, plan);
+		const scans = staticImportScanCount();
+		const waiting = await createExecutePlanCriticNode(criticRuntime(fixture, root))({ snapshot: reviewing });
+		assert.equal(staticImportScanCount(), scans + 1);
+		assert.equal(fixture.governor.calls.length, 0);
+		assert.equal(waiting.snapshot.state, 'WAITING_FOR_PLAN_ACCEPTANCE');
+		assert.equal(waiting.snapshot.taskPlanHash, hash);
+		const pending = fixture.store.getInterrupt(waiting.snapshot.pendingInterruptId);
+		const request = fixture.artifacts.readJson(pending.requestArtifact);
+		assert.equal(request.criticReport.paths.includes('pkg/billing/src/retire.ts'), true);
+		const after = fixture.store.getTaskPlan(fixture.runId);
+		assert.equal(after.planPolicyHash, saved.planPolicyHash);
+		assert.deepEqual(after.tasks[0].authoredPaths, ['pkg/billing/src/retire.ts']);
+	} finally {
+		fixture.close();
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test('@ac AC-05 @case AC-05.2 a recompute that finds no blockers leaves the model critic in place', async () => {
+	const root = tempTree({
+		'pkg/billing/src/retire.ts': "import fs from 'node:fs';\nimport { X } from '@nestjs/common/interfaces';\n",
+	});
+	const fixture = makeFixture('retirement-recompute-empty');
+	try {
+		const plan = planRetired(root, true, '2026-11-11-retirement-empty');
+		const hash = plan.planPolicyHash;
+		assert.deepEqual(retirementBlockersFor(hash), []);
+		const { saved, reviewing } = reviewingSnapshot(fixture, plan);
+		const scans = staticImportScanCount();
+		reviewing.approvedSpecHash = 'd'.repeat(64);
+		const frozen = await createExecutePlanCriticNode(criticRuntime(fixture, root))({ snapshot: reviewing });
+		assert.equal(staticImportScanCount() > scans, true);
+		assert.equal(fixture.governor.calls.some((call) => call.profile === 'critic-review'), true);
+		assert.equal(frozen.snapshot.state, 'PREPARING_WORKSPACE');
+		assert.equal(frozen.snapshot.taskPlanHash, hash);
+		const after = fixture.store.getTaskPlan(fixture.runId);
+		assert.equal(after.planPolicyHash, saved.planPolicyHash);
+		assert.deepEqual(after.tasks[0].authoredPaths, ['pkg/billing/src/retire.ts']);
 	} finally {
 		fixture.close();
 		fs.rmSync(root, { recursive: true, force: true });

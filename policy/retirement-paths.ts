@@ -44,6 +44,26 @@ export function retirementBlockersFor(planPolicyHash: string): readonly Retireme
 	return blockersByHash.get(planPolicyHash) ?? [];
 }
 
+export function retirementBlockersForStoredPlan({
+	planPolicyHash,
+	tasks,
+	rootDir,
+	allowedPathPrefixes,
+}: {
+	planPolicyHash: string;
+	tasks: readonly RetirementTaskLike[];
+	rootDir: string;
+	allowedPathPrefixes: readonly string[] | null | undefined;
+}): readonly RetirementBlocker[] {
+	const cached = blockersByHash.get(planPolicyHash);
+	if (cached) return cached;
+	const expansion = expandRetirementPaths({ tasks, rootDir, allowedPathPrefixes });
+	if (expansion.blockers.length > 0) {
+		rememberRetirementBlockers(planPolicyHash, expansion.blockers);
+	}
+	return expansion.blockers;
+}
+
 export function expandRetirementPaths<T extends RetirementTaskLike>({
 	tasks,
 	rootDir,
