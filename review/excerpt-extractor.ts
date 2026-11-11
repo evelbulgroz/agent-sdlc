@@ -7,7 +7,6 @@ const TEST_CALL_RE = /\b((?:it|test)(?:\.(?:only|skip))?)\s*\(\s*(['"`])([\s\S]*
 
 export const DEFAULT_MAX_BYTES = 24576; // 24 KB
 export const DEFAULT_MAX_LINES = 1000;
-export const DEFAULT_ASSERTIONS_PER_TEST = 3;
 export const DEFAULT_MAX_ASSERT_CHARS = 240;
 export const DEFAULT_FILE_SOFT_CAP = 80;
 
@@ -181,7 +180,7 @@ export function extractTestExcerpts({
 	baseLines = 0,
 	maxBytes = DEFAULT_MAX_BYTES,
 	maxLines = DEFAULT_MAX_LINES,
-	maxAssertionsPerTest = DEFAULT_ASSERTIONS_PER_TEST,
+	maxAssertionsPerTest,
 	maxAssertChars = DEFAULT_MAX_ASSERT_CHARS,
 	softCapPerFile = DEFAULT_FILE_SOFT_CAP,
 }: {
@@ -226,10 +225,13 @@ export function extractTestExcerpts({
 		if (m && m[1]) activeAcSet.add(m[1].toUpperCase());
 	}
 
-	// Prepare initial pack per file respecting maxAssertionsPerTest and softCapPerFile
+	// Keep every assertion until a ceiling requires eviction. An explicit
+	// maxAssertionsPerTest is a caller cap applied before those ceilings.
 	for (const file of parsedFiles) {
 		for (const test of file.tests) {
-			test.activeAssertions = test.assertionLines.slice(0, maxAssertionsPerTest);
+			test.activeAssertions = Number.isInteger(maxAssertionsPerTest)
+				? test.assertionLines.slice(0, maxAssertionsPerTest)
+				: test.assertionLines.slice();
 		}
 		enforceFileSoftCap(file, softCapPerFile);
 	}
@@ -333,7 +335,7 @@ function countFileLines(file: ParsedFile): number {
 function enforceFileSoftCap(file: ParsedFile, softCap: number): void {
 	if (countFileLines(file) <= softCap) return;
 
-	// Step A: Drop assertions 2-3 per test down to 1
+	// Step A: Keep the first assertion in each test.
 	for (const test of file.tests) {
 		if (test.activeAssertions && test.activeAssertions.length > 1) {
 			test.activeAssertions = test.activeAssertions.slice(0, 1);
@@ -389,7 +391,7 @@ function evictToFitBudget({
 }): void {
 	if (!isOverBudget(parsedFiles, baseBytes, baseLines, maxBytes, maxLines)) return;
 
-	// Eviction order 1: Drop assertion lines 2-3 per test (keep the first). Preserve-one rule.
+	// Eviction order 1: Keep the first assertion in each test. Preserve-one rule.
 	for (const file of parsedFiles) {
 		for (const test of file.tests) {
 			if (test.activeAssertions && test.activeAssertions.length > 1) {

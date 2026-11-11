@@ -49,7 +49,7 @@ Checkpoint review remains evidence, not merge trust: the candidate must still pa
 3. **Prompt Ceilings, P1 Derivation & Provider Exhaustion (`critic-input-packing.ts`):**
    - Assembled critic prompts are capped at $\le 24\text{ KB}$ and $\le 1,000$ lines (`INPUT_OVERSIZED`).
    - Report status is derived strictly from whether any P1 finding exists (`hasP1`), ignoring subjective model status fields.
-   - `excerpt-extractor.ts` retains at most 3 assertion lines per test ($\le 240$ chars), enforces an 80-line per-file soft cap, and prioritizes oracle files and uncited ACs before evicting.
+   - `excerpt-extractor.ts` keeps every assertion line ($\le 240$ chars) while the pack fits. An 80-line per-file soft cap and the 24 KB / 1,000-line ceiling drop extra assertions down to the first, then prioritize oracle files and uncited ACs before evicting tests.
    - In legacy graph runs, exhausted provider routes record a `CRITIC_REVIEW_FAILED` advisory and continue; budget, policy, and contract errors remain blocking. New-policy QA blocks instead.
 
 ## Standalone CLI Usage

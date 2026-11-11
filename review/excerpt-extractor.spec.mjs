@@ -62,6 +62,44 @@ it('empty test without assertions', () => {
 	assert.match(result.text, /\(no assertion lines\)/);
 });
 
+test('extractTestExcerpts keeps assertions past the third while the excerpt fits', () => {
+	const source = `
+it('@ac AC-01 clamps', () => {
+  expect(clampPercent(50), 50);
+  expect(clampPercent(49.6), 50);
+  expect(clampPercent(12.4), 12);
+  expect(clampPercent(-5), 0);
+  expect(clampPercent(150), 100);
+});
+`;
+	const result = extractTestExcerpts({
+		touchedFiles: [{ path: 'scripts/canary-probe.spec.mjs', content: source }],
+		acceptanceCriteria: ['AC-01: the result is an integer from 0 to 100 inclusive'],
+	});
+
+	assert.match(result.text, /clampPercent\(50\)/);
+	assert.match(result.text, /clampPercent\(-5\)/);
+	assert.match(result.text, /clampPercent\(150\)/);
+});
+
+test('extractTestExcerpts keeps only the first assertion when a file exceeds its soft cap', () => {
+	const source = `
+it('many @ac AC-01', () => {
+  expect(1).toBe(1);
+  expect(2).toBe(2);
+  expect(3).toBe(3);
+});
+`;
+	const result = extractTestExcerpts({
+		touchedFiles: [{ path: 'test/wide.spec.ts', content: source }],
+		softCapPerFile: 2,
+	});
+
+	assert.match(result.text, /expect\(1\)\.toBe\(1\)/);
+	assert.doesNotMatch(result.text, /expect\(2\)\.toBe\(2\)/);
+	assert.doesNotMatch(result.text, /expect\(3\)\.toBe\(3\)/);
+});
+
 test('extractTestExcerpts enforces preserve-one rule and drops extra assertions first during eviction', () => {
 	// 2 tests in one file, each with 3 assertions
 	const source = `
