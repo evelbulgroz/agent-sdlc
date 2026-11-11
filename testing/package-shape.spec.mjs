@@ -83,7 +83,7 @@ test('@ac AC-01 @case AC-01.1 @ac AC-03 @case AC-03.1 package.json build emits d
 test('@ac AC-01 @case AC-01.2 package.json declares package-local scripts, build, conditional exports, and publishConfig', () => {
 	const pkg = readPackageJson();
 	assert.equal(pkg.name, '@evelbulgroz/agent-sdlc');
-	assert.equal(pkg.version, '1.0.0');
+	assert.equal(pkg.version, '1.1.0');
 	assert.equal(pkg.private, false);
 	assert.equal(pkg.type, 'module');
 	assert.deepEqual(pkg.files, ['dist', 'testing/reliability-corpus']);

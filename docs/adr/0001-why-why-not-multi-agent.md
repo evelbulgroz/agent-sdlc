@@ -20,7 +20,7 @@ When embedding autonomous agentic capabilities into a disciplined software archi
 
 Specifically: **For the problem of transforming a frozen, human-approved specification and task dependency DAG into verified, reviewable code modifications, does multi-agent orchestration provide enough value to justify its complexity over deterministic and single-agent alternatives?**
 
-In earlier iterations of `@fitness-app/agent-sdlc`, we tested multi-agent decomposition inside the inner execution loop, breaking task turns into specialist roles (e.g., dedicated coder, reader, linter, and autonomous repairer). Concurrently, in Prototype A (Discovery Research Synthesis), we evaluated an unanchored evaluator-optimizer multi-turn critique loop. Both investigations raised the core architectural question:
+In earlier host checkouts of this engine, we tested multi-agent decomposition inside the inner execution loop, breaking task turns into specialist roles (e.g., dedicated coder, reader, linter, and autonomous repairer). Concurrently, in Prototype A (Discovery Research Synthesis), we evaluated an unanchored evaluator-optimizer multi-turn critique loop. Both investigations raised the core architectural question:
 
 > *Where does multi-agent orchestration actually earn its place, and where does it introduce self-inflicted failure demand?*
 
@@ -50,7 +50,7 @@ In earlier iterations of `@fitness-app/agent-sdlc`, we tested multi-agent decomp
 
 ### Alternative 3: Fine-Grained Inner-Loop Multi-Agent Swarm (Specialist Role Decomposition)
 * **Mechanisms:** Decomposing task execution into a swarm of interacting in-loop specialist agents: `ReaderAgent` ➔ `CoderAgent` ➔ `LinterAgent` ➔ `RepairerAgent` ➔ `CriticAgent` communicating via JSON messages inside each task turn.
-* **Empirical Reality:** Tested in `@fitness-app/agent-sdlc` between 7 September and 16 October 2026. Resulted in a 5,996-line chaperone harness (`controlled-executor.mjs`), severe retry amnesia, and harness failure demand (>70% rejection of valid work). Similarly, in Prototype A, an unanchored evaluator-optimizer loop doubled token cost and degraded recall on small corpora unless anchored by deterministic regression guards.
+* **Empirical Reality:** Tested in the prior host checkout between 7 September and 16 October 2026. Resulted in a 5,996-line chaperone harness (`controlled-executor.mjs`), severe retry amnesia, and harness failure demand (>70% rejection of valid work). Similarly, in Prototype A, an unanchored evaluator-optimizer loop doubled token cost and degraded recall on small corpora unless anchored by deterministic regression guards.
 
 ### Alternative 4: The Bicameral Architecture — Single-Agent Working-Set Worker with Outer-Loop Heterogeneous Cross-Vendor Critics & Deterministic Floor *(The Selected Architecture)*
 * **Mechanisms:**
@@ -101,7 +101,7 @@ Multi-agent orchestration earned its keep **only** where two conditions were met
 
 ### Positive Consequences
 * **Radical Code Simplification:** Enabled the deletion of 32,373 LOC of harness bloat (`41c30aa6`), retiring 5 unused roles and returning the entire engine under a strict `<= 500` LOC navigability ceiling.
-* **Unattended Convergence:** Enabled multi-task feature specifications (such as the 11-task `conditioning-session-weather` slice) to execute unattended from `SPEC_APPROVED` to `READY_FOR_GIT_APPROVAL`.
+* **Unattended Convergence:** Enabled multi-task feature specifications (such as an 11-task weather-session slice) to execute unattended from `SPEC_APPROVED` to `READY_FOR_GIT_APPROVAL`.
 * **True Process Ownership:** Decoupled our development workflow from proprietary vendor editor platforms.
 * **Jidoka in Practice:** Built-in quality automatically halts the line on abnormalities instead of burning unbounded tokens on doomed repair loops.
 
