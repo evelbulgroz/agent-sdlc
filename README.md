@@ -261,7 +261,7 @@ Before running a multi-task DAG after modifying orchestration logic, qualify the
 agent-sdlc reliability replay --json
 
 # 2. Validate canary fixture bounds (1 vertical slice/task, <= 2 ACs, <= 3 files, score <= 10)
-agent-sdlc canary check --goal-file <canary-spec.md> --task-plan-file <canary.tasks.json> --json
+agent-sdlc canary check --goal-file docs/specs/canary/canary.md --task-plan-file docs/specs/canary/canary.tasks.json --json
 
 # 3. Drive the unmerged canary fixture to READY_FOR_GIT_APPROVAL via shell start / reply / watch, then qualify:
 agent-sdlc canary qualify --run <run-id> --json
