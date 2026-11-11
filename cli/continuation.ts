@@ -1,6 +1,7 @@
 // Pure continuation decision. No status file, host card, or store I/O.
 import { type ContinuationRecord, validateContinuation } from '../policy/contracts.ts';
 import { isGovernorRecoverableError } from '../policy/errors.ts';
+import { readCorrectionOffer } from './correction-reply.ts';
 
 export interface ContinuationStateLike {
 	state?: string | null;
@@ -63,11 +64,16 @@ export interface ContinuationInterruptLike {
 }
 
 export interface ContinuationInputs {
-	authorization?: { baseCommitSha?: string | null; [key: string]: unknown } | null;
+	authorization?: {
+		baseCommitSha?: string | null;
+		allowedPathPrefixes?: readonly string[] | null;
+		[key: string]: unknown;
+	} | null;
 	pendingInterrupt?: ContinuationInterruptLike | null;
 	continuationAttempts?: number;
 	qualityAnswerRecorded?: boolean;
 	qualityRecoveryHalted?: boolean;
+	highRiskPaths?: readonly string[] | null;
 }
 
 export function computeContinuation(
@@ -78,6 +84,7 @@ export function computeContinuation(
 		continuationAttempts = 0,
 		qualityAnswerRecorded = false,
 		qualityRecoveryHalted = false,
+		highRiskPaths = null,
 	}: ContinuationInputs = {},
 ): Readonly<ContinuationRecord> {
 	if (!state) {
@@ -132,6 +139,9 @@ export function computeContinuation(
 	}
 
 	if (state.state === 'FAILED' || state.state === 'ESCALATED') {
+		if (readCorrectionOffer(state, authorization, highRiskPaths)) {
+			return validateContinuation({ action: 'answer', reason: 'HUMAN_RESPONSE_REQUIRED' });
+		}
 		return validateContinuation({ action: 'stop', reason: 'HALTED' });
 	}
 

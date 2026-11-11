@@ -1,14 +1,18 @@
 import { assertProjectionSafe } from '../persistence/artifacts.ts';
+import { readCorrectionOffer, type CorrectionOffer } from './correction-reply.ts';
 import {
 	HOST_APPROVAL_CHOICES,
 	HOST_FORBIDDEN_FLAGS,
 	HOST_HIGH_RISK_REVIEW_CHOICES,
 	HOST_PLAN_CRITIC_CHOICES,
 	HOST_RECONCILIATION_CHOICES,
+	canonicalJson,
+	sha256,
 	type HostInvocationRecord,
 	hostInvocationChangeSlots,
 	validateHostInvocation,
 } from '../policy/contracts.ts';
+import { HOST_CORRECTION_CHOICES } from '../policy/contracts/host-invocation-schema.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { exitCodeForContinuation } from './exit-codes.ts';
 import {
@@ -241,6 +245,38 @@ function actionCard(
 	});
 }
 
+function correctionCard(
+	runId: string,
+	offer: CorrectionOffer,
+	exitCode: number,
+): Readonly<HostInvocationRecord> {
+	const stateHash = sha256(canonicalJson({
+		paths: [...offer.paths],
+		taskId: offer.taskId,
+		taskIdRequired: offer.taskIdRequired,
+	}));
+	return finishCard({
+		executable: true,
+		packetConsumed: true,
+		exitCode,
+		argv: baseArgv(runId, 'resume', ['--response-file', '{response-file}']),
+		retryAllowed: false,
+		responseDocument: {
+			schemaVersion: '1.0.0',
+			interruptId: `correction-${runId}`,
+			stateHash,
+			action: null,
+			paths: [...offer.paths],
+			taskId: offer.taskId,
+			taskIdRequired: offer.taskIdRequired,
+		},
+		responseSlots: {
+			field: 'action',
+			choices: [...HOST_CORRECTION_CHOICES],
+		},
+	});
+}
+
 /**
  * Pure host card for one run snapshot. The host executes argv when executable
  * is true. retry.allowed does not suppress that argv; the engine enforces the
@@ -254,12 +290,14 @@ export function projectHostInvocation(
 		continuationAttempts = 0,
 		qualityAnswerRecorded = false,
 		qualityRecoveryHalted = false,
+		highRiskPaths = null,
 	}: {
-		authorization?: { baseCommitSha?: string | null; [key: string]: unknown } | null;
+		authorization?: { baseCommitSha?: string | null; allowedPathPrefixes?: readonly string[] | null; [key: string]: unknown } | null;
 		pendingInterrupt?: HostInvocationInterruptInput | null;
 		continuationAttempts?: number;
 		qualityAnswerRecorded?: boolean;
 		qualityRecoveryHalted?: boolean;
+		highRiskPaths?: readonly string[] | null;
 	} = {},
 ): Readonly<HostInvocationRecord> {
 	const continuation = computeContinuation(state, {
@@ -268,6 +306,7 @@ export function projectHostInvocation(
 		continuationAttempts,
 		qualityAnswerRecorded,
 		qualityRecoveryHalted,
+		highRiskPaths,
 	});
 	const exitCode = exitCodeForContinuation(continuation, state) ?? 3;
 	const interrupt = interruptView(pendingInterrupt);
@@ -277,6 +316,8 @@ export function projectHostInvocation(
 	}
 	if (continuation.action === 'stop') return consumedStop(exitCode);
 	const runId = requireRunId(state);
+	const correction = readCorrectionOffer(state, authorization, highRiskPaths);
+	if (correction && !pending) return correctionCard(runId, correction, exitCode);
 	if (continuation.action === 'authorize') {
 		return finishCard({
 			executable: true,

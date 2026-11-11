@@ -11,8 +11,9 @@ import { freezePreparationSelection } from '../../host/verification-preparation.
 import { assertTaskPlanHash, hashTaskPlanProjection, type RuntimeState, type TaskManifest, validateTaskManifest } from '../../policy/contracts.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import { evaluatePolicyGate } from '../../policy/policy-gate.ts';
+import { retirementBlockersFor } from '../../policy/retirement-paths.ts';
 import { planTaskDag } from '../../policy/task-planner.ts';
-import { latestPhaseReview } from '../../review/critic-budget.ts';
+import { latestPhaseReview, planAttemptKey } from '../../review/critic-budget.ts';
 import { runPlanCritic } from '../../review/critic-gate.ts';
 import {
 	type GraphStateValues,
@@ -189,6 +190,7 @@ export function createExecutePlanCriticNode(runtime: WorkflowRuntimeLike) {
 			throw new SdlcError('TASK_PLAN_INVALID', `Task plan not found for run ${current.runId}`);
 		}
 		assertTaskPlanHash(plan, current.taskPlanHash);
+		const retirementBlockers = retirementBlockersFor(plan.planPolicyHash);
 		let criticResult: {
 			status: string;
 			hasP1: boolean;
@@ -196,7 +198,14 @@ export function createExecutePlanCriticNode(runtime: WorkflowRuntimeLike) {
 			attemptKey: string | null;
 		};
 		try {
-			criticResult = await runPlanCritic({ runtime, snapshot: current, plan });
+			criticResult = retirementBlockers.length > 0
+				? {
+						status: 'FAIL',
+						hasP1: true,
+						artifactHash: current.taskPlanHash,
+						attemptKey: planAttemptKey(current.approvedPlanPolicyHash ?? plan.planPolicyHash),
+					}
+				: await runPlanCritic({ runtime, snapshot: current, plan });
 		} catch (error: unknown) {
 			const deferred = deferUnavailableCritic(runtime, current, 'plan', error);
 			if (!deferred) {
@@ -230,6 +239,9 @@ export function createExecutePlanCriticNode(runtime: WorkflowRuntimeLike) {
 							hasP1: true,
 							artifactHash: criticResult.artifactHash,
 							attemptKey: criticResult.attemptKey,
+							...(retirementBlockers.length > 0
+								? { paths: retirementBlockers.map((blocker) => blocker.path) }
+								: {}),
 						},
 			});
 			const requestArtifact = runtime.artifactStore.writeJson(

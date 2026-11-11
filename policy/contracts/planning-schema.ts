@@ -82,6 +82,7 @@ export const ManifestTaskSchema = z.object({
 	verificationCommand: z.array(z.string()).readonly(),
 	generatorCommand: z.array(z.string()).readonly().nullable(),
 	acceptanceCriteria: z.array(z.string()).readonly().optional(),
+	retirement: z.boolean().optional(),
 });
 export type ManifestTask = z.infer<typeof ManifestTaskSchema>;
 
@@ -226,9 +227,14 @@ function validateManifestTask(input: unknown, index: number): Readonly<ManifestT
 			'shadowPaths',
 			'verificationCommand',
 			'generatorCommand',
+			'retirement',
 		],
 		name,
 	);
+	const retirement = Object.hasOwn(input, 'retirement') ? input.retirement : undefined;
+	if (retirement !== undefined && typeof retirement !== 'boolean') {
+		failContract(`${name}.retirement must be a boolean`);
+	}
 	const generatedOutputs = repositoryPathArray(input.generatedOutputs, `${name}.generatedOutputs`);
 	const generatorCommand =
 		input.generatorCommand === null
@@ -270,6 +276,7 @@ function validateManifestTask(input: unknown, index: number): Readonly<ManifestT
 			declaredTaskCommand(input.verificationCommand, `${name}.verificationCommand`),
 		),
 		generatorCommand: generatorCommand === null ? null : Object.freeze(generatorCommand),
+		...(typeof retirement === 'boolean' ? { retirement } : {}),
 	});
 }
 

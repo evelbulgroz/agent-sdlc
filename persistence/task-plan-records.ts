@@ -86,6 +86,7 @@ const TASK_MANIFEST_METADATA_FIELDS = Object.freeze([
 	'contractProducer',
 	'highRisk',
 	'changeClass',
+	'retirement',
 	'maxAutonomousRepairs',
 	'humanReviewEvidence',
 	'exceededLimits',

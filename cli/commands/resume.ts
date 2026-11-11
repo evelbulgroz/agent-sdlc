@@ -33,6 +33,7 @@ import {
 	synthesizeLearningPayload,
 } from './candidate-learning.ts';
 import { verifyContainmentAndOracles } from './resume-escalation.ts';
+import { applyPreflightTaskRevision } from '../../workflow/preflight-task-revision.ts';
 
 function collectTaskDescendants(
 	tasks: readonly DagTask[],
@@ -108,6 +109,16 @@ export async function resumeRun(
 			state = await context.runtime.synchronizeCheckpoint(state);
 		}
 		if (recoveringQualityAnswer && !state.pendingInterruptId) {
+			return { ...context.projection.readStatusResult(), state: state.state };
+		}
+		if (
+			parsed.values.has('--response-file') &&
+			state.state === 'ESCALATED' &&
+			state.blockedReason === 'AUTONOMOUS_REPAIR_RETIRED'
+		) {
+			const responseFile = path.resolve(rootDir, parsed.values.get('--response-file') ?? '');
+			const response = JSON.parse(fs.readFileSync(responseFile, 'utf8')) as Record<string, unknown>;
+			state = applyPreflightTaskRevision({ runtime: context.runtime, snapshot: state, response });
 			return { ...context.projection.readStatusResult(), state: state.state };
 		}
 		if (parsed.values.has('--author-vendor')) {

@@ -112,8 +112,8 @@ test('@ac AC-01 @case AC-01.2 reliability submodules do not import the facade an
 	assert.equal(hasCycle(modules), false);
 });
 
-test('@ac AC-04 @case AC-04.1 the task-planner facade and three submodules are within the ceiling', () => {
-	assert.equal(plannerModules.length, 4);
+test('@ac AC-04 @case AC-04.1 the task-planner facade and four submodules are within the ceiling', () => {
+	assert.equal(plannerModules.length, 5);
 	assertWithinCeiling(plannerModules);
 });
 

@@ -87,6 +87,8 @@ export const HOST_RECONCILIATION_CHOICES = Object.freeze(['escalate', 'cancel'] 
 
 export const HOST_HIGH_RISK_REVIEW_CHOICES = Object.freeze(['approve', 'cancel'] as const);
 
+export const HOST_CORRECTION_CHOICES = Object.freeze(['approve-correction', 'stop'] as const);
+
 const HOST_EXIT_CODES = new Set([0, 2, 3, 4]);
 
 const HOST_DOCUMENT_METADATA_KEYS = new Set([
@@ -304,6 +306,7 @@ function validateHostResponse(document: unknown, slots: unknown): void {
 		}
 		return;
 	}
+	if (isCorrectionDocument(doc, slots)) return;
 	assertClosedContract(
 		doc,
 		['schemaVersion', 'interruptId', 'stateHash', 'action', 'taskPlanHash'],
@@ -325,6 +328,25 @@ function validateHostResponse(document: unknown, slots: unknown): void {
 		failContract('hostInvocation action choices are invalid');
 	}
 	if (slots.field !== 'action') failContract('hostInvocation.responseSlots.field must be action');
+}
+
+function isCorrectionDocument(doc: Record<string, unknown>, slots: unknown): boolean {
+	if (!slots || typeof slots !== 'object' || Array.isArray(slots)) return false;
+	if (!sameJson((slots as { choices?: unknown }).choices, HOST_CORRECTION_CHOICES)) return false;
+	assertClosedContract(
+		doc,
+		['schemaVersion', 'interruptId', 'stateHash', 'action', 'paths', 'taskId', 'taskIdRequired'],
+		'hostInvocation.responseDocument',
+	);
+	if (doc.action !== null) failContract('hostInvocation action must be null');
+	if (!Array.isArray(doc.paths) || doc.paths.length === 0 || doc.paths.some((item) => typeof item !== 'string' || item.length === 0)) {
+		failContract('hostInvocation correction paths are invalid');
+	}
+	if (doc.taskId !== null && typeof doc.taskId !== 'string') failContract('hostInvocation correction taskId is invalid');
+	if (typeof doc.taskIdRequired !== 'boolean') failContract('hostInvocation correction taskIdRequired must be boolean');
+	assertClosedContract(slots, ['field', 'choices'], 'hostInvocation.responseSlots');
+	if ((slots as { field?: unknown }).field !== 'action') failContract('hostInvocation.responseSlots.field must be action');
+	return true;
 }
 
 function validateActionSlots(slots: unknown, choices: readonly string[]): Record<string, unknown> {

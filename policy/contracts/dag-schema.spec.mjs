@@ -74,3 +74,27 @@ test('DAG task, task plan, and reconciliation record contracts validate strictly
 		/Invalid ReconciliationRecord/,
 	);
 });
+
+test('optional retirement boolean is kept and an unknown task key is rejected', () => {
+	const validTask = {
+		taskId: 'billing-task',
+		title: 'Update billing service log model',
+		targetPackage: 'services/billing',
+		pathPrefixes: ['services/billing/src/'],
+		dependsOn: [],
+		status: 'pending',
+		integrationOrder: 0,
+		worktreeSubdir: 'worktrees/billing-task',
+		baseCommitSha: 'a'.repeat(40),
+		parentTreeSha: null,
+		targetTreeSha: null,
+		patchHash: null,
+		failurePacketArtifact: null,
+		repairCount: 0,
+	};
+	assert.equal(validateDagTask({ ...validTask, retirement: true }).retirement, true);
+	assert.equal(validateDagTask({ ...validTask, retirement: false }).retirement, false);
+	assert.equal(validateDagTask(validTask).retirement, undefined);
+	assert.throws(() => validateDagTask({ ...validTask, retirement: 'yes' }), /Invalid DagTask/);
+	assert.throws(() => validateDagTask({ ...validTask, extraTaskKey: true }), /Invalid DagTask/);
+});

@@ -15,6 +15,7 @@ import { SdlcError } from '../policy/errors.ts';
 import { collectTouchedTestFiles, isTouchedTestFile } from '../review/critic-gate.ts';
 import { finalPreparationHook } from '../execution/verification-preparation.ts';
 import { buildIntegrationFailure } from '../cli/status-integration-failure.ts';
+import { buildCorrectionOffer, priorCorrection } from './preflight-task-revision.ts';
 import { executePreflightVerifier } from '../review/verifier.ts';
 import {
 	type WorkflowRuntimeLike,
@@ -287,6 +288,15 @@ export async function escalateAutonomousRepairRetired(
 				diagnostics,
 			})
 		: null;
+	const prior = integrationFailure ? priorCorrection(runtime, snapshot) : { consumed: false, prior: null };
+	const correctionOffer = integrationFailure && !prior.consumed && integrationFailure.category === 'coverage_floor_regression'
+		? buildCorrectionOffer({
+				runtime,
+				snapshot,
+				paths: integrationFailure.targetPaths,
+				allowedPathPrefixes: runtime.runtimeStore.getAuthorization(snapshot.runId)?.allowedPathPrefixes ?? [],
+			})
+		: null;
 	const next = runtime.transition(snapshot, {
 		to: 'ESCALATED',
 		eventType: 'RUN_BLOCKED',
@@ -299,6 +309,8 @@ export async function escalateAutonomousRepairRetired(
 				metadata: {
 					failurePacketArtifact: artifact,
 					...(integrationFailure ? { integrationFailure } : {}),
+					...(prior.consumed ? { integrationCorrectionConsumed: true, priorIntegrationFailure: prior.prior } : {}),
+					...(correctionOffer ? { correctionOffer } : {}),
 				},
 			},
 		},

@@ -242,3 +242,18 @@ test('task manifest with no tasks fails closed', () => {
 	manifest.tasks = [];
 	assert.throws(() => validateTaskManifest(manifest), /non-empty array/);
 });
+
+test('optional retirement boolean survives manifest validation', () => {
+	const manifest = validTaskManifest();
+	manifest.tasks[1] = { ...manifest.tasks[1], retirement: true };
+	const parsed = validateTaskManifest(manifest);
+	assert.equal(parsed.tasks[1].retirement, true);
+	assert.equal(parsed.tasks[0].retirement, undefined);
+	assert.throws(
+		() => validateTaskManifest({
+			...manifest,
+			tasks: [{ ...manifest.tasks[0], retirement: 'yes' }],
+		}),
+		/retirement must be a boolean/,
+	);
+});

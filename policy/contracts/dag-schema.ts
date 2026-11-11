@@ -66,6 +66,7 @@ export const DagTaskSchema = z.object({
 	contractProducer: z.boolean().optional(),
 	highRisk: z.boolean().optional(),
 	changeClass: z.enum(['A', 'B', 'C', 'D', 'E']).optional(),
+	retirement: z.boolean().optional(),
 	maxAutonomousRepairs: z.number().int().min(0).max(2).optional(),
 	humanReviewEvidence: z.enum(['not_required', 'required_pending', 'satisfied']).optional(),
 	exceededLimits: z.array(z.object({
@@ -73,7 +74,7 @@ export const DagTaskSchema = z.object({
 		actual: z.number().int().min(0),
 		maximum: z.number().int().min(0),
 	}).strict()).optional(),
-});
+}).strict();
 
 const TaskPlanV1Schema = z.object({
 	schemaVersion: z.literal('1.0.0'),

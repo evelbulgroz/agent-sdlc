@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { MinimalExecutor } from '../execution/minimal-executor.ts';
 import { captureTaskDelta } from '../execution/task-tree-delta.ts';
+import { deletedPathsBetween, requireDeletionProof } from '../execution/reference-proof.ts';
 import { eligibleParentTasks, materializeClosureTree } from '../execution/eligible-closure.ts';
 import type { ExecutableTask } from '../execution/task-executor.ts';
 import type { QualityAnswer, TaskRevision, ClosureRecord } from '../policy/contracts/quality-schema.ts';
@@ -138,6 +139,11 @@ export async function runApprovedQualityCorrection({
 			}
 			const delta = captureTaskDelta({ task, worktreeDir, rootDir: runtime.rootDir,
 				gitCli: runtime.gitCli, rawPatchHash: true });
+			const removed = deletedPathsBetween(runtime.gitCli, runtime.rootDir, old.targetTreeSha, delta.targetTreeSha);
+			if (removed.length > 0) {
+				const proof = requireDeletionProof({ rootDir: worktreeDir, roots: [task.targetPackage], deletedPaths: removed });
+				runtime.artifactStore.writeJson('reference-proof', proof);
+			}
 			if (owner) {
 				captureTaskDelta({ task: { ...task, parentTreeSha: expectedTreeSha,
 					authoredPaths: owner.editPaths, pathPrefixes: owner.editPaths }, worktreeDir,
