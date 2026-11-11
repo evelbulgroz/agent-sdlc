@@ -27,6 +27,7 @@ export interface DeltaTaskLike {
 	readonly patchHash?: string | null;
 	readonly dependsOn?: readonly string[];
 	readonly authoredPaths?: readonly string[];
+	readonly removedPaths?: readonly string[];
 	readonly generatedOutputs?: readonly string[];
 	readonly pathPrefixes: readonly string[];
 }
@@ -295,7 +296,7 @@ export function captureTaskDelta({
 		// 4. Assert exact authored/generated output containment for manifest tasks.
 		const deltaPrefixes =
 			task.authoredPaths || task.generatedOutputs
-				? [...(task.authoredPaths ?? []), ...(task.generatedOutputs ?? [])]
+				? [...(task.authoredPaths ?? []), ...(task.generatedOutputs ?? []), ...(task.removedPaths ?? [])]
 				: task.pathPrefixes;
 		for (const file of changedFiles) {
 			const contained = deltaPrefixes.some(

@@ -73,7 +73,7 @@ real host adapters or browser dependencies are installed by the engine.
    - Calls `governor.assertCanReserve` prior to each model dispatch. Honours `AGENT_SDLC_PREFERRED_ROUTES` and `AGENT_SDLC_MAX_ROUTE_FAILOVERS=0`.
 
 2. **Strict Read/Write Path Containment (`tools.ts`, `tool-path-guards.ts`):**
-   - Package tasks may read within `targetPackage` for local patterns, but mutations (`write_file`, `replace_in_file`, `replace_snapshot_range`, `delete_file`) are strictly confined to the task's exact authored paths under `allowedPathPrefixes` with `realpath` traversal defenses.
+   - Package tasks may read within `targetPackage` for local patterns, but mutations (`write_file`, `replace_in_file`, `replace_snapshot_range`, `delete_file`) are strictly confined to the task's exact authored paths under `allowedPathPrefixes` with `realpath` traversal defenses. Edits stay on authored paths. delete_file may also target removedPaths.
    - Model tools cannot edit `pnpm-lock.yaml` directly; declared dependency mutations must edit the authorized `package.json`, after which `task-executor.ts` (`checkAndRefreshManifest`) refreshes and stages `pnpm-lock.yaml`.
    - When an authored test file is identified, an allowlisted targeted test command runs as a mandatory intermediate gate before the full declared task verification command.
 

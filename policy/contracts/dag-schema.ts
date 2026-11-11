@@ -37,6 +37,7 @@ export const DagTaskSchema = z.object({
 	failureMetadata: z.record(z.string(), z.unknown()).nullable().optional(),
 	sliceId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/).optional(),
 	authoredPaths: z.array(z.string().min(1)).optional(),
+	removedPaths: z.array(z.string().min(1)).max(8).optional(),
 	generatedOutputs: z.array(z.string().min(1)).optional(),
 	deliveryLayers: z.array(z.enum(TASK_MANIFEST_DELIVERY_LAYERS)).optional(),
 	dependencyMutations: z.array(z.object({

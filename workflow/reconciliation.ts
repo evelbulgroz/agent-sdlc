@@ -223,6 +223,7 @@ export async function reconcileTasks({
 		const allowedPrefixes = [
 			...(taskPlan.schemaVersion === '2.0.0' ? task.authoredPaths ?? [] : task.pathPrefixes ?? []),
 			...(task.generatedOutputs ?? []),
+			...(task.removedPaths ?? []),
 		];
 		for (const file of changedFiles) {
 			const isContained = allowedPrefixes.some(

@@ -53,6 +53,7 @@ export interface FeasibilityTaskInput {
 	readonly sliceId: string;
 	readonly targetPackage: string;
 	readonly authoredPaths: readonly string[];
+	readonly removedPaths?: readonly string[];
 	readonly pathPrefixes: readonly string[];
 	readonly generatedOutputs: readonly string[];
 	readonly dependsOn: readonly string[];

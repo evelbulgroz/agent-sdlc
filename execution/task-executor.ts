@@ -12,7 +12,7 @@ import {
 } from './minimal-executor.ts';
 import type { CompletionValidatorFn } from './minimal-verification.ts';
 import { composeCompletionValidator } from './task-acceptance-evidence.ts';
-import { type TaskScopeAuthorizationLike, taskAuthoredWritePaths } from './task-scope.ts';
+import { type TaskScopeAuthorizationLike, taskAuthoredWritePaths, taskMutationAllowlist } from './task-scope.ts';
 import { type GitCliFn, captureTaskDelta, deriveParentTreeSha } from './task-tree-delta.ts';
 import {
 	type PackageJsonLike,
@@ -391,8 +391,9 @@ export class TaskExecutor {
 				} : undefined,
 				...p.preparation,
 				authoredPaths: Array.isArray(task.authoredPaths) ? task.authoredPaths : [],
+				removedPaths: task.removedPaths ?? [],
 				authoredTestPaths,
-				allowedWritePathPrefixes: authoredPaths,
+				allowedWritePathPrefixes: taskMutationAllowlist(task),
 				allowedPackages: p.allowedCommandPackages,
 				specSummary: p.scopedSpecSummary,
 				acceptanceCriteria: effectiveTaskPromptContext.acceptanceCriteria ?? p.acceptanceCriteria,

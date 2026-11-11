@@ -243,6 +243,51 @@ test('task manifest with no tasks fails closed', () => {
 	assert.throws(() => validateTaskManifest(manifest), /non-empty array/);
 });
 
+test('removedPaths is optional and accepts only covered files outside the write set', () => {
+	const omitted = validateTaskManifest(validTaskManifest());
+	assert.equal(omitted.tasks[0].removedPaths, undefined);
+
+	const covered = validTaskManifest();
+	covered.tasks[0] = {
+		...covered.tasks[0],
+		pathPrefixes: ['tools/agent-sdlc', 'tools/agent-sdlc/policy/legacy.mjs'],
+		removedPaths: ['tools/agent-sdlc/policy/legacy.mjs', 'tools/agent-sdlc/policy/other.ts'],
+	};
+	assert.deepEqual(validateTaskManifest(covered).tasks[0].removedPaths, [
+		'tools/agent-sdlc/policy/legacy.mjs',
+		'tools/agent-sdlc/policy/other.ts',
+	]);
+
+	const rejected = [
+		{ removedPaths: ['tools/agent-sdlc'], message: /directory/ },
+		{ removedPaths: ['elsewhere/file.ts'], message: /outside pathPrefixes/ },
+		{ removedPaths: ['tools/agent-sdlc/policy/contracts.mjs'], message: /overlaps/ },
+		{ removedPaths: [''], message: /non-empty/ },
+		{ removedPaths: ['tools/agent-sdlc/a.ts', 'tools/agent-sdlc/a.ts'], message: /duplicate/ },
+		{ removedPaths: ['/tmp/a.ts'], message: /non-repository-relative/ },
+		{ removedPaths: ['tools/../a.ts'], message: /non-repository-relative/ },
+		{ removedPaths: ['tools/./a.ts'], message: /non-repository-relative/ },
+		{
+			removedPaths: Array.from({ length: 9 }, (_, index) => `tools/agent-sdlc/file-${index}.ts`),
+			message: /at most 8/,
+		},
+	];
+	for (const item of rejected) {
+		const manifest = validTaskManifest();
+		manifest.tasks[0] = { ...manifest.tasks[0], removedPaths: item.removedPaths };
+		assert.throws(() => validateTaskManifest(manifest), item.message);
+	}
+
+	const generated = validTaskManifest();
+	generated.tasks[0] = {
+		...generated.tasks[0],
+		generatedOutputs: ['tools/agent-sdlc/generated/out.ts'],
+		generatorCommand: ['pnpm', '--filter', '@fixture/billing-service', 'run', 'build:contracts'],
+		removedPaths: ['tools/agent-sdlc/generated/out.ts'],
+	};
+	assert.throws(() => validateTaskManifest(generated), /overlaps/);
+});
+
 test('optional retirement boolean survives manifest validation', () => {
 	const manifest = validTaskManifest();
 	manifest.tasks[1] = { ...manifest.tasks[1], retirement: true };

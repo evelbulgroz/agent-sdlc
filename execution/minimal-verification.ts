@@ -128,6 +128,21 @@ export function checkMissingAuthoredFiles(
 	return `AUDIT_REQUIRED: Cannot complete until all authoredPaths and authoredTestPaths exist on disk. Missing: ${missing.join(', ')}`;
 }
 
+export function checkRemainingRemovedPaths(
+	worktreeDir: string | null | undefined,
+	removedPaths: readonly string[] = [],
+): string | null {
+	if (!worktreeDir) return null;
+	const present = [...new Set(removedPaths)].filter(
+		(entry) =>
+			typeof entry === 'string' &&
+			entry.length > 0 &&
+			fs.existsSync(path.join(worktreeDir, entry)),
+	);
+	if (present.length === 0) return null;
+	return `AUDIT_REQUIRED: Cannot complete until every removed path is absent. Still on disk: ${present.join(', ')}`;
+}
+
 export function sameArgv(left: unknown, right: unknown): boolean {
 	return (
 		Array.isArray(left) &&

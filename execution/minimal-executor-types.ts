@@ -58,6 +58,7 @@ export interface MinimalExecutorInput extends MinimalPromptInput {
 	readonly prepareVerification?: () => RunPreparationResult;
 	readonly prepareExploratory?: () => RunPreparationResult | null;
 	readonly authoredPaths?: readonly string[];
+	readonly removedPaths?: readonly string[];
 	readonly authoredTestPaths?: readonly string[];
 	readonly allowedWritePathPrefixes?: readonly string[];
 	readonly allowedPackages?: readonly string[];

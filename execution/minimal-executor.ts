@@ -13,6 +13,7 @@ import {
 	WRITE_TOOLS,
 	buildAuditRequiredFeedback,
 	checkMissingAuthoredFiles,
+	checkRemainingRemovedPaths,
 	computeWorktreeDigest,
 	evaluateEvidence,
 	runVerification,
@@ -228,13 +229,15 @@ export class MinimalExecutor {
 			input.auditGate === true
 				? checkMissingAuthoredFiles(input.worktreeDir, input.authoredPaths, input.authoredTestPaths)
 				: null;
-		if (missing) {
+		const remaining = checkRemainingRemovedPaths(input.worktreeDir, input.removedPaths);
+		const presence = missing ?? remaining;
+		if (presence) {
 			if (auditState) auditState.auditedDigest = null;
 			await this.writeTranscript(input, { attempt, prompt, toolCalls, failureReason: 'evidence-failed', passed: false, started });
 			if (attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
 				return { done: true, result: { status: 'failed', failureReason: 'evidence-failed', attempts: attempt } };
 			}
-			return { done: false, feedback: missing };
+			return { done: false, feedback: presence };
 		}
 		const staticMiss = this.completionValidator?.staticCheck?.() ?? null;
 		if (staticMiss) {

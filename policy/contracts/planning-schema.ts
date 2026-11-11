@@ -73,6 +73,7 @@ export const ManifestTaskSchema = z.object({
 	sliceId: z.string(),
 	targetPackage: z.string(),
 	authoredPaths: z.array(z.string()).readonly(),
+	removedPaths: z.array(z.string()).readonly().optional(),
 	pathPrefixes: z.array(z.string()).readonly(),
 	generatedOutputs: z.array(z.string()).readonly(),
 	dependsOn: z.array(z.string()).readonly(),
@@ -219,6 +220,7 @@ function validateManifestTask(input: unknown, index: number): Readonly<ManifestT
 			'sliceId',
 			'targetPackage',
 			'authoredPaths',
+			'removedPaths',
 			'pathPrefixes',
 			'generatedOutputs',
 			'dependsOn',
@@ -235,7 +237,10 @@ function validateManifestTask(input: unknown, index: number): Readonly<ManifestT
 	if (retirement !== undefined && typeof retirement !== 'boolean') {
 		failContract(`${name}.retirement must be a boolean`);
 	}
+	const authoredPaths = repositoryPathArray(input.authoredPaths, `${name}.authoredPaths`, false);
+	const pathPrefixes = repositoryPathArray(input.pathPrefixes, `${name}.pathPrefixes`, false);
 	const generatedOutputs = repositoryPathArray(input.generatedOutputs, `${name}.generatedOutputs`);
+	const removedPaths = validateRemovedPaths(input, name, pathPrefixes, authoredPaths, generatedOutputs);
 	const generatorCommand =
 		input.generatorCommand === null
 			? null
@@ -252,12 +257,9 @@ function validateManifestTask(input: unknown, index: number): Readonly<ManifestT
 		taskId: manifestId(input.taskId, `${name}.taskId`),
 		sliceId: manifestId(input.sliceId, `${name}.sliceId`),
 		targetPackage: contractNonEmptyString(input.targetPackage, `${name}.targetPackage`, 512),
-		authoredPaths: Object.freeze(
-			repositoryPathArray(input.authoredPaths, `${name}.authoredPaths`, false),
-		),
-		pathPrefixes: Object.freeze(
-			repositoryPathArray(input.pathPrefixes, `${name}.pathPrefixes`, false),
-		),
+		authoredPaths: Object.freeze(authoredPaths),
+		pathPrefixes: Object.freeze(pathPrefixes),
+		...(removedPaths ? { removedPaths: Object.freeze(removedPaths) } : {}),
 		generatedOutputs: Object.freeze(generatedOutputs),
 		dependsOn: Object.freeze(manifestIdArray(input.dependsOn, `${name}.dependsOn`)),
 		deliveryLayers: Object.freeze(
@@ -293,8 +295,8 @@ function manifestIdArray(value: unknown, name: string): string[] {
 	return ids;
 }
 
-function repositoryPathArray(value: unknown, name: string, allowEmpty = true): string[] {
-	const paths = contractStringArray(value, name, { allowEmpty, maxItems: 64 });
+function repositoryPathArray(value: unknown, name: string, allowEmpty = true, maxItems = 64): string[] {
+	const paths = contractStringArray(value, name, { allowEmpty, maxItems });
 	for (const relPath of paths) {
 		if (
 			relPath.startsWith('/') ||
@@ -305,6 +307,33 @@ function repositoryPathArray(value: unknown, name: string, allowEmpty = true): s
 		}
 	}
 	return paths;
+}
+
+function validateRemovedPaths(
+	input: Record<string, unknown>,
+	name: string,
+	pathPrefixes: readonly string[],
+	authoredPaths: readonly string[],
+	generatedOutputs: readonly string[],
+): string[] | undefined {
+	if (!Object.hasOwn(input, 'removedPaths')) return undefined;
+	const removed = repositoryPathArray(input.removedPaths, `${name}.removedPaths`, true, 8);
+	const occupied = new Set([...authoredPaths, ...generatedOutputs]);
+	for (const entry of removed) {
+		const base = entry.split('/').pop() ?? '';
+		if (!/^[^.].*\.[A-Za-z0-9]+$/.test(base)) {
+			failContract(`${name}.removedPaths contains directory '${entry}'`);
+		}
+		const covered = pathPrefixes.some((prefix) => {
+			const clean = prefix.replace(/\/+$/, '');
+			return entry === clean || entry.startsWith(`${clean}/`);
+		});
+		if (!covered) failContract(`${name}.removedPaths entry '${entry}' is outside pathPrefixes`);
+		if (occupied.has(entry)) {
+			failContract(`${name}.removedPaths entry '${entry}' overlaps authoredPaths or generatedOutputs`);
+		}
+	}
+	return removed;
 }
 
 function enumArray<T extends string>(

@@ -354,6 +354,53 @@ test('planTaskDag grants lockfile ownership to a package-root task that can modi
 	);
 });
 
+test('planPolicyHash changes when only removedPaths changes and ignores them in authored complexity', () => {
+	const authorization = {
+		runId: RUN_ID,
+		baseCommitSha: BASE_COMMIT_SHA,
+		taskManifestHash: 'f'.repeat(64),
+		allowedPackages: ['services/billing'],
+		allowedPathPrefixes: ['services/billing'],
+	};
+	const draft = readinessDraft({
+		touchedSurfaces: ['services/billing/src/billing/domain'],
+	});
+	const plan = (removedPaths) => {
+		const manifest = serialManifest();
+		if (removedPaths) {
+			manifest.tasks[0] = { ...manifest.tasks[0], removedPaths };
+		}
+		return planTaskDag({
+			draft,
+			taskManifest: manifest,
+			authorization,
+			now: () => '2026-09-07T09:00:00.000Z',
+		});
+	};
+	const omitted = plan();
+	const forward = plan([
+		'services/billing/src/billing/domain/old-a.ts',
+		'services/billing/src/billing/domain/old-b.ts',
+	]);
+	const reversed = plan([
+		'services/billing/src/billing/domain/old-b.ts',
+		'services/billing/src/billing/domain/old-a.ts',
+	]);
+	assert.equal(omitted.tasks[0].removedPaths, undefined);
+	assert.deepEqual(forward.tasks[0].removedPaths, [
+		'services/billing/src/billing/domain/old-a.ts',
+		'services/billing/src/billing/domain/old-b.ts',
+	]);
+	assert.deepEqual(forward.tasks[0].authoredPaths, omitted.tasks[0].authoredPaths);
+	assert.equal(
+		forward.tasks[0].complexityInputs.authoredPaths,
+		omitted.tasks[0].complexityInputs.authoredPaths,
+	);
+	assert.equal(forward.tasks[0].complexityScore, omitted.tasks[0].complexityScore);
+	assert.notEqual(forward.planPolicyHash, omitted.planPolicyHash);
+	assert.notEqual(reversed.planPolicyHash, forward.planPolicyHash);
+});
+
 test('@ac AC-04 @case AC-04.2 the facade exports the frozen planner names', () => {
 	assert.deepEqual(
 		Object.keys(taskPlanner).sort(),

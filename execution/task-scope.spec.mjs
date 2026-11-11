@@ -78,6 +78,22 @@ test('manifest tasks restrict model writes to authored paths rather than broader
 	);
 });
 
+test('removed paths stay out of the authored write set and are listed for deletion', () => {
+	const task = {
+		authoredPaths: ['services/billing/src/keep.ts'],
+		pathPrefixes: ['services/billing', 'services/billing/src/old.ts'],
+		removedPaths: ['services/billing/src/old.ts'],
+	};
+	assert.deepEqual(taskAuthoredWritePaths(task), ['services/billing/src/keep.ts']);
+	const scoped = scopeSpecSummaryForTask({ specSummary: 'Goal: retire the sibling', task });
+	assert.match(
+		scoped,
+		/Authorized Mutation Path Prefixes:\n- services\/billing\/src\/keep\.ts\nDelete before completing:\n- services\/billing\/src\/old\.ts\n/,
+	);
+	assert.match(scoped, /Those files must be absent/);
+	assert.equal(scoped.includes('\n- services/billing\n'), false);
+});
+
 test('scopeSpecSummaryForTask scopes touched surfaces to task pathPrefixes and prepends task header', () => {
 	const task = {
 		taskId: 'example-pwa-frontend-task',

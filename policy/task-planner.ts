@@ -178,6 +178,7 @@ function planManifestTasks({
 			...task.authoredPaths,
 			...task.pathPrefixes,
 			...task.generatedOutputs,
+			...(task.removedPaths ?? []),
 		]) {
 			const contained =
 				(candidate === 'pnpm-lock.yaml' && task.dependencyMutations.length > 0) ||
@@ -225,6 +226,9 @@ function planManifestTasks({
 			sliceId: task.sliceId,
 			targetPackage: task.targetPackage,
 			authoredPaths: task.authoredPaths,
+			...(task.removedPaths && task.removedPaths.length > 0
+				? { removedPaths: task.removedPaths }
+				: {}),
 			pathPrefixes: task.pathPrefixes,
 			generatedOutputs: task.generatedOutputs,
 			dependsOn: task.dependsOn,

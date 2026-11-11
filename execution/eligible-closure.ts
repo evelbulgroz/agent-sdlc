@@ -128,7 +128,11 @@ export function materializeClosureTree({
 			}
 			const files = String(gitCli('git', ['diff-tree', '-r', '--name-only', task.parentTreeSha, task.targetTreeSha], opts))
 				.trim().split('\n').filter(Boolean);
-			const paths = [...(task.authoredPaths ?? task.pathPrefixes), ...(task.generatedOutputs ?? [])];
+			const paths = [
+				...(task.authoredPaths ?? task.pathPrefixes),
+				...(task.generatedOutputs ?? []),
+				...(task.removedPaths ?? []),
+			];
 			for (const file of files) {
 				if (!paths.some(prefix => file === prefix || file.startsWith(`${prefix.replace(/\/$/, '')}/`))) {
 					throw new SdlcError('PATH_CONTAINMENT_VIOLATION', `Closure delta escapes task '${task.taskId}'`);

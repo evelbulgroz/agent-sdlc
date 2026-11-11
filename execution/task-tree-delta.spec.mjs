@@ -259,6 +259,37 @@ test('captureTaskDelta materializes target tree and throws on path containment e
 	}
 });
 
+test('captureTaskDelta allows a removed path and rejects a sibling outside that write set', () => {
+	const tmpDir = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `removed-delta-${crypto.randomUUID()}`);
+	fs.mkdirSync(path.join(tmpDir, '.git'), { recursive: true });
+	let stagedFiles = ['services/billing/src/old.ts'];
+	const gitCli = (_command, args) => {
+		if (args[0] === 'diff-index') return `${stagedFiles.join('\n')}\n`;
+		if (args[0] === 'write-tree') return `${'2'.repeat(40)}\n`;
+		if (args[0] === 'diff-tree') return 'removed patch\n';
+		return '';
+	};
+	const task = {
+		taskId: 'remove-task',
+		parentTreeSha: '1'.repeat(40),
+		pathPrefixes: ['services/billing'],
+		authoredPaths: ['services/billing/src/keep.ts'],
+		removedPaths: ['services/billing/src/old.ts'],
+	};
+	try {
+		assert.deepEqual(captureTaskDelta({ task, worktreeDir: tmpDir, gitCli }).changedFiles, [
+			'services/billing/src/old.ts',
+		]);
+		stagedFiles = ['services/billing/src/sibling.ts'];
+		assert.throws(
+			() => captureTaskDelta({ task, worktreeDir: tmpDir, gitCli }),
+			(error) => error.code === 'PATH_CONTAINMENT_VIOLATION',
+		);
+	} finally {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
 test('@ac AC-11 captureTaskDelta permits declared generated outputs and rejects other generator deltas', () => {
 	const tmpDir = path.join(REPOSITORY_ROOT, 'tools/.agent-sdlc/test-fixtures', `generated-delta-${crypto.randomUUID()}`);
 	fs.mkdirSync(path.join(tmpDir, '.git'), { recursive: true });

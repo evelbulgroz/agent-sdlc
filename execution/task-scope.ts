@@ -11,6 +11,7 @@ export interface TaskScopeTaskLike {
 	readonly sliceId?: string | null;
 	readonly pathPrefixes?: readonly string[];
 	readonly authoredPaths?: readonly string[];
+	readonly removedPaths?: readonly string[];
 	readonly generatedOutputs?: readonly string[];
 	readonly dependsOn?: readonly string[];
 	status?: string;
@@ -66,11 +67,19 @@ export function scopeSpecSummaryForTask({
 	}
 
 	const mutationPaths = taskAuthoredWritePaths(task);
+	const removedPaths = task.removedPaths ?? [];
 	const taskHeader = [
 		`### Current Task Scope: ${task.taskId ?? ''} (${task.title || task.targetPackage || ''})`,
 		`Target Package: ${task.targetPackage ?? ''}`,
 		`Authorized Mutation Path Prefixes:`,
 		...mutationPaths.map((p) => `- ${p}`),
+		...(removedPaths.length > 0
+			? [
+					'Delete before completing:',
+					...removedPaths.map((entry) => `- ${entry}`),
+					'Those files must be absent before you complete.',
+				]
+			: []),
 		`Package-local files may be inspected for prior art, but do NOT modify files outside the authorized mutation path prefixes.`,
 		...(Array.isArray(siblingTestPaths) && siblingTestPaths.length > 0
 			? [
@@ -113,6 +122,10 @@ export function collectCumulativeTaskPackages(
 		for (const pkg of authorization.allowedPackages) packages.add(pkg);
 	}
 	return Array.from(packages).sort();
+}
+
+export function taskMutationAllowlist(task: TaskScopeTaskLike): readonly string[] {
+	return [...new Set([...taskAuthoredWritePaths(task), ...(task.removedPaths ?? [])])];
 }
 
 export function taskAuthoredWritePaths(task: TaskScopeTaskLike): readonly string[] {

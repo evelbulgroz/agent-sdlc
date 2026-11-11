@@ -186,6 +186,46 @@ function recordContext(store) {
 	});
 }
 
+test('a saved task plan round-trips removedPaths in declared order', () => {
+	const fixture = makeFixture('removed-paths-plan');
+	try {
+		fixture.runtime.initialize({ runId: fixture.runId, goal: 'round trip deletions' });
+		const removedPaths = ['services/billing/src/old.ts', 'services/billing/src/older.ts'];
+		fixture.store.saveTaskPlan({
+			schemaVersion: '1.0.0',
+			runId: fixture.runId,
+			planPolicyHash: 'a'.repeat(64),
+			baseCommitSha: 'b'.repeat(40),
+			tasks: [
+				{
+					taskId: 'billing-task',
+					title: 'Delete the retired billing files',
+					targetPackage: 'services/billing',
+					pathPrefixes: ['services/billing'],
+					authoredPaths: ['services/billing/src/keep.ts'],
+					removedPaths,
+					dependsOn: [],
+					status: 'pending',
+					integrationOrder: 0,
+					worktreeSubdir: 'worktrees/billing-task',
+					baseCommitSha: 'b'.repeat(40),
+					parentTreeSha: null,
+					targetTreeSha: null,
+					patchHash: null,
+					failurePacketArtifact: null,
+					repairCount: 0,
+				},
+			],
+			integrationOrder: ['billing-task'],
+			isParallel: false,
+			createdAt: '2026-09-07T00:00:00.000Z',
+		});
+		assert.deepEqual(fixture.store.getTask(fixture.runId, 'billing-task').removedPaths, removedPaths);
+	} finally {
+		fixture.close();
+	}
+});
+
 test('task plan records return null for a missing plan and reject a missing task', () => {
 	const fixture = makeFixture('task-plan-direct');
 	try {
