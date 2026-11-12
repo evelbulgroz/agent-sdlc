@@ -62,7 +62,7 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## Attempt cap continues and quality-gate text survives a write
 
-**Origin:** fitness-app run `2026-11-12-conditioning-log-owns-writes-v5` halted on `fetch-sweep-task` with `failureReason` `tool-calls` after 150 calls. An earlier run replaced `quality-gate failed` finding text with the generic file-modified sentence after the next source write.
+**Origin:** A host run halted on `fetch-sweep-task` with `failureReason` `tool-calls` after 150 calls. An earlier run replaced `quality-gate failed` finding text with the generic file-modified sentence after the next source write.
 
 **Candidate:** `docs/specs/drafts/attempt-cap-and-quality-feedback.md`. The cap ends the current attempt when a later attempt remains, and that next attempt starts from an empty tool-call list. Feedback that starts with `quality-gate failed` stays after a source write. `AUDIT_REQUIRED` replacement stays. The cap stays 150.
 
