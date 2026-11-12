@@ -59,3 +59,11 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 **Candidate:** either the generated `shadowPaths` carry concrete recovery statements, or the plan critic rubric stops treating the generated labels as a defect. Measure the false-positive rate over several clean runs first.
 
 **Done when:** at least five clean tier 2 runs on unseen specs raise no plan critic P1, or each P1 names a real defect.
+
+## Attempt cap continues and quality-gate text survives a write
+
+**Origin:** fitness-app run `2026-11-12-conditioning-log-owns-writes-v5` halted on `fetch-sweep-task` with `failureReason` `tool-calls` after 150 calls. An earlier run replaced `quality-gate failed` finding text with the generic file-modified sentence after the next source write.
+
+**Candidate:** `docs/specs/drafts/attempt-cap-and-quality-feedback.md`. The cap ends the current attempt when a later attempt remains, and that next attempt starts from an empty tool-call list. Feedback that starts with `quality-gate failed` stays after a source write. `AUDIT_REQUIRED` replacement stays. The cap stays 150.
+
+**Done when:** that draft is implemented and `pnpm run test:unit` covers AC-01 through AC-05.

@@ -23,6 +23,8 @@ test('loadRubric loads markdown rubric from repository or throws INVALID_CONTRAC
 	assert.ok(planRubric.includes('Implementation Plan Quality & Invariant Rubric'));
 	assert.ok(planRubric.includes('complexityInputs'));
 	assert.ok(planRubric.includes('slices[].acceptanceCriteria'));
+	assert.ok(planRubric.includes('A file listed in `removedPaths` stays off `authoredPaths`'));
+	assert.equal(specRubric.includes('removedPaths'), false);
 
 	const codeRubric = loadRubric(REPOSITORY_ROOT, 'code');
 	assert.ok(codeRubric.includes('Code Quality & Architecture Rubric'));

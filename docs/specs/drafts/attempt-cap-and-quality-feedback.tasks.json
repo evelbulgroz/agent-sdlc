@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0.0",
+  "slices": [
+    {
+      "sliceId": "attempt-cap-feedback",
+      "kind": "vertical",
+      "goal": "A tool-call cap continues into a later attempt, and quality-gate finding text survives the next source write.",
+      "acceptanceCriteria": ["AC-01", "AC-02", "AC-03", "AC-04", "AC-05"],
+      "dependsOn": []
+    }
+  ],
+  "tasks": [
+    {
+      "taskId": "attempt-cap-feedback-task",
+      "sliceId": "attempt-cap-feedback",
+      "targetPackage": "execution",
+      "authoredPaths": [
+        "execution/minimal-executor.ts",
+        "execution/minimal-executor.spec.mjs"
+      ],
+      "pathPrefixes": ["execution"],
+      "generatedOutputs": [],
+      "dependsOn": [],
+      "deliveryLayers": ["tooling"],
+      "dependencyMutations": [],
+      "shadowPaths": {
+        "unhappy": "the last attempt at the 150 tool-call cap fails with tool-calls and makes no further model call",
+        "timeout": "wall-time still fails the task on the attempt that hits the clock",
+        "empty": "an exhausted governor script after a continued cap fails the task",
+        "boundary": "quality-gate finding text remains after a source write, AUDIT_REQUIRED is still replaced, and both files stay within 500 lines and 20480 bytes"
+      },
+      "verificationCommand": ["pnpm", "run", "test:unit"],
+      "generatorCommand": null
+    }
+  ]
+}
