@@ -62,8 +62,6 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## Attempt cap continues and quality-gate text survives a write
 
-**Origin:** A host run halted on `fetch-sweep-task` with `failureReason` `tool-calls` after 150 calls. An earlier run replaced `quality-gate failed` finding text with the generic file-modified sentence after the next source write.
+**Origin:** A host run halted on `fetch-sweep-task` with `failureReason` `tool-calls` on attempt 2. The deleted attempt artifact listed 188 tool calls because earlier calls stayed in the shared array. The per-attempt cap is 150. An earlier run replaced `quality-gate failed` finding text with the generic file-modified sentence after the next source write. Those finding lines were not retained.
 
-**Candidate:** `docs/specs/drafts/attempt-cap-and-quality-feedback.md`. The cap ends the current attempt when a later attempt remains, and that next attempt starts from an empty tool-call list. Feedback that starts with `quality-gate failed` stays after a source write. `AUDIT_REQUIRED` replacement stays. The cap stays 150.
-
-**Done when:** that draft is implemented and `pnpm run test:unit` covers AC-01 through AC-05.
+**Status (2026-11-12):** implemented. The spec is retired at `docs/specs/retired/attempt-cap-and-quality-feedback.md`. `pnpm run test:unit` covers AC-01 through AC-05. **Closed.**

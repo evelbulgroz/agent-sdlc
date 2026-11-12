@@ -56,6 +56,30 @@ export type {
 	MinimalExecutorOptions,
 } from './minimal-executor-types.ts';
 
+function feedbackAfterWrite(feedback: string): string {
+	if (feedback.startsWith('AUDIT_REQUIRED')) return FILE_MODIFIED_FEEDBACK;
+	if (!feedback.startsWith('quality-gate failed')) return feedback;
+	const splitAt = feedback.indexOf('\n');
+	return `Quality-gate findings below are the pre-write result.${splitAt === -1 ? '' : feedback.slice(splitAt)}`;
+}
+
+function capResidue(calls: readonly MinimalToolCallRecord[], prior: string): string {
+	const paths: string[] = [];
+	let last: MinimalToolCallRecord | undefined;
+	for (const call of calls) {
+		const name = call.toolName ?? '';
+		const filePath = call.parameters?.path;
+		if (typeof filePath === 'string' && filePath && (name === 'read_file' || WRITE_TOOLS.has(name)) && !paths.includes(filePath)) paths.push(filePath);
+		if (name === 'run_allowlisted_command') last = call;
+	}
+	const stdout = last?.result?.stdout;
+	const parts = [`Attempt ended at the tool-call cap of ${MINIMAL_TOOL_CALL_CAP}. Raw tool results were dropped.`, ...paths];
+	if (last) parts.push(`Last command exit ${String(last.result?.exitCode)}`);
+	if (typeof stdout === 'string') parts.push(stdout.slice(0, 200));
+	if (prior && !prior.startsWith('AUDIT_REQUIRED')) parts.push(prior);
+	return parts.join('\n');
+}
+
 /**
  * Governed working-set implementer loop with post-hoc validation and optional
  * two-call AUDIT_REQUIRED completion gate. Model operations route exclusively
@@ -183,15 +207,19 @@ export class MinimalExecutor {
 				}
 				if (WRITE_TOOLS.has(toolName) && !dispatched.result?.error && !dispatched.result?.code) {
 					auditState.auditedDigest = null;
-					if (/^quality-gate failed|^AUDIT_REQUIRED/.test(feedback)) {
-						feedback = FILE_MODIFIED_FEEDBACK;
-					}
+					feedback = feedbackAfterWrite(feedback);
 				}
 				toolCalls.push({ toolName, parameters: action.parameters ?? {}, result: dispatched.result ?? null });
 				attemptToolCalls += 1;
 				if (attemptToolCalls >= MINIMAL_TOOL_CALL_CAP) {
 					await this.writeTranscript(input, { attempt, prompt, toolCalls, failureReason: 'tool-calls', passed: false, started });
-					return { done: true, result: { status: 'failed', failureReason: 'tool-calls', attempts: attempt } };
+					if (attempt >= (input.maxSourceEditIterations ?? MINIMAL_MAX_ATTEMPTS)) {
+						return { done: true, result: { status: 'failed', failureReason: 'tool-calls', attempts: attempt } };
+					}
+					const residue = capResidue(toolCalls, feedback);
+					toolCalls.length = 0;
+					auditState.auditedDigest = null;
+					return { done: false, feedback: residue };
 				}
 				continue;
 			}

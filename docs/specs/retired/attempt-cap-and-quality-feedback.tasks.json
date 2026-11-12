@@ -4,7 +4,7 @@
     {
       "sliceId": "attempt-cap-feedback",
       "kind": "vertical",
-      "goal": "A tool-call cap continues into a later attempt, and quality-gate finding text survives the next source write.",
+      "goal": "A tool-call cap continues with a short residue, and quality-gate findings stay as the pre-write result.",
       "acceptanceCriteria": ["AC-01", "AC-02", "AC-03", "AC-04", "AC-05"],
       "dependsOn": []
     }
@@ -27,7 +27,7 @@
         "unhappy": "the last attempt at the 150 tool-call cap fails with tool-calls and makes no further model call",
         "timeout": "wall-time still fails the task on the attempt that hits the clock",
         "empty": "an exhausted governor script after a continued cap fails the task",
-        "boundary": "quality-gate finding text remains after a source write, AUDIT_REQUIRED is still replaced, and both files stay within 500 lines and 20480 bytes"
+        "boundary": "the continued prompt keeps the cap residue and the pre-write quality-gate note, AUDIT_REQUIRED is still replaced, a continued cap clears the audit digest, and both files stay within 500 lines and 20480 bytes"
       },
       "verificationCommand": ["pnpm", "run", "test:unit"],
       "generatorCommand": null
