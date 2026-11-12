@@ -1,0 +1,121 @@
+{
+  "activeOwner": "human",
+  "blockedReason": null,
+  "changeClass": "D",
+  "continuation": {
+    "action": "stop",
+    "reason": "GIT_APPROVAL"
+  },
+  "git": {
+    "branch": "detached",
+    "dirty": true,
+    "headSha": "21a3c070c85bc18db711809047e1ab5b44d06cb9",
+    "worktreePath": "/mnt/ssd-media/dev/version-control/lib/ts/agent-sdlc/tools/.agent-sdlc/2026-11-12-sdlc-8bb97721/worktree"
+  },
+  "hostInvocation": {
+    "argv": null,
+    "executable": false,
+    "exitCode": 0,
+    "forbiddenFlags": [
+      "--create-branch",
+      "--create-local-commits",
+      "--hitl-tty",
+      "--open-pr",
+      "--push",
+      "--retry"
+    ],
+    "packetConsumed": true,
+    "responseDocument": null,
+    "responseSlots": null,
+    "retry": {
+      "allowed": false,
+      "maxAdditionalInvocations": 0
+    },
+    "schemaVersion": "1.0.0"
+  },
+  "lane": "agent",
+  "orchestration": {
+    "draftHash": "022fd967336827d83579ae284719eba31548c015833f2c0ebc77e98d2c07d1ab",
+    "eventLogHash": "10d9c4114f859b338e7d8e9c51aada955bc0880e8e59e7a9cfb6e561a69b5cb8",
+    "mode": "langgraph",
+    "pendingInterruptId": null,
+    "projectionHash": "831fad65d9bb597906837f95914030fc404c87bae8492dbe10923f89c2c246bd",
+    "runtimeRevision": 17,
+    "schemaVersion": "1.0.0",
+    "state": "READY_FOR_GIT_APPROVAL"
+  },
+  "packages": [
+    "scripts"
+  ],
+  "phase": "review",
+  "retry": {
+    "count": 0,
+    "maxRetries": 2,
+    "source": "runtime.sqlite"
+  },
+  "revision": 4,
+  "risk": "normal",
+  "runId": "2026-11-12-sdlc-8bb97721",
+  "schemaVersion": 1,
+  "skillsUsed": [
+    "specification-workflow",
+    "implementation-workflow"
+  ],
+  "taskProgress": {
+    "completedCheckpoints": [
+      {
+        "sliceId": "canary-probe",
+        "targetTreeSha": "ba5cf3d2512724d78fe5a3e0d9d69082608c93ae",
+        "taskId": "canary-probe-task"
+      }
+    ],
+    "featureNonExposed": true,
+    "nextReadyTask": null,
+    "slices": [
+      {
+        "acceptanceCriteria": [
+          "AC-01",
+          "AC-02"
+        ],
+        "dependsOn": [],
+        "goal": "Deliver clampPercent with a co-located spec",
+        "kind": "vertical",
+        "sliceId": "canary-probe",
+        "taskIds": [
+          "canary-probe-task"
+        ]
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "changeClass": "D",
+      "complexityScore": 6,
+      "exceededLimits": [],
+      "highRisk": false,
+      "humanReviewEvidence": "not_required",
+      "id": "canary-probe-task",
+      "maxAutonomousRepairs": 2,
+      "package": "scripts",
+      "sliceId": "canary-probe",
+      "status": "completed",
+      "targetTreeSha": "ba5cf3d2512724d78fe5a3e0d9d69082608c93ae",
+      "title": "Deliver clampPercent with a co-located spec - canary-probe-task",
+      "worktreeSubdir": "worktree"
+    }
+  ],
+  "updatedAt": "2026-11-12T16:08:42.907Z",
+  "verification": {
+    "lastCommand": "pnpm run test:unit",
+    "lastExitCode": 0,
+    "lastRanAt": "2026-11-12T16:08:42.907Z",
+    "lastResult": "pass",
+    "preflight": {
+      "changeClass": "B",
+      "finishedAt": "2026-11-12T16:08:42.907Z",
+      "gitHeadSha": "21a3c070c85bc18db711809047e1ab5b44d06cb9",
+      "resultFile": null,
+      "status": "OK"
+    }
+  }
+}
