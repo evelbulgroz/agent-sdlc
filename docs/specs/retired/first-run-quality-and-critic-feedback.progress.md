@@ -34,6 +34,10 @@ and its touched suite green.
 
 On 2026-11-13, `pnpm run build`, `pnpm run typecheck`, and `pnpm run test:unit` passed (1902 pass, 0 fail, 1 skipped). `node cli/cli.ts reliability replay` passed 20/20 with `providerOperations=0`. Nothing was committed.
 
+## Retirement
+
+Retired 2026-11-13 after `07bf6cf`. Canary run `2026-11-13-sdlc-ce64034e` reached `READY_FOR_GIT_APPROVAL`. `canary qualify` returned `PASSED`, and the gate is `CANARY_CURRENT` for that commit. The canary worktree was not merged.
+
 ## Skipped
 
 - No live canary. `execution/task-quality-gate.ts` and `execution/task-scope.ts` are inside `boundedPlanningHash`.

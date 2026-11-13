@@ -1,6 +1,6 @@
 # Intent
 
-Status: ready 2026-11-13. Evaluated and amended 2026-11-13. This is an engine self-change: implement it directly in sequential increments, not through `shell start`, and record progress in `first-run-quality-and-critic-feedback.progress.md` next to this file. The task manifest orders the increments. The incident evidence is in Goal and Assumptions. A struck remedy stays in Non-goals. Promoting a non-goal is a separate spec.
+Status: retired 2026-11-13 (implemented). This file is no longer a `check-spec` goal. The progress note remains beside this file. The incident evidence is in Goal and Assumptions.
 
 ## Goal
 
