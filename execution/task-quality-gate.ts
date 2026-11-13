@@ -52,6 +52,259 @@ interface EslintFileResult {
 	readonly messages?: readonly EslintMessage[];
 }
 
+const DECLARATION_LINE =
+	/^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:class|function)\s+[A-Za-z_$][\w$]*/;
+const NON_PRODUCTION_TS = /\.(?:spec|test|d)\.ts$/;
+const SKIP_CLONE_DIRS = new Set(['node_modules', 'dist', '.git', 'coverage']);
+
+interface CloneSource {
+	readonly rel: string;
+	readonly lines: readonly string[];
+	readonly declarations: readonly number[];
+}
+
+interface CloneSpan {
+	readonly file: string;
+	readonly start: number;
+	readonly end: number;
+}
+
+function stripCloneLine(line: string): string {
+	return line.endsWith('\r') ? line.slice(0, -1) : line;
+}
+
+function cloneLines(content: string): string[] {
+	const lines = content.split('\n').map(stripCloneLine);
+	if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+	return lines;
+}
+
+function readCloneMinLines(gateConfig: string): number {
+	try {
+		const parsed: unknown = JSON.parse(
+			fs.readFileSync(path.join(path.dirname(gateConfig), 'jscpd.json'), 'utf8'),
+		);
+		const minLines =
+			parsed && typeof parsed === 'object' ? (parsed as { minLines?: unknown }).minLines : undefined;
+		if (typeof minLines === 'number' && Number.isInteger(minLines) && minLines > 0) return minLines;
+	} catch {
+		// A missing or unreadable jscpd minLines config uses 8 and does not throw.
+	}
+	return 8;
+}
+
+function readProductionSources(worktreeDir: string, targetPackage: string): CloneSource[] {
+	const sources: CloneSource[] = [];
+	const stack = [path.join(worktreeDir, targetPackage)];
+	while (stack.length > 0) {
+		const current = stack.pop();
+		if (!current) continue;
+		let entries: fs.Dirent[];
+		try {
+			entries = fs.readdirSync(current, { withFileTypes: true });
+		} catch {
+			continue;
+		}
+		for (const entry of entries) {
+			const full = path.join(current, entry.name);
+			if (entry.isDirectory()) {
+				if (!SKIP_CLONE_DIRS.has(entry.name)) stack.push(full);
+				continue;
+			}
+			if (!entry.isFile() || !entry.name.endsWith('.ts') || NON_PRODUCTION_TS.test(entry.name)) continue;
+			let text = '';
+			try {
+				text = fs.readFileSync(full, 'utf8');
+			} catch {
+				continue;
+			}
+			const lines = cloneLines(text);
+			const declarations: number[] = [];
+			for (let index = 0; index < lines.length; index += 1) {
+				if (DECLARATION_LINE.test(lines[index] ?? '')) declarations.push(index);
+			}
+			if (declarations.length === 0) continue;
+			sources.push({
+				rel: path.relative(worktreeDir, full).split(path.sep).join('/'),
+				lines,
+				declarations,
+			});
+		}
+	}
+	sources.sort((left, right) => left.rel.localeCompare(right.rel));
+	return sources;
+}
+
+function baselineCloneSpans(baseline: QualityBaseline): CloneSpan[] {
+	const spans: CloneSpan[] = [];
+	for (const finding of baseline.findings ?? []) {
+		if (finding?.tool !== 'jscpd' || typeof finding.location !== 'string') continue;
+		const match = finding.location.match(/^(.*):(\d+)-(\d+)$/);
+		if (!match) continue;
+		spans.push({
+			file: match[1] ?? '',
+			start: Number.parseInt(match[2] ?? '0', 10),
+			end: Number.parseInt(match[3] ?? '0', 10),
+		});
+	}
+	return spans;
+}
+
+function spanOverlaps(file: string, start: number, end: number, spans: readonly CloneSpan[]): boolean {
+	return spans.some((span) => span.file === file && start <= span.end && end >= span.start);
+}
+
+function identicalRunLength(
+	left: readonly string[],
+	leftStart: number,
+	right: readonly string[],
+	rightStart: number,
+): number {
+	let length = 0;
+	while (
+		leftStart + length < left.length &&
+		rightStart + length < right.length &&
+		left[leftStart + length] === right[rightStart + length]
+	) {
+		length += 1;
+	}
+	return length;
+}
+
+function containsLineRun(content: string, run: readonly string[]): boolean {
+	if (run.length === 0) return false;
+	const lines = cloneLines(content);
+	for (let index = 0; index + run.length <= lines.length; index += 1) {
+		let same = true;
+		for (let offset = 0; offset < run.length; offset += 1) {
+			if (lines[index + offset] !== run[offset]) {
+				same = false;
+				break;
+			}
+		}
+		if (same) return true;
+	}
+	return false;
+}
+
+function showAtBase(
+	gitCli: GitShowFn,
+	worktreeDir: string,
+	baseCommitSha: string,
+	relFile: string,
+): string | null {
+	try {
+		return String(
+			gitCli('git', ['show', `${baseCommitSha}:${relFile}`], {
+				cwd: worktreeDir,
+				encoding: 'utf8',
+				stdio: ['ignore', 'pipe', 'pipe'],
+			}) ?? '',
+		);
+	} catch {
+		return null;
+	}
+}
+
+function cachedShow(
+	gitCli: GitShowFn,
+	worktreeDir: string,
+	baseCommitSha: string,
+	cache: Map<string, string | null>,
+	relFile: string,
+): string | null {
+	const cached = cache.get(relFile);
+	if (cached !== undefined) return cached;
+	const shown = showAtBase(gitCli, worktreeDir, baseCommitSha, relFile);
+	cache.set(relFile, shown);
+	return shown;
+}
+
+function sameRunAtBase(
+	gitCli: GitShowFn,
+	worktreeDir: string,
+	baseCommitSha: string,
+	cache: Map<string, string | null>,
+	left: CloneSource,
+	leftStart: number,
+	rightRel: string,
+	length: number,
+): boolean {
+	const run = left.lines.slice(leftStart, leftStart + length);
+	const leftBase = cachedShow(gitCli, worktreeDir, baseCommitSha, cache, left.rel);
+	const rightBase = cachedShow(gitCli, worktreeDir, baseCommitSha, cache, rightRel);
+	return (
+		leftBase !== null &&
+		rightBase !== null &&
+		containsLineRun(leftBase, run) &&
+		containsLineRun(rightBase, run)
+	);
+}
+
+function collectNewCloneFindings(
+	worktreeDir: string,
+	targetPackage: string,
+	authoredPaths: readonly string[],
+	baseline: QualityBaseline,
+	baseCommitSha: string | null,
+	gitCli: GitShowFn | null,
+	gateConfig: string,
+): string[] {
+	const sources = readProductionSources(worktreeDir, targetPackage);
+	const authored = new Set(authoredPaths);
+	const spans = baselineCloneSpans(baseline);
+	const minLines = readCloneMinLines(gateConfig);
+	const baseCache = new Map<string, string | null>();
+	const findings: string[] = [];
+	const seen = new Set<string>();
+	for (let leftIndex = 0; leftIndex < sources.length; leftIndex += 1) {
+		for (let rightIndex = leftIndex + 1; rightIndex < sources.length; rightIndex += 1) {
+			const left = sources[leftIndex];
+			const right = sources[rightIndex];
+			if (!left || !right || (!authored.has(left.rel) && !authored.has(right.rel))) continue;
+			for (const leftStart of left.declarations) {
+				for (const rightStart of right.declarations) {
+					const length = identicalRunLength(left.lines, leftStart, right.lines, rightStart);
+					if (length < minLines) continue;
+					const leftLine = leftStart + 1;
+					const rightLine = rightStart + 1;
+					const leftEnd = leftStart + length;
+					const rightEnd = rightStart + length;
+					if (
+						spanOverlaps(left.rel, leftLine, leftEnd, spans) ||
+						spanOverlaps(right.rel, rightLine, rightEnd, spans)
+					) {
+						continue;
+					}
+					if (
+						baseCommitSha &&
+						typeof gitCli === 'function' &&
+						sameRunAtBase(
+							gitCli,
+							worktreeDir,
+							baseCommitSha,
+							baseCache,
+							left,
+							leftStart,
+							right.rel,
+							length,
+						)
+					) {
+						continue;
+					}
+					const key = `${left.rel}:${leftLine}-${leftEnd}|${right.rel}:${rightLine}-${rightEnd}`;
+					if (seen.has(key)) continue;
+					seen.add(key);
+					findings.push(
+						`[jscpd] new clone ${left.rel}:${leftLine}-${leftEnd} — ${right.rel}:${rightLine}-${rightEnd}`,
+					);
+				}
+			}
+		}
+	}
+	return findings;
+}
+
 export function resolveTaskQualityGatePaths(
 	worktreeDir: string,
 	profile?: Readonly<HostProfile>,
@@ -155,7 +408,7 @@ export function evaluateTaskQualityGate({
 							const newStart = idx + 1;
 							const newEnd = newStart + span;
 							findings.push(
-								`[jscpd] clone ${relFile}:${newStart}-${newEnd} — baseline clone at ${relFile}:${startLine}-${endLine} shifted to lines ${newStart}-${newEnd}. Keep lines ${startLine}-${endLine} at their original line numbers (place new imports after line ${endLine}).`,
+								`[jscpd] clone ${relFile}:${newStart}-${newEnd} — baseline clone at ${relFile}:${startLine}-${endLine} shifted to lines ${newStart}-${newEnd}. Lines ${startLine}-${endLine} must stay byte-for-byte. A deletion above that range needs the same number of replacement lines.`,
 							);
 							break;
 						}
@@ -164,6 +417,18 @@ export function evaluateTaskQualityGate({
 			} catch {}
 		}
 	}
+
+	findings.push(
+		...collectNewCloneFindings(
+			worktreeDir,
+			targetPackage,
+			canonicalPaths,
+			baseline,
+			baseCommitSha,
+			gitCli,
+			gateConfig,
+		),
+	);
 
 	const pkgDir = path.join(worktreeDir, targetPackage);
 	const eslintCandidates = [

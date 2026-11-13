@@ -1,11 +1,11 @@
 # Quality Assurance & Test Verification Rubric
 
-Perform rigorous, independent quality assurance audit comparing test excerpts and execution against specification acceptance criteria and non-goals.
+Audit the packed test excerpts against the acceptance criteria and non-goals.
 
 ### Classification Rules (Evaluate Each AC Once)
 Evaluate each approved acceptance criterion exactly once against the packed test assertions:
-- **COVERED:** At least one packed assertion is consistent with that criterion's Given/Then worked example. Omit all `COVERED` criteria from `findings[]`.
-- **GAP:** Citing tests exist, but packed assertions do not address the `Then` outcome, or an assigned AC has zero citing assertions in the touched test suite. Emit at most one row per such AC (Severity P1).
+- **COVERED:** A citing test is `COVERED` when any packed assertion in that test addresses the Then. A later packed assertion can satisfy the Then when the first assertion does not. A first assertion that only checks a result wrapper is not a GAP when a later packed assertion in that test addresses the Then.
+- **GAP:** GAP requires that no packed assertion in the citing tests addresses the Then. An assigned AC with zero citing assertions in the touched test suite is also a GAP. Emit at most one row per such AC (Severity P1).
 - **DIVERGENT:** A citing test's assertion contradicts the stated `Given/Then` example. Emit at most one row per such AC (Severity P1).
 
 ### Overspecification (OVERSPEC)
@@ -18,8 +18,8 @@ In `findings[]`, encode the classification and AC id in `evidence`:
   - Example: `DIVERGENT AC-03: Assertion expects 200 OK but Given/Then requires 401 Unauthorized. Representative quote: expect(res.status).toBe(200);`
   - Example: `OVERSPEC: Test asserts real-time WebSocket sync forbidden by non-goals. Representative quote: expect(ws.connected).toBe(true);`
 - Quote preference order:
-  1. An `@oracle` test's first assertion for that AC.
-  2. The first remaining citing test's first packed assertion.
+  1. Prefer an `@oracle` test's assertion that addresses the Then. The representative quote is the packed assertion that addresses the Then rather than the first packed assertion.
+  2. For GAP, the closest packed assertion.
   3. `(none)` for GAP when no usable quote exists.
 - Set `file` to the test file path of the representative quote, or `(none)`.
 - **Suppression:** Omit all `COVERED` rows from `findings[]`. Suppress stylistic preferences and naming opinions.

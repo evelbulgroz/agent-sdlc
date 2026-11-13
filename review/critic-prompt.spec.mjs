@@ -272,3 +272,50 @@ test('@ac AC-04 @case AC-04.2 @ac AC-03 loadRubric appends Layer 3 host rubric a
 	assert.ok(Buffer.byteLength(pwaCodePrompt, 'utf8') <= 24576);
 	assert.ok(pwaCodePrompt.split('\n').length <= 1000);
 });
+
+test('@ac AC-07 QA classifies from every packed assertion in the citing test', () => {
+	const rubric = loadRubric(REPOSITORY_ROOT, 'qa');
+	assert.match(rubric, /later packed assertion can satisfy the Then when the first assertion does not/);
+	assert.match(rubric, /GAP requires that no packed assertion in the citing tests addresses the Then/);
+	assert.match(
+		rubric,
+		/representative quote is the packed assertion that addresses the Then rather than the first packed assertion/,
+	);
+	assert.match(rubric, /Prefer an `@oracle` test's assertion that addresses the Then/);
+});
+
+test('@ac AC-08 the plan rubric accepts source-constraint shadows and ordered overlap', () => {
+	const rubric = loadRubric(REPOSITORY_ROOT, 'plan');
+	assert.match(
+		rubric,
+		/shadow restating a spec failure defense or a source constraint is sufficient on a behavior-preserving change/,
+	);
+	assert.match(rubric, /`dependsOn` makes shared-path overlap ordered/);
+	assert.match(rubric, /null `parentTreeSha` before execution is not evidence of two writers from one base/);
+	assert.match(rubric, /A file listed in `removedPaths` stays off `authoredPaths`/);
+});
+
+test('@ac AC-09 the spec rubric allows a later task to cite a shared file and rejects an unmeasured distinct case', () => {
+	const rubric = loadRubric(REPOSITORY_ROOT, 'spec');
+	assert.match(
+		rubric,
+		/verification-plan citation of an AC is valid when the spec names a later task or slice that owns the AC and runs after the earlier task on the shared file/,
+	);
+	assert.match(rubric, /branch label of the parent Then is measurable/);
+	assert.match(rubric, /distinct outcome without its own Given and Then is a P1/);
+	assert.equal(rubric.includes('removedPaths'), false);
+});
+
+test('@ac AC-10 the rubric files stay within the navigability budget', () => {
+	for (const rel of [
+		'defaults/protocol/qa.md',
+		'defaults/protocol/plan.md',
+		'defaults/protocol/spec.md',
+		'critic-prompt.spec.mjs',
+	]) {
+		const data = fs.readFileSync(new URL(rel, import.meta.url));
+		let lines = 0;
+		for (const byte of data) if (byte === 10) lines += 1;
+		assert.ok(lines <= 500 && data.length <= 20480, `${rel} ${lines} lines ${data.length} bytes`);
+	}
+});

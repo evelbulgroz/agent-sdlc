@@ -65,3 +65,11 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 **Origin:** A host run halted on `fetch-sweep-task` with `failureReason` `tool-calls` on attempt 2. The deleted attempt artifact listed 188 tool calls because earlier calls stayed in the shared array. The per-attempt cap is 150. An earlier run replaced `quality-gate failed` finding text with the generic file-modified sentence after the next source write. Those finding lines were not retained.
 
 **Status (2026-11-12):** implemented. The spec is retired at `docs/specs/retired/attempt-cap-and-quality-feedback.md`. `pnpm run test:unit` covers AC-01 through AC-05. **Closed.**
+
+## New-clone declaration shape and overlapping windows
+
+**Origin:** review of `docs/specs/ready/first-run-quality-and-critic-feedback.md` (2026-11-13). `execution/task-quality-gate.ts` is at 499 lines, so a change there needs a split first.
+
+**Observed:** the declaration regex misses `export abstract class`, indented declarations, and `function*`, which NestJS-style hosts use. Two identical production files that each hold several classes can report overlapping runs, such as `1-16` and `9-16`. A deliberate new copy is accepted only through a baseline jscpd entry. The exceptions file does not allow it.
+
+**Done when:** a spec decides which declaration forms count, whether overlapping windows collapse to one finding, and whether an exceptions entry may allow a new copy. The gate stays within 500 lines and 20480 bytes.

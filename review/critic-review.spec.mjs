@@ -455,7 +455,7 @@ test('executeReview truncates prompts exceeding ceiling to <= targetCeiling with
 test('executeReview rejects a plan prompt that would truncate the immutable plan', async () => {
 	const governor = new FakeGovernorForCritic();
 	const adapter = new CriticReviewAdapter({ rootDir: REPOSITORY_ROOT, governor });
-	const largeDoc = 'Word '.repeat(4200);
+	const largeDoc = 'Word '.repeat(4150);
 	assert.ok(Buffer.byteLength(largeDoc, 'utf8') <= 24576);
 
 	await assert.rejects(

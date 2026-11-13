@@ -66,9 +66,18 @@ export function scopeSpecSummaryForTask({
 		scopedSummary = mappedParts.join('\n\n');
 	}
 
+	const taskHeader = formatTaskScope(task, siblingTestPaths);
+
+	return `${taskHeader}\n\n${scopedSummary}`;
+}
+
+export function formatTaskScope(
+	task: TaskScopeTaskLike,
+	siblingTestPaths: readonly string[] = [],
+): string {
 	const mutationPaths = taskAuthoredWritePaths(task);
 	const removedPaths = task.removedPaths ?? [];
-	const taskHeader = [
+	return [
 		`### Current Task Scope: ${task.taskId ?? ''} (${task.title || task.targetPackage || ''})`,
 		`Target Package: ${task.targetPackage ?? ''}`,
 		`Authorized Mutation Path Prefixes:`,
@@ -81,14 +90,14 @@ export function scopeSpecSummaryForTask({
 				]
 			: []),
 		`Package-local files may be inspected for prior art, but do NOT modify files outside the authorized mutation path prefixes.`,
+		'A class or function this task imports must not be redeclared in an authorized file. Import it instead; a copied class with the same name is a duplicate, not a reuse.',
+		'A quality-gate line shift fails the task even when the package tests pass. Restore the named line range byte-for-byte. A deletion above that range needs the same number of replacement lines.',
 		...(Array.isArray(siblingTestPaths) && siblingTestPaths.length > 0
 			? [
 					`Earlier task(s) in slice '${String(task.sliceId ?? '')}' already authored and tested: ${siblingTestPaths.join(', ')}. Their @ac / @case citations count toward slice AC coverage — only test the behavior owned by your Authorized Mutation Path Prefixes in your spec files.`,
 				]
 			: []),
 	].join('\n');
-
-	return `${taskHeader}\n\n${scopedSummary}`;
 }
 
 export function taskReadPathPrefixes(task: TaskScopeTaskLike | null | undefined): string[] {
