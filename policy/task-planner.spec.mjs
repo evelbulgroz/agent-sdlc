@@ -412,7 +412,7 @@ test('@ac AC-05 @case AC-05.1 the manifest branch returns the pinned planPolicyH
 	const plan = planTaskDag(pinnedManifestPlanInput());
 	assert.equal(
 		plan.planPolicyHash,
-		'a1e949e4206c747c0f70f6287b112b899355bc850bf4e02ee6edf3ef107e875d',
+		'f2a239077cf4b9dfeb51b0771346989c508c3b5d49f0f7e7d670571c4e8747f8',
 	);
 });
 

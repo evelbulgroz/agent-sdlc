@@ -296,7 +296,10 @@ test('@ac AC-13 high-risk task protections are derived and cannot be downgraded 
 			{
 				...base.tasks[0],
 				targetPackage: 'services/authentication',
-				authoredPaths: ['services/authentication/src/authentication.service.ts'],
+				authoredPaths: [
+					'services/authentication/src/authentication.service.ts',
+					'services/authentication/src/authentication.service.spec.ts',
+				],
 				pathPrefixes: ['services/authentication/src'],
 				verificationCommand: [
 					'pnpm',
@@ -381,7 +384,7 @@ test('@ac AC-06 @case AC-06.2 the manifest readiness hash stays pinned', () => {
 	const readiness = evaluateTaskReadiness(pinnedManifestReadinessInput());
 	assert.equal(
 		sha256(canonicalJson(readiness)),
-		'00d14a2bfc3b5d7bce95bf6248a89b3b21ce8ee7fc3bd7266084a765d930d109',
+		'5739e803f9b5a0f8038ad05874682117450a87835b8a1bbf8c9fb6ae4d2111bb',
 	);
 });
 

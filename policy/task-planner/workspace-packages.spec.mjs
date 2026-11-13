@@ -58,9 +58,10 @@ test('readiness reports every exceeded task dimension and aggregate score', () =
 				targetPackage: 'tools',
 				authoredPaths: [
 					...Array.from(
-						{ length: 7 },
+						{ length: 6 },
 						(_, index) => `tools/agent-sdlc/file-${index}.mjs`,
 					),
+					'tools/agent-sdlc/file.spec.mjs',
 					'tools/package.json',
 				],
 				pathPrefixes: ['tools/agent-sdlc'],
@@ -214,6 +215,7 @@ test('a preserving sink that omits a controller or a contract artifact is TASK_P
 		const omittedController = demoTask({
 			authoredPaths: [
 				'services/demo/src/a.controller.ts',
+				'services/demo/src/a.controller.spec.ts',
 				'services/demo/openapi/demo.openapi.json',
 				'services/demo/contracts/generated-api.ts',
 			],
@@ -241,7 +243,10 @@ test('a preserving sink that omits a controller or a contract artifact is TASK_P
 					criteria: ['AC-01: The OpenAPI document must not change.'],
 					tasks: [
 						demoTask({
-							authoredPaths: ['services/demo/src'],
+							authoredPaths: [
+								'services/demo/src',
+								'services/demo/src/a.controller.spec.ts',
+							],
 							pathPrefixes: ['services/demo/src'],
 							generatedOutputs: [],
 						}),
@@ -282,7 +287,10 @@ test('a directory prefix on the sink covers controllers and generated outputs co
 		});
 		const sink = demoTask({
 			dependsOn: ['foundation-task'],
-			authoredPaths: ['services/demo/src'],
+			authoredPaths: [
+				'services/demo/src',
+				'services/demo/src/a.controller.spec.ts',
+			],
 			pathPrefixes: ['services/demo/src'],
 			generatedOutputs: [
 				'services/demo/openapi/demo.openapi.json',
@@ -312,6 +320,7 @@ test('a directory prefix on the sink covers controllers and generated outputs co
 							taskId: 'foundation-task',
 							authoredPaths: [
 								'services/demo/src',
+								'services/demo/src/a.controller.spec.ts',
 								'services/demo/openapi/demo.openapi.json',
 								'services/demo/contracts/generated-api.ts',
 							],
@@ -337,7 +346,10 @@ test('a non-preserving spec and a package without both contract scripts stay val
 	withDemoRoot((rootDir) => {
 		const tasks = [
 			demoTask({
-				authoredPaths: ['services/demo/src/a.controller.ts'],
+				authoredPaths: [
+					'services/demo/src/a.controller.ts',
+					'services/demo/src/a.controller.spec.ts',
+				],
 				pathPrefixes: ['services/demo/src'],
 			}),
 		];

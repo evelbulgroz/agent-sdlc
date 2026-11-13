@@ -62,6 +62,20 @@ function manifestFor(retirement) {
 		generatorCommand: null,
 	};
 	if (retirement !== undefined) taskBody.retirement = retirement;
+	const testTask = {
+		taskId: 'retire-test',
+		sliceId: 'behavior',
+		targetPackage: 'pkg/billing',
+		authoredPaths: ['pkg/billing/src/retire.spec.ts'],
+		pathPrefixes: ['pkg/billing/src/retire.spec.ts'],
+		generatedOutputs: [],
+		dependsOn: ['retire-route'],
+		deliveryLayers: ['application'],
+		dependencyMutations: [],
+		shadowPaths: shadowPaths(),
+		verificationCommand: ['pnpm', '--filter', '@fixture/billing', 'test'],
+		generatorCommand: null,
+	};
 	return {
 		schemaVersion: '1.0.0',
 		slices: [{
@@ -71,7 +85,7 @@ function manifestFor(retirement) {
 			acceptanceCriteria: ['AC-01'],
 			dependsOn: [],
 		}],
-		tasks: [taskBody],
+		tasks: [taskBody, testTask],
 	};
 }
 

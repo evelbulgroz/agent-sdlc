@@ -42,7 +42,7 @@ test('@ac AC-02 bounded manifest readiness reports score, change class, and risk
 						taskId: 'behavior-task',
 						sliceId: 'behavior',
 						targetPackage: 'tools',
-						authoredPaths: ['tools/agent-sdlc/cli/cli.mjs'],
+						authoredPaths: ['tools/agent-sdlc/cli/cli.spec.mjs'],
 						pathPrefixes: ['tools/agent-sdlc'],
 						generatedOutputs: [],
 						dependsOn: [],
@@ -189,9 +189,10 @@ test('@ac AC-19 legal dimensions with score 21 require decomposition', async () 
 						targetPackage: 'tools',
 						authoredPaths: [
 							...Array.from(
-								{ length: 7 },
+								{ length: 6 },
 								(_, index) => `tools/agent-sdlc/file-${index}.mjs`,
 							),
+							'tools/agent-sdlc/file.spec.mjs',
 							'tools/package.json',
 						],
 						pathPrefixes: ['tools'],

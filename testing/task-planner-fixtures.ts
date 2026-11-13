@@ -37,7 +37,10 @@ export function serialManifest(overrides: Partial<TaskManifest> = {}): TaskManif
 				taskId: 'behavior-foundation',
 				sliceId: 'behavior',
 				targetPackage: 'services/billing',
-				authoredPaths: ['services/billing/src/billing/domain'],
+				authoredPaths: [
+					'services/billing/src/billing/domain',
+					'services/billing/src/billing/domain/foundation.spec.ts',
+				],
 				pathPrefixes: ['services/billing/src/billing/domain'],
 				generatedOutputs: [],
 				dependsOn: [],
@@ -61,7 +64,10 @@ export function serialManifest(overrides: Partial<TaskManifest> = {}): TaskManif
 				taskId: 'behavior-activation',
 				sliceId: 'behavior',
 				targetPackage: 'services/billing',
-				authoredPaths: ['services/billing/src/billing/domain'],
+				authoredPaths: [
+					'services/billing/src/billing/domain',
+					'services/billing/src/billing/domain/behavior.spec.ts',
+				],
 				pathPrefixes: ['services/billing/src/billing/domain'],
 				generatedOutputs: [],
 				dependsOn: ['behavior-foundation'],
@@ -118,7 +124,7 @@ export function demoTask(overrides: Partial<ManifestTask> = {}): ManifestTask {
 		taskId: 'sink-task',
 		sliceId: 'behavior',
 		targetPackage: 'services/demo',
-		authoredPaths: ['services/demo/src'],
+		authoredPaths: ['services/demo/src', 'services/demo/src/a.controller.spec.ts'],
 		pathPrefixes: ['services/demo/src'],
 		generatedOutputs: [],
 		dependsOn: [],
@@ -208,7 +214,10 @@ function toolsTask(overrides = {}) {
 		taskId: 'behavior-task',
 		sliceId: 'behavior',
 		targetPackage: 'tools',
-		authoredPaths: ['tools/agent-sdlc/policy/task-planner.mjs'],
+		authoredPaths: [
+			'tools/agent-sdlc/policy/task-planner.mjs',
+			'tools/agent-sdlc/policy/task-planner.spec.mjs',
+		],
 		pathPrefixes: ['tools/agent-sdlc/policy'],
 		generatedOutputs: [],
 		dependsOn: [],
@@ -254,7 +263,7 @@ export function pinnedAuthorization(overrides = {}) {
 
 export function pinnedManifestPlanInput() {
 	return {
-		draft: readinessDraft(),
+		draft: readinessDraft({ touchedSurfaces: ['tools/agent-sdlc/policy'] }),
 		taskManifest: pinnedToolsManifest(),
 		authorization: pinnedAuthorization({ taskManifestHash: 'c'.repeat(64) }),
 		workspacePackages: emptyWorkspacePackages(),
@@ -322,7 +331,7 @@ export function pinnedManifestlessReadinessInput() {
 
 export function pinnedManifestReadinessInput() {
 	return {
-		draft: readinessDraft(),
+		draft: readinessDraft({ touchedSurfaces: ['tools/agent-sdlc/policy'] }),
 		taskManifest: pinnedToolsManifest(),
 		workspacePackages: emptyWorkspacePackages(),
 		rootDir: '/tmp/agent-sdlc-readiness-pin',
@@ -334,10 +343,13 @@ export function nineAuthoredPathReadinessInput() {
 		draft: readinessDraft({ touchedSurfaces: ['tools/agent-sdlc'] }),
 		taskManifest: pinnedToolsManifest([
 			toolsTask({
-				authoredPaths: Array.from(
-					{ length: 9 },
-					(_, index) => `tools/agent-sdlc/file-${index}.mjs`,
-				),
+				authoredPaths: [
+					...Array.from(
+						{ length: 8 },
+						(_, index) => `tools/agent-sdlc/file-${index}.mjs`,
+					),
+					'tools/agent-sdlc/file-8.spec.mjs',
+				],
 				pathPrefixes: ['tools/agent-sdlc'],
 			}),
 		]),

@@ -114,3 +114,11 @@ export function validateOpaqueId(value: unknown, name = 'id'): string {
 	if (typeof value !== 'string' || !IDENTIFIER_PATTERN.test(value)) failContract(`${name} is invalid`);
 	return value;
 }
+
+export const TEST_FILE_PATTERN = /\.(?:spec|test)\.[cm]?[jt]sx?$/;
+
+export function isTestFilePath(filePath: unknown): boolean {
+	if (typeof filePath !== 'string' || filePath.trim().length === 0) return false;
+	return TEST_FILE_PATTERN.test(filePath.split('\\').join('/'));
+}
+

@@ -99,6 +99,8 @@ export {
 	sha256,
 	validateRunId,
 	validateOpaqueId,
+	TEST_FILE_PATTERN,
+	isTestFilePath,
 } from './contracts/primitives.ts';
 
 export {

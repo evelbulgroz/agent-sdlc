@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { isTestFilePath } from '../policy/contracts.ts';
 import type { GitShowFn } from './ac-worktree-coverage.ts';
 import type { CompletionValidatorFn } from './minimal-verification.ts';
 import { createAcceptanceEvidenceValidator } from './task-acceptance-evidence.ts';
@@ -107,7 +108,7 @@ const TARGETED_TEST_SCRIPT_NAMES: ReadonlySet<string> = new Set([
 function resolveAuthoredTestPaths(task: VerificationPlanTask): string[] {
 	const packagePrefix = `${task.targetPackage.replace(/\/+$/, '')}/`;
 	return (task.authoredPaths ?? [])
-		.filter((authoredPath) => /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(authoredPath))
+		.filter((authoredPath) => isTestFilePath(authoredPath))
 		.filter((authoredPath) => authoredPath.startsWith(packagePrefix))
 		.map((authoredPath) => authoredPath.slice(packagePrefix.length));
 }
@@ -295,7 +296,7 @@ export function resolveTaskVerificationContext({
 				.flatMap((candidate) => taskAuthoredWritePaths(candidate))
 				.filter(
 					(filePath) =>
-						/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(filePath) &&
+						isTestFilePath(filePath) &&
 						(!worktreeDir || fs.existsSync(path.join(worktreeDir, filePath))),
 				),
 		),
@@ -332,7 +333,7 @@ export function resolveTaskVerificationContext({
 		generatorCommand: taskPromptContext?.generatorCommand ?? task.generatorCommand ?? null,
 	};
 	const authoredTestPaths = taskAuthoredWritePaths(task).filter((filePath) =>
-		/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(filePath),
+		isTestFilePath(filePath),
 	);
 	const sliceAuthoredTestPaths = [
 		...new Set([...sliceCompletedTestPaths, ...authoredTestPaths]),

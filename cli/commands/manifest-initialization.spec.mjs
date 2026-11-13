@@ -34,7 +34,12 @@ test('@ac AC-03 manifest initialization persists immutable hash-bound input', ()
 			registry,
 			governor: new FakeModelGovernor([]),
 		});
-		const draft = completeSpecJson();
+		const draft = completeSpecJson({
+			touchedSurfaces: [
+				'tools/agent-sdlc/cli/cli.mjs',
+				'tools/agent-sdlc/cli/cli.spec.mjs',
+			],
+		});
 		const manifest = {
 			schemaVersion: '1.0.0',
 			slices: [
@@ -51,8 +56,14 @@ test('@ac AC-03 manifest initialization persists immutable hash-bound input', ()
 					taskId: 'behavior-task',
 					sliceId: 'behavior',
 					targetPackage: 'tools',
-					authoredPaths: ['tools/agent-sdlc/cli/cli.mjs'],
-					pathPrefixes: ['tools/agent-sdlc/cli/cli.mjs'],
+					authoredPaths: [
+						'tools/agent-sdlc/cli/cli.mjs',
+						'tools/agent-sdlc/cli/cli.spec.mjs',
+					],
+					pathPrefixes: [
+						'tools/agent-sdlc/cli/cli.mjs',
+						'tools/agent-sdlc/cli/cli.spec.mjs',
+					],
 					generatedOutputs: [],
 					dependsOn: [],
 					deliveryLayers: ['tooling'],
@@ -86,7 +97,10 @@ test('@ac AC-03 manifest initialization persists immutable hash-bound input', ()
 				baseCommitSha: 'a'.repeat(40),
 				taskManifestHash: manifestHash,
 				allowedPackages: ['tools'],
-				allowedPathPrefixes: ['tools/agent-sdlc/cli/cli.mjs'],
+				allowedPathPrefixes: [
+					'tools/agent-sdlc/cli/cli.mjs',
+					'tools/agent-sdlc/cli/cli.spec.mjs',
+				],
 			},
 			now: () => '2026-09-29T00:00:00.000Z',
 		});

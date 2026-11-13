@@ -4,6 +4,7 @@ import {
 	contractNonEmptyString,
 	contractStringArray,
 	failContract,
+	isTestFilePath,
 } from './primitives.ts';
 
 const TASK_MANIFEST_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -172,6 +173,20 @@ export function validateTaskManifestAcceptanceCriteria(
 			duplicate.length > 0 ? `duplicate: ${duplicate.join(', ')}` : null,
 		].filter(Boolean);
 		failContract(`taskManifest acceptance criterion ownership is invalid (${details.join('; ')})`);
+	}
+	for (const slice of manifest.slices) {
+		if (slice.kind === 'enabling') continue;
+		const hasTestFile = manifest.tasks.some(
+			(task) =>
+				task.sliceId === slice.sliceId &&
+				(task.authoredPaths.some((filePath) => isTestFilePath(filePath)) ||
+					task.generatedOutputs.some((filePath) => isTestFilePath(filePath))),
+		);
+		if (!hasTestFile) {
+			failContract(
+				`taskManifest slice '${slice.sliceId}' has no task authoring a test file matching TEST_FILE_PATTERN`,
+			);
+		}
 	}
 	return manifest;
 }

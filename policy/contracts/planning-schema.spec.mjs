@@ -1,6 +1,9 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateTaskManifest, validateTaskManifestAcceptanceCriteria } from './planning-schema.ts';
+import { TEST_FILE_PATTERN, isTestFilePath } from './primitives.ts';
 
 function validTaskManifest() {
 	return {
@@ -45,7 +48,10 @@ function validTaskManifest() {
 				taskId: 'behavior-task',
 				sliceId: 'behavior',
 				targetPackage: 'tools',
-				authoredPaths: ['tools/agent-sdlc/workflow/specification.mjs'],
+				authoredPaths: [
+					'tools/agent-sdlc/workflow/specification.mjs',
+					'tools/agent-sdlc/workflow/specification.spec.mjs',
+				],
 				pathPrefixes: ['tools/agent-sdlc'],
 				generatedOutputs: [],
 				dependsOn: ['foundation-task'],
@@ -301,4 +307,139 @@ test('optional retirement boolean survives manifest validation', () => {
 		}),
 		/retirement must be a boolean/,
 	);
+});
+
+test('@ac AC-01 a task manifest containing a non-enabling slice without any test-authoring task fails contract validation', () => {
+	// AC-01.1: a vertical slice authoring only production code throws INVALID_CONTRACT
+	const prodOnlyManifest = validTaskManifest();
+	prodOnlyManifest.tasks[1] = {
+		...prodOnlyManifest.tasks[1],
+		authoredPaths: ['tools/agent-sdlc/workflow/specification.mjs'],
+	};
+	assert.throws(
+		() => validateTaskManifestAcceptanceCriteria(prodOnlyManifest, ['AC-01']),
+		(error) =>
+			error.code === 'INVALID_CONTRACT' &&
+			error.message.includes("taskManifest slice 'behavior' has no task authoring a test file matching TEST_FILE_PATTERN"),
+	);
+
+	// AC-01.2: a vertical slice authoring only shell scripts under tests throws INVALID_CONTRACT
+	const shellOnlyManifest = validTaskManifest();
+	shellOnlyManifest.tasks[1] = {
+		...shellOnlyManifest.tasks[1],
+		authoredPaths: ['tests/run.sh', 'tests/check.sh'],
+	};
+	assert.throws(
+		() => validateTaskManifestAcceptanceCriteria(shellOnlyManifest, ['AC-01']),
+		(error) =>
+			error.code === 'INVALID_CONTRACT' &&
+			error.message.includes("taskManifest slice 'behavior' has no task authoring a test file matching TEST_FILE_PATTERN"),
+	);
+
+	// AC-01.3: a vertical slice authoring only documentation throws INVALID_CONTRACT
+	const docsOnlyManifest = validTaskManifest();
+	docsOnlyManifest.tasks[1] = {
+		...docsOnlyManifest.tasks[1],
+		authoredPaths: ['docs/README.md', 'docs/config.json'],
+	};
+	assert.throws(
+		() => validateTaskManifestAcceptanceCriteria(docsOnlyManifest, ['AC-01']),
+		(error) =>
+			error.code === 'INVALID_CONTRACT' &&
+			error.message.includes("taskManifest slice 'behavior' has no task authoring a test file matching TEST_FILE_PATTERN"),
+	);
+});
+
+test('@ac AC-02 enabling slices and slices with pooled test-authoring tasks pass contract validation', () => {
+	// AC-02.1: an enabling slice requires no test file
+	const enablingManifest = validTaskManifest();
+	assert.equal(
+		enablingManifest.tasks.some(
+			(t) => t.sliceId === 'foundation' && t.authoredPaths.some(isTestFilePath),
+		),
+		false,
+	);
+	assert.doesNotThrow(() =>
+		validateTaskManifestAcceptanceCriteria(enablingManifest, ['AC-01']),
+	);
+
+	// AC-02.2: a vertical slice with an implementation task and a sibling test-authoring task passes
+	const pooledManifest = validTaskManifest();
+	pooledManifest.tasks = [
+		pooledManifest.tasks[0],
+		{
+			...pooledManifest.tasks[1],
+			sliceId: 'behavior',
+			taskId: 'impl-task',
+			authoredPaths: ['tools/agent-sdlc/workflow/specification.mjs'],
+		},
+		{
+			...pooledManifest.tasks[1],
+			sliceId: 'behavior',
+			taskId: 'test-task',
+			dependsOn: ['impl-task'],
+			authoredPaths: ['tools/agent-sdlc/workflow/specification.spec.mjs'],
+		},
+	];
+	assert.doesNotThrow(() =>
+		validateTaskManifestAcceptanceCriteria(pooledManifest, ['AC-01']),
+	);
+
+	// AC-02.3: a task producing a test file via generatedOutputs passes
+	const generatedTestManifest = validTaskManifest();
+	generatedTestManifest.tasks[1] = {
+		...generatedTestManifest.tasks[1],
+		authoredPaths: ['tools/agent-sdlc/workflow/specification.mjs'],
+		generatedOutputs: ['tools/agent-sdlc/workflow/generated.spec.ts'],
+		generatorCommand: ['pnpm', '--filter', '@fixture/billing-service', 'run', 'build:contracts'],
+	};
+	assert.doesNotThrow(() =>
+		validateTaskManifestAcceptanceCriteria(generatedTestManifest, ['AC-01']),
+	);
+});
+
+test('@ac AC-03 TEST_FILE_PATTERN and isTestFilePath accurately recognize test files and reject non-tests', () => {
+	assert.ok(TEST_FILE_PATTERN.test('src/feature.spec.ts'));
+	assert.ok(TEST_FILE_PATTERN.test('src/feature.test.js'));
+	assert.ok(TEST_FILE_PATTERN.test('src/feature.spec.mjs'));
+	assert.ok(TEST_FILE_PATTERN.test('src/feature.test.cjs'));
+	assert.ok(TEST_FILE_PATTERN.test('src/feature.spec.tsx'));
+	assert.ok(TEST_FILE_PATTERN.test('src/feature.test.jsx'));
+
+	assert.equal(isTestFilePath('src/feature.spec.ts'), true);
+	assert.equal(isTestFilePath('tests/run.sh'), false);
+	assert.equal(isTestFilePath('tests/check.sh'), false);
+	assert.equal(isTestFilePath('test/README.md'), false);
+	assert.equal(isTestFilePath('src/feature.ts'), false);
+	assert.equal(isTestFilePath(''), false);
+	assert.equal(isTestFilePath(null), false);
+	assert.equal(isTestFilePath(undefined), false);
+	assert.equal(isTestFilePath(123), false);
+});
+
+test('@ac AC-04 touched contract, policy, execution, and test files remain within navigability ceilings', () => {
+	const files = [
+		'policy/contracts/primitives.ts',
+		'policy/contracts.ts',
+		'policy/contracts/planning-schema.ts',
+		'execution/task-verification-plan.ts',
+		'policy/contracts/planning-schema.spec.mjs',
+		'policy/contracts.spec.mjs',
+		'testing/deepen-contracts.spec.mjs',
+		'testing/task-planner-fixtures.ts',
+	];
+	for (const rel of files) {
+		const full = path.resolve(rel);
+		const content = fs.readFileSync(full, 'utf8');
+		const lineCount = content.split('\n').length;
+		const byteCount = Buffer.byteLength(content, 'utf8');
+		assert.ok(
+			lineCount <= 500,
+			`${rel} exceeded line ceiling: ${lineCount} > 500`,
+		);
+		assert.ok(
+			byteCount <= 20480,
+			`${rel} exceeded byte ceiling: ${byteCount} > 20480`,
+		);
+	}
 });
