@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "slices": [
+    {
+      "sliceId": "quality-gate",
+      "kind": "vertical",
+      "goal": "The task gate names a byte-for-byte line repair and fails a new duplicated class.",
+      "acceptanceCriteria": ["AC-01", "AC-02", "AC-03", "AC-04"],
+      "dependsOn": []
+    },
+    {
+      "sliceId": "task-prompt",
+      "kind": "vertical",
+      "goal": "The task header states the redeclaration ban and the line-shift repair.",
+      "acceptanceCriteria": ["AC-05", "AC-06"],
+      "dependsOn": ["quality-gate"]
+    },
+    {
+      "sliceId": "rubrics",
+      "kind": "vertical",
+      "goal": "QA, plan, and spec protocols stop the false P1s seen on the deepening runs.",
+      "acceptanceCriteria": ["AC-07", "AC-08", "AC-09", "AC-10"],
+      "dependsOn": []
+    }
+  ],
+  "tasks": [
+    {
+      "taskId": "quality-gate-task",
+      "sliceId": "quality-gate",
+      "targetPackage": "execution",
+      "authoredPaths": [
+        "execution/task-quality-gate.ts",
+        "execution/task-quality-gate.spec.mjs"
+      ],
+      "pathPrefixes": ["execution"],
+      "generatedOutputs": [],
+      "dependsOn": [],
+      "deliveryLayers": ["tooling"],
+      "dependencyMutations": [],
+      "shadowPaths": {
+        "unhappy": "a duplicated export class of at least minLines in an authored production file fails the gate and names both file ranges",
+        "timeout": "a missing jscpd.json uses minLines 8 and does not spawn jscpd or throw",
+        "empty": "an empty authoredPaths list returns pass true and findings empty",
+        "boundary": "a baseline window and a spec-file copy do not add a new clone finding, the shift finding keeps the original lines byte-for-byte, and both files stay within 500 lines and 20480 bytes"
+      },
+      "verificationCommand": ["pnpm", "run", "test:unit"],
+      "generatorCommand": null
+    },
+    {
+      "taskId": "task-prompt-task",
+      "sliceId": "task-prompt",
+      "targetPackage": "execution",
+      "authoredPaths": [
+        "execution/task-scope.ts",
+        "execution/task-scope.spec.mjs"
+      ],
+      "pathPrefixes": ["execution"],
+      "generatedOutputs": [],
+      "dependsOn": ["quality-gate-task"],
+      "deliveryLayers": ["tooling"],
+      "dependencyMutations": [],
+      "shadowPaths": {
+        "unhappy": "the header tells the implementer that a second class with the same name is a different token",
+        "timeout": "the header states that a line shift fails the task even when the package tests pass",
+        "empty": "a task with one authored path still renders Authorized Mutation Path Prefixes and the do-not-modify sentence",
+        "boundary": "both task-scope files stay within 500 lines and 20480 bytes and role JSON is not edited"
+      },
+      "verificationCommand": ["pnpm", "run", "test:unit"],
+      "generatorCommand": null
+    },
+    {
+      "taskId": "rubric-task",
+      "sliceId": "rubrics",
+      "targetPackage": "review",
+      "authoredPaths": [
+        "review/defaults/protocol/qa.md",
+        "review/defaults/protocol/plan.md",
+        "review/defaults/protocol/spec.md",
+        "review/critic-prompt.spec.mjs"
+      ],
+      "pathPrefixes": ["review"],
+      "generatedOutputs": [],
+      "dependsOn": [],
+      "deliveryLayers": ["tooling"],
+      "dependencyMutations": [],
+      "shadowPaths": {
+        "unhappy": "QA emits GAP only when no packed assertion in the citing tests addresses the Then",
+        "timeout": "a plan shadow that restates a spec source constraint is sufficient and does not demand new transactional recovery",
+        "empty": "a branch label of the parent Then stays measurable and a distinct outcome without Given and Then is a P1",
+        "boundary": "ordered dependsOn overlap is not a P1, the spec rubric does not contain removedPaths, and each rubric file stays within 500 lines and 20480 bytes"
+      },
+      "verificationCommand": ["pnpm", "run", "test:unit"],
+      "generatorCommand": null
+    }
+  ]
+}
