@@ -68,7 +68,7 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## New-clone declaration shape and overlapping windows
 
-**Origin:** review of `docs/specs/ready/first-run-quality-and-critic-feedback.md` (2026-11-13). `execution/task-quality-gate.ts` is at 499 lines, so a change there needs a split first.
+**Origin:** review of `docs/specs/retired/first-run-quality-and-critic-feedback.md` (2026-11-13). `execution/task-quality-gate.ts` is at 499 lines, so a change there needs a split first.
 
 **Observed:** the declaration regex misses `export abstract class`, indented declarations, and `function*`, which NestJS-style hosts use. Two identical production files that each hold several classes can report overlapping runs, such as `1-16` and `9-16`. A deliberate new copy is accepted only through a baseline jscpd entry. The exceptions file does not allow it.
 
