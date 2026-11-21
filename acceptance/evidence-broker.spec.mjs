@@ -80,3 +80,19 @@ test('brokered command runner reports a supervisor failure reason without parsin
     commandRegistrationFixture(), { binding: { baseCommitSha: 'b'.repeat(40) }, obligations: [] }, '/w');
   assert.deepEqual([result.exitCode, result.cases, result.failureReason], [null, [], 'timeout']);
 });
+
+test('brokered source commands use request tuples and preserve foreign-failure suite exits', async () => {
+	const bytes = Buffer.from('<testsuite><testcase file="src/requested.spec.mjs" name="@ac AC-03 @case AC-03.1 requested"/>' +
+		'<testcase file="src/other.spec.mjs" name="@ac AC-03 @case AC-03.1 old"><failure/></testcase></testsuite>');
+	const ledger = { evidence: async () => ({ code: 1, reason: null, stdout: bytes.toString('base64') }) };
+	const registration = commandRegistrationFixture({ caseIdentity: 'case-file-criterion' });
+	const request = { binding: { baseCommitSha: 'b'.repeat(40) }, obligations: [{
+		caseId: 'AC-03.1', criterionId: 'AC-03', testCases: [{ file: 'src/requested.spec.mjs', caseKey: 'requested' }],
+	}] };
+	const result = await brokerCommandRunner(ledger, RUN_ID)(registration, request, '/w');
+	assert.equal(result.exitCode, 1);
+	assert.equal(result.cases[0].outcome, 'passed');
+	assert.deepEqual(result.cases[0].source, { file: 'src/requested.spec.mjs', criterionId: 'AC-03', caseId: 'AC-03.1' });
+	request.obligations[0].testCases[0].file = 'src/missing.spec.mjs';
+	await assert.rejects(brokerCommandRunner(ledger, RUN_ID)(registration, request, '/w'), /REPORT_SOURCE_MISMATCH/);
+});

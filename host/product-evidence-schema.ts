@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { IDENTIFIER_PATTERN } from '../policy/contracts/primitives.ts';
-import { Capability, Layer, RelPath } from '../policy/contracts/quality-primitives.ts';
+import { Capability, CaseIdentity, Layer, RelPath } from '../policy/contracts/quality-primitives.ts';
 
 const IdSchema = z.string().regex(IDENTIFIER_PATTERN);
 const PLACEHOLDER = /\{[^{}]*\}/g;
@@ -27,6 +27,8 @@ const ProductCommandSchema = z.strictObject({
 		.refine(placeholdersValid, { message: 'only {reportPath} or {baseSha} may appear, as a whole token or a key=value value, never in argv[0]' })
 		.refine(hasReportPath, { message: 'argv must pass {reportPath} so the report is not read from stdout' }),
 	cwd: RelPath,
+	packageRoot: RelPath.optional(),
+	caseIdentity: CaseIdentity.optional(),
 	layer: Layer,
 	pins: z.array(PinSchema).min(1),
 	capabilities: z.array(Capability).optional(),
@@ -44,7 +46,7 @@ export const ProductEvidenceSchema = z.strictObject({
 		context.addIssue({ code: 'custom', path: ['commands'], message: 'at least one command is required' });
 	}
 	for (const [id, command] of Object.entries(block.commands)) {
-		const root = block.packageRoot;
+		const root = command.packageRoot ?? block.packageRoot;
 		if (!(command.cwd === root || command.cwd.startsWith(`${root}/`))) {
 			context.addIssue({ code: 'custom', path: ['commands', id, 'cwd'], message: 'command cwd must lie inside packageRoot' });
 		}
@@ -75,6 +77,7 @@ export function productEvidenceContainmentPaths(config: ProductEvidenceConfig | 
 	if (!config) return [];
 	const paths: [string, string][] = [[config.packageRoot, 'productEvidence.packageRoot']];
 	for (const [id, command] of Object.entries(config.commands)) {
+		if (command.packageRoot !== undefined) paths.push([command.packageRoot, `productEvidence.commands.${id}.packageRoot`]);
 		paths.push([command.cwd, `productEvidence.commands.${id}.cwd`]);
 		for (const pin of command.pins) {
 			const file = 'file' in pin ? pin.file : pin.script.file;

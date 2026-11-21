@@ -168,8 +168,35 @@ test('acceptProductObligations accepts the implicit task-0 owner when no manifes
 				testFile: 'policy/widget.spec.ts',
 			})]),
 		});
+
 		assert.equal(accepted.plan.evidenceObligations[0].owner.id, 'task-0');
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test('product plans freeze a sibling command root and source identity while leaving the default command unchanged', (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'product-plan-sibling-'));
+	t.after(() => fs.rmSync(root, { recursive: true }));
+	const evidence = productEvidence(root);
+	fs.mkdirSync(path.join(root, 'sibling'));
+	fs.writeFileSync(path.join(root, 'sibling/pin.txt'), 'pin\n');
+	const legacy = accept(root, { productEvidence: evidence }).plan.adapterBindings[0];
+	assert.equal('packageRoot' in legacy, false);
+	assert.equal('caseIdentity' in legacy, false);
+	evidence.commands.node = {
+		...evidence.commands.unit, cwd: 'sibling', packageRoot: 'sibling', caseIdentity: 'case-file-criterion',
+	};
+	const accepted = accept(root, {
+		productEvidence: evidence, allowedPathPrefixes: ['pkg', 'sibling'], criteria: [SECOND],
+		obligations: document([obligation(), obligation({
+			obligationId: 'node-proof', caseId: 'AC-01.2', profileId: 'node', testFile: 'sibling/widget.spec.mjs',
+		})]),
+	});
+	assert.deepEqual(accepted.plan.adapterBindings.find((item) => item.profiles[0].profileId === 'unit'), legacy);
+	const node = accepted.plan.adapterBindings.find((item) => item.profiles[0].profileId === 'node');
+	assert.equal(node.packageRoot, 'sibling');
+	assert.equal(node.caseIdentity, 'case-file-criterion');
+	assert.equal(node.pins[0].path, 'sibling/pin.txt');
+	assert.equal(accepted.plan.evidenceObligations.find((item) => item.obligationId === 'node-proof').adapterBindingHash, sha256(node));
 });

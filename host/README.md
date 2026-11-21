@@ -2,6 +2,12 @@
 
 Host-repository configuration loader (`.agents/sdlc-host.json`), progressive verification gates, evidence-adapter registrations, workspace package discovery, worktree hydration dispatch, role-command allowlisting, and host verification execution.
 
+## Product Command Scope and Source Identity
+
+On host schema `1.7.0`, a `productEvidence.commands` entry may set `packageRoot` to override the block's default root; `cwd` must equal or descend from that effective root. Named roots, working directories and pins remain physically contained in the repository. Explicit scope freezes `cwd`, `packageRoot` and `caseIdentity` into the command binding. Omitted fields preserve legacy registration projections and hashes.
+
+`caseIdentity: "case-file-criterion"` selects each obligation by the reported repository-relative `file` and exact title `@ac` and `@case` tags. Full-report exit correspondence is checked before tuple filtering or duplicate collapse. Foreign same-tag rows do not count as duplicates; wrong-source-only rows are invalid evidence, and entirely absent cases remain not-run. Local and brokered command results retain the matched source and actual process exit. Native Node JUnit without `file` cannot supply source-bound proof; the host must provide a source-aware reporter. Omitted `caseIdentity` (or `"case"`) keeps legacy case-only selection.
+
 ## Key Files & Entrypoints
 
 - `host/host-profile.ts` — Closed `1.7.0` schema validator and loader for `.agents/sdlc-host.json` (`1.7.0` adds the optional `telemetry.dir` write location for `agent-sdlc telemetry record|export`, default `<stateDir>/telemetry`; version gates live in `host/profile-version-gates.ts`), with explicit decoding for `1.6.0`, `1.5.0`, `1.4.0`, `1.3.0` and `1.2.0`.

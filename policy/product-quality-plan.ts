@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { commandBindingHash, recordPins, resolveExecutable, type PinSpec } from '../host/command-evidence.ts';
+import { commandBindingHash, commandScope, recordPins, resolveExecutable, type PinSpec } from '../host/command-evidence.ts';
 import type { ProductCommandConfig, ProductEvidenceConfig } from '../host/product-evidence-schema.ts';
 import { sha256 } from './contracts/primitives.ts';
 import {
@@ -177,7 +177,9 @@ function registrationFor(
 		retries: command.retries ?? 0,
 		executable,
 		pins,
-		commandSha256: commandBindingHash(command.argv, executable.sha256, pins),
+		...(command.packageRoot !== undefined ? { packageRoot: command.packageRoot } : {}),
+		...(command.caseIdentity !== undefined ? { caseIdentity: command.caseIdentity } : {}),
+		commandSha256: commandBindingHash(command.argv, executable.sha256, pins, [], commandScope(command)),
 		profiles: [{ profileId, layers: [command.layer], capabilities: command.capabilities ?? [] }],
 		limits: {
 			timeoutMs: command.timeoutMs ?? (command.layer === 'browser' ? 300_000 : 120_000),

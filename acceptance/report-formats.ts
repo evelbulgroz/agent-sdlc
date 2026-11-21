@@ -12,7 +12,7 @@ export type ReportFormat = 'junit' | 'case-report';
 export type EvidenceReportErrorCode =
 	| 'REPORT_MALFORMED' | 'REPORT_UNKNOWN_ELEMENT' | 'REPORT_DUPLICATE_IDENTITY' | 'REPORT_ZERO_CASES'
 	| 'REPORT_EXIT_CONTRADICTION' | 'REPORT_CASE_MISSING' | 'REPORT_CASE_NOT_PASSED' | 'REPORT_MISSING'
-	| 'REPORT_NOT_REGULAR' | 'REPORT_OVERSIZED' | 'REPORT_STALE' | 'SENTINEL_MISMATCH';
+	| 'REPORT_NOT_REGULAR' | 'REPORT_OVERSIZED' | 'REPORT_STALE' | 'REPORT_SOURCE_MISMATCH' | 'SENTINEL_MISMATCH';
 
 export interface CaseRow {
 	name: string;
@@ -23,7 +23,10 @@ export interface CaseRow {
 }
 export interface CollapsedRow extends CaseRow { identity: string; attempts: number }
 export type SelectedOutcome = Exclude<ReportOutcome, 'error'> | 'not-run';
-export interface CaseResult { identity: string; outcome: SelectedOutcome; message: string; attempts: number }
+export interface SourceCaseIdentity { file: string; criterionId: string; caseId: string }
+export interface CaseResult {
+	identity: string; outcome: SelectedOutcome; message: string; attempts: number; source?: SourceCaseIdentity;
+}
 export interface SelectCasesInput {
 	rows: readonly CaseRow[];
 	selected: readonly string[];

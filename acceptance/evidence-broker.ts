@@ -98,6 +98,6 @@ export function brokerCommandRunner(ledger: RemoteExperimentLedger, runId: strin
     const reportBytes = Buffer.from(result.stdout, 'base64');
     const selected = [...new Set(request.obligations.map((obligation) => obligation.caseId))] as string[];
     return { exitCode: result.code, reportBytes,
-      cases: casesFromReport({ registration, selected, code: result.code, reportBytes }) };
+      cases: casesFromReport({ registration, selected, code: result.code, reportBytes, request }) };
   };
 }

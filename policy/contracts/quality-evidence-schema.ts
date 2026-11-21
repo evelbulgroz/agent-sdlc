@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Capability, Hash, Id, Layer, NonNegativeInt, Outcome, PosInt, RelPath, Time, Tree, UniqueStrings, QUALITY_RECORD_SCHEMA_VERSION } from './quality-primitives.ts';
+import { Capability, CaseIdentity, Hash, Id, Layer, NonNegativeInt, Outcome, PosInt, RelPath, Time, Tree, UniqueStrings, QUALITY_RECORD_SCHEMA_VERSION } from './quality-primitives.ts';
 import { RUN_ID_PATTERN } from './primitives.ts';
 
 export const EvidenceAdapterProfileSchema = z.strictObject({
@@ -44,16 +44,23 @@ export const CommandRegistrationSchema = z.strictObject({
 	argv: z.array(z.string().min(1)).min(1),
 	cwd: RelPath,
 	reportFormat: z.enum(['junit', 'case-report']),
+	packageRoot: RelPath.optional(),
+	caseIdentity: CaseIdentity.optional(),
 	retries: z.number().int().min(0).max(5),
 	executable: z.strictObject({ path: z.string().refine((value) => value.startsWith('/') && !value.includes('\0')), sha256: Hash }),
 	pins: z.array(CommandPin),
 	pretest: z.array(CommandPretestStep).optional(),
-	// sha256 of { argv, executable.sha256, pins }, plus the pretest steps when present.
+	// Legacy binding, plus pretest and explicit command scope only when present.
 	commandSha256: Hash,
 	profiles: z.array(EvidenceAdapterProfileSchema).min(1),
 	limits: z.strictObject({
 		timeoutMs: PosInt, maxReportBytes: PosInt, maxArtifactBytes: PosInt, maxArtifacts: PosInt,
 	}),
+}).superRefine((command, ctx) => {
+	if (command.packageRoot !== undefined &&
+		!(command.cwd === command.packageRoot || command.cwd.startsWith(`${command.packageRoot}/`))) {
+		ctx.addIssue({ code: 'custom', path: ['cwd'], message: 'command cwd must lie inside packageRoot' });
+	}
 });
 export type CommandRegistration = z.infer<typeof CommandRegistrationSchema>;
 

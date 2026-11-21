@@ -4,7 +4,9 @@ import { sha256 } from '../policy/contracts/primitives.ts';
 import type {
 	AdapterRegistration, EvidenceReport, EvidenceRequest, CommandPinRecord, CommandPretestStep, CommandRegistration,
 } from '../policy/contracts/quality-evidence-schema.ts';
-import { hashEvidenceBytes, readEvidenceFile } from './evidence-files.ts';
+import { assertEvidenceDirectory, hashEvidenceBytes, readEvidenceFile } from './evidence-files.ts';
+import { sourceCaseKey } from '../acceptance/source-case-selection.ts';
+import type { SourceCaseIdentity } from '../acceptance/report-formats.ts';
 
 export type PinSpec = { file: string } | { script: { file: string; name: string } };
 export const PINNED_FILE_MODIFIED = 'PINNED_FILE_MODIFIED';
@@ -12,10 +14,14 @@ export const PINNED_FILE_MODIFIED = 'PINNED_FILE_MODIFIED';
 export const isCommandRegistration = (registration: AdapterRegistration): registration is CommandRegistration =>
 	registration.kind === 'command';
 
-/** Repository-relative files an evidence registration freezes, for containment checks. */
+/** Repository-relative paths an evidence registration freezes, for containment checks. */
 export function evidenceRegistrationFiles(registration: AdapterRegistration): { path: string }[] {
-	return [...registration.pins, ...(registration.pretest ?? []).flatMap((step) => step.pins)]
-		.map((pin) => ({ path: pin.kind === 'file' ? pin.path : pin.file }));
+	return [
+		...[...registration.pins, ...(registration.pretest ?? []).flatMap((step) => step.pins)]
+			.map((pin) => ({ path: pin.kind === 'file' ? pin.path : pin.file })),
+		...(commandScope(registration) ? [{ path: registration.cwd }] : []),
+		...(registration.packageRoot !== undefined ? [{ path: registration.packageRoot }] : []),
+	];
 }
 
 const PLACEHOLDER = /\{[^{}]*\}/g;
@@ -80,10 +86,25 @@ export function verifyPins(root: string, pins: readonly CommandPinRecord[]): voi
 	}
 }
 
+export type CommandScope = Pick<CommandRegistration, 'cwd' | 'packageRoot' | 'caseIdentity'>;
+
+/** Omitted extensions must not change legacy registrations or their command hashes. */
+export const commandScope = (command: CommandScope): CommandScope | undefined =>
+	command.packageRoot === undefined && command.caseIdentity === undefined ? undefined : {
+		cwd: command.cwd,
+		...(command.packageRoot !== undefined ? { packageRoot: command.packageRoot } : {}),
+		...(command.caseIdentity !== undefined ? { caseIdentity: command.caseIdentity } : {}),
+	};
+
 export const commandBindingHash = (
 	argv: readonly string[], executableSha256: string, pins: readonly CommandPinRecord[],
 	pretest: readonly CommandPretestStep[] = [],
-): string => sha256(pretest.length ? { argv, executableSha256, pins, pretest } : { argv, executableSha256, pins });
+	scope?: CommandScope,
+): string => sha256({
+	argv, executableSha256, pins,
+	...(pretest.length ? { pretest } : {}),
+	...(scope ? { scope } : {}),
+});
 
 function verifyExecutable(executable: { path: string; sha256: string }): void {
 	const real = executable.path;
@@ -96,8 +117,13 @@ function verifyExecutable(executable: { path: string; sha256: string }): void {
 /** Frozen-state check shared by the before-run and after-run verification. */
 export function verifyCommandRegistration(root: string, registration: CommandRegistration): void {
 	const pretest = registration.pretest ?? [];
-	if (registration.commandSha256 !== commandBindingHash(registration.argv, registration.executable.sha256, registration.pins, pretest)) {
+	const scope = commandScope(registration);
+	if (registration.commandSha256 !== commandBindingHash(registration.argv, registration.executable.sha256, registration.pins, pretest, scope)) {
 		throw new Error('frozen-adapter-file-changed');
+	}
+	if (scope) {
+		assertEvidenceDirectory(path.resolve(root, registration.cwd));
+		if (registration.packageRoot !== undefined) assertEvidenceDirectory(path.resolve(root, registration.packageRoot));
 	}
 	verifyExecutable(registration.executable);
 	verifyPins(root, registration.pins);
@@ -109,6 +135,7 @@ export function verifyCommandRegistration(root: string, registration: CommandReg
 
 export interface CommandCaseResult {
 	identity: string;
+	source?: SourceCaseIdentity;
 	outcome: 'passed' | 'failed' | 'skipped' | 'not-run';
 	message: string;
 	attempts: number;
@@ -125,13 +152,17 @@ export function selectedCaseIdentities(request: EvidenceRequest): string[] {
 export function synthesizeCommandReport(
 	registration: CommandRegistration, request: EvidenceRequest, cases: readonly CommandCaseResult[],
 ): EvidenceReport {
-	const byIdentity = new Map(cases.map((entry) => [entry.identity, entry]));
-	const grouped = new Map<string, { file: string; caseKey: string; ids: string[]; capabilities: Set<string>; identity: string }>();
+	const sourceBound = registration.caseIdentity === 'case-file-criterion';
+	const byIdentity = new Map(cases.map((entry) => {
+		if (sourceBound && (!entry.source || entry.source.caseId !== entry.identity)) throw new Error('invalid-evidence');
+		return [sourceBound ? sourceCaseKey(entry.source as SourceCaseIdentity) : entry.identity, entry];
+	}));
+	const grouped = new Map<string, { file: string; caseKey: string; criterionId: string; ids: string[]; capabilities: Set<string>; identity: string }>();
 	for (const obligation of request.obligations) {
 		for (const testCase of obligation.testCases) {
 			const key = `${testCase.file}\0${testCase.caseKey}`;
-			const item = grouped.get(key) ?? { file: testCase.file, caseKey: testCase.caseKey, ids: [], capabilities: new Set<string>(), identity: obligation.caseId as string };
-			if (item.identity !== obligation.caseId) throw new Error('invalid-evidence');
+			const item = grouped.get(key) ?? { file: testCase.file, caseKey: testCase.caseKey, criterionId: obligation.criterionId, ids: [], capabilities: new Set<string>(), identity: obligation.caseId as string };
+			if (item.identity !== obligation.caseId || (sourceBound && item.criterionId !== obligation.criterionId)) throw new Error('invalid-evidence');
 			item.ids.push(obligation.obligationId);
 			for (const capability of obligation.requiredCapabilities) item.capabilities.add(capability);
 			grouped.set(key, item);
@@ -141,10 +172,12 @@ export function synthesizeCommandReport(
 		schemaVersion: '1.0.0', operationId: request.operationId, requestHash: sha256(request),
 		adapterBindingHash: request.adapterBindingHash, profileId: request.profileId, artifacts: [],
 		cases: [...grouped.values()].map((item) => {
-			const result = byIdentity.get(item.identity);
+			const result = byIdentity.get(sourceBound
+				? sourceCaseKey({ file: item.file, criterionId: item.criterionId, caseId: item.identity }) : item.identity);
 			if (!result) throw new Error('invalid-evidence');
 			return {
-				file: item.file, caseKey: item.caseKey, obligationIds: item.ids,
+				file: sourceBound ? (result.source as SourceCaseIdentity).file : item.file,
+				caseKey: item.caseKey, obligationIds: item.ids,
 				exercisedCapabilities: result.outcome === 'passed' ? [...item.capabilities] : [],
 				outcome: result.outcome,
 				attempts: result.outcome === 'not-run' ? []

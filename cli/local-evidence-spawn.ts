@@ -45,6 +45,7 @@ function commandCases(cases: readonly CaseResult[]): CommandCaseResult[] {
 		if (entry.outcome === 'todo') throw new Error('invalid-evidence');
 		return {
 			identity: entry.identity,
+			...(entry.source ? { source: entry.source } : {}),
 			outcome: entry.outcome,
 			message: entry.message,
 			attempts: entry.attempts,
@@ -105,7 +106,7 @@ async function runRegistration(
 		return { exitCode: code, cases: [], reportBytes: Buffer.alloc(0), failureReason: 'invalid-evidence' };
 	}
 	try {
-		const cases = commandCases(casesFromReport({ registration, selected, code, reportBytes }));
+		const cases = commandCases(casesFromReport({ registration, selected, code, reportBytes, request }));
 		return { exitCode: code, cases, reportBytes };
 	} catch {
 		return { exitCode: code, cases: [], reportBytes, failureReason: 'invalid-evidence' };

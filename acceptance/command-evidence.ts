@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { bytesHash, engineModule, fail, regularFile } from './primitives.ts';
 import type {
-	CommandPinRecord, CommandPretestStep, CommandRegistration, EvidenceAdapterProfile,
+	CommandPinRecord, CommandPretestStep, CommandRegistration, EvidenceAdapterProfile, EvidenceRequest,
 } from '../policy/contracts/quality-evidence-schema.ts';
 import { executeOwned } from './process.ts';
 import { COMMAND_PATH, namespaceArgv } from './sandbox.ts';
@@ -11,6 +11,7 @@ import {
 } from './report-formats.ts';
 import type { CaseResult, ReportFormat } from './report-formats.ts';
 import type { AcceptanceConfig, CommandBlock, ExecuteOwned } from './types.ts';
+import { selectedSourceCaseIdentities, selectSourceCases } from './source-case-selection.ts';
 
 type PinInput = NonNullable<CommandBlock['pins']>[number];
 
@@ -125,13 +126,18 @@ export async function runCommandInSandbox({ worktree, config, registration, base
 }
 
 /** Engine-child side: parses the brokered report bytes into per-case results. */
-export function casesFromReport({ registration, selected, code, reportBytes }: {
-	registration: Pick<CommandRegistration, 'reportFormat' | 'retries'>;
+export function casesFromReport({ registration, selected, code, reportBytes, request }: {
+	registration: Pick<CommandRegistration, 'reportFormat' | 'retries' | 'caseIdentity'>;
 	selected: readonly string[];
 	code: number | null;
 	reportBytes: Buffer;
+	request?: Pick<EvidenceRequest, 'obligations'>;
 }): CaseResult[] {
 	const rows = parseReport(registration.reportFormat, reportBytes.toString('utf8'));
+	if (registration.caseIdentity === 'case-file-criterion') {
+		if (!request) throw new Error('invalid-evidence');
+		return selectSourceCases({ rows, selected: selectedSourceCaseIdentities(request), exitCode: code, retries: registration.retries });
+	}
 	return selectCases({ rows, selected, exitCode: code, retries: registration.retries });
 }
 

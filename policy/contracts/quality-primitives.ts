@@ -12,6 +12,7 @@ export const Time = z.string().datetime();
 export const PosInt = z.number().int().positive();
 export const NonNegativeInt = z.number().int().nonnegative();
 export const Layer = z.enum(['unit', 'integration', 'browser', 'static']);
+export const CaseIdentity = z.enum(['case', 'case-file-criterion']);
 export const Capability = z.enum(['native-browser', 'native-file-picker', 'focus-navigation', 'static-check']);
 export const Outcome = z.enum(['passed', 'failed', 'skipped', 'incomplete']);
 export const RelPath = z.string().min(1).refine((value) =>
