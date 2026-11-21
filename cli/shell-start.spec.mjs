@@ -151,6 +151,68 @@ test('shell start rejects a goal file whose sibling task manifest was omitted', 
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test('shell start rejects a goal file whose sibling obligations file was omitted', async () => {
+	const dir = makeTempDir('sibling-obligations');
+	const goalFile = writeGoalFile(dir);
+	const sibling = goalFile.replace(/\.md$/, '.obligations.json');
+	fs.writeFileSync(sibling, '{}\n');
+	const spy = spyOnRunCli();
+
+	await assert.rejects(
+		() =>
+			shellStart({
+				goalFile,
+				rootDir: REPOSITORY_ROOT,
+				streams: SILENT_STREAMS,
+				runCliFn: spy,
+				engineOptions: { governor: throwingGovernor() },
+			}),
+		(error) => {
+			assert.equal(error.code, 'INVALID_INPUT');
+			assert.match(error.message, /--obligations-file/);
+			assert.match(error.message, /sibling obligations file exists/);
+			assert.ok(error.message.includes(sibling));
+			return true;
+		},
+	);
+	assert.deepEqual(spy.calls, []);
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('shell start passes an explicit obligations file through to check-spec', async () => {
+	const dir = makeTempDir('sibling-obligations-explicit');
+	const goalFile = writeGoalFile(dir);
+	const obligationsFile = goalFile.replace(/\.md$/, '.obligations.json');
+	fs.writeFileSync(obligationsFile, '{}\n');
+	const calls = [];
+	async function spy(args) {
+		calls.push(args.slice());
+		return {
+			exitCode: 2,
+			result: {
+				ok: true,
+				command: 'check-spec',
+				ready: false,
+				completeness: { missingFields: ['owningContext'], ambiguousFields: [] },
+			},
+			human: 'check-spec',
+		};
+	}
+
+	const result = await shellStart({
+		goalFile,
+		obligationsFile,
+		rootDir: REPOSITORY_ROOT,
+		streams: SILENT_STREAMS,
+		runCliFn: spy,
+		engineOptions: { governor: throwingGovernor() },
+	});
+
+	assert.equal(result.ready, false);
+	assert.deepEqual(calls, [['check-spec', '--goal-file', goalFile, '--json', '--obligations-file', obligationsFile]]);
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('shell start passes an explicit task manifest through to check-spec', async () => {
 	const dir = makeTempDir('sibling-explicit');
 	const goalFile = writeGoalFile(dir);

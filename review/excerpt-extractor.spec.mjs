@@ -22,6 +22,84 @@ describe('suite', () => {
 	assert.match(result.text, /test\/sample\.spec\.ts:3 it\("happy path @ac AC-01"\)/);
 	assert.match(result.text, /test\/sample\.spec\.ts:5 expect\(res\)\.toBe\(42\);/);
 	assert.match(result.text, /test\/sample\.spec\.ts:6 assert\.equal\(res, 42\);/);
+	assert.doesNotMatch(result.text, /compute\(\)/);
+});
+
+test('extractTestExcerpts keeps arguments of a multiline expect or assert call', () => {
+	const source = `
+it('@ac AC-01 clamps and rounds finite numbers', () => {
+	expect(
+		[-5, 42.6, 250].map(clampPercent),
+		[0, 43, 100],
+	);
+});
+it('@ac AC-02 neutralises invalid input without throwing', () => {
+	expect(
+		[NaN, null, '42'].map(clampPercent),
+		[0, 0, 0],
+	);
+});
+it('@ac AC-04 named list', () => {
+	const inputs = [NaN, null, 'string'];
+	expect(
+		inputs.map(clampPercent),
+		[0, 0, 0],
+	);
+});
+it('closed call', () => {
+	expect(1).toBe(1);
+});
+it('unclosed call', () => {
+	expect(
+		clampPercent(-5)
+});
+it('after unclosed', () => {
+	expect(2).toBe(2);
+});
+it('assert call', () => {
+	assert.deepEqual(
+		clampPercent(7),
+		7,
+	);
+});
+`;
+	const result = extractTestExcerpts({
+		touchedFiles: [{ path: 'tools/lib/clamp-percent.spec.mjs', content: source }],
+		acceptanceCriteria: ['AC-01: finite.', 'AC-02: invalid.', 'AC-04: named.'],
+	});
+	assert.match(result.text, /\[-5, 42\.6, 250\]\.map\(clampPercent\)/);
+	assert.match(result.text, /\[0, 43, 100\]/);
+	assert.match(result.text, /\[NaN, null, '42'\]\.map\(clampPercent\)/);
+	assert.match(result.text, /const inputs = \[NaN, null, 'string'\]/);
+	assert.match(result.text, /inputs\.map\(clampPercent\)/);
+	assert.match(result.text, /expect\(1\)\.toBe\(1\)/);
+	assert.match(result.text, /clampPercent\(-5\)/);
+	assert.match(result.text, /expect\(2\)\.toBe\(2\)/);
+	assert.match(result.text, /clampPercent\(7\)/);
+});
+
+test('extractTestExcerpts keeps the literal binding that supplies an assertion', () => {
+	const source = `
+it('@ac AC-02: Invalid input is neutralised', () => {
+  for (const value of [NaN, null, 'string']) {
+    expect(clampPercent(value) === 0);
+  }
+});
+it('@ac AC-03: named list', () => {
+  const inputs = [NaN, null, 'string'];
+  for (const value of inputs) {
+    expect(clampPercent(value) === 0);
+  }
+});
+`;
+	const result = extractTestExcerpts({
+		touchedFiles: [{ path: 'tools/lib/clamp-percent.spec.mjs', content: source }],
+		acceptanceCriteria: ['AC-02: Given NaN, null, or a string. Then 0.'],
+	});
+	assert.match(result.text, /for \(const value of \[NaN, null, 'string'\]\)/);
+	assert.match(result.text, /const inputs = \[NaN, null, 'string'\]/);
+	assert.match(result.text, /for \(const value of inputs\)/);
+	assert.match(result.text, /expect\(clampPercent\(value\) === 0\)/);
 });
 
 test('extractTestExcerpts truncates long assertion lines to 240 chars with … (AC-07)', () => {

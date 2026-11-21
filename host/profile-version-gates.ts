@@ -96,4 +96,11 @@ export function assertProfileVersionGates(rawRecord: Record<string, unknown>): v
 			schemaVersion: String(rawRecord.schemaVersion),
 		});
 	}
+
+	if (rawRecord.productEvidence !== undefined && rawRecord.schemaVersion !== HOST_PROFILE_SCHEMA_VERSION) {
+		invalidHostProfile(`Field 'productEvidence' requires schemaVersion '${HOST_PROFILE_SCHEMA_VERSION}'`, {
+			fieldName: 'productEvidence',
+			schemaVersion: String(rawRecord.schemaVersion),
+		});
+	}
 }

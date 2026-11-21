@@ -17,6 +17,7 @@ import { preparationContainmentPaths, VerificationPreparationSchema } from './ve
 import { AdapterRegistrationSchema } from '../policy/contracts/quality-schema.ts';
 import { evidenceRegistrationFiles } from './command-evidence.ts';
 import { AcceptanceEvidenceSchema, acceptanceContainmentPaths, acceptanceVersionIssue } from './acceptance-evidence-schema.ts';
+import { ProductEvidenceSchema, productEvidenceContainmentPaths } from './product-evidence-schema.ts';
 import {
 	ACCEPTANCE_HOST_PROFILE_SCHEMA_VERSION, ADAPTERS_HOST_PROFILE_SCHEMA_VERSION, assertProfileVersionGates, COMMANDS_HOST_PROFILE_SCHEMA_VERSION,
 	HOST_PROFILE_SCHEMA_VERSION, LEGACY_HOST_PROFILE_SCHEMA_VERSION, PREVIOUS_HOST_PROFILE_SCHEMA_VERSION,
@@ -128,6 +129,8 @@ const BaseProfileFields = {
 	learnings: LearningsConfigSchema.optional(), telemetry: TelemetryConfigSchema.optional(), commandPolicy: CommandPolicySchema.optional(),
 	engine: EngineConfigSchema.optional(), verificationPreparation: VerificationPreparationSchema.optional(),
 	evidenceAdapters: z.array(AdapterRegistrationSchema).optional(), acceptanceEvidence: AcceptanceEvidenceSchema.optional(),
+	productEvidence: ProductEvidenceSchema.optional(),
+	qualificationFixture: z.strictObject({ spec: NonEmptyTokenSchema }).optional(),
 };
 
 const DefaultHostProfileSchema = z.strictObject({
@@ -253,6 +256,8 @@ export function loadHostProfile(rootDir: string = REPOSITORY_ROOT): Readonly<Hos
 	checkRel(profile.engine?.selfRoot, 'engine.selfRoot', true);
 	for (const [p, f] of preparationContainmentPaths(profile.verificationPreparation)) checkRel(p, f, true);
 	for (const [p, f] of acceptanceContainmentPaths(profile.acceptanceEvidence)) checkRel(p, f);
+	for (const [p, f] of productEvidenceContainmentPaths(profile.productEvidence)) checkRel(p, f);
+	checkRel(profile.qualificationFixture?.spec, 'qualificationFixture.spec');
 
 	if (profile.prompts) {
 		checkRel(profile.prompts.roleAddendaDir, 'prompts.roleAddendaDir');

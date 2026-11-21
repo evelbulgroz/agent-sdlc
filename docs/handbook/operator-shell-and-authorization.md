@@ -4,25 +4,7 @@
 
 The `agent-sdlc` engine is strictly headless. It produces state projections and continuation cards as machine-readable JSON (`status-projection.ts`).
 
-The Operator Shell (`agent-sdlc shell`) is the sole surface that drives orchestrated runs:
-
-```bash
-# 1. Validate spec and task plan (governor-free, creates no run or worktree)
-agent-sdlc check-spec --goal-file <spec.md> --task-plan-file <tasks.json> --json
-
-# 2. Brief-then-confirm gate (stops with briefHash; requires explicit confirmation)
-agent-sdlc shell start --goal-file <spec.md> --task-plan-file <tasks.json> --json
-agent-sdlc shell start --goal-file <spec.md> --response-file <confirmation.json> --json
-
-# 3. Mechanical watch loop (replays authorized steps until a human gate is reached)
-agent-sdlc shell watch --run <run-id> --json
-
-# 4. Human-In-The-Loop response submission (validates response slots before execution)
-agent-sdlc shell reply --run <run-id> --response-file <reply.json> --json
-
-# 5. Read-only status projection
-agent-sdlc shell status --run <run-id> --json
-```
+The Operator Shell (`agent-sdlc shell`) is the sole surface that drives orchestrated runs. Its commands, the brief-then-confirm gate, sibling task and obligations files, and watch replay are in [`cli/README.md`](../../cli/README.md). A host chat model copies [`host-skills.md`](./host-skills.md) rather than reimplementing that contract.
 
 ---
 

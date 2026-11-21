@@ -8,6 +8,7 @@ import {
 } from '../../policy/authorization.ts';
 import { SdlcError } from '../../policy/errors.ts';
 import { type ParsedArguments, requiredValue } from '../arguments.ts';
+import { qualityPlanForStoredObligations } from '../product-obligations-file.ts';
 import { type OpenContextOptions, openContext, readBoundedFile } from '../run-context.ts';
 import type { CliStreams } from '../shell-driver.ts';
 
@@ -158,6 +159,13 @@ export async function authorizeRun(
 				targetBranch,
 				approvalMethod: isInteractive ? 'local-interactive' : 'local-cli',
 				now: new Date(),
+				qualityPlan: qualityPlanForStoredObligations({
+					rootDir,
+					runId: state.runId,
+					draft,
+					taskManifest,
+					goalText: context.artifacts.read(state.goalArtifact),
+				}),
 			});
 		}
 		const next = await context.runtime.authorize(state, envelope);

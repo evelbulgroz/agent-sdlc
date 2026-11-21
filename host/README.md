@@ -36,6 +36,7 @@ Host-repository configuration loader (`.agents/sdlc-host.json`), progressive ver
 2. **Client Onboarding & `.gitignore` Guidance:**
    - Minimal new-client onboarding requires only `.agents/sdlc-host.json` (`schemaVersion: "1.6.0"`) and adding `.agent-sdlc/` to the repository's `.gitignore` so machine-local SQLite databases, worktrees, critic reports, and archived runs are never committed. Evidence adapters are optional until a host explicitly qualifies and authorizes them.
    - Creating `.agents/workflows/` or `.agents/review-rubrics/` is optional; `roles/defaults/` and `review/defaults/` provide built-in workflow, role, and prompt/rubric defaults (see [`../roles/README.md`](../roles/README.md) and [`../prompts/README.md`](../prompts/README.md)).
+   - Host chat skills are not written by `host scaffold`. Copy `host/skill-templates/` into the host `.agents/skills/` and follow [`../docs/handbook/host-skills.md`](../docs/handbook/host-skills.md). The shell skill calls only `shell`. The specification skill owns draft headings and, when `productEvidence` is declared, the obligations document.
 
 3. **Package Closure & Adapter Isolation (`learnings.ts`, `script.ts`):**
    - The package is self-contained: no TypeScript module resolves relative imports outside the package root.

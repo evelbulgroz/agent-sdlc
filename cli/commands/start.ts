@@ -27,6 +27,7 @@ import {
 	resolveGoalText,
 	resolveTaskManifest,
 } from '../run-context.ts';
+import { prepareStartObligations, writeProductObligations } from '../product-obligations-file.ts';
 import type { CliStreams } from '../shell-driver.ts';
 
 export function resolveExecutorSelection(
@@ -117,6 +118,13 @@ export async function startRun(
 			);
 		}
 	}
+	const obligationsDocument = prepareStartObligations({
+		rootDir,
+		draft,
+		taskManifest,
+		obligationsFile: parsed.values.get('--obligations-file') ?? null,
+		goalFile: parsed.values.get('--goal-file') ?? null,
+	});
 	if (typeof governor.assertAvailable === 'function') {
 		await governor.assertAvailable();
 	}
@@ -193,6 +201,7 @@ export async function startRun(
 					...(executor ? { executor } : {}),
 				});
 				canonicalInitializationCommitted = true;
+				if (obligationsDocument) writeProductObligations(rootDir, runId, obligationsDocument);
 			} catch (error: unknown) {
 				canonicalInitializationCommitted = context.store.hasRun(runId);
 				throw error;

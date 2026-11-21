@@ -15,8 +15,8 @@ Command entrypoints, operator shell driver, Human-in-the-Loop (HITL) interrupt h
 
 1. **Headless State Engine & Operator Shell Boundary:**
    The engine does not host an interactive REPL. When it hits a HITL boundary (`WAITING_FOR_ANSWERS`, `WAITING_FOR_APPROVAL`, `WAITING_FOR_AUTHORIZATION`, or `RECONCILIATION_CONFLICT`), it pauses via LangGraph `interrupt(...)`, persists state in `runtime.sqlite`, and emits structured JSON on `stdout`.
-   - `shell start` validates the draft via governor-free `check-spec` first. Unready drafts exit `2` without creating a run. Ready drafts without `--response-file` print a brief (`briefHash`, owning context, and `AC-NN` lines) and exit `2`. Passing `--response-file` with `{"confirm":true,"briefHash":"<briefHash>"}` starts the run once. When `<slug>.tasks.json` sits beside a `.md` goal file, `--task-plan-file` is required.
-   - `shell watch` replays mechanical continuations (`resume`, `authorize`) by executing the engine's published `hostInvocation.argv` verbatim without operator prompts or `--retry`, stopping when `continuation.action` is `answer` or `stop`.
+   - `shell start` validates the draft via governor-free `check-spec` first. Unready drafts exit `2` without creating a run. Ready drafts without `--response-file` print a brief (`briefHash`, owning context, and `AC-NN` lines) and exit `2`. Passing `--response-file` with `{"confirm":true,"briefHash":"<briefHash>"}` starts the run once. Pass `--slug` as kebab-case matching `^[a-z0-9][a-z0-9-]*$`. Leave `AGENT_SDLC_PREFERRED_ROUTES` unset; a set value is the executor's preferred route list (`execution/README.md`). A new slug reads the goal file you pass, so write an in-run revise back into that file before starting it. When `<slug>.tasks.json` or `<slug>.obligations.json` sits beside a `.md` goal file, pass `--task-plan-file` or `--obligations-file`. Omit a flag when its sibling does not exist. Omitting the flag for a sibling that exists is `INVALID_INPUT` and creates no run. `shell start` does not attach the sibling on its own. A host that declares `productEvidence` must pass `--obligations-file` when the draft has acceptance criteria, except a goal file named by `qualificationFixture.spec` or `acceptanceEvidence.canary.spec`: one obligation per declared case. The engine does not invent case ids. The host authors that document.
+   - `shell watch` replays mechanical continuations (`resume`, `authorize`) by executing the engine's published `hostInvocation.argv` verbatim without operator prompts or `--retry`, stopping when `continuation.action` is `answer` or `stop`. The published `authorize` argv includes no `--envelope-file`. The engine builds the envelope, and a stored product-obligations file becomes the quality plan when the host declares `productEvidence`.
    - `shell reply` validates the operator response against the card's `responseSlots` (`choices` and `changes`) before submitting via the card's published `argv`. An `ESCALATED` `coverage_floor_regression` whose paths sit inside the approved prefixes, and outside high-risk and oracle paths, publishes `approve-correction` or `stop`. The reply repeats the card paths. `stop` consumes the card, leaves task trees unchanged, and the next continuation is `stop`. `shell watch` does not submit that card. Reply flags stay `--run`, `--response-file`, and `--json`.
    - `shell status` is read-only. On `GIT_APPROVAL`, both `shell status` and `shell watch` stop and print the worktree path without running `git commit`, `git push`, or adding git flags.
    - Explicit checkpoint-quality findings produce a `quality_review` interrupt and a non-mechanical `answer`, never `resume` or `authorize`. Responses are bound to the exact candidate and findings: `refute`, `confirm`, or `approve-correction`. A `refute` answer may carry inline `claims` (`findingId`, `rationale`, `evidenceHashes`); `resume` writes them as claim-evidence artifacts bound to the answer's `bindingHash`, the only guarded writer for them. Refutation cannot discharge deterministic evidence failures; correction approval names owning tasks, edit paths, rerun obligations, and a one- or two-iteration edit cap.
@@ -40,14 +40,18 @@ Command entrypoints, operator shell driver, Human-in-the-Loop (HITL) interrupt h
 
 ```bash
 # Operator shell (canonical interactive / host-session surface)
-agent-sdlc shell start --goal-file docs/specs/drafts/<slug>.md \
+agent-sdlc shell start --slug <slug> --goal-file docs/specs/drafts/<slug>.md \
+  [--obligations-file docs/specs/drafts/<slug>.obligations.json] \
   [--task-plan-file docs/specs/drafts/<slug>.tasks.json] [--json]
+agent-sdlc shell start --slug <slug> --goal-file docs/specs/drafts/<slug>.md \
+  --response-file <path-to-brief-confirmation.json> --json
 agent-sdlc shell watch --run <run-id> [--json]
 agent-sdlc shell reply --run <run-id> --response-file <path> [--json]
 agent-sdlc shell status --run <run-id> [--json]
 
-# Spec validation (governor-free, no run created)
+# Spec validation (governor-free, no run created). shell start forwards the same sibling flags.
 agent-sdlc check-spec --goal-file docs/specs/drafts/<slug>.md \
+  [--obligations-file docs/specs/drafts/<slug>.obligations.json] \
   [--task-plan-file docs/specs/drafts/<slug>.tasks.json] [--json]
 
 # Headless lifecycle & maintenance subcommands

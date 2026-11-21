@@ -23,6 +23,7 @@ import type { HostInvocationRecord, ResponseQuestionSlot, ResponseSlot } from '.
 import { SdlcError } from '../policy/errors.ts';
 import { parseSpecification } from '../workflow/specification.ts';
 import { mergeCorrectionReply } from './correction-reply.ts';
+import { assertStartSiblings } from './shell-start-files.ts';
 
 const MAX_GOAL_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_RESPONSE_FILE_BYTES = 262144;
@@ -118,17 +119,6 @@ async function invokeEngine(
 	return unwrapEngineOutcome(outcome);
 }
 
-/**
- * A goal named `something.md` with `something.tasks.json` beside it is a
- * manifest run. shell start names that file only when the caller passed
- * `--task-plan-file`; it does not attach the sibling on its own.
- */
-function siblingTaskManifest(absoluteGoalFile: string): string | null {
-	if (!absoluteGoalFile.endsWith('.md')) return null;
-	const sibling = `${absoluteGoalFile.slice(0, -'.md'.length)}.tasks.json`;
-	return fs.existsSync(sibling) ? sibling : null;
-}
-
 function readBoundedFile(filename: string, maxBytes: number, label: string): string {
 	let stat: fs.Stats;
 	try {
@@ -183,11 +173,11 @@ function computeBriefHash(draft: {
  * exactly once.
  */
 export async function shellStart({
-	goalFile, taskPlanFile = null, slug = null, responseFile = null,
+	goalFile, taskPlanFile = null, obligationsFile = null, slug = null, responseFile = null,
 	executor = null, skipCanary = false, rootDir, streams, runCliFn, engineOptions = {},
 }: {
-	goalFile?: string | null; taskPlanFile?: string | null; slug?: string | null;
-	responseFile?: string | null; executor?: string | null; skipCanary?: boolean;
+	goalFile?: string | null; taskPlanFile?: string | null; obligationsFile?: string | null;
+	slug?: string | null; responseFile?: string | null; executor?: string | null; skipCanary?: boolean;
 	rootDir: string; streams?: CliStreams; runCliFn?: RunCliFn; engineOptions?: Record<string, unknown>;
 }): Promise<Record<string, unknown>> {
 	const engineCaller = requireRunCliFn(runCliFn);
@@ -195,19 +185,12 @@ export async function shellStart({
 		throw new SdlcError('INVALID_INPUT', 'shell start requires --goal-file');
 	}
 	const absoluteGoalFile = path.resolve(rootDir, goalFile);
-	if (!taskPlanFile) {
-		const sibling = siblingTaskManifest(absoluteGoalFile);
-		if (sibling) {
-			throw new SdlcError(
-				'INVALID_INPUT',
-				`shell start requires --task-plan-file because sibling task manifest exists: ${sibling}`,
-			);
-		}
-	}
+	assertStartSiblings(absoluteGoalFile, taskPlanFile, obligationsFile);
 	readBoundedFile(absoluteGoalFile, MAX_GOAL_FILE_BYTES, 'goal file');
 
 	const checkArgs = ['check-spec', '--goal-file', goalFile, '--json'];
 	if (taskPlanFile) checkArgs.push('--task-plan-file', taskPlanFile);
+	if (obligationsFile) checkArgs.push('--obligations-file', obligationsFile);
 	const checked = await invokeEngine(engineCaller, checkArgs, {
 		rootDir,
 		streams,
@@ -262,6 +245,7 @@ export async function shellStart({
 	if (slug) startArgs.push('--slug', slug);
 	startArgs.push('--goal-file', goalFile);
 	if (taskPlanFile) startArgs.push('--task-plan-file', taskPlanFile);
+	if (obligationsFile) startArgs.push('--obligations-file', obligationsFile);
 	if (typeof executor === 'string' && executor.length > 0) startArgs.push('--executor', executor);
 	if (skipCanary) startArgs.push('--skip-canary');
 	startArgs.push('--json');

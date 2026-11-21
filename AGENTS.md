@@ -30,6 +30,7 @@ Standalone library providing the local SDLC orchestration engine.
 - `./docs/critic-protocol.md` (Heterogeneous dynamic critic review protocol)
 - `./docs/anti-patterns.md` (Anti-patterns, repair budget, and unmerged canary invariant)
 - `./docs/institutional-memory.md` (Native learnings store and graduation workflow)
+- `./docs/handbook/host-skills.md` (Minimal host shell and specification skills)
 - `./.agents/skills/README.md` (Interactive pairing skills index)
 - Module documentation:
   - `./cli/README.md` — Operator shell (`shell start/watch/reply/status`), CLI subcommands, `status.json` continuation projection, and exit codes

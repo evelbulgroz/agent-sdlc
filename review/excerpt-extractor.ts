@@ -1,9 +1,12 @@
 import path from 'node:path';
 import { SdlcError } from '../policy/errors.ts';
 import { isOraclePath } from '../execution/ac-citations.ts';
+import { assertionCallSpan } from './excerpt-call-lines.ts';
 
 const ASSERTION_RE = /\bexpect\s*\(|\bassert\s*\(|\bassert\./;
 const TEST_CALL_RE = /\b((?:it|test)(?:\.(?:only|skip))?)\s*\(\s*(['"`])([\s\S]*?)\2/g;
+const LITERAL_RE = /(['"`])(?:\\.|(?!\1).)*?\1|\b(?:NaN|null|undefined|true|false|Infinity)\b|\b\d/;
+const BINDING_RE = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)|\bforEach\s*\(\s*\(?\s*([A-Za-z_$][\w$]*)/g;
 
 export const DEFAULT_MAX_BYTES = 24576; // 24 KB
 export const DEFAULT_MAX_LINES = 1000;
@@ -27,6 +30,8 @@ export interface ExtractedTestExcerpts {
 interface AssertionLine {
 	line: number;
 	text: string;
+	supplies?: AssertionLine[];
+	continuations?: AssertionLine[];
 }
 
 interface ParsedTest {
@@ -49,6 +54,30 @@ interface ParsedFile {
 
 function posixPath(filePath: unknown): string {
 	return String(filePath).split(path.sep).join('/');
+}
+
+function boundNames(line: string): string[] {
+	BINDING_RE.lastIndex = 0;
+	return [...line.matchAll(BINDING_RE)].flatMap((match) =>
+		[match[1], match[2]].filter((name): name is string => Boolean(name)),
+	);
+}
+
+function mentions(text: string, name: string): boolean {
+	return new RegExp(`\\b${name}\\b`).test(text);
+}
+
+/** The binding that feeds an assertion, plus one earlier literal binding it names. */
+function valueSupplies(lines: readonly AssertionLine[], assertion: AssertionLine, maxChars: number): AssertionLine[] {
+	const prior = lines.filter((line) => line.line < assertion.line && line.text.trim() && !ASSERTION_RE.test(line.text));
+	const direct = [...prior].reverse().find((line) => boundNames(line.text).some((name) => mentions(assertion.text, name)));
+	if (!direct) return [];
+	const packed = (line: AssertionLine): AssertionLine => ({ line: line.line, text: truncateLine(line.text, maxChars) });
+	const upstream = LITERAL_RE.test(direct.text) ? undefined : [...prior].reverse().find((line) =>
+		line.line < direct.line && LITERAL_RE.test(line.text) && boundNames(line.text).some((name) => mentions(direct.text, name)));
+	return [upstream, LITERAL_RE.test(direct.text) || upstream ? direct : undefined]
+		.filter((line): line is AssertionLine => line !== undefined)
+		.map(packed);
 }
 
 function truncateLine(text: unknown, maxChars = DEFAULT_MAX_ASSERT_CHARS): string {
@@ -136,20 +165,30 @@ function parseFileTests(
 		const afterTitleIndex = match.index + match[0].length;
 		const { body, bodyStart } = extractCallbackInfo(content, afterTitleIndex);
 
-		const assertionLines: AssertionLine[] = [];
+		const rawLines: AssertionLine[] = [];
 		const bodyLines = body.split('\n');
 		let currentOffset = bodyStart;
-
 		for (const rawLine of bodyLines) {
-			if (ASSERTION_RE.test(rawLine)) {
-				const lineInFile = content.slice(0, currentOffset).split('\n').length;
-				const truncated = truncateLine(rawLine, maxChars);
-				assertionLines.push({
-					line: lineInFile,
-					text: truncated,
-				});
-			}
+			rawLines.push({ line: content.slice(0, currentOffset).split('\n').length, text: rawLine });
 			currentOffset += rawLine.length + 1; // +1 for '\n'
+		}
+		const assertionLines: AssertionLine[] = [];
+		const consumed = new Set<number>();
+		for (let i = 0; i < rawLines.length; i++) {
+			const line = rawLines[i];
+			if (!line || consumed.has(i) || !ASSERTION_RE.test(line.text)) continue;
+			const span = assertionCallSpan(rawLines.map((entry) => entry.text), i);
+			for (const entry of span.slice(1)) consumed.add(entry.index);
+			const callText = span.map((entry) => entry.text).join('\n');
+			assertionLines.push({
+				line: line.line,
+				text: truncateLine(line.text, maxChars),
+				continuations: span.slice(1).map((entry) => ({
+					line: rawLines[entry.index]?.line ?? line.line,
+					text: truncateLine(entry.text, maxChars),
+				})),
+				supplies: valueSupplies(rawLines, { line: line.line, text: callText }, maxChars),
+			});
 		}
 
 		const acMatches = [...title.matchAll(/@ac\s+(AC-\d{2,})/gi)].map((m) =>
@@ -301,8 +340,15 @@ function renderTestLines(test: ParsedTest): string[] {
 	const lines: string[] = [];
 	lines.push(`${test.file}:${test.line} it("${test.title}")`);
 	if (test.hadAssertions) {
+		const seen = new Set<number>();
 		for (const a of test.activeAssertions) {
+			for (const supply of a.supplies ?? []) {
+				if (seen.has(supply.line)) continue;
+				seen.add(supply.line);
+				lines.push(`${test.file}:${supply.line} ${supply.text}`);
+			}
 			lines.push(`${test.file}:${a.line} ${a.text}`);
+			for (const cont of a.continuations ?? []) lines.push(`${test.file}:${cont.line} ${cont.text}`);
 		}
 	} else {
 		lines.push(`${test.file}:${test.line + 1} (no assertion lines)`);

@@ -116,6 +116,7 @@ async function shellStartCommand(
 	return shellStart({
 		goalFile: parsed.values.get('--goal-file'),
 		taskPlanFile: parsed.values.get('--task-plan-file') ?? null,
+		obligationsFile: parsed.values.get('--obligations-file') ?? null,
 		slug: parsed.values.get('--slug') ?? null,
 		responseFile: parsed.values.get('--response-file') ?? null,
 		executor: parsed.values.get('--executor') ?? null,

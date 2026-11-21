@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { RepositoryModelGovernor } from '../adapters/model-governor.ts';
+import { hasHostProfile, loadHostProfile } from '../host/host-profile.ts';
+import { createLocalEvidenceSpawn } from './local-evidence-spawn.ts';
 import { ArtifactStore, assertAuthoritativeInputSafe } from '../persistence/artifacts.ts';
 import {
 	REPOSITORY_ROOT,
@@ -49,6 +51,12 @@ export interface RunContext {
 	readonly gitCli: GitCliFn;
 }
 
+function defaultEvidenceSpawn(rootDir: string): OpenContextOptions['evidenceSpawn'] {
+	if (!hasHostProfile(rootDir)) return undefined;
+	const profile = loadHostProfile(rootDir);
+	return profile.productEvidence ? createLocalEvidenceSpawn() : undefined;
+}
+
 export function openContext({
 	rootDir,
 	runId,
@@ -91,7 +99,7 @@ export function openContext({
 			onBoundary,
 			gitCli,
 			execCli,
-			evidenceSpawn,
+			evidenceSpawn: evidenceSpawn ?? defaultEvidenceSpawn(effectiveRoot),
 			ghCli,
 		});
 		const projection = new StatusProjection({
