@@ -76,7 +76,7 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## Recall only reviewed learnings
 
-**Origin:** fitness-app graduation pass, 23 November 2026. `.learnings.jsonl` held 27 entries from 1 October to 19 November. Four `observed` traps graduated to the handbook. Twenty-three `user-stated` entries at confidence 9 were task prompts and were eligible for the three recall slots.
+**Origin:** downstream host graduation pass, 23 November 2026. `.learnings.jsonl` held 27 entries from 1 October to 19 November. Four `observed` traps graduated to the handbook. Twenty-three `user-stated` entries at confidence 9 were task prompts and were eligible for the three recall slots.
 
 **Candidate:** `docs/specs/ready/learning-recall-accepts-reviewed-entries.md`. Store rows with `source: user-stated` stay searchable and stay out of `resolveScopeLearnings` until `learnings add --upsert` republishes them as `observed`. Staged `candidateLearnings` for the current run still inject. No lesson classifier. The graduation gate stays an identifier search.
 
@@ -84,7 +84,7 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 ## Ledger measurements on the next run cohort
 
-**Origin:** course reflection, engineering quality and integration. The 10-start conditioning-deepening cohort already showed `semanticRepairsCount: 0` and no route exhaustion when multi-vendor fallback was preserved.
+**Origin:** course reflection, engineering quality and integration. The 10-start deepening cohort already showed `semanticRepairsCount: 0` and no route exhaustion when multi-vendor fallback was preserved.
 
 **Candidate:** one read-only pass over the next cohort of `runtime.sqlite` archives. Report prefix-cache hit rate (`cacheReadTokens` against `inputTokens` on 50–150 tool-call turns), first-pass `complete` against defects caught in `AUDIT_REQUIRED` and attempt 2/3, critic cost share against defects caught, and route cost per task. Write the numbers back into the reflection. No dashboard and no new merge gate.
 
