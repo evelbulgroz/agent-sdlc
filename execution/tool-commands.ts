@@ -16,6 +16,7 @@ import {
 } from '../host/command-policy.ts';
 import { validateScriptCommand } from '../host/script.ts';
 import { SdlcError } from '../policy/errors.ts';
+import { commandReportPath } from './command-report-path.ts';
 import {
 	type ParsedTestExecutionEvidence,
 	parseTestExecutionEvidence,
@@ -368,6 +369,7 @@ export interface RunCommandResult {
 	readonly pagedPath?: string;
 	readonly pagedStderrPath?: string;
 	readonly testExecutionEvidence?: ParsedTestExecutionEvidence;
+	readonly reportPath?: string;
 }
 
 export function runCommandTool(
@@ -443,6 +445,7 @@ export function runCommandTool(
 	const testExecutionEvidence = parseTestExecutionEvidence(
 		exitCode === 0 ? sanitizedStdout : `${sanitizedStdout}\n${sanitizedStderr}`,
 	);
+	const reportPath = commandReportPath(worktreeDir, validArgs, exitCode);
 	const stdout = presentCommandStream(sanitizedStdout, {
 		worktreeDir,
 		pageOverflow,
@@ -460,5 +463,6 @@ export function runCommandTool(
 		...(stdout.pagedPath ? { pagedPath: stdout.pagedPath } : {}),
 		...(stderr.pagedPath ? { pagedStderrPath: stderr.pagedPath } : {}),
 		...(testExecutionEvidence.format ? { testExecutionEvidence } : {}),
+		...(reportPath ? { reportPath } : {}),
 	};
 }

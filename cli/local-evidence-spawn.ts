@@ -53,9 +53,44 @@ function commandCases(cases: readonly CaseResult[]): CommandCaseResult[] {
 	});
 }
 
-const runCommand: CommandRunner = async (registration, request, worktreeDir) => {
+function containedReport(worktreeDir: string, relativePath: string): string | null {
+	if (relativePath.length === 0 || path.isAbsolute(relativePath) || relativePath.split(/[\\/]/).includes('..')) return null;
+	const root = path.resolve(worktreeDir);
+	const full = path.resolve(root, relativePath);
+	const relative = path.relative(root, full);
+	if (relative.startsWith('..') || path.isAbsolute(relative)) return null;
+	return full;
+}
+
+function scoreRecordedReport(
+	registration: CommandRegistration,
+	request: EvidenceRequest,
+	worktreeDir: string,
+	relativePath: string,
+	selected: readonly string[],
+): Promise<{ exitCode: number | null; cases: CommandCaseResult[]; reportBytes: Buffer; failureReason?: string | null }> {
+	const full = containedReport(worktreeDir, relativePath);
+	if (!full) return Promise.resolve({ exitCode: null, cases: [], reportBytes: Buffer.alloc(0), failureReason: 'invalid-evidence' });
+	let reportBytes: Buffer;
+	try {
+		reportBytes = fs.readFileSync(full);
+	} catch {
+		return Promise.resolve({ exitCode: null, cases: [], reportBytes: Buffer.alloc(0), failureReason: 'invalid-evidence' });
+	}
+	try {
+		const cases = commandCases(casesFromReport({ registration, selected, code: 0, reportBytes, request }));
+		return Promise.resolve({ exitCode: 0, cases, reportBytes });
+	} catch {
+		return Promise.resolve({ exitCode: 0, cases: [], reportBytes, failureReason: 'invalid-evidence' });
+	}
+}
+
+const runCommand: CommandRunner = async (registration, request, worktreeDir, context) => {
 	verifyCommandRegistration(worktreeDir, registration);
 	const selected = selectedCaseIdentities(request);
+	if (context?.priorReportPath) {
+		return scoreRecordedReport(registration, request, worktreeDir, context.priorReportPath, selected);
+	}
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-product-evidence-'));
 	try {
 		return await runRegistration(registration, request, worktreeDir, directory, selected);

@@ -31,6 +31,8 @@ export interface EvidenceInvocationContext {
 	maxDiagnosticBytes?: number;
 	/** Remaining authorized execution duration; may narrow, never expand, the frozen timeout. */
 	executionDurationCeilingMs?: number;
+	/** Repository-relative report already written by the task command. When set, scoring reads it and does not spawn. */
+	priorReportPath?: string;
 }
 
 export type EvidenceSpawn = ((
@@ -71,7 +73,12 @@ export interface EvidenceRecordStore {
 }
 
 /** Runs a command registration (outside the engine child) and returns the engine-parsed case results. */
-export type CommandRunner = (registration: CommandRegistration, request: EvidenceRequest, worktreeDir: string) => Promise<{
+export type CommandRunner = (
+	registration: CommandRegistration,
+	request: EvidenceRequest,
+	worktreeDir: string,
+	context?: Pick<EvidenceInvocationContext, 'priorReportPath'>,
+) => Promise<{
 	exitCode: number | null;
 	cases: CommandCaseResult[];
 	reportBytes: Buffer;

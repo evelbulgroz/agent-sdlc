@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
-	evaluateReport, parseCaseReport, parseJunit, prepareReportDirectory, readReportFile,
+	evaluateReport, parseCaseReport, parseJunit, prepareReportDirectory, readReportFile, selectCases,
 } from './report-formats.ts';
 
 const suite = (body) => `<?xml version="1.0"?>\n<testsuites>${body}</testsuites>`;
@@ -60,6 +60,28 @@ test('pass predicate fails closed', () => {
 	throwsCode(() => evaluateReport({ rows: rows(pass, pass), selected, exitCode: 0 }), 'REPORT_DUPLICATE_IDENTITY');
 	throwsCode(() => evaluateReport({ rows: rows(pass), selected, exitCode: 1 }), 'REPORT_EXIT_CONTRADICTION');
 	throwsCode(() => evaluateReport({ rows: rows(pass, ['x', 'failed']), selected, exitCode: 0 }), 'REPORT_EXIT_CONTRADICTION');
+});
+
+test('@ac AC-02 @case AC-02.1 @case AC-02.2 an unselected duplicate does not reject the selected pass', () => {
+	const rows = [
+		{ name: '@case AC-01.3 enter', outcome: 'passed', message: '' },
+		{ name: '@case AC-01.3 space', outcome: 'passed', message: '' },
+		{ name: '@case AC-02.1 historic', outcome: 'passed', message: '' },
+	];
+	const [selected] = selectCases({ rows, selected: ['AC-02.1'], exitCode: 0, retries: 0 });
+	assert.equal(selected.outcome, 'passed');
+	assert.equal(selected.identity, 'AC-02.1');
+});
+
+test('@ac AC-03 @case AC-03.1 @case AC-03.2 a selected duplicate still fails unless retries allow the second attempt', () => {
+	const duplicate = [
+		{ name: '@case AC-02.1 first', outcome: 'passed', message: '' },
+		{ name: '@case AC-02.1 second', outcome: 'passed', message: '' },
+	];
+	throwsCode(() => selectCases({ rows: duplicate, selected: ['AC-02.1'], exitCode: 0, retries: 0 }), 'REPORT_DUPLICATE_IDENTITY');
+	const [selected] = selectCases({ rows: duplicate, selected: ['AC-02.1'], exitCode: 0, retries: 1 });
+	assert.equal(selected.outcome, 'passed');
+	assert.equal(selected.attempts, 2);
 });
 
 test('retries collapse to the last attempt up to n+1 rows', () => {

@@ -208,10 +208,23 @@ export function collapseAttempts(rows: readonly CaseRow[], retries = 0): Collaps
  * zero cases, duplicate identities and an exit code that contradicts the unfiltered report; a selected case
  * that is absent is `not-run`, and any other non-passing row keeps its outcome.
  */
+function isFailing(outcome: ReportOutcome | undefined): boolean {
+	return outcome === 'failed' || outcome === 'error';
+}
+
 export function selectCases({ rows, selected, exitCode, retries = 0 }: SelectCasesInput): CaseResult[] {
-	const collapsed = collapseAttempts(rows, retries);
-	if (!selected.length || !collapsed.length) reject('REPORT_ZERO_CASES');
-	const failing = collapsed.some((row) => row.outcome === 'failed' || row.outcome === 'error');
+	if (!selected.length || !rows.length) reject('REPORT_ZERO_CASES');
+	const selectedIds = new Set(selected);
+	const selectedRows: CaseRow[] = [];
+	const unselected = new Map<string, CaseRow>();
+	for (const row of rows) {
+		const identity = identityOf(row.name);
+		if (selectedIds.has(identity)) selectedRows.push(row);
+		else unselected.set(identity, row);
+	}
+	const collapsed = collapseAttempts(selectedRows, retries);
+	const failing = collapsed.some((row) => isFailing(row.outcome))
+		|| [...unselected.values()].some((row) => isFailing(row.outcome));
 	if ((exitCode === 0) === failing) reject('REPORT_EXIT_CONTRADICTION', `exit ${exitCode}, failing rows ${failing}`);
 	const byIdentity = new Map(collapsed.map((row) => [row.identity, row]));
 	return selected.map((identity) => {

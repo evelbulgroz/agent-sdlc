@@ -186,7 +186,7 @@ export async function executeEvidence(
 		const runCommand = callbacks.runCommand ?? spawn.runCommand;
 		if (!runCommand) throw new Error('unqualified-evidence-executable');
 		selectedCaseIdentities(request);
-		const ran = await runCommand(registration, request, context.worktreeDir);
+		const ran = await runCommand(registration, request, context.worktreeDir, context);
 		commandCases = ran.cases;
 		({ exitCode } = ran);
 		stdout = ran.reportBytes;

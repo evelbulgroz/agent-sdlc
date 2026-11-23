@@ -27,11 +27,12 @@ function requireQualityPlan(plan: TaskPlan): QualityPlan {
 }
 
 export async function executeCheckpointObligations({
-	runtime, snapshot, plan: rawPlan, binding, worktreeDir, registryId, obligations, observeSource,
+	runtime, snapshot, plan: rawPlan, binding, worktreeDir, registryId, obligations, observeSource, toolResult,
 }: {
 	runtime: WorkflowRuntimeLike; snapshot: Readonly<RuntimeState>; plan: TaskPlan;
 	binding: CandidateBinding; worktreeDir: string; registryId: string; obligations: Obligation[];
 	observeSource: EvidenceInvocationContext['observeSource'];
+	toolResult?: { reportPath?: string } | null;
 }): Promise<string[]> {
 	const plan = requireQualityPlan(rawPlan);
 	const auth = getAndValidateAuthorization(runtime, snapshot);
@@ -68,6 +69,7 @@ export async function executeCheckpointObligations({
 			expectedSourceHash: observation.sourceHash, observeSource,
 			environment: { PATH: process.env.PATH ?? '', CI: 'true' },
 			executionDurationCeilingMs: remainingDurationMs,
+			...(toolResult?.reportPath ? { priorReportPath: toolResult.reportPath } : {}),
 		}, runtime.evidenceSpawn ?? spawn, createEvidenceRecordStore(runtime.runtimeStore, request), {
 			now: runtime.now,
 			onDiagnostics: (diagnostics) => {

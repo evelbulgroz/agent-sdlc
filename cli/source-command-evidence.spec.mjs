@@ -36,6 +36,29 @@ function bind(f, body, code = 0, overrides = {}) {
 	return registration;
 }
 
+test('@ac AC-01 @case AC-01.1 @case AC-01.2 checkpoint evidence scores the recorded report and does not spawn', async () => {
+	await fixture(async (f) => {
+		const registration = bind(f, `<testsuite>${pass}</testsuite>`, 0, {
+			script: 'import fs from "node:fs"; fs.writeFileSync("src/SPAWNED", "1"); process.exit(1);\n',
+		});
+		fs.writeFileSync(path.join(f.root, 'src/task-report.xml'), `<testsuite>${pass}</testsuite>`);
+		f.context.priorReportPath = 'src/task-report.xml';
+		const result = await executeEvidence(f.request, registration, f.context, createLocalEvidenceSpawn(), f.store);
+		assert.equal(result.receipt.status, 'passed');
+		assert.equal(result.report.cases[0].file, source.file);
+		assert.equal(fs.existsSync(path.join(f.root, 'src/SPAWNED')), false);
+	});
+	await fixture(async (f) => {
+		const registration = bind(f, `<testsuite>${pass}</testsuite>`, 0, {
+			script: 'import fs from "node:fs"; fs.writeFileSync("src/SPAWNED", "1"); process.exit(0);\n',
+		});
+		f.context.priorReportPath = 'src/missing-task-report.xml';
+		const result = await executeEvidence(f.request, registration, f.context, createLocalEvidenceSpawn(), f.store);
+		assert.equal(result.invocation.failureReason, 'invalid-evidence');
+		assert.equal(fs.existsSync(path.join(f.root, 'src/SPAWNED')), false);
+	});
+});
+
 test('real local command selection and receipt synthesis retain the matching source despite a foreign collision', async () => {
 	await fixture(async (f) => {
 		const registration = bind(f, `<testsuite>${foreignPass}${pass}</testsuite>`);
