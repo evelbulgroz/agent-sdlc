@@ -73,3 +73,35 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 **Observed:** the declaration regex misses `export abstract class`, indented declarations, and `function*`, which NestJS-style hosts use. Two identical production files that each hold several classes can report overlapping runs, such as `1-16` and `9-16`. A deliberate new copy is accepted only through a baseline jscpd entry. The exceptions file does not allow it.
 
 **Done when:** a spec decides which declaration forms count, whether overlapping windows collapse to one finding, and whether an exceptions entry may allow a new copy. The gate stays within 500 lines and 20480 bytes.
+
+## Recall only reviewed learnings
+
+**Origin:** fitness-app graduation pass, 23 November 2026. `.learnings.jsonl` held 27 entries from 1 October to 19 November. Four `observed` traps graduated to the handbook. Twenty-three `user-stated` entries at confidence 9 were task prompts and were eligible for the three recall slots.
+
+**Candidate:** `docs/specs/drafts/learning-recall-accepts-reviewed-entries.md`. Store rows with `source: user-stated` stay searchable and stay out of `resolveScopeLearnings` until `learnings add --upsert` republishes them as `observed`. Staged `candidateLearnings` for the current run still inject. No lesson classifier. The graduation gate stays an identifier search.
+
+**Done when:** the draft's AC-01 through AC-04 are covered in `roles/upstream-recall.spec.mjs`. Do not `shell start` until the obligations file exists.
+
+## Ledger measurements on the next run cohort
+
+**Origin:** course reflection, engineering quality and integration. The 10-start conditioning-deepening cohort already showed `semanticRepairsCount: 0` and no route exhaustion when multi-vendor fallback was preserved.
+
+**Candidate:** one read-only pass over the next cohort of `runtime.sqlite` archives. Report prefix-cache hit rate (`cacheReadTokens` against `inputTokens` on 50–150 tool-call turns), first-pass `complete` against defects caught in `AUDIT_REQUIRED` and attempt 2/3, critic cost share against defects caught, and route cost per task. Write the numbers back into the reflection. No dashboard and no new merge gate.
+
+**Done when:** that cohort has been measured and the reflection records which of the four questions the numbers answer.
+
+## Split the planning hash before the next comment-only stale
+
+**Origin:** `boundedPlanningHash` binds `/^task-.*\.ts$/` and the planning contract schemas. A comment in `execution/task-quality-gate.ts` or `execution/task-scope.ts` stales the hash and forces a canary re-run.
+
+**Candidate:** the next time that happens, split the hash into a schema part and an implementation part so an offline fixture run covers an implementation-only change. Do not do the split in advance.
+
+**Done when:** a comment-only edit in one of those two files no longer requires a hosted canary, and the schema part still fails closed when a planning contract changes.
+
+## Provider adapter changes wait for a provider change
+
+**Origin:** course reflection. Schema strict-mode, reasoning effort, prompt-cache breakpoints, and credit-depletion failover already live in `/home/ulrik/version-control/lib/ts/model-usage-govenor/` (`PROVIDER-CAPABILITIES.md`).
+
+**Candidate:** edit an adapter when that provider's request shape changes. Do not open a parity project ahead of that change.
+
+**Done when:** the next forced provider change updates that adapter and its capability card, and no unused parity layer has been added.
