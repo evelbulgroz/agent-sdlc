@@ -13,6 +13,7 @@
 	},
 	"workspace": {
 		"allowedPathRoots": [
+			"acceptance",
 			"adapters",
 			"cli",
 			"docs",
@@ -31,6 +32,7 @@
 			".agents"
 		],
 		"repositoryScopes": [
+			"acceptance",
 			"adapters",
 			"cli",
 			"docs",
