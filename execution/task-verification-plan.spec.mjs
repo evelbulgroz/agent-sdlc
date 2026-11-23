@@ -187,6 +187,82 @@ test('@ac AC-01 AC-04 derives closed JSON evidence commands for supported test r
 	);
 });
 
+test('@ac AC-01 @case AC-01.1 @case AC-01.2 a registered unit argv is used verbatim', () => {
+	const task = {
+		targetPackage: 'frontends/example',
+		authoredPaths: ['frontends/example/src/ui/Page.spec.tsx'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/example', 'test'],
+	};
+	const registered = ['pnpm', 'run', 'test:unit'];
+	const packageJson = {
+		scripts: { test: 'vitest run && node --test scripts/evidence.spec.mjs', posttest: 'node scripts/posttest-sentinel.mjs' },
+	};
+	const argv = resolveAcceptanceEvidenceCommand(task, packageJson, registered);
+	assert.deepEqual(argv, registered);
+	assert.equal(argv.includes('--reporter=json'), false);
+	assert.equal(argv.includes('src/ui/Page.spec.tsx'), false);
+	assert.equal(argv.includes('vitest'), false);
+	assert.equal(argv.some((token) => token.includes('posttest')), false);
+	const withPlaceholder = ['pnpm', 'run', 'test:unit', '{reportPath}'];
+	assert.deepEqual(
+		resolveAcceptanceEvidenceCommand(task, packageJson, withPlaceholder),
+		withPlaceholder,
+	);
+});
+
+test('@ac AC-02 @case AC-02.1 @case AC-02.2 a compound test script gains neither a reporter nor a spec path', () => {
+	const task = {
+		targetPackage: 'frontends/example',
+		authoredPaths: ['frontends/example/src/ui/Page.spec.tsx'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/example', 'test'],
+	};
+	const argv = resolveAcceptanceEvidenceCommand(task, {
+		scripts: {
+			test: 'vitest run && node --test scripts/evidence.spec.mjs',
+			posttest: 'node scripts/posttest-sentinel.mjs',
+		},
+	});
+	assert.deepEqual(argv, ['pnpm', '--filter', '@fixture/example', 'test']);
+	assert.equal(argv.includes('--reporter=json'), false);
+	assert.equal(argv.includes('scripts/evidence.spec.mjs'), false);
+	assert.equal(argv.includes('src/ui/Page.spec.tsx'), false);
+	assert.equal(argv.some((token) => token.includes('posttest')), false);
+});
+
+test('@ac AC-03 @case AC-03.1 @case AC-03.2 a single Vitest script still ends with the JSON reporter', () => {
+	const task = {
+		targetPackage: 'frontends/example',
+		authoredPaths: ['frontends/example/src/ui/Page.spec.tsx'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/example', 'test'],
+	};
+	const argv = resolveAcceptanceEvidenceCommand(task, {
+		scripts: {
+			test: 'vitest run',
+			posttest: 'node scripts/posttest-sentinel.mjs',
+		},
+	});
+	assert.equal(argv.at(-1), '--reporter=json');
+	assert.equal(argv.filter((token) => token === '--reporter=json').length, 1);
+	assert.equal(argv.some((token) => token.includes('posttest')), false);
+});
+
+test('an empty registered unit argv is rejected and a command outside the allowlist is rejected before spawn', () => {
+	const task = {
+		targetPackage: 'frontends/example',
+		authoredPaths: ['frontends/example/src/ui/Page.spec.tsx'],
+		verificationCommand: ['pnpm', '--filter', '@fixture/example', 'test'],
+	};
+	const packageJson = { scripts: { test: 'vitest run' } };
+	assert.throws(
+		() => resolveAcceptanceEvidenceCommand(task, packageJson, []),
+		(err) => err.code === 'INVALID_INPUT' && err.message.includes('empty'),
+	);
+	assert.throws(
+		() => resolveAcceptanceEvidenceCommand(task, packageJson, ['pnpm', 'run', 'publish']),
+		(err) => err.code === 'INVALID_INPUT',
+	);
+});
+
 test('repository-scoped tasks retain their exact declared verification command without package metadata', () => {
 	const task = {
 		targetPackage: 'docs',

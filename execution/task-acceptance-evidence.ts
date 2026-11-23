@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { SdlcError } from '../policy/errors.ts';
 import { formatAcCoverageFailure } from './ac-author-feedback.ts';
 import { type BoundAcCoverageReport, bindAcCoverageToExecution } from './ac-coverage.ts';
 import { type GitShowFn, evaluateAcCoverageFromWorktree } from './ac-worktree-coverage.ts';
@@ -10,6 +11,17 @@ import {
 	hasTaskQualityGateConfig,
 } from './task-quality-gate.ts';
 import { type TaskScopeTaskLike, taskAuthoredWritePaths } from './task-scope.ts';
+import { validateCommandAllowlist } from './tool-commands.ts';
+
+/** Returns the registered unit argv with no added token. `{reportPath}` stays as written. */
+export function acceptRegisteredUnitArgv(argv: readonly string[]): readonly string[] {
+	if (argv.length === 0 || argv.some((token) => token.trim().length === 0)) {
+		throw new SdlcError('INVALID_INPUT', 'Registered unit argv is empty');
+	}
+	const allowlisted = argv.filter((token) => token !== '{reportPath}');
+	validateCommandAllowlist(allowlisted[0], allowlisted.slice(1));
+	return [...argv];
+}
 
 export interface CreateAcceptanceEvidenceValidatorOptions {
 	readonly acceptanceCriteria: readonly string[];

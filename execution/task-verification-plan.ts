@@ -3,7 +3,7 @@ import path from 'node:path';
 import { isTestFilePath } from '../policy/contracts.ts';
 import type { GitShowFn } from './ac-worktree-coverage.ts';
 import type { CompletionValidatorFn } from './minimal-verification.ts';
-import { createAcceptanceEvidenceValidator } from './task-acceptance-evidence.ts';
+import { acceptRegisteredUnitArgv, createAcceptanceEvidenceValidator } from './task-acceptance-evidence.ts';
 import {
 	type TaskScopePlanLike,
 	type TaskScopeTaskLike,
@@ -184,7 +184,9 @@ export function resolveTargetedVerificationCommand(
 export function resolveAcceptanceEvidenceCommand(
 	task: VerificationPlanTask,
 	packageJson: PackageJsonLike = {},
+	registeredUnitArgv?: readonly string[] | null,
 ): readonly string[] | null {
+	if (Array.isArray(registeredUnitArgv)) return acceptRegisteredUnitArgv(registeredUnitArgv);
 	const verificationCommand = resolveTaskVerificationCommand(task, packageJson);
 	const repositorySuite = JSON.stringify(verificationCommand);
 	if (repositorySuite === JSON.stringify(['pnpm', 'run', 'test:unit'])) {
@@ -196,6 +198,9 @@ export function resolveAcceptanceEvidenceCommand(
 		resolveAuthoredTestPaths(task),
 	)?.command;
 	if (!targeted || typeof targetedScript !== 'string') return null;
+	// A compound shell command must not receive a reporter or a spec path. Those
+	// tokens would be forwarded past `&&` and the build fails closed instead.
+	if (targetedScript.includes('&&')) return verificationCommand;
 	if (/\bvitest\b/.test(targetedScript)) return [...targeted, '--reporter=json'];
 	if (/\bjest\b/.test(targetedScript)) return [...targeted, '--json'];
 	if (/\bnode\s+--test\b/.test(targetedScript)) return targeted;
