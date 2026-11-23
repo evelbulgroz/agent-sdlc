@@ -29,6 +29,12 @@ import {
 } from '../run-context.ts';
 import { prepareStartObligations, writeProductObligations } from '../product-obligations-file.ts';
 import type { CliStreams } from '../shell-driver.ts';
+import {
+	loadPriorTaskCheckout,
+	omitCompletedAuthoredPaths,
+	priorTaskFlags,
+	writePriorTaskHandoff,
+} from '../../workflow/prior-task-tree.ts';
 
 export function resolveExecutorSelection(
 	parsed: { values?: ReadonlyMap<string, string> } | null | undefined,
@@ -78,6 +84,10 @@ export async function startRun(
 	},
 ): Promise<Record<string, unknown>> {
 	const executor = resolveExecutorSelection(parsed, env);
+	const priorPair = priorTaskFlags(parsed.values.get('--prior-run'), parsed.values.get('--prior-task'));
+	const priorCheckout = priorPair
+		? loadPriorTaskCheckout({ rootDir, ...priorPair, ...(gitCli ? { gitCli } : {}) })
+		: null;
 	const registry = new RoleRegistry({ rootDir });
 	const loaded = registry.load();
 	const governor = injectedGovernor ?? new RepositoryModelGovernor({ rootDir });
@@ -89,10 +99,10 @@ export async function startRun(
 	const draft = parseSpecification(goal);
 	const completeness = evaluateCompleteness(draft);
 	const acceptanceCriteriaQuality = evaluateAcceptanceCriteriaQuality(draft);
-	const taskManifest = resolveTaskManifest(parsed, {
+	const taskManifest = omitCompletedAuthoredPaths(resolveTaskManifest(parsed, {
 		rootDir,
 		maxBytes: loaded.workflow.limits.maxGoalBytes,
-	});
+	}), priorCheckout?.authoredPaths ?? []);
 	if (taskManifest && (!completeness.complete || !acceptanceCriteriaQuality.complete)) {
 		throw new SdlcError(
 			'TASK_PLAN_INVALID',
@@ -162,6 +172,7 @@ export async function startRun(
 			`# Execution Plan: ${runId}\n\n## Status\n- Orchestrated run initialized.\n`,
 			'utf8',
 		);
+		if (priorCheckout) writePriorTaskHandoff(rootDir, runId, priorCheckout);
 		const staleLedgerPath = path.join(rootDir, 'tools/.model-usage/runs', `${runId}.json`);
 		if (fs.existsSync(staleLedgerPath)) {
 			fs.unlinkSync(staleLedgerPath);

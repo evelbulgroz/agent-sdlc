@@ -11,6 +11,7 @@ import {
 	getAndValidateAuthorization,
 	shouldDeferGitMaterialization,
 } from '../node-helpers.ts';
+import { checkoutRecordedPriorTask } from '../prior-task-tree.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../worktree-guard.ts';
 import { timedSpan } from '../../persistence/run-spans.ts';
 
@@ -38,6 +39,12 @@ export function createPrepareWorkspaceNode(runtime: WorkflowRuntimeLike) {
 				auth.allowedOperations?.createBranch && !deferGitMaterialization
 					? auth.targetBranch
 					: undefined,
+			gitCli: runtime.gitCli,
+		});
+		checkoutRecordedPriorTask({
+			rootDir: runtime.rootDir,
+			runId: snapshot.runId,
+			worktreeDir: worktreeResult.worktreeDir,
 			gitCli: runtime.gitCli,
 		});
 

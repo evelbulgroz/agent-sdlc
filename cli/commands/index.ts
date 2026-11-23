@@ -121,6 +121,8 @@ async function shellStartCommand(
 		responseFile: parsed.values.get('--response-file') ?? null,
 		executor: parsed.values.get('--executor') ?? null,
 		skipCanary: parsed.booleans.has('--skip-canary'),
+		priorRun: parsed.values.get('--prior-run') ?? null,
+		priorTask: parsed.values.get('--prior-task') ?? null,
 		rootDir: options.rootDir,
 		streams: options.streams,
 		runCliFn: caller,

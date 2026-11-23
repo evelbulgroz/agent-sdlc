@@ -24,6 +24,7 @@ import { SdlcError } from '../policy/errors.ts';
 import { parseSpecification } from '../workflow/specification.ts';
 import { mergeCorrectionReply } from './correction-reply.ts';
 import { mergeQualityReply } from './quality-reply.ts';
+import { priorTaskFlags } from '../workflow/prior-task-tree.ts';
 import { assertStartSiblings } from './shell-start-files.ts';
 
 const MAX_GOAL_FILE_BYTES = 10 * 1024 * 1024;
@@ -175,13 +176,16 @@ function computeBriefHash(draft: {
  */
 export async function shellStart({
 	goalFile, taskPlanFile = null, obligationsFile = null, slug = null, responseFile = null,
-	executor = null, skipCanary = false, rootDir, streams, runCliFn, engineOptions = {},
+	executor = null, skipCanary = false, priorRun = null, priorTask = null,
+	rootDir, streams, runCliFn, engineOptions = {},
 }: {
 	goalFile?: string | null; taskPlanFile?: string | null; obligationsFile?: string | null;
 	slug?: string | null; responseFile?: string | null; executor?: string | null; skipCanary?: boolean;
+	priorRun?: string | null; priorTask?: string | null;
 	rootDir: string; streams?: CliStreams; runCliFn?: RunCliFn; engineOptions?: Record<string, unknown>;
 }): Promise<Record<string, unknown>> {
 	const engineCaller = requireRunCliFn(runCliFn);
+	priorTaskFlags(priorRun, priorTask);
 	if (!goalFile || typeof goalFile !== 'string') {
 		throw new SdlcError('INVALID_INPUT', 'shell start requires --goal-file');
 	}
@@ -249,6 +253,9 @@ export async function shellStart({
 	if (obligationsFile) startArgs.push('--obligations-file', obligationsFile);
 	if (typeof executor === 'string' && executor.length > 0) startArgs.push('--executor', executor);
 	if (skipCanary) startArgs.push('--skip-canary');
+	if (priorRun && priorTask) {
+		startArgs.push('--prior-run', priorRun, '--prior-task', priorTask);
+	}
 	startArgs.push('--json');
 	return invokeEngine(engineCaller, startArgs, { rootDir, streams, engineOptions });
 }
