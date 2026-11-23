@@ -78,9 +78,9 @@ Open work for `@evelbulgroz/agent-sdlc`. Keep items short, evidence-linked and a
 
 **Origin:** fitness-app graduation pass, 23 November 2026. `.learnings.jsonl` held 27 entries from 1 October to 19 November. Four `observed` traps graduated to the handbook. Twenty-three `user-stated` entries at confidence 9 were task prompts and were eligible for the three recall slots.
 
-**Candidate:** `docs/specs/drafts/learning-recall-accepts-reviewed-entries.md`. Store rows with `source: user-stated` stay searchable and stay out of `resolveScopeLearnings` until `learnings add --upsert` republishes them as `observed`. Staged `candidateLearnings` for the current run still inject. No lesson classifier. The graduation gate stays an identifier search.
+**Candidate:** `docs/specs/ready/learning-recall-accepts-reviewed-entries.md`. Store rows with `source: user-stated` stay searchable and stay out of `resolveScopeLearnings` until `learnings add --upsert` republishes them as `observed`. Staged `candidateLearnings` for the current run still inject. No lesson classifier. The graduation gate stays an identifier search.
 
-**Done when:** the draft's AC-01 through AC-04 are covered in `roles/upstream-recall.spec.mjs`. Do not `shell start` until the obligations file exists.
+**Done when:** the draft's AC-01 through AC-04 are covered in `roles/upstream-recall.spec.mjs`. This host profile has no `productEvidence`, so the goal has no obligations file.
 
 ## Ledger measurements on the next run cohort
 

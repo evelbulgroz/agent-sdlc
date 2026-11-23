@@ -1,6 +1,6 @@
 # Intent
 
-Draft only. Do not start this goal until its sibling obligations file exists.
+Ready for `shell start`. This host profile declares no `productEvidence`, so this goal has no obligations file.
 
 ## Goal
 
@@ -26,8 +26,8 @@ A sentence captured on `resume --retry` or `post-mortem` stays in `.learnings.js
 
 ## Invariants and constraints
 
-- Store rows with `source: user-stated` are omitted from `resolveScopeLearnings`.
-- The `candidateLearnings` argument is still merged. Those entries are this run's staged proposals, including when their source defaults to `user-stated`.
+- Store rows with `source: user-stated` are omitted from `resolveScopeLearnings` before `candidateLearnings` are merged.
+- The `candidateLearnings` argument is still merged after that filter. Those entries are this run's staged proposals, including when their source defaults to `user-stated`.
 - `source: observed` and `source: inferred` rows at confidence 7 or higher follow the existing scope, type, and three-slot rules.
 - `agent-sdlc-deterministic` and `maxPromptTokens: 0` still return an empty string.
 - `learnings add --upsert` with `source: observed` replaces the stored row and makes that key eligible for recall.

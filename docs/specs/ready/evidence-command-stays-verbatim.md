@@ -1,6 +1,6 @@
 # Intent
 
-Draft only. Do not start this goal until its sibling obligations file exists. The 24,576-byte critic packing ceiling stays.
+Ready for `shell start`. This host profile declares no `productEvidence`, so this goal has no obligations file. The 24,576-byte critic packing ceiling stays.
 
 ## Goal
 
@@ -10,7 +10,7 @@ Task acceptance evidence runs the argv the host profile registered for that evid
 
 ## Non-goals
 
-- Do not remove `--reporter=json` from a registered command whose own script is a single Vitest invocation and whose registration says to add it.
+- Do not remove `--reporter=json` from a targeted script that is one Vitest invocation and is not the registered unit command.
 - Do not change the host allowlist format.
 - Do not make `posttest` part of the evidence command.
 - Do not raise the packing ceiling.
@@ -27,8 +27,9 @@ Task acceptance evidence runs the argv the host profile registered for that evid
 
 ## Invariants and constraints
 
-- When `productEvidence.commands.unit` is registered, that argv is the evidence command.
-- Arguments are appended only to the process the registration names, never to a `posttest` script.
+- When `productEvidence.commands.unit.argv` is non-empty, `resolveAcceptanceEvidenceCommand` returns that argv with no added token. `{reportPath}` stays as written.
+- With no registered unit argv, a targeted script whose text contains `vitest` and does not contain `&&` still gains `--reporter=json` on that command only.
+- Arguments are appended only to that one command, never to a `posttest` script.
 - A package `test` script that is not the registered command is not rewritten.
 - The registered command must already be on the host command allowlist.
 
@@ -40,7 +41,7 @@ None. This changes how the engine builds an evidence argv. Package `test` script
 
 1. AC-01: the registered unit argv is used verbatim. Given a profile whose unit command is `pnpm run test:unit` and a package `test` script that contains `vitest`. Then the evidence argv is the registered command and does not gain a spec path or `--reporter=json`. Cases: AC-01.1: registered argv is unchanged; AC-01.2: the package `test` script is not the command that runs.
 2. AC-02: a compound test script does not receive the reporter. Given a `test` script of `vitest run && node --test scripts/evidence.spec.mjs` and a task that targets that script. Then the built argv does not append `--reporter=json` or a spec path after the `&&` segment. Cases: AC-02.1: no reporter appended; AC-02.2: no spec path appended.
-3. AC-03: a single registered Vitest script may still request JSON. Given a registration whose script is one Vitest command and whose registration sets `reporter` to `json`. Then the argv for that command ends with `--reporter=json` and the same token is not added to any other script. Cases: AC-03.1: the Vitest command gains the reporter; AC-03.2: `posttest` is absent from the argv.
+3. AC-03: a single Vitest script may still request JSON. Given no registered unit argv and a targeted script of one Vitest command with no `&&`. Then the argv for that command ends with `--reporter=json` and the same token is not added to any other script. Cases: AC-03.1: the Vitest command gains the reporter; AC-03.2: `posttest` is absent from the argv.
 
 ## Failure defenses
 
