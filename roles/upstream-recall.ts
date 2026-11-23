@@ -136,12 +136,13 @@ export async function resolveScopeLearnings({
 			}
 		}
 	}
+	const recallPool = pool.filter((entry) => (entry.source ?? 'observed') !== 'user-stated');
 	if (Array.isArray(candidateLearnings) && candidateLearnings.length > 0) {
-		const existingKeys = new Set(pool.map((e) => e.key));
+		const existingKeys = new Set(recallPool.map((entry) => entry.key));
 		for (const candidate of candidateLearnings) {
 			const key = candidate.learning_key || candidate.key;
 			if (key && !existingKeys.has(key)) {
-				pool.push({
+				recallPool.push({
 					type: candidate.learning_type || candidate.type || 'pitfall',
 					key,
 					scope: candidate.scope ?? 'global',
@@ -155,7 +156,7 @@ export async function resolveScopeLearnings({
 		}
 	}
 
-	if (pool.length === 0) {
+	if (recallPool.length === 0) {
 		return '';
 	}
 
@@ -163,7 +164,7 @@ export async function resolveScopeLearnings({
 	const types = getRoleAffinityTypes(effectiveRole);
 	const scope = resolveTargetScope(targetPaths, { rootDir: resolvedRootDir });
 
-	const results = await searchLearningStore(pool, {
+	const results = await searchLearningStore(recallPool, {
 		query: taskDescription || '',
 		scope,
 		types,

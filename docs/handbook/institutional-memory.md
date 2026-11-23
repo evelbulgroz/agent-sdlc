@@ -16,6 +16,8 @@ Each entry records:
 
 When planning or drafting tasks in a given area, the engine queries the learnings store for entries matching the target package or scope, injecting high-signal institutional memory directly into prompt contexts.
 
+Role recall keeps at most three rows whose source is `observed` or `inferred`, and a stored row with no source is treated as `observed`. A `user-stated` row stays in `learnings search` and stays out of that prompt until an operator republishes the same key with `source: observed`. Staged proposals from the current run are still injected. The confidence floor stays 7.
+
 ---
 
 ## 3. The Graduation Workflow
