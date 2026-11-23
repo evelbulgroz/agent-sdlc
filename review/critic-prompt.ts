@@ -37,6 +37,58 @@ export interface BuildPhasePromptOptions {
 	documentText?: string;
 	rubric?: string;
 	testExcerpts?: string;
+	/** Criterion ids owned by this goal's tasks. When set, other criterion lines stay out of the prompt. */
+	ownedCriterionIds?: readonly string[];
+	/** Present only when the run bound an obligations document. The prompt receives the hash and no other bytes of that document. */
+	obligations?: CriticObligationsBinding;
+}
+
+export interface CriticObligationsBinding {
+	hash?: string;
+	criterionIds: readonly string[];
+	documentText: string;
+}
+
+function criterionIdsInText(text: string): string[] {
+	const ids: string[] = [];
+	for (const match of text.matchAll(new RegExp('AC-(\\d{2,})', 'g'))) {
+		const digits = match[1];
+		if (digits) ids.push(`AC-${digits}`);
+	}
+	return ids;
+}
+
+function limitOwnedText(text: string, owned: ReadonlySet<string> | null, obligationsText: string): string {
+	const stripped = obligationsText.length > 0 ? text.split(obligationsText).join('') : text;
+	if (!owned) return stripped;
+	return stripped
+		.split('\n')
+		.filter((line) => criterionIdsInText(line).every((id) => owned.has(id)))
+		.join('\n');
+}
+
+function resolveObligationsHash(
+	obligations: CriticObligationsBinding | undefined,
+	ownedCriterionIds: readonly string[] | undefined,
+): string | null {
+	if (obligations === undefined) return null;
+	const hash = typeof obligations.hash === 'string' ? obligations.hash.trim() : '';
+	if (!/^[a-f0-9]{64}$/.test(hash)) {
+		throw new SdlcError(
+			'INVALID_CONTRACT',
+			'A bound obligations document requires its SHA-256 before prompt assembly',
+		);
+	}
+	const present = new Set(obligations.criterionIds);
+	for (const id of ownedCriterionIds ?? []) {
+		if (!present.has(id)) {
+			throw new SdlcError(
+				'INVALID_CONTRACT',
+				`Task criterion '${id}' is absent from the bound obligations document`,
+			);
+		}
+	}
+	return hash;
 }
 
 export function sliceSafe(str: string, length: number): string {
@@ -208,7 +260,19 @@ export function buildPhasePrompt({
 	documentText = '',
 	rubric = '',
 	testExcerpts = '',
+	ownedCriterionIds,
+	obligations,
 }: BuildPhasePromptOptions): string {
+	const obligationsHash = resolveObligationsHash(obligations, ownedCriterionIds);
+	const ownedIds = ownedCriterionIds === undefined ? null : new Set(ownedCriterionIds);
+	const obligationsText = obligations?.documentText ?? '';
+	const limitedDocumentText = limitOwnedText(documentText, ownedIds, obligationsText);
+	const limitedSummary = limitOwnedText(specSummary, ownedIds, obligationsText);
+	const limitedCriteria = ownedIds
+		? acceptanceCriteria
+			.map((entry) => limitOwnedText(entry, ownedIds, obligationsText).trim())
+			.filter((entry) => criterionIdsInText(entry).some((id) => ownedIds.has(id)))
+		: acceptanceCriteria;
 	const phaseRubric = rubric
 		? rubric.trim()
 		: loadRubric(rootDir, phase, { touchedFiles, authoredPaths });
@@ -217,12 +281,15 @@ export function buildPhasePrompt({
 		'',
 		phaseRubric,
 	];
+	if (obligationsHash) {
+		sections.push('', '### Obligations SHA-256', obligationsHash);
+	}
 
 	if (phase === 'spec' || phase === 'plan') {
 		sections.push(
 			'',
 			`### Target ${phase === 'spec' ? 'Specification' : 'Implementation Plan'}`,
-			documentText ? documentText.trim() : '(none)',
+			limitedDocumentText ? limitedDocumentText.trim() : '(none)',
 		);
 	} else if (phase === 'qa') {
 		let excerptsText = '(none)';
@@ -237,11 +304,11 @@ export function buildPhasePrompt({
 					phaseRubric,
 					'',
 					'### Approved Specification & Acceptance Criteria',
-					specSummary ? specSummary.trim() : '(none)',
+					limitedSummary ? limitedSummary.trim() : '(none)',
 					'',
 					'### Acceptance Criteria',
-					acceptanceCriteria.length > 0
-						? acceptanceCriteria.map((ac, i) => `${i + 1}. ${ac}`).join('\n')
+					limitedCriteria.length > 0
+						? limitedCriteria.map((ac, i) => `${i + 1}. ${ac}`).join('\n')
 						: '(none)',
 					'',
 					'### Touched Test Excerpts',
@@ -258,7 +325,7 @@ export function buildPhasePrompt({
 				);
 				const extracted = extractTestExcerpts({
 					touchedFiles: objectFiles,
-					acceptanceCriteria,
+					acceptanceCriteria: limitedCriteria,
 					baseBytes,
 					baseLines,
 				});
@@ -270,11 +337,11 @@ export function buildPhasePrompt({
 		sections.push(
 			'',
 			'### Approved Specification & Acceptance Criteria',
-			specSummary ? specSummary.trim() : '(none)',
+			limitedSummary ? limitedSummary.trim() : '(none)',
 			'',
 			'### Acceptance Criteria',
-			acceptanceCriteria.length > 0
-				? acceptanceCriteria.map((ac, i) => `${i + 1}. ${ac}`).join('\n')
+			limitedCriteria.length > 0
+				? limitedCriteria.map((ac, i) => `${i + 1}. ${ac}`).join('\n')
 				: '(none)',
 			'',
 			'### Touched Test Excerpts',
@@ -288,11 +355,11 @@ export function buildPhasePrompt({
 		sections.push(
 			'',
 			'### Approved Specification',
-			specSummary ? specSummary.trim() : '(none)',
+			limitedSummary ? limitedSummary.trim() : '(none)',
 			'',
 			'### Acceptance Criteria',
-			acceptanceCriteria.length > 0
-				? acceptanceCriteria.map((ac, i) => `${i + 1}. ${ac}`).join('\n')
+			limitedCriteria.length > 0
+				? limitedCriteria.map((ac, i) => `${i + 1}. ${ac}`).join('\n')
 				: '(none)',
 			'',
 			'### Touched Files',

@@ -306,6 +306,120 @@ test('@ac AC-09 the spec rubric allows a later task to cite a shared file and re
 	assert.equal(rubric.includes('removedPaths'), false);
 });
 
+const OWNED_TEXT = 'AC-01: owned outcome OWNED-CRITERION-TEXT. Given the goal. Then the prompt keeps this sentence.';
+const FOREIGN_TEXT = 'AC-02: foreign outcome FOREIGN-CRITERION-TEXT. Given a sibling goal. Then the prompt drops this sentence.';
+const OBLIGATIONS_JSON = '{"schemaVersion":"1.0.0","sentinel":"OBLIGATIONS-DOCUMENT-SENTINEL","text":"FOREIGN-CRITERION-TEXT"}';
+const OBLIGATIONS_HASH = crypto.createHash('sha256').update(OBLIGATIONS_JSON).digest('hex');
+
+function promptWithBoundObligations(phase) {
+	return buildPhasePrompt({
+		rootDir: REPOSITORY_ROOT,
+		phase,
+		documentText: ['# Goal', OWNED_TEXT, FOREIGN_TEXT, OBLIGATIONS_JSON].join('\n'),
+		specSummary: [OWNED_TEXT, FOREIGN_TEXT, OBLIGATIONS_JSON].join('\n'),
+		acceptanceCriteria: [OWNED_TEXT, FOREIGN_TEXT],
+		ownedCriterionIds: ['AC-01'],
+		obligations: {
+			hash: OBLIGATIONS_HASH,
+			criterionIds: ['AC-01', 'AC-02'],
+			documentText: OBLIGATIONS_JSON,
+		},
+	});
+}
+
+function assertOwnedPrompt(prompt) {
+	assert.ok(prompt.includes('OWNED-CRITERION-TEXT'));
+	assert.ok(prompt.includes(OBLIGATIONS_HASH));
+	assert.equal(prompt.includes('FOREIGN-CRITERION-TEXT'), false);
+	assert.equal(prompt.includes('OBLIGATIONS-DOCUMENT-SENTINEL'), false);
+	assert.equal(prompt.includes(OBLIGATIONS_JSON), false);
+}
+
+test('@ac AC-01 @case AC-01.1 @case AC-01.2 the spec critic prompt keeps the owned criterion and the obligations hash', () => {
+	assertOwnedPrompt(promptWithBoundObligations('spec'));
+});
+
+test('@ac AC-02 @case AC-02.1 @case AC-02.2 one byte over the packing ceiling reports the byte count and the exact ceiling is accepted', () => {
+	const seed = 'AC-01: owned. Given a seed. Then SEED.';
+	const seeded = buildPhasePrompt({
+		rootDir: REPOSITORY_ROOT,
+		phase: 'spec',
+		documentText: seed,
+		ownedCriterionIds: ['AC-01'],
+	});
+	const extra = 24576 - Buffer.byteLength(seeded, 'utf8');
+	assert.ok(extra > 0);
+	const accepted = buildPhasePrompt({
+		rootDir: REPOSITORY_ROOT,
+		phase: 'spec',
+		documentText: `${seed}${'x'.repeat(extra)}`,
+		ownedCriterionIds: ['AC-01'],
+	});
+	assert.equal(Buffer.byteLength(accepted, 'utf8'), 24576);
+	assert.throws(
+		() => buildPhasePrompt({
+			rootDir: REPOSITORY_ROOT,
+			phase: 'spec',
+			documentText: `${seed}${'x'.repeat(extra + 1)}`,
+			ownedCriterionIds: ['AC-01'],
+		}),
+		(err) => err.code === 'INPUT_OVERSIZED' && err.metadata.byteCount === 24577,
+	);
+});
+
+test('@ac AC-03 @case AC-03.1 @case AC-03.2 plan and QA prompts omit the foreign criterion and the obligations document', () => {
+	assertOwnedPrompt(promptWithBoundObligations('plan'));
+	assertOwnedPrompt(promptWithBoundObligations('qa'));
+});
+
+test('@ac AC-04 @case AC-04.1 @case AC-04.2 a run with no obligations document still assembles the owned criterion', () => {
+	const prompt = buildPhasePrompt({
+		rootDir: REPOSITORY_ROOT,
+		phase: 'spec',
+		documentText: OWNED_TEXT,
+		ownedCriterionIds: ['AC-01'],
+	});
+	assert.equal(prompt.includes('### Obligations SHA-256'), false);
+	assert.ok(prompt.includes('OWNED-CRITERION-TEXT'));
+});
+
+test('a bound obligations document with a missing hash rejects assembly before the byte check', () => {
+	assert.throws(
+		() => buildPhasePrompt({
+			rootDir: REPOSITORY_ROOT,
+			phase: 'spec',
+			documentText: 'x'.repeat(30000),
+			ownedCriterionIds: ['AC-01'],
+			obligations: { criterionIds: ['AC-01'], documentText: OBLIGATIONS_JSON },
+		}),
+		(err) => err.code === 'INVALID_CONTRACT' && err.message.includes('SHA-256') && err.code !== 'INPUT_OVERSIZED',
+	);
+});
+
+test('a task criterion absent from the bound obligations document rejects assembly', () => {
+	assert.throws(
+		() => buildPhasePrompt({
+			rootDir: REPOSITORY_ROOT,
+			phase: 'spec',
+			documentText: 'AC-09: missing. Given none. Then reject.',
+			ownedCriterionIds: ['AC-09'],
+			obligations: { hash: OBLIGATIONS_HASH, criterionIds: ['AC-01'], documentText: OBLIGATIONS_JSON },
+		}),
+		(err) => err.code === 'INVALID_CONTRACT' && err.message.includes('AC-09'),
+	);
+});
+
+test('foreign criterion text is omitted whole rather than truncated to fit the ceiling', () => {
+	const prompt = buildPhasePrompt({
+		rootDir: REPOSITORY_ROOT,
+		phase: 'spec',
+		documentText: `${OWNED_TEXT}\nAC-02: FOREIGN-PREFIX-${'y'.repeat(20000)}`,
+		ownedCriterionIds: ['AC-01'],
+	});
+	assert.ok(prompt.includes('OWNED-CRITERION-TEXT'));
+	assert.equal(prompt.includes('FOREIGN-PREFIX-'), false);
+});
+
 test('@ac AC-10 the rubric files stay within the navigability budget', () => {
 	for (const rel of [
 		'defaults/protocol/qa.md',
