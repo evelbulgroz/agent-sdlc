@@ -130,6 +130,47 @@ for (const command of ['answer', 'resume']) {
 	});
 }
 
+test('@ac AC-02 @case AC-02.1 @case AC-02.2 a mismatched quality reply stays blocked', async (t) => {
+	const f = await fixture(t);
+	const filename = path.join(f.rootDir, 'stale-answer.json');
+	const options = {
+		rootDir: f.rootDir, governor: f.runtime.governor,
+		gitCli: f.runtime.gitCli, execCli: f.runtime.execCli, continueAfterAnswerRecord: true,
+	};
+	const args = ['answer', '--run', f.runId, '--interrupt', answer.interruptId, '--response-file', filename];
+	fs.writeFileSync(filename, JSON.stringify({ ...answer, interruptId: 'interrupt-stale' }));
+	const staleInterrupt = await runCli(args, options);
+	assert.equal(staleInterrupt.result.error.code, 'STALE_RESPONSE');
+	assert.equal(f.store.getPendingInterrupt(f.runId).status, 'PENDING');
+	fs.writeFileSync(filename, JSON.stringify({ ...answer, bindingHash: 'b'.repeat(64) }));
+	const staleBinding = await runCli(args, options);
+	assert.equal(staleBinding.result.error.code, 'STALE_RESPONSE');
+	assert.equal(f.store.getPendingInterrupt(f.runId).status, 'PENDING');
+	assert.equal(f.store.getRun(f.runId).pendingInterruptId, answer.interruptId);
+});
+
+test('an action outside the card and a missing allow-list are rejected before resume', async (t) => {
+	const f = await fixture(t);
+	const filename = path.join(f.rootDir, 'unapproved-answer.json');
+	const options = {
+		rootDir: f.rootDir, governor: f.runtime.governor,
+		gitCli: f.runtime.gitCli, execCli: f.runtime.execCli, continueAfterAnswerRecord: true,
+	};
+	fs.writeFileSync(filename, JSON.stringify({ ...answer, action: 'refute', evidenceHashes: [H] }));
+	const rejected = await runCli(
+		['answer', '--run', f.runId, '--interrupt', answer.interruptId, '--response-file', filename],
+		options,
+	);
+	assert.equal(rejected.result.error.code, 'POLICY_VIOLATION');
+	assert.equal(f.store.getPendingInterrupt(f.runId).status, 'PENDING');
+	const request = { ...f.request };
+	delete request.allowedActions;
+	assert.throws(
+		() => validatePendingResponse({ state: f.state, interrupt: f.store.getPendingInterrupt(f.runId), request, response: answer }),
+		(error) => error instanceof SdlcError && error.code === 'POLICY_VIOLATION',
+	);
+});
+
 test('quality CLI validation rejects stale bindings, null payloads and unapproved actions', async t => {
 	const f = await fixture(t);
 	const interrupt = f.store.getPendingInterrupt(f.runId);

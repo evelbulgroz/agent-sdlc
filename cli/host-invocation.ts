@@ -12,7 +12,7 @@ import {
 	hostInvocationChangeSlots,
 	validateHostInvocation,
 } from '../policy/contracts.ts';
-import { HOST_CORRECTION_CHOICES } from '../policy/contracts/host-invocation-schema.ts';
+import { HOST_CORRECTION_CHOICES, HOST_QUALITY_ACTIONS } from '../policy/contracts/host-invocation-schema.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { exitCodeForContinuation } from './exit-codes.ts';
 import {
@@ -28,6 +28,7 @@ const RECOGNIZED_INTERRUPT_KINDS = new Set([
 	'plan_critic',
 	'reconciliation_conflict',
 	'high_risk_review',
+	'quality_review',
 ]);
 
 function freezeDeep<T>(value: T): Readonly<T> {
@@ -245,6 +246,64 @@ function actionCard(
 	});
 }
 
+function listedQualityChoices(request: Record<string, unknown> | null): string[] {
+	const raw = request?.allowedActions;
+	if (!Array.isArray(raw)) return [];
+	const listed = new Set(raw);
+	return HOST_QUALITY_ACTIONS.filter((action) => listed.has(action));
+}
+
+function qualityFindingIds(request: Record<string, unknown> | null): string[] {
+	if (typeof request?.failureId === 'string') return [request.failureId];
+	const findings = request?.findings;
+	if (!Array.isArray(findings)) return [];
+	const ids: string[] = [];
+	for (const finding of findings) {
+		if (!finding || typeof finding !== 'object') continue;
+		const id = (finding as { findingId?: unknown }).findingId;
+		if (typeof id === 'string') ids.push(id);
+	}
+	return ids;
+}
+
+function qualityCard(
+	runId: string,
+	interrupt: InterruptView,
+	exitCode: number,
+): Readonly<HostInvocationRecord> {
+	const bindingHash = interrupt.request?.bindingHash;
+	if (typeof bindingHash !== 'string' || !/^[a-f0-9]{64}$/.test(bindingHash)) {
+		return unrecognizedCard(exitCode);
+	}
+	return finishCard({
+		executable: true,
+		packetConsumed: true,
+		exitCode,
+		argv: baseArgv(runId, 'answer', [
+			'--interrupt',
+			interrupt.interruptId,
+			'--response-file',
+			'{response-file}',
+		]),
+		retryAllowed: false,
+		responseDocument: {
+			schemaVersion: '1.0.0',
+			answerId: null,
+			interruptId: interrupt.interruptId,
+			bindingHash,
+			findingIds: qualityFindingIds(interrupt.request),
+			action: null,
+			rationale: null,
+			evidenceHashes: [],
+			correction: null,
+		},
+		responseSlots: {
+			field: 'action',
+			choices: listedQualityChoices(interrupt.request),
+		},
+	});
+}
+
 function correctionCard(
 	runId: string,
 	offer: CorrectionOffer,
@@ -354,5 +413,6 @@ export function projectHostInvocation(
 	if (interrupt?.kind === 'high_risk_review') {
 		return actionCard(runId, interrupt, HOST_HIGH_RISK_REVIEW_CHOICES, exitCode);
 	}
+	if (interrupt?.kind === 'quality_review') return qualityCard(runId, interrupt, exitCode);
 	return unrecognizedCard(exitCode);
 }

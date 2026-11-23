@@ -9,6 +9,12 @@ import {
 	validateOpaqueId,
 } from './primitives.ts';
 
+export const HOST_QUALITY_ACTIONS = Object.freeze([
+	'refute',
+	'confirm',
+	'approve-correction',
+] as const);
+
 export const CONTINUATION_ACTIONS = Object.freeze([
 	'authorize',
 	'answer',
@@ -244,6 +250,10 @@ function validateHostResponse(document: unknown, slots: unknown): void {
 		failContract('hostInvocation.responseDocument.schemaVersion must be 1.0.0');
 	}
 	validateOpaqueId(doc.interruptId, 'hostInvocation.responseDocument.interruptId');
+	if (Object.hasOwn(doc, 'bindingHash')) {
+		validateQualityDocument(doc, slots);
+		return;
+	}
 	if (typeof doc.stateHash !== 'string' || !HASH_PATTERN.test(doc.stateHash)) {
 		failContract('hostInvocation.responseDocument.stateHash is invalid');
 	}
@@ -347,6 +357,48 @@ function isCorrectionDocument(doc: Record<string, unknown>, slots: unknown): boo
 	assertClosedContract(slots, ['field', 'choices'], 'hostInvocation.responseSlots');
 	if ((slots as { field?: unknown }).field !== 'action') failContract('hostInvocation.responseSlots.field must be action');
 	return true;
+}
+
+function qualityChoicesInOrder(choices: unknown): boolean {
+	if (!Array.isArray(choices)) return false;
+	let cursor = 0;
+	for (const choice of choices) {
+		const at = (HOST_QUALITY_ACTIONS as readonly string[]).indexOf(String(choice));
+		if (at < cursor) return false;
+		cursor = at + 1;
+	}
+	return true;
+}
+
+function validateQualityDocument(doc: Record<string, unknown>, slots: unknown): void {
+	assertClosedContract(
+		doc,
+		['schemaVersion', 'answerId', 'interruptId', 'bindingHash', 'findingIds', 'action', 'rationale', 'evidenceHashes', 'correction'],
+		'hostInvocation.responseDocument',
+	);
+	if (doc.answerId !== null) failContract('hostInvocation quality answerId must be null');
+	if (typeof doc.bindingHash !== 'string' || !HASH_PATTERN.test(doc.bindingHash)) {
+		failContract('hostInvocation.responseDocument.bindingHash is invalid');
+	}
+	if (!Array.isArray(doc.findingIds)) failContract('hostInvocation quality findingIds must be an array');
+	for (const [index, id] of doc.findingIds.entries()) {
+		validateOpaqueId(id, `hostInvocation.responseDocument.findingIds[${index}]`);
+	}
+	if (new Set(doc.findingIds).size !== doc.findingIds.length) {
+		failContract('hostInvocation quality findingIds must be unique');
+	}
+	if (doc.action !== null) failContract('hostInvocation quality action must be null');
+	if (doc.rationale !== null) failContract('hostInvocation quality rationale must be null');
+	if (!Array.isArray(doc.evidenceHashes) || doc.evidenceHashes.length !== 0) {
+		failContract('hostInvocation quality evidenceHashes must be empty');
+	}
+	if (doc.correction !== null) failContract('hostInvocation quality correction must be null');
+	if (!slots || typeof slots !== 'object' || Array.isArray(slots)) {
+		failContract('hostInvocation.responseSlots must be an object');
+	}
+	assertClosedContract(slots, ['field', 'choices'], 'hostInvocation.responseSlots');
+	if (slots.field !== 'action') failContract('hostInvocation.responseSlots.field must be action');
+	if (!qualityChoicesInOrder(slots.choices)) failContract('hostInvocation quality action choices are invalid');
 }
 
 function validateActionSlots(slots: unknown, choices: readonly string[]): Record<string, unknown> {

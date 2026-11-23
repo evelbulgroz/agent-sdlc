@@ -182,6 +182,89 @@ test('@ac AC-07: Git approval stops in front of the operator', async () => {
 	assert.equal(watched.continuation.reason, 'GIT_APPROVAL');
 });
 
+test('@ac AC-03 @case AC-03.1 shell watch does not execute a quality answer argv', async () => {
+	const calls = [];
+	const status = {
+		ok: true,
+		command: 'status',
+		runId: 'r-quality',
+		continuation: { action: 'answer', reason: 'HUMAN_RESPONSE_REQUIRED' },
+		hostInvocation: {
+			executable: true,
+			argv: ['pnpm', 'run', 'agent:sdlc', '--', 'answer', '--run', 'r-quality', '--interrupt', 'quality-interrupt', '--response-file', '{response-file}', '--json'],
+		},
+	};
+	async function fakeRunCliFn(args) {
+		calls.push(args.slice());
+		return { exitCode: 2, result: status, human: '' };
+	}
+	const watched = await shellWatch({
+		runId: 'r-quality',
+		rootDir: REPOSITORY_ROOT,
+		streams: SILENT_STREAMS,
+		runCliFn: fakeRunCliFn,
+	});
+	assert.equal(watched.continuation.action, 'answer');
+	assert.deepEqual(calls.map((call) => call[0]), ['status']);
+});
+
+test('shell reply copies quality fields onto the answer command', async () => {
+	const hash = 'ab'.repeat(32);
+	const dir = makeTempDir('quality-reply');
+	const responseFile = path.join(dir, 'reply.json');
+	const payload = {
+		answerId: 'answer-a',
+		interruptId: 'quality-interrupt',
+		bindingHash: hash,
+		findingIds: ['finding-a'],
+		action: 'confirm',
+		rationale: 'The spec is the contract.',
+		evidenceHashes: [],
+		correction: null,
+	};
+	fs.writeFileSync(responseFile, JSON.stringify(payload));
+	const card = {
+		executable: true,
+		argv: ['pnpm', 'run', 'agent:sdlc', '--', 'answer', '--run', 'r-quality', '--interrupt', 'quality-interrupt', '--response-file', '{response-file}', '--json'],
+		responseDocument: {
+			schemaVersion: '1.0.0',
+			answerId: null,
+			interruptId: 'quality-interrupt',
+			bindingHash: hash,
+			findingIds: ['finding-a'],
+			action: null,
+			rationale: null,
+			evidenceHashes: [],
+			correction: null,
+		},
+		responseSlots: { field: 'action', choices: ['refute', 'confirm'] },
+	};
+	let submitted = null;
+	async function fakeRunCliFn(args) {
+		if (args[0] === 'status') {
+			return { exitCode: 2, result: { hostInvocation: card }, human: '' };
+		}
+		assert.equal(args[0], 'answer');
+		assert.equal(args.includes('resume'), false);
+		submitted = JSON.parse(fs.readFileSync(args[args.indexOf('--response-file') + 1], 'utf8'));
+		return { exitCode: 2, result: { ok: true, command: 'answer' }, human: '' };
+	}
+	await shellReply({
+		runId: 'r-quality',
+		responseFile,
+		rootDir: dir,
+		streams: SILENT_STREAMS,
+		runCliFn: fakeRunCliFn,
+	});
+	assert.equal(submitted.rationale, 'The spec is the contract.');
+	assert.equal(submitted.answerId, 'answer-a');
+	assert.equal(submitted.bindingHash, hash);
+	assert.equal(submitted.action, 'confirm');
+	assert.equal(submitted.correction, null);
+	assert.equal(Object.hasOwn(submitted, 'stateHash'), false);
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('shell watch elevates HALTED to stderr with terminal bell', async () => {
 	const statusResult = {
 		ok: true,

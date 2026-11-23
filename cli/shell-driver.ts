@@ -23,6 +23,7 @@ import type { HostInvocationRecord, ResponseQuestionSlot, ResponseSlot } from '.
 import { SdlcError } from '../policy/errors.ts';
 import { parseSpecification } from '../workflow/specification.ts';
 import { mergeCorrectionReply } from './correction-reply.ts';
+import { mergeQualityReply } from './quality-reply.ts';
 import { assertStartSiblings } from './shell-start-files.ts';
 
 const MAX_GOAL_FILE_BYTES = 10 * 1024 * 1024;
@@ -407,7 +408,9 @@ export async function shellReply({
 		MAX_RESPONSE_FILE_BYTES,
 		'response file',
 	);
-	const filledDocument = mergeCorrectionReply(card, payload, fillResponseDocument(card, payload));
+	const filled = fillResponseDocument(card, payload);
+	const filledDocument = mergeQualityReply(card, payload, filled)
+		?? mergeCorrectionReply(card, payload, filled);
 	const tempResponsePath = writeTempResponseFile(rootDir, validRunId, filledDocument);
 	const argv = card.argv.map((segment) =>
 		segment === RESPONSE_FILE_PLACEHOLDER ? tempResponsePath : segment,
