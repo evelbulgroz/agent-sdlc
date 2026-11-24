@@ -8,6 +8,7 @@ import { computeContinuation } from '../cli/continuation.ts';
 import { projectHostInvocation } from '../cli/host-invocation.ts';
 import { projectTaskProgress, projectTasks } from '../cli/status-document.ts';
 import { captureTaskDelta } from './task-tree-delta.ts';
+import { omitCompletedAuthoredPaths } from '../workflow/prior-task-tree.ts';
 import { SdlcError } from '../policy/errors.ts';
 import {
 	FakeModelGovernor,
@@ -233,6 +234,28 @@ test('@ac AC-03: the implementer cannot rewrite the completed paths', async (t) 
 		const delta = captureTaskDelta({ task, worktreeDir: repo.root, rootDir: repo.root, gitCli: execFileSync });
 		assert.deepEqual(delta.changedFiles, ['src/page.ts']);
 		assert.notEqual(delta.targetTreeSha, repo.tree);
+		git(repo.root, ['checkout', '--', 'src/page.ts']);
+	});
+
+	await t.test('a parent authored prefix cannot authorize an edit of the completed file', () => {
+		const omitted = omitCompletedAuthoredPaths({
+			tasks: [{
+				taskId: 'page-task', authoredPaths: ['src', 'src/page.ts'], pathPrefixes: ['src'], generatedOutputs: ['src'],
+			}],
+		}, ['src/done.ts']);
+		assert.deepEqual(omitted.tasks[0].authoredPaths, ['src/page.ts']);
+		assert.deepEqual(omitted.tasks[0].generatedOutputs, []);
+		assert.deepEqual(omitted.tasks[0].pathPrefixes, ['src']);
+		const narrowed = { ...omitted.tasks[0], parentTreeSha: repo.tree };
+		fs.writeFileSync(path.join(repo.root, 'src/done.ts'), 'export const done = 2;\n');
+		assert.throws(
+			() => captureTaskDelta({ task: narrowed, worktreeDir: repo.root, rootDir: repo.root, gitCli: execFileSync }),
+			(error) => error instanceof SdlcError && error.code === 'PATH_CONTAINMENT_VIOLATION',
+		);
+		git(repo.root, ['checkout', '--', 'src/done.ts']);
+		fs.writeFileSync(path.join(repo.root, 'src/page.ts'), 'export const page = 2;\n');
+		const delta = captureTaskDelta({ task: narrowed, worktreeDir: repo.root, rootDir: repo.root, gitCli: execFileSync });
+		assert.deepEqual(delta.changedFiles, ['src/page.ts']);
 		git(repo.root, ['checkout', '--', 'src/page.ts']);
 	});
 

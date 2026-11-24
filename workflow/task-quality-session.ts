@@ -6,6 +6,7 @@ import type { ClosureRecord, CandidateBinding, TaskRevision } from '../policy/co
 import { canonicalJson, sha256, type RuntimeState, type TaskPlan } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { liveRunRoot } from '../persistence/run-paths.ts';
+import { commandReportPath } from '../execution/command-report-path.ts';
 import { runCommandTool } from '../execution/tool-commands.ts';
 import { hydrateWorktree } from './hydration.ts';
 import { checkpointHydrationBinding, checkpointPreparationSelection } from './checkpoint-hydration.ts';
@@ -50,10 +51,55 @@ export function createTaskQualitySession(
 		const current = closures.find(entry => entry.status === 'accepted' || entry.status === 'verified');
 		return current?.status ?? null;
 	};
+	const verificationClaims = new Map<string, { reportPath?: string; durationMs: number }>();
+	function taskExecutionRevision(task: ExecutableTask): number {
+		return staging ? (staging.revisions.get(task.taskId)?.executionRevision ?? -1) + 1 : 0;
+	}
+	function claimTaskCommand(
+		task: ExecutableTask, worktreeDir: string, executionRevision: number, binding: CandidateBinding,
+	): { reportPath?: string; durationMs: number } {
+		if (!task.verificationCommand?.length) throw new SdlcError('TASK_PLAN_INVALID', 'Quality task verification command missing');
+		const [command, ...args] = task.verificationCommand;
+		if (!command) throw new SdlcError('TASK_PLAN_INVALID', 'Quality task verification command empty');
+		const operationId = `verification-${task.taskId}-r${executionRevision}-${task.targetTreeSha}`;
+		const remembered = verificationClaims.get(operationId);
+		if (remembered) return remembered;
+		const verificationReceipt = {
+			schemaVersion: '1.0.0' as const, runId: snapshot.runId, taskId: task.taskId, executionRevision,
+			treeSha: task.targetTreeSha, command: [...task.verificationCommand],
+			artifactHash: sha256(`${canonicalJson({ binding, command: task.verificationCommand, exitCode: 0 })}\n`),
+			exitCode: 0 as const, status: 'passed' as const,
+		};
+		const ledger = quality.getBudget(snapshot.runId);
+		if (!ledger) throw new SdlcError('INVALID_CONTRACT', 'Task verification budget missing');
+		const existing = ledger.reservations.find(entry => entry.operationId === operationId);
+		if (existing && !quality.getVerificationReceipt(snapshot.runId, sha256(verificationReceipt))) {
+			throw new SdlcError('POLICY_VIOLATION', 'Interrupted task verification has no complete receipt; it cannot be replayed');
+		}
+		let durationMs = 0;
+		if (!existing) {
+			const remainingDurationMs = maxExecutionDurationMs - ledger.counters.executionDurationMs;
+			if (remainingDurationMs <= 0) throw new SdlcError('BUDGET_EXHAUSTED', 'Task verification duration exhausted');
+			const started = Date.now();
+			const result = runCommandTool({ command, args }, {
+				worktreeDir, rootDir: runtime.rootDir, allowedPackages: auth.allowedPackages,
+				execCli: (invoked, invokedArgs, options) => runtime.execCli(invoked, invokedArgs, {
+					...options, timeout: Math.min(Number(options?.timeout ?? remainingDurationMs), remainingDurationMs),
+				}),
+			});
+			durationMs = Date.now() - started;
+			if (result.exitCode !== 0) throw new SdlcError('TASK_EXECUTION_FAILED', 'Task checkpoint verification failed');
+		}
+		const reportPath = commandReportPath(worktreeDir, args, 0) ?? undefined;
+		const claimed = { ...(reportPath ? { reportPath } : {}), durationMs };
+		verificationClaims.set(operationId, claimed);
+		return claimed;
+	}
 	async function verifyTaskEvidence(task: ExecutableTask, worktreeDir: string): Promise<string[]> {
-		const executionRevision = staging ? (staging.revisions.get(task.taskId)?.executionRevision ?? -1) + 1 : 0;
+		const executionRevision = taskExecutionRevision(task);
 		const binding = { ...qualityTaskBinding(snapshot, plan, task, sourcePreparationHash(task, preparationHash)),
 			candidateRevision: executionRevision };
+		const claimed = claimTaskCommand(task, worktreeDir, executionRevision, binding);
 		const registryId = `task-${sha256(binding).slice(0, 40)}`;
 		quality.registerWorktree({
 			runId: snapshot.runId, registryId, kind: 'task', ownerId: task.taskId,
@@ -64,18 +110,16 @@ export function createTaskQualitySession(
 		return executeCheckpointObligations({
 			runtime, snapshot, plan, binding, worktreeDir, registryId, obligations,
 			observeSource: createTaskSourceObserver(runtime, task, worktreeDir, preparationHash),
+			...(claimed.reportPath ? { toolResult: { reportPath: claimed.reportPath } } : {}),
 		});
 	}
 	async function verifyTask(task: ExecutableTask, worktreeDir: string): Promise<void> {
 		if (!task.targetTreeSha || !task.parentTreeSha || !task.patchHash) throw new SdlcError('INVALID_CONTRACT', 'Task delta identity missing');
-		const executionRevision = staging ? (staging.revisions.get(task.taskId)?.executionRevision ?? -1) + 1 : 0;
+		const executionRevision = taskExecutionRevision(task);
 		const binding = { ...qualityTaskBinding(snapshot, plan, task, sourcePreparationHash(task, preparationHash)),
 			candidateRevision: executionRevision };
 		const receiptHashes = await verifyTaskEvidence(task, worktreeDir);
 		if (!task.verificationCommand?.length) throw new SdlcError('TASK_PLAN_INVALID', 'Quality task verification command missing');
-		const [command, ...args] = task.verificationCommand;
-		if (!command) throw new SdlcError('TASK_PLAN_INVALID', 'Quality task verification command empty');
-		const verificationOperation = `verification-${task.taskId}-r${executionRevision}-${task.targetTreeSha}`;
 		const artifactValue = { binding, command: task.verificationCommand, exitCode: 0 };
 		const artifactHash = sha256(`${canonicalJson(artifactValue)}\n`);
 		const verificationReceipt = {
@@ -83,30 +127,18 @@ export function createTaskQualitySession(
 			treeSha: task.targetTreeSha, command: [...task.verificationCommand], artifactHash,
 			exitCode: 0 as const, status: 'passed' as const,
 		};
-		const ledger = quality.getBudget(snapshot.runId);
-		if (!ledger) throw new SdlcError('INVALID_CONTRACT', 'Task verification budget missing');
-		const existing = ledger.reservations.find(entry => entry.operationId === verificationOperation);
-		if (existing && !quality.getVerificationReceipt(snapshot.runId, sha256(verificationReceipt))) {
-			throw new SdlcError('POLICY_VIOLATION', 'Interrupted task verification has no complete receipt; it cannot be replayed');
-		}
-		if (!existing) {
-			quality.reserveBudget(snapshot.runId, { operationId: verificationOperation, kind: 'execution',
-				checkpointId: `task:${task.taskId}`, candidateRevision: executionRevision, status: 'reserved' });
-			const started = Date.now();
-			const remainingDurationMs = maxExecutionDurationMs -
-				ledger.counters.executionDurationMs;
-			if (remainingDurationMs <= 0) throw new SdlcError('BUDGET_EXHAUSTED', 'Task verification duration exhausted');
-			const result = runCommandTool({ command, args }, {
-				worktreeDir, rootDir: runtime.rootDir, allowedPackages: auth.allowedPackages,
-				execCli: (command, args, options) => runtime.execCli(command, args, {
-					...options, timeout: Math.min(Number(options?.timeout ?? remainingDurationMs), remainingDurationMs),
-				}),
-			});
-			quality.chargeBudget(snapshot.runId, verificationOperation, { executionDurationMs: Date.now() - started });
-			if (result.exitCode !== 0) throw new SdlcError('TASK_EXECUTION_FAILED', 'Task checkpoint verification failed');
-		}
 		if ((await createTaskSourceObserver(runtime, task, worktreeDir, preparationHash)()).treeSha !== task.targetTreeSha) {
 			throw new SdlcError('INVALID_CONTRACT', 'Task source changed during verification');
+		}
+		const operationId = `verification-${task.taskId}-r${executionRevision}-${task.targetTreeSha}`;
+		const ledger = quality.getBudget(snapshot.runId);
+		if (!ledger) throw new SdlcError('INVALID_CONTRACT', 'Task verification budget missing');
+		if (!ledger.reservations.some(entry => entry.operationId === operationId)) {
+			quality.reserveBudget(snapshot.runId, { operationId, kind: 'execution',
+				checkpointId: `task:${task.taskId}`, candidateRevision: executionRevision, status: 'reserved' });
+			quality.chargeBudget(snapshot.runId, operationId, {
+				executionDurationMs: verificationClaims.get(operationId)?.durationMs ?? 0,
+			});
 		}
 		runtime.artifactStore.writeJson('task-quality-verification', artifactValue);
 		receiptHashes.push(quality.saveVerificationReceipt(verificationReceipt));

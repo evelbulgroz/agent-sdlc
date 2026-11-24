@@ -41,7 +41,9 @@ export function priorTaskFlags(
 
 function covers(completed: string, candidate: string): boolean {
 	const base = completed.replace(/\/+$/, '');
-	return candidate === base || candidate.startsWith(`${base}/`);
+	const prefix = candidate.replace(/\/+$/, '');
+	if (!base || !prefix) return false;
+	return prefix === base || prefix.startsWith(`${base}/`) || base.startsWith(`${prefix}/`);
 }
 
 export function omitCompletedAuthoredPaths(
@@ -50,11 +52,13 @@ export function omitCompletedAuthoredPaths(
 ): Readonly<TaskManifest> | null {
 	if (!manifest || completedPaths.length === 0) return manifest;
 	const tasks = manifest.tasks.map((task) => {
-		const authoredPaths = task.authoredPaths.filter((entry) => !completedPaths.some((completed) => covers(completed, entry)));
+		const outside = (entry: string) => !completedPaths.some((completed) => covers(completed, entry));
+		const authoredPaths = task.authoredPaths.filter(outside);
 		if (authoredPaths.length === 0) {
 			throw new SdlcError('INVALID_INPUT', `Replacement task '${task.taskId}' has no authored paths outside the completed task`);
 		}
-		return { ...task, authoredPaths };
+		const generatedOutputs = Array.isArray(task.generatedOutputs) ? task.generatedOutputs.filter(outside) : task.generatedOutputs;
+		return { ...task, authoredPaths, ...(generatedOutputs === undefined ? {} : { generatedOutputs }) };
 	});
 	return { ...manifest, tasks };
 }

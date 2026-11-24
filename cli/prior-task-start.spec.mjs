@@ -356,4 +356,17 @@ test('replacement authored paths omit the completed paths', () => {
 		() => omitCompletedAuthoredPaths({ tasks: [{ taskId: 'page-task', authoredPaths: ['src/done.ts'] }] }, ['src/done.ts']),
 		rejectCode(/no authored paths outside the completed task/),
 	);
+	const parent = omitCompletedAuthoredPaths({
+		tasks: [{
+			taskId: 'page-task', authoredPaths: ['src', 'src/page.ts', 'src/done.ts.bak', 'src/done'],
+			generatedOutputs: ['src', 'src/page.ts'], pathPrefixes: ['src'],
+		}],
+	}, ['src/done.ts']);
+	assert.deepEqual(parent.tasks[0].authoredPaths, ['src/page.ts', 'src/done.ts.bak', 'src/done']);
+	assert.deepEqual(parent.tasks[0].generatedOutputs, ['src/page.ts']);
+	assert.deepEqual(parent.tasks[0].pathPrefixes, ['src']);
+	assert.throws(
+		() => omitCompletedAuthoredPaths({ tasks: [{ taskId: 'page-task', authoredPaths: ['src'] }] }, ['src/done.ts']),
+		rejectCode(/no authored paths outside the completed task/),
+	);
 });

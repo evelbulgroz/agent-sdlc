@@ -23,9 +23,12 @@ import type { WorkflowTransitionOptions } from '../workflow/node-helpers.ts';
 import type { CommandRegistration, EvidenceRequest } from '../policy/contracts/quality-evidence-schema.ts';
 import { CommandRegistrationSchema } from '../policy/contracts/quality-evidence-schema.ts';
 import { commandBindingHash } from '../host/command-evidence.ts';
+import { createLocalEvidenceSpawn } from '../cli/local-evidence-spawn.ts';
 
 export function taskQualityFixture(
-	t: TestContext, { withConsumer = false, overlappingConsumer = false }: { withConsumer?: boolean; overlappingConsumer?: boolean } = {},
+	t: TestContext, { withConsumer = false, overlappingConsumer = false, recordedReport = false }: {
+		withConsumer?: boolean; overlappingConsumer?: boolean; recordedReport?: boolean;
+	} = {},
 ) {
 	const fixtureParent = path.resolve('tools/.agent-sdlc/test-fixtures');
 	fs.mkdirSync(fixtureParent, { recursive: true });
@@ -37,13 +40,16 @@ export function taskQualityFixture(
 	fs.mkdirSync(path.join(rootDir, '.agents'));
 	fs.writeFileSync(path.join(rootDir, '.agents/sdlc-host.json'), JSON.stringify({
 		schemaVersion: '1.4.0', profileId: 'quality-fixture', repositoryId: 'fixture/repo', adapter: 'default',
+		...(recordedReport ? { commandPolicy: { repositoryScripts: [['pnpm', 'run', 'test:unit', 'src/task-report.xml']] } } : {}),
 	}));
 	const runId = `2026-11-01-quality-proof-${crypto.randomUUID().slice(0, 8)}`;
 	const runtimeDir = path.join(liveRunRoot(rootDir), runId);
 	fs.writeFileSync(path.join(rootDir, '.gitignore'),
-		`${path.relative(rootDir, liveRunRoot(rootDir))}/\nnode_modules/\ntools/.agent-preflight-last.json\n`);
+		`${path.relative(rootDir, liveRunRoot(rootDir))}/\nnode_modules/\ntools/.agent-preflight-last.json\n` +
+		(recordedReport ? 'src/task-report.xml\nsrc/run.mjs\nsrc/spawned.txt\n' : ''));
 	fs.mkdirSync(path.join(rootDir, 'src'));
 	fs.writeFileSync(path.join(rootDir, 'src/a.ts'), 'export const value = 1;\n');
+	if (recordedReport) fs.writeFileSync(path.join(rootDir, 'src/a.spec.mjs'), 'export const spec = 1;\n');
 	git(['add', '.']);
 	git(['-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'fixture']);
 	const base = git(['rev-parse', 'HEAD']), tree = git(['rev-parse', 'HEAD^{tree}']);
@@ -111,7 +117,7 @@ export function taskQualityFixture(
 	const runtime = { rootDir, runtimeStore: store, artifactStore: artifacts, registry: new RoleRegistry({ rootDir }),
 		governor, roleExecutor: new RoleExecutor({ governor, runtimeStore: store, artifactStore: artifacts }), now: () => new Date(TIME), onBoundary: async () => {},
 		gitCli: execFileSync, execCli: (...args: Parameters<GitCliFn>) => { commands++; return verify(...args); },
-		evidenceSpawn: passingEvidenceSpawn(), ghCli: execFileSync, checkpointer: null,
+		evidenceSpawn: recordedReport ? createLocalEvidenceSpawn() : passingEvidenceSpawn(), ghCli: execFileSync, checkpointer: null,
 		currentOrAlreadyAdvanced: () => null, transition: (current: Readonly<RuntimeState>, options: WorkflowTransitionOptions) => ({
 			...current, ...options.updates, state: options.to, runtimeRevision: current.runtimeRevision + 1,
 		}) };
