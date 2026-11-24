@@ -1,6 +1,6 @@
 # Intent
 
-Ready for `shell start`. This host profile declares no `productEvidence`, so this goal has no obligations file. The 24,576-byte critic packing ceiling stays.
+Status: retired 2026-11-24 (implemented on `c971c4d`). This file is no longer a `check-spec` goal.
 
 ## Goal
 

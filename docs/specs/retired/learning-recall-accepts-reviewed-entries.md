@@ -1,6 +1,6 @@
 # Intent
 
-Ready for `shell start`. This host profile declares no `productEvidence`, so this goal has no obligations file.
+Status: retired 2026-11-24 (implemented on `fba7a96`). This file is no longer a `check-spec` goal.
 
 ## Goal
 
