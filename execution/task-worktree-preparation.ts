@@ -1,7 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { createEvent } from '../policy/contracts.ts';
+import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import { hydrateWorktree } from '../workflow/hydration.ts';
 import { checkpointHydrationBinding } from '../workflow/checkpoint-hydration.ts';
+import { checkoutRecordedPriorTask } from '../workflow/prior-task-tree.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../workflow/worktree-guard.ts';
 import { createSyntheticCommit } from '../workflow/worktrees.ts';
 import {
@@ -92,6 +94,14 @@ export async function prepareTaskWorktree({
 			worktreeDir,
 			rootDir,
 			gitCli,
+		});
+		// This worktree is created at the base commit. The parent tree already
+		// includes a recorded prior checkout, so those paths must be present too.
+		checkoutRecordedPriorTask({
+			rootDir: rootDir ?? REPOSITORY_ROOT,
+			runId,
+			worktreeDir,
+			...(gitCli ? { gitCli } : {}),
 		});
 	} else {
 		let commitSha = task.parentCommitSha ?? null;

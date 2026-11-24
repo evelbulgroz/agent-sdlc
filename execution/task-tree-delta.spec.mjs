@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { REPOSITORY_ROOT } from '../persistence/run-paths.ts';
+import { createRuntimeDirectory, REPOSITORY_ROOT } from '../persistence/run-paths.ts';
 import {
 	sha256,
 } from '../policy/contracts.ts';
+import { checkoutRecordedPriorTask, writePriorTaskHandoff } from '../workflow/prior-task-tree.ts';
 import {
 	captureTaskDelta,
 	deriveParentTreeSha,
@@ -319,4 +322,163 @@ test('@ac AC-11 captureTaskDelta permits declared generated outputs and rejects 
 	} finally {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
 	}
+});
+
+function git(cwd, args) {
+	return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+}
+
+function writeRepoFile(root, relative, text) {
+	const full = path.join(root, relative);
+	fs.mkdirSync(path.dirname(full), { recursive: true });
+	fs.writeFileSync(full, text);
+}
+
+test('deriveParentTreeSha treats a recorded prior checkout as the independent parent', async (t) => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'prior-parent-'));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	fs.mkdirSync(path.join(root, 'docs/specs/runs'), { recursive: true });
+	git(root, ['init']);
+	git(root, ['config', 'user.email', 'fixture@example.com']);
+	git(root, ['config', 'user.name', 'Fixture Host']);
+	writeRepoFile(root, '.gitignore', '.agent-sdlc/\n');
+	writeRepoFile(root, 'src/keep.ts', 'keep\n');
+	writeRepoFile(root, 'src/done.ts', 'base-done\n');
+	writeRepoFile(root, 'src/legacy/old.ts', 'old\n');
+	writeRepoFile(root, 'src/other.ts', 'base-other\n');
+	git(root, ['add', '.']);
+	git(root, ['commit', '-m', 'base']);
+	const baseCommit = git(root, ['rev-parse', 'HEAD']);
+	const baseTree = git(root, ['rev-parse', 'HEAD^{tree}']);
+	writeRepoFile(root, 'src/done.ts', 'prior-done\n');
+	fs.rmSync(path.join(root, 'src/legacy/old.ts'));
+	writeRepoFile(root, 'src/legacy/new.ts', 'new\n');
+	writeRepoFile(root, 'src/other.ts', 'prior-other\n');
+	fs.symlinkSync('done.ts', path.join(root, 'src/link'));
+	git(root, ['add', '-A']);
+	const priorTree = git(root, ['write-tree']);
+	git(root, ['reset', '--hard', 'HEAD']);
+	const runId = '2026-11-24-prior-parent';
+	createRuntimeDirectory(runId, root);
+	const checkout = {
+		priorRunId: '2026-11-23-halted-prior',
+		priorTaskId: 'done-task',
+		targetTreeSha: priorTree,
+		authoredPaths: ['src/done.ts', 'src/legacy', 'src/link'],
+	};
+	writePriorTaskHandoff(root, runId, checkout);
+	const task = {
+		taskId: 'page-task',
+		baseCommitSha: baseCommit,
+		dependsOn: [],
+		pathPrefixes: ['src'],
+		authoredPaths: ['src/page.ts'],
+	};
+	const taskPlan = { runId, baseCommitSha: baseCommit, tasks: [task] };
+	const parentTree = deriveParentTreeSha({ task, taskPlan, rootDir: root, gitCli: execFileSync });
+
+	await t.test('completed paths match the prior tree and other files stay on the base tree', () => {
+		assert.notEqual(parentTree, baseTree);
+		assert.equal(git(root, ['cat-file', '-p', `${parentTree}:src/done.ts`]), 'prior-done');
+		assert.equal(git(root, ['rev-parse', `${parentTree}:src/keep.ts`]), git(root, ['rev-parse', `${baseTree}:src/keep.ts`]));
+		assert.equal(git(root, ['cat-file', '-p', `${parentTree}:src/other.ts`]), 'base-other');
+		assert.equal(git(root, ['ls-tree', '-r', '--name-only', parentTree, '--', 'src/legacy']), 'src/legacy/new.ts');
+		assert.match(git(root, ['ls-tree', parentTree, 'src/link']), /^120000 /);
+		assert.equal(git(root, ['cat-file', '-p', `${parentTree}:src/link`]), 'done.ts');
+		assert.equal(
+			deriveParentTreeSha({ task, taskPlan, rootDir: root, gitCli: execFileSync }),
+			parentTree,
+		);
+	});
+
+	await t.test('a checked-out completed file is not an unauthored edit', () => {
+		checkoutRecordedPriorTask({ rootDir: root, runId, worktreeDir: root, gitCli: execFileSync });
+		writeRepoFile(root, 'src/page.ts', 'page\n');
+		assert.throws(
+			() => captureTaskDelta({
+				task: { ...task, parentTreeSha: baseTree },
+				worktreeDir: root,
+				rootDir: root,
+				gitCli: execFileSync,
+			}),
+			(error) => error.code === 'PATH_CONTAINMENT_VIOLATION',
+		);
+		const delta = captureTaskDelta({
+			task: { ...task, parentTreeSha: parentTree },
+			worktreeDir: root,
+			rootDir: root,
+			gitCli: execFileSync,
+		});
+		assert.deepEqual(delta.changedFiles, ['src/page.ts']);
+	});
+
+	await t.test('a missing run id, a missing handoff, and empty authored paths stay on the base tree', () => {
+		assert.equal(
+			deriveParentTreeSha({
+				task,
+				taskPlan: { baseCommitSha: baseCommit, tasks: [task] },
+				rootDir: root,
+				gitCli: execFileSync,
+			}),
+			baseTree,
+		);
+		assert.equal(
+			deriveParentTreeSha({
+				task,
+				taskPlan: { runId: '2026-11-24-prior-absent', baseCommitSha: baseCommit, tasks: [task] },
+				rootDir: root,
+				gitCli: execFileSync,
+			}),
+			baseTree,
+		);
+		const emptyId = '2026-11-24-prior-empty';
+		createRuntimeDirectory(emptyId, root);
+		writePriorTaskHandoff(root, emptyId, { ...checkout, authoredPaths: [] });
+		assert.equal(
+			deriveParentTreeSha({
+				task,
+				taskPlan: { runId: emptyId, baseCommitSha: baseCommit, tasks: [task] },
+				rootDir: root,
+				gitCli: execFileSync,
+			}),
+			baseTree,
+		);
+	});
+
+	await t.test('an invalid handoff or a failed index update fails closed', () => {
+		const badId = '2026-11-24-prior-bad';
+		createRuntimeDirectory(badId, root);
+		writePriorTaskHandoff(root, badId, { ...checkout, authoredPaths: ['../outside.ts'] });
+		assert.throws(
+			() => deriveParentTreeSha({
+				task,
+				taskPlan: { runId: badId, baseCommitSha: baseCommit, tasks: [task] },
+				rootDir: root,
+				gitCli: execFileSync,
+			}),
+			(error) => error.code === 'INVALID_INPUT',
+		);
+		writePriorTaskHandoff(root, badId, { ...checkout, authoredPaths: ['src/missing.ts'] });
+		assert.throws(
+			() => deriveParentTreeSha({
+				task,
+				taskPlan: { runId: badId, baseCommitSha: baseCommit, tasks: [task] },
+				rootDir: root,
+				gitCli: execFileSync,
+			}),
+			(error) => error.code === 'INVALID_INPUT',
+		);
+		assert.throws(
+			() => deriveParentTreeSha({
+				task,
+				taskPlan,
+				rootDir: root,
+				gitCli: (_command, args) => {
+					if (args[0] === 'rev-parse') return `${baseTree}\n`;
+					throw new Error('index unavailable');
+				},
+			}),
+			(error) => error.code === 'WORKTREE_FAILED' && error.cause.message === 'index unavailable',
+		);
+	});
 });

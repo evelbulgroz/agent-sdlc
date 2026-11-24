@@ -5,6 +5,7 @@ import path from 'node:path';
 import { REPOSITORY_ROOT, stateDirRelative } from '../persistence/run-paths.ts';
 import { sha256 } from '../policy/contracts.ts';
 import { SdlcError } from '../policy/errors.ts';
+import { overlayPriorCheckoutTree } from '../workflow/prior-task-tree.ts';
 import { assertPlanFrozenThenCreateWorktree } from '../workflow/worktree-guard.ts';
 import { removeWorktree } from '../workflow/worktrees.ts';
 
@@ -41,8 +42,8 @@ export interface DeltaTaskPlanLike {
 
 /**
  * Derives parent tree SHA for a task.
- * For independent tasks, returns baseCommitSha^{tree}.
- * For dependent tasks, returns upstream parent targetTreeSha.
+ * An independent task returns baseCommitSha^{tree}, plus a recorded prior checkout when that handoff exists.
+ * A dependent task returns the upstream parent targetTreeSha.
  */
 export function deriveParentTreeSha({
 	task,
@@ -61,6 +62,8 @@ export function deriveParentTreeSha({
 }): string {
 	if (!task.dependsOn || task.dependsOn.length === 0) {
 		const baseSha = task.baseCommitSha || taskPlan.baseCommitSha || '';
+		let baseTree = baseSha;
+		let resolvedTree = false;
 		try {
 			const out = gitCli('git', ['rev-parse', `${baseSha}^{tree}`], {
 				cwd: rootDir,
@@ -69,12 +72,20 @@ export function deriveParentTreeSha({
 			});
 			const trimmed = gitText(out).trim();
 			if (/^[a-f0-9]{40}$/.test(trimmed)) {
-				return trimmed;
+				baseTree = trimmed;
+				resolvedTree = true;
 			}
 		} catch {
 			// fall back to baseSha
 		}
-		return baseSha;
+		if (resolvedTree) {
+			const runId = typeof taskPlan.runId === 'string' ? taskPlan.runId : '';
+			const overlaid = runId
+				? overlayPriorCheckoutTree({ rootDir, runId, baseTreeSha: baseTree, gitCli })
+				: null;
+			if (overlaid) return overlaid;
+		}
+		return baseTree;
 	}
 
 	const taskMap = new Map(taskPlan.tasks.map((t) => [t.taskId, t]));

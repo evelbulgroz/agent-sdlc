@@ -2,7 +2,9 @@
 // Reads the prior run and writes only the new run's handoff file.
 
 import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { computeContinuation } from '../cli/continuation.ts';
 import { projectHostInvocation } from '../cli/host-invocation.ts';
@@ -21,8 +23,10 @@ export interface PriorTaskCheckout {
 
 const TREE_SHA = /^[a-f0-9]{40}$/;
 
-function repositoryRelative(entry: string): boolean {
-	if (!entry || entry.startsWith('-') || entry.startsWith('/') || entry.includes('\\')) return false;
+function repositoryRelative(entry: unknown): entry is string {
+	if (typeof entry !== 'string' || !entry || entry.startsWith('-') || entry.startsWith('/') || entry.includes('\\')) {
+		return false;
+	}
 	return entry.split('/').every((segment) => segment !== '' && segment !== '.' && segment !== '..');
 }
 
@@ -134,6 +138,110 @@ export function writePriorTaskHandoff(rootDir: string, runId: string, checkout: 
 	fs.writeFileSync(priorTaskHandoffPath(rootDir, runId), `${JSON.stringify(checkout)}\n`, { mode: 0o600 });
 }
 
+function recordedCheckout(file: string): PriorTaskCheckout | null {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+	} catch (error: unknown) {
+		throw new SdlcError('INVALID_INPUT', 'Prior task handoff is not a recorded tree checkout', {}, { cause: error });
+	}
+	if (!parsed || typeof parsed !== 'object') {
+		throw new SdlcError('INVALID_INPUT', 'Prior task handoff is not a recorded tree checkout');
+	}
+	const checkout = parsed as PriorTaskCheckout;
+	if (!Array.isArray(checkout.authoredPaths) || checkout.authoredPaths.length === 0) return null;
+	if (!TREE_SHA.test(checkout.targetTreeSha ?? '') || checkout.authoredPaths.some((entry) => !repositoryRelative(entry))) {
+		throw new SdlcError('INVALID_INPUT', 'Prior task handoff is not a recorded tree checkout');
+	}
+	return checkout;
+}
+
+function handoffFile(rootDir: string, runId: string): string | null {
+	if (!runId) return null;
+	try {
+		return priorTaskHandoffPath(rootDir, runId);
+	} catch (error: unknown) {
+		if (
+			error instanceof SdlcError &&
+			(error.code === 'INVALID_CONTRACT' || error.code === 'RUN_NOT_FOUND' || error.code === 'PATH_OUTSIDE_ROOT')
+		) {
+			return null;
+		}
+		throw error;
+	}
+}
+
+function gitBytes(gitCli: GitCliFn, args: readonly string[], options: Record<string, unknown>): Buffer {
+	try {
+		const result = gitCli('git', args, options);
+		if (typeof result === 'string') return Buffer.from(result);
+		return Buffer.isBuffer(result) ? result : Buffer.alloc(0);
+	} catch (error: unknown) {
+		throw new SdlcError('WORKTREE_FAILED', 'Prior task parent overlay failed', {}, { cause: error });
+	}
+}
+
+function indexInfoFromLsTree(raw: Buffer): Buffer | null {
+	const chunks: Buffer[] = [];
+	let start = 0;
+	for (let index = 0; index <= raw.length; index += 1) {
+		if (index !== raw.length && raw[index] !== 0) continue;
+		const record = raw.subarray(start, index);
+		start = index + 1;
+		if (record.length === 0) continue;
+		const tab = record.indexOf(0x09);
+		const head = (tab < 0 ? '' : record.subarray(0, tab).toString('utf8')).split(' ');
+		const mode = head[0] ?? '';
+		const sha = head[2] ?? '';
+		if (tab < 0 || !/^[0-7]{6}$/.test(mode) || !TREE_SHA.test(sha)) {
+			throw new SdlcError('INVALID_INPUT', 'Prior task handoff is not a recorded tree checkout');
+		}
+		chunks.push(Buffer.from(`${mode} ${sha}\t`), record.subarray(tab + 1), Buffer.from([0]));
+	}
+	return chunks.length === 0 ? null : Buffer.concat(chunks);
+}
+
+/**
+ * Base tree plus the recorded prior-task paths. A missing handoff returns null.
+ * The temp index is not the repository index, and this does not move HEAD.
+ */
+export function overlayPriorCheckoutTree({
+	rootDir,
+	runId,
+	baseTreeSha,
+	gitCli = execFileSync as GitCliFn,
+}: {
+	rootDir: string;
+	runId: string;
+	baseTreeSha: string;
+	gitCli?: GitCliFn;
+}): string | null {
+	if (!TREE_SHA.test(baseTreeSha)) return null;
+	const file = handoffFile(rootDir, runId);
+	if (!file || !fs.existsSync(file)) return null;
+	const checkout = recordedCheckout(file);
+	if (!checkout) return null;
+	const tmpIndex = path.join(os.tmpdir(), `agent-sdlc-prior-${crypto.randomUUID()}`);
+	const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
+	const gitOptions = { cwd: rootDir, env, stdio: ['pipe', 'pipe', 'pipe'] };
+	try {
+		gitBytes(gitCli, ['read-tree', baseTreeSha], gitOptions);
+		for (const entry of checkout.authoredPaths) {
+			gitBytes(gitCli, ['rm', '-r', '--cached', '--ignore-unmatch', '--', entry], gitOptions);
+			const listed = gitBytes(gitCli, ['ls-tree', '-r', '-z', checkout.targetTreeSha, '--', entry], gitOptions);
+			const info = indexInfoFromLsTree(listed);
+			if (!info) throw new SdlcError('INVALID_INPUT', 'Prior task handoff is not a recorded tree checkout');
+			gitBytes(gitCli, ['update-index', '-z', '--index-info'], { ...gitOptions, input: info });
+		}
+		const treeSha = gitBytes(gitCli, ['write-tree'], gitOptions).toString('utf8').trim();
+		if (!TREE_SHA.test(treeSha)) throw new SdlcError('WORKTREE_FAILED', 'Prior task parent overlay failed');
+		return treeSha;
+	} finally {
+		fs.rmSync(tmpIndex, { force: true });
+		fs.rmSync(`${tmpIndex}.lock`, { force: true });
+	}
+}
+
 export function checkoutRecordedPriorTask({
 	rootDir,
 	runId,
@@ -145,14 +253,17 @@ export function checkoutRecordedPriorTask({
 	worktreeDir: string;
 	gitCli?: GitCliFn;
 }): void {
-	const file = priorTaskHandoffPath(rootDir, runId);
-	if (!fs.existsSync(file)) return;
-	const checkout = JSON.parse(fs.readFileSync(file, 'utf8')) as PriorTaskCheckout;
-	if (!Array.isArray(checkout.authoredPaths) || checkout.authoredPaths.length === 0) return;
-	if (!TREE_SHA.test(checkout.targetTreeSha ?? '') || checkout.authoredPaths.some((entry) => !repositoryRelative(entry))) {
-		throw new SdlcError('INVALID_INPUT', 'Prior task handoff is not a recorded tree checkout');
-	}
+	const file = handoffFile(rootDir, runId);
+	if (!file || !fs.existsSync(file)) return;
+	const checkout = recordedCheckout(file);
+	if (!checkout) return;
 	try {
+		// checkout -- pathspec updates files the prior tree has and leaves deletions behind.
+		// Remove the path first so a directory prefix matches the overlay parent.
+		gitCli('git', ['rm', '-r', '--ignore-unmatch', '--', ...checkout.authoredPaths], {
+			cwd: worktreeDir,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
 		gitCli('git', ['checkout', checkout.targetTreeSha, '--', ...checkout.authoredPaths], {
 			cwd: worktreeDir,
 			stdio: ['ignore', 'pipe', 'pipe'],
