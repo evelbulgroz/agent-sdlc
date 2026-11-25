@@ -2,6 +2,9 @@ import path from 'node:path';
 import { readEvidenceFile } from '../host/evidence-files.ts';
 import type { EvidenceCompletion } from '../host/evidence-types.ts';
 import type { EvidenceObligation, QualityPolicy } from '../policy/contracts/quality-schema.ts';
+import { excerptObligatedCases } from './obligation-case-excerpt.ts';
+
+const CASE_SOURCE_READ_BYTES = 1_048_576;
 
 export interface QualityEvidencePacketInput {
 	worktreeDir: string;
@@ -98,13 +101,22 @@ export function packQualityEvidencePacket({
 			});
 		}
 	}
-	const casePaths = [...new Set(obligations.flatMap((obligation) =>
-		obligation.testCases.map((testCase) => testCase.file),
-	))].sort();
+	const caseIdsByPath = new Map<string, string[]>();
+	for (const obligation of obligations) {
+		for (const testCase of obligation.testCases) {
+			const ids = caseIdsByPath.get(testCase.file) ?? [];
+			if (obligation.caseId !== null && !ids.includes(obligation.caseId)) ids.push(obligation.caseId);
+			caseIdsByPath.set(testCase.file, ids);
+		}
+	}
+	const casePaths = [...caseIdsByPath.keys()].sort();
 	const implementationPaths = [...new Set(obligations.flatMap((obligation) =>
 		obligation.implementationPaths,
 	))].sort();
-	const sourcePaths = [...new Set([...casePaths, ...implementationPaths])].sort();
+	const sourcePaths = [
+		...casePaths,
+		...implementationPaths.filter((file) => !caseIdsByPath.has(file)),
+	];
 	const files: Array<{ path: string; content: string }> = [];
 	let sourceBytes = 0;
 	let sourceLines = 0;
@@ -114,12 +126,16 @@ export function packQualityEvidencePacket({
 		if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
 			return insufficient('A declared case path escaped the candidate worktree');
 		}
+		const caseIds = caseIdsByPath.get(sourcePath);
+		const excerptIds = caseIds && caseIds.length > 0 ? caseIds : null;
 		let content: string;
 		try {
-			content = readEvidenceFile(path.resolve(worktreeDir), sourcePath,
-				policy.retrieval.maxPacketBytes - sourceBytes).toString('utf8');
-		} catch {
-			return insufficient(`Case source is unavailable: ${sourcePath}`);
+			content = excerptIds
+				? excerptCaseSource(worktreeDir, sourcePath, excerptIds, policy.retrieval.maxPacketBytes - sourceBytes)
+				: readEvidenceFile(path.resolve(worktreeDir), sourcePath,
+					policy.retrieval.maxPacketBytes - sourceBytes).toString('utf8');
+		} catch (error: unknown) {
+			return insufficient(sourceFailure(error, sourcePath));
 		}
 		sourceBytes += Buffer.byteLength(content, 'utf8');
 		sourceLines += content.split('\n').length;
@@ -127,7 +143,9 @@ export function packQualityEvidencePacket({
 			sourceBytes > policy.retrieval.maxPacketBytes ||
 			sourceLines > policy.retrieval.maxPacketLines
 		) {
-			return insufficient('Case sources exceed the bounded initial evidence packet');
+			return insufficient(excerptIds
+				? `Obligated cases in ${sourcePath} exceed the bounded initial evidence packet`
+				: 'Case sources exceed the bounded initial evidence packet');
 		}
 		files.push({ path: sourcePath, content });
 	}
@@ -174,4 +192,33 @@ export function packQualityEvidencePacket({
 			lineCount: sourceLines,
 		});
 	}
+}
+
+function sourceFailure(error: unknown, sourcePath: string): string {
+	const message = error instanceof Error ? error.message : '';
+	if (message.startsWith('Obligated case ') || message.startsWith('Obligated cases in ')) return message;
+	return `Case source is unavailable: ${sourcePath}`;
+}
+
+function excerptCaseSource(
+	worktreeDir: string,
+	sourcePath: string,
+	caseIds: readonly string[],
+	maxBytes: number,
+): string {
+	if (maxBytes < 1) {
+		throw new Error(`Obligated cases in ${sourcePath} exceed the bounded initial evidence packet`);
+	}
+	const source = readEvidenceFile(path.resolve(worktreeDir), sourcePath, CASE_SOURCE_READ_BYTES).toString('utf8');
+	let excerpt: { text: string; missingCaseIds: readonly string[] };
+	try {
+		excerpt = excerptObligatedCases({ filePath: sourcePath, source, caseIds, maxBytes });
+	} catch {
+		throw new Error(`Obligated cases in ${sourcePath} exceed the bounded initial evidence packet`);
+	}
+	if (excerpt.missingCaseIds.length > 0 || excerpt.text.length === 0) {
+		const missing = excerpt.missingCaseIds.length > 0 ? excerpt.missingCaseIds : caseIds;
+		throw new Error(missing.map((caseId) => `Obligated case ${caseId} has no excerpt in ${sourcePath}`).join('; '));
+	}
+	return excerpt.text;
 }

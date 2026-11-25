@@ -130,7 +130,8 @@ test('checkpoint QA persists one bounded production follow-up and lets it discha
 		const worktreeDir = path.join(fixture.runtimeDir, 'checkpoint');
 		fs.mkdirSync(path.join(worktreeDir, 'src'), { recursive: true });
 		fs.writeFileSync(path.join(worktreeDir, 'src/production.ts'), 'export function run() {\n  return true;\n}\n');
-		fs.writeFileSync(path.join(worktreeDir, 'src/production.spec.ts'), 'assert.equal(run(), true);\n');
+		fs.writeFileSync(path.join(worktreeDir, 'src/production.spec.ts'),
+			"test('validated result @case AC-01.1', () => { assert.equal(run(), true); });\n");
 		const policy = {
 			schemaVersion: '1.0.0',
 			policyId: 'checkpoint-evidence-v1',

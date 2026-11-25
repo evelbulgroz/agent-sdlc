@@ -148,6 +148,10 @@ closed to the keys above, plus optional `capabilities`.
 - `testFile` is a repository-relative path with no `.` or `..` segment, and
   it must sit under the run's allowed path prefixes. The test title contains
   `@case AC-NN.N` equal to `caseId`.
+- Each `caseId` must be absent from `testFile` when the draft is checked. A
+  missing `testFile` is fine. When `check-spec` or `shell start` reports an
+  occupied case, follow that reported remedy. Do not delete tests to make a
+  review packet fit.
 - `ownerTaskId` is `task-0` when no task manifest is passed. When a manifest
   is passed, it is the task whose slice lists `criterionId`.
 - `obligationId`, `ownerTaskId`, `profileId`, and `caseKey` match

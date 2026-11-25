@@ -15,7 +15,8 @@ function fixture(t, options = {}) {
 	const worktreeDir = path.join(f.runtimeDir, 'candidate');
 	fs.mkdirSync(path.join(worktreeDir, 'src'), { recursive: true });
 	fs.writeFileSync(path.join(worktreeDir, 'src/code.ts'), 'export const ready = true;\n');
-	fs.writeFileSync(path.join(worktreeDir, 'src/code.spec.ts'), 'assert.equal(ready, true);\n');
+	fs.writeFileSync(path.join(worktreeDir, 'src/code.spec.ts'),
+		"test('ready @case AC-01.1', () => { assert.equal(ready, true); });\n");
 	const policy = { ...baseline, followUpDispatches: 0,
 		review: { maxLogicalDispatches: 8, maxPhysicalCalls: 3,
 			maxInputTokens: options.reviewInputTokens ?? 30_000, maxOutputTokens: 2_000 },
@@ -237,7 +238,7 @@ test('hard-crash QA reservations are conservatively charged once and a fresh slo
 	f.request.runtime.registry = { ...f.request.runtime.registry,
 		rootDir: f.request.runtime.registry.rootDir,
 		loadRole: id => ({ ...loadRole(id), role: {
-			requestedLimits: { maxPhysicalAttempts: 1, maxPromptTokens: 6_000, maxCompletionTokens: 500 },
+			requestedLimits: { maxPhysicalAttempts: 1, maxPromptTokens: 6_100, maxCompletionTokens: 500 },
 		} }),
 	};
 	const reserve = f.store.quality.reserveBudget;
@@ -252,7 +253,7 @@ test('hard-crash QA reservations are conservatively charged once and a fresh slo
 	assert.equal((await f.run()).status, 'PASS');
 	assert.deepEqual(f.budget().reservations.map(entry => entry.status), ['interrupted', 'consumed']);
 	assert.equal(f.budget().counters.physicalCalls, 2);
-	assert.equal(f.budget().counters.inputTokens, 6_123);
+	assert.equal(f.budget().counters.inputTokens, 6_223);
 	assert.equal(f.budget().counters.outputTokens, 545);
 	const charged = f.budget();
 	assert.equal((await f.run()).status, 'PASS');

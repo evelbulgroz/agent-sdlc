@@ -213,6 +213,39 @@ test('shell start passes an explicit obligations file through to check-spec', as
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test('shell start copies occupied obligation cases into the not-ready result', async () => {
+	const dir = makeTempDir('occupied-cases');
+	const goalFile = writeGoalFile(dir);
+	const remedy = 'Case id AC-01.1 already appears 2 times in pkg/a.spec.mjs. Choose a case id that does not appear in that file and keep the existing tests.';
+	async function spy() {
+		return {
+			exitCode: 2,
+			result: {
+				ok: true,
+				command: 'check-spec',
+				ready: false,
+				completeness: { missingFields: [], ambiguousFields: [] },
+				productObligations: {
+					occupiedCases: [{ caseId: 'AC-01.1', testFile: 'pkg/a.spec.mjs', count: 2, remedy }],
+				},
+			},
+			human: 'check-spec',
+		};
+	}
+	const result = await shellStart({
+		goalFile,
+		rootDir: REPOSITORY_ROOT,
+		streams: SILENT_STREAMS,
+		runCliFn: spy,
+		engineOptions: { governor: throwingGovernor() },
+	});
+	assert.equal(result.ready, false);
+	assert.equal(result.continuation.reason, 'SPEC_INCOMPLETE');
+	assert.equal(result.productObligations.occupiedCases[0].count, 2);
+	assert.match(humanResult('shell start', result), /keep the existing tests/);
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('shell start passes an explicit task manifest through to check-spec', async () => {
 	const dir = makeTempDir('sibling-explicit');
 	const goalFile = writeGoalFile(dir);

@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { casesFromReport } from '../acceptance/command-evidence.ts';
-import { readReportFile, type CaseResult } from '../acceptance/report-formats.ts';
+import { parseReport, prepareReportDirectory, readReportFile, EvidenceReportError, type CaseResult } from '../acceptance/report-formats.ts';
+import { selectedSourceCaseIdentities, structuralIdentityFailure } from '../acceptance/source-case-selection.ts';
 import { selectedCaseIdentities, substituteArgv, verifyCommandRegistration } from '../host/command-evidence.ts';
 import type { CommandCaseResult } from '../host/command-evidence.ts';
 import type { CommandRunner, EvidenceSpawn } from '../host/evidence-types.ts';
@@ -80,8 +81,8 @@ function scoreRecordedReport(
 	try {
 		const cases = commandCases(casesFromReport({ registration, selected, code: 0, reportBytes, request }));
 		return Promise.resolve({ exitCode: 0, cases, reportBytes });
-	} catch {
-		return Promise.resolve({ exitCode: 0, cases: [], reportBytes, failureReason: 'invalid-evidence' });
+	} catch (error: unknown) {
+		return Promise.resolve({ exitCode: 0, cases: [], reportBytes, failureReason: typedReportFailure(error) });
 	}
 }
 
@@ -93,11 +94,35 @@ const runCommand: CommandRunner = async (registration, request, worktreeDir, con
 	}
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sdlc-product-evidence-'));
 	try {
+		const first = await runRegistration(registration, request, worktreeDir, directory, selected);
+		// One retry when a hashed report contradicts its exit. A second disagreement still fails.
+		// A duplicate or source mismatch in that report is structural: do not retry it.
+		if (first.failureReason !== 'REPORT_EXIT_CONTRADICTION' || first.reportBytes.length === 0) return first;
+		const structural = structuralBesideContradiction(registration, request, first.reportBytes);
+		if (structural) return { ...first, cases: [], failureReason: structural };
 		return await runRegistration(registration, request, worktreeDir, directory, selected);
 	} finally {
 		fs.rmSync(directory, { recursive: true, force: true });
 	}
 };
+
+function typedReportFailure(error: unknown): string {
+	return error instanceof EvidenceReportError ? error.code : 'invalid-evidence';
+}
+
+function structuralBesideContradiction(
+	registration: CommandRegistration,
+	request: EvidenceRequest,
+	reportBytes: Buffer,
+): string | null {
+	if (registration.caseIdentity !== 'case-file-criterion') return null;
+	try {
+		const rows = parseReport(registration.reportFormat, reportBytes.toString('utf8'));
+		return structuralIdentityFailure(rows, selectedSourceCaseIdentities(request), registration.retries);
+	} catch {
+		return null;
+	}
+}
 
 async function runRegistration(
 	registration: CommandRegistration,
@@ -106,6 +131,7 @@ async function runRegistration(
 	directory: string,
 	selected: readonly string[],
 ): Promise<{ exitCode: number | null; cases: CommandCaseResult[]; reportBytes: Buffer; failureReason?: string | null }> {
+	prepareReportDirectory(directory);
 	const name = `report.${EXTENSIONS[registration.reportFormat]}`;
 	const reportPath = path.join(directory, name);
 	const argv = substituteArgv(registration.argv, { reportPath, baseSha: request.binding?.baseCommitSha });
@@ -137,14 +163,14 @@ async function runRegistration(
 			maxBytes: registration.limits.maxReportBytes,
 			runStartedMs: started - CLOCK_TOLERANCE_MS,
 		}), 'utf8');
-	} catch {
-		return { exitCode: code, cases: [], reportBytes: Buffer.alloc(0), failureReason: 'invalid-evidence' };
+	} catch (error: unknown) {
+		return { exitCode: code, cases: [], reportBytes: Buffer.alloc(0), failureReason: typedReportFailure(error) };
 	}
 	try {
 		const cases = commandCases(casesFromReport({ registration, selected, code, reportBytes, request }));
 		return { exitCode: code, cases, reportBytes };
-	} catch {
-		return { exitCode: code, cases: [], reportBytes, failureReason: 'invalid-evidence' };
+	} catch (error: unknown) {
+		return { exitCode: code, cases: [], reportBytes, failureReason: typedReportFailure(error) };
 	}
 }
 

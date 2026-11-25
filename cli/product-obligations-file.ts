@@ -13,6 +13,7 @@ import {
 	type ProductObligationsDocument,
 	type ProductQualityCode,
 } from '../policy/product-quality-plan.ts';
+import { occupiedObligationCases, type OccupiedCaseFinding } from './obligation-case-occupancy.ts';
 
 export const PRODUCT_OBLIGATIONS_FILENAME = 'product-obligations.json';
 const MAX_OBLIGATIONS_BYTES = 65_536;
@@ -135,8 +136,16 @@ function acceptForHost({
 	});
 }
 
-/** Validates a start-time obligations file and returns the document to store with the run. */
-export function prepareStartObligations({
+export interface StartObligationsLoad {
+	document: ProductObligationsDocument | null;
+	occupiedCases: OccupiedCaseFinding[];
+}
+
+/**
+ * Validates a start-time obligations file. Occupancy is draft admission only:
+ * a later quality-plan rebuild must not reject case ids the implementer added.
+ */
+export function loadStartObligations({
 	rootDir, draft, taskManifest, obligationsFile, goalFile = null,
 }: {
 	rootDir: string;
@@ -144,10 +153,26 @@ export function prepareStartObligations({
 	taskManifest: TaskManifest | null;
 	obligationsFile: string | null;
 	goalFile?: string | null;
-}): ProductObligationsDocument | null {
-	if (!obligationsFile && goalFileIsExempt(rootDir, goalFile)) return null;
+}): StartObligationsLoad {
+	if (!obligationsFile && goalFileIsExempt(rootDir, goalFile)) return { document: null, occupiedCases: [] };
 	const obligations = obligationsFile ? readProductObligationsFile(path.resolve(rootDir, obligationsFile)) : null;
-	return acceptForHost({ rootDir, draft, taskManifest, obligations, code: 'INVALID_INPUT' })?.document ?? null;
+	const document = acceptForHost({ rootDir, draft, taskManifest, obligations, code: 'INVALID_INPUT' })?.document ?? null;
+	return { document, occupiedCases: document ? occupiedObligationCases(rootDir, document) : [] };
+}
+
+/** Validates a start-time obligations file and returns the document to store with the run. */
+export function prepareStartObligations(input: {
+	rootDir: string;
+	draft: DraftFields;
+	taskManifest: TaskManifest | null;
+	obligationsFile: string | null;
+	goalFile?: string | null;
+}): ProductObligationsDocument | null {
+	const loaded = loadStartObligations(input);
+	if (loaded.occupiedCases.length > 0) {
+		throw new SdlcError('INVALID_INPUT', loaded.occupiedCases.map((item) => item.remedy).join('\n'));
+	}
+	return loaded.document;
 }
 
 /** Rebuilds the checkpoint quality plan from the obligations stored with the run. */

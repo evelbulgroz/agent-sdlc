@@ -210,11 +210,13 @@ export async function shellStart({
 			...(completeness?.missingFields ?? []),
 			...(completeness?.ambiguousFields ?? []),
 		];
+		const productObligations = checked.productObligations ?? null;
 		return {
 			ready: false,
 			missingFields,
 			completeness: checked.completeness ?? null,
 			acceptanceCriteriaQuality: checked.acceptanceCriteriaQuality ?? null,
+			...(productObligations ? { productObligations } : {}),
 			continuation: { action: 'answer', reason: 'SPEC_INCOMPLETE' },
 		};
 	}

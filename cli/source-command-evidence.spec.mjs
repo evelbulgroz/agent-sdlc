@@ -89,18 +89,30 @@ test('real local source command preserves nonzero suite exit while the requested
 	});
 });
 
+test('checkpoint evidence stores a duplicate case id instead of invalid-evidence', async () => {
+	await fixture(async (f) => {
+		const registration = bind(f, `<testsuite>${pass}${pass}</testsuite>`);
+		const result = await executeEvidence(f.request, registration, f.context, createLocalEvidenceSpawn(), f.store);
+		assert.equal(result.invocation.failureReason, 'REPORT_DUPLICATE_IDENTITY');
+		assert.equal(result.report, null);
+	});
+});
+
 test('real local command rejects wrong-source, matched duplicates, contradictory exits and unusable reports', async () => {
-	for (const body of [
-		`<testsuite>${foreignPass}</testsuite>`,
-		`<testsuite>${pass.replace('@ac AC-01', '@ac AC-02')}</testsuite>`,
-		`<testsuite>${pass}${pass}</testsuite>`,
-		`<testsuite>${pass}${foreignFailure}</testsuite>`,
-		'', '<testsuite>', 'x'.repeat(17000),
-	]) {
+	const cases = [
+		[`<testsuite>${foreignPass}</testsuite>`, 'REPORT_SOURCE_MISMATCH'],
+		[`<testsuite>${pass.replace('@ac AC-01', '@ac AC-02')}</testsuite>`, 'REPORT_SOURCE_MISMATCH'],
+		[`<testsuite>${pass}${pass}</testsuite>`, 'REPORT_DUPLICATE_IDENTITY'],
+		[`<testsuite>${pass}${foreignFailure}</testsuite>`, 'REPORT_EXIT_CONTRADICTION'],
+		['', 'REPORT_MALFORMED'],
+		['<testsuite>', 'REPORT_MALFORMED'],
+		['x'.repeat(17000), 'REPORT_OVERSIZED'],
+	];
+	for (const [body, reason] of cases) {
 		await fixture(async (f) => {
 			const registration = bind(f, body);
 			const result = await createLocalEvidenceSpawn().runCommand(registration, f.request, f.root);
-			assert.equal(result.failureReason, 'invalid-evidence', body.slice(0, 100));
+			assert.equal(result.failureReason, reason, body.slice(0, 100));
 			assert.deepEqual(result.cases, []);
 		});
 	}

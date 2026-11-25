@@ -9,6 +9,9 @@ import { usage } from './arguments.ts';
 export interface HumanResultInput extends Record<string, unknown> {
 	ready?: boolean;
 	missingFields?: readonly string[];
+	productObligations?: {
+		occupiedCases?: ReadonlyArray<{ remedy?: string } | null>;
+	} | null;
 	owningContext?: string | null;
 	briefHash?: string;
 	acceptanceCriteria?: readonly string[];
@@ -194,6 +197,12 @@ function appendLearningOutcomeLines(
 	}
 }
 
+function occupiedRemedies(result: HumanResultInput): string[] {
+	const cases = result.productObligations?.occupiedCases;
+	if (!Array.isArray(cases)) return [];
+	return cases.flatMap((item) => (typeof item?.remedy === 'string' && item.remedy.length > 0 ? [item.remedy] : []));
+}
+
 export function humanResult(
 	command: string,
 	resultInput: Record<string, unknown>,
@@ -231,7 +240,9 @@ export function humanResult(
 	}
 	if (command === 'shell start' && typeof result.ready === 'boolean') {
 		if (!result.ready) {
-			return `shell start: not ready, missing=[${(result.missingFields ?? []).join(', ')}]`;
+			const summary = `shell start: not ready, missing=[${(result.missingFields ?? []).join(', ')}]`;
+			const remedies = occupiedRemedies(result);
+			return remedies.length > 0 ? [summary, ...remedies].join('\n') : summary;
 		}
 		return [
 			`shell start: brief ready (owningContext=${result.owningContext ?? 'unknown'})`,
@@ -264,6 +275,7 @@ export function humanResult(
 				);
 			}
 		}
+		lines.push(...occupiedRemedies(result));
 		return lines.join('\n');
 	}
 	if (command === 'reliability replay') {

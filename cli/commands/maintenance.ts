@@ -18,6 +18,7 @@ import {
 	parseSpecification,
 } from '../../workflow/specification.ts';
 import { type ParsedArguments, requiredValue } from '../arguments.ts';
+import { loadStartObligations } from '../product-obligations-file.ts';
 import { resolveGoalText, resolveTaskManifest } from '../run-context.ts';
 
 export interface PruneRunsOptions {
@@ -86,14 +87,27 @@ export function checkSpecRun(
 		completeness.complete === true && acceptanceCriteriaQuality.complete === true
 			? evaluateTaskReadiness({ draft, taskManifest, rootDir })
 			: null;
+	const obligationsFile = parsed.values.get('--obligations-file') ?? null;
+	const admitted = obligationsFile && completeness.complete === true && acceptanceCriteriaQuality.complete === true
+		? loadStartObligations({
+			rootDir,
+			draft,
+			taskManifest,
+			obligationsFile,
+			goalFile: parsed.values.get('--goal-file') ?? null,
+		})
+		: null;
+	const occupiedCases = admitted?.occupiedCases ?? [];
 	return {
 		ready:
 			completeness.complete === true &&
 			acceptanceCriteriaQuality.complete === true &&
-			taskReadiness !== null,
+			taskReadiness !== null &&
+			occupiedCases.length === 0,
 		completeness,
 		acceptanceCriteriaQuality,
 		taskReadiness,
+		...(occupiedCases.length > 0 ? { productObligations: { occupiedCases } } : {}),
 	};
 }
 

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { casesFromReport } from './command-evidence.ts';
+import { parseJunit } from './report-formats.ts';
+import { structuralIdentityFailure } from './source-case-selection.ts';
 
 const registration = { reportFormat: 'junit', retries: 0, caseIdentity: 'case-file-criterion' };
 const source = (file = 'pkg/src/bundle-time.spec.mjs', criterionId = 'AC-03', caseId = 'AC-03.1') =>
@@ -65,6 +67,14 @@ test('source selection preserves missing, skipped, failed and error outcomes', (
 	throwsCode(() => select(''), 'REPORT_ZERO_CASES');
 	throwsCode(() => select(leaf(source()), []), 'REPORT_ZERO_CASES');
 	assert.throws(() => select('', [source()], 0, { reportBytes: Buffer.alloc(0) }), /REPORT_MALFORMED/);
+});
+
+test('a contradictory exit does not make a duplicate or source mismatch retryable', () => {
+	const duplicate = parseJunit(`<testsuite>${leaf(source())}${leaf(source())}</testsuite>`);
+	assert.equal(structuralIdentityFailure(duplicate, [source()]), 'REPORT_DUPLICATE_IDENTITY');
+	const mismatch = parseJunit(`<testsuite>${leaf(source('pkg/src/other.spec.mjs'), 'failure')}</testsuite>`);
+	assert.equal(structuralIdentityFailure(mismatch, [source()]), 'REPORT_SOURCE_MISMATCH');
+	assert.equal(structuralIdentityFailure(parseJunit(`<testsuite>${leaf(source())}</testsuite>`), [source()]), null);
 });
 
 test('full-report exit correspondence precedes source matching and duplicate collapse', () => {

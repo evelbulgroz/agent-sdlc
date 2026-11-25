@@ -4,6 +4,7 @@ import {
 	EvidenceReceiptSchema, InvocationRecordSchema, validateEvidenceReportForRequest,
 	type AdapterRegistration, type EvidenceRequest, type EvidenceReport, type InvocationRecord,
 } from '../policy/contracts/quality-schema.ts';
+import { EVIDENCE_REPORT_ERROR_CODES } from '../acceptance/report-formats.ts';
 import { sha256 } from '../policy/contracts/primitives.ts';
 import type { CommandRegistration } from '../policy/contracts/quality-evidence-schema.ts';
 import {
@@ -214,13 +215,14 @@ export async function executeEvidence(
 		if (commandCases && status === 'passed') exitCode = 0;
 	} catch (error) {
 		// Never persist attacker-controlled reports, diagnostics, or exception messages as reasons.
-		const known = new Set([
+		const known = new Set<string>([
 			'timeout', 'spawn-failed', 'process-error', 'stdin-error', 'report-byte-limit',
 			'process-cleanup-failed', 'unqualified-evidence-executable', 'unqualified-evidence-adapter',
 			'candidate-source-or-preparation-changed', 'frozen-adapter-file-changed',
 			'artifact-directory-not-fresh', 'evidence-path-not-authorized', 'process-interrupted',
 			'artifact-count-limit', 'artifact-manifest-mismatch', 'undeclared-attempt-artifact',
 			'unsafe-directory', 'unsafe-file-path', 'invalid-file-size-or-kind', 'PINNED_FILE_MODIFIED',
+			...EVIDENCE_REPORT_ERROR_CODES,
 		]);
 		failureReason = error instanceof Error && known.has(error.message) ? error.message : 'invalid-evidence';
 		// The unclassified cause is operator-visible only through the diagnostics callback, never in durable evidence.

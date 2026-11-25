@@ -58,3 +58,26 @@ export function selectSourceCases({ rows, selected, exitCode, retries = 0 }: {
 		};
 	});
 }
+
+/**
+ * A contradictory exit is retryable only when the same rows, scored with an
+ * exit that agrees with them, have no duplicate or source mismatch.
+ * `selectSourceCases` still reports the contradiction first.
+ */
+export function structuralIdentityFailure(
+	rows: readonly CaseRow[],
+	selected: readonly SourceCaseIdentity[],
+	retries = 0,
+): 'REPORT_DUPLICATE_IDENTITY' | 'REPORT_SOURCE_MISMATCH' | null {
+	const failing = rows.some((row) => row.outcome === 'failed' || row.outcome === 'error');
+	try {
+		selectSourceCases({ rows, selected, exitCode: failing ? 1 : 0, retries });
+		return null;
+	} catch (error: unknown) {
+		if (error instanceof EvidenceReportError &&
+			(error.code === 'REPORT_DUPLICATE_IDENTITY' || error.code === 'REPORT_SOURCE_MISMATCH')) {
+			return error.code;
+		}
+		return null;
+	}
+}
