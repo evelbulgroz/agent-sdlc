@@ -26,8 +26,10 @@ function fixture(t, options = {}) {
 		counters: { executionInvocations: 0, executionDurationMs: 0, logicalDispatches: 0,
 			physicalCalls: 0, inputTokens: 0, outputTokens: 0 }, reservations: [],
 	}, policy);
+	const checkpointKind = options.checkpointKind === 'final' ? 'final' : 'slice';
 	const binding = { runId: f.runId, approvedSpecHash: 'a'.repeat(64), taskPlanHash: 'b'.repeat(64),
-		qualityPolicyHash: sha256(policy), checkpointId: 'slice-one', checkpointKind: 'slice', ownerId: 'slice-one',
+		qualityPolicyHash: sha256(policy), checkpointId: 'slice-one', checkpointKind,
+		ownerId: checkpointKind === 'final' ? null : 'slice-one',
 		candidateRevision: 0, baseCommitSha: 'c'.repeat(40), treeSha: 'd'.repeat(40),
 		revisionSetHash: 'e'.repeat(64), preparationHash: 'f'.repeat(64) };
 	const obligation = { obligationId: 'visible', criterionId: 'AC-01', caseId: 'AC-01.1',
@@ -76,7 +78,8 @@ function fixture(t, options = {}) {
 		closure: { binding, receiptHashes: ['2'.repeat(64)] } };
 	const snapshot = { ...initial, state: 'REVIEWING_QA', authorVendor: 'google', taskPlanFrozen: true,
 		approvedSpecHash: binding.approvedSpecHash, taskPlanHash: binding.taskPlanHash,
-		qualityCheckpointKind: 'slice', qualityCheckpointBindingHash: sha256(binding) };
+		qualityCheckpointKind: checkpointKind, qualityCheckpointBindingHash: sha256(binding),
+		...(checkpointKind === 'final' ? { preflightBindingArtifact: '9'.repeat(64) } : {}) };
 	const registry = options.maxPhysicalAttempts ? {
 		rootDir: f.registry.rootDir, loadRole(id) {
 			const loaded = f.registry.loadRole(id);
@@ -181,6 +184,45 @@ test('QA charges every reconciled failed and successful physical attempt', async
 	assert.equal(f.budget().counters.physicalCalls, 2);
 	assert.equal(f.budget().counters.inputTokens, 100);
 	assert.equal(f.budget().counters.outputTokens, 20);
+});
+
+test('follow-up QA keeps the scoped Given/Then evidence for slice and final review', async t => {
+	for (const checkpointKind of ['slice', 'final']) {
+		const f = fixture(t, { followUp: true, policy: { followUpDispatches: 1 }, checkpointKind });
+		const [obligation] = f.request.context.plan.evidenceObligations;
+		obligation.requiredCapabilities = ['native-file-picker'];
+		obligation.layer = 'browser';
+		f.request.context.plan.evidenceObligations.push({
+			...obligation,
+			obligationId: 'visible-again',
+			observableOutcome: 'Ready stays visible',
+			expectedResult: 'Ready remains true',
+		});
+		f.store.quality.getEvidenceCompletionByReceiptHash = () => ({
+			receipt: { status: 'passed', dischargedObligationIds: ['visible', 'visible-again'] },
+			invocation: { status: 'completed' },
+			report: { cases: [{ file: 'src/code.spec.ts', caseKey: 'ready', obligationIds: ['visible', 'visible-again'],
+				outcome: 'passed', exercisedCapabilities: ['native-file-picker'],
+				attempts: [{ index: 0, outcome: 'passed', durationMs: 1 }] }] },
+		});
+		const result = await f.run();
+		assert.equal(result.status, 'PASS', result.reason ?? '');
+		assert.equal(f.calls.length, 2);
+		for (const call of f.calls) {
+			assert.match(call.prompt, /expected: Ready is true/);
+			assert.match(call.prompt, /expected: Ready remains true/);
+			assert.match(call.prompt, /"layer":"browser"/);
+			assert.match(call.prompt, /"requiredCapabilities":\["native-file-picker"\]/);
+			assert.match(call.prompt, /### Acceptance Criteria\n1\. AC-01\n/);
+			assert.equal(call.prompt.includes('2. AC-01'), false);
+		}
+		assert.match(f.calls[1].prompt, checkpointKind === 'slice' ? /ONLY the obligations/ : /Bound governed QA usage/);
+		if (checkpointKind === 'slice') assert.equal(f.calls[1].prompt.includes('Bound governed QA usage'), false);
+		if (checkpointKind === 'final') {
+			assert.match(f.calls[1].prompt, /"outcome":"passed"/);
+			assert.match(f.calls[1].prompt, /"exercisedCapabilities":\["native-file-picker"\]/);
+		}
+	}
 });
 
 test('follow-up resource limits use freshly charged remaining budget and replay does not recharge', async t => {

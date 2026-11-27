@@ -13,7 +13,7 @@ import {
 	getAndValidateAuthorization,
 	shouldDeferGitMaterialization,
 } from '../node-helpers.ts';
-import { reconcileTasks } from '../reconciliation.ts';
+import { freshIntegrationCheckout, reconcileTasks } from '../reconciliation.ts';
 import { timedSpan } from '../../persistence/run-spans.ts';
 
 export function createReconcileIntegrationNode(runtime: WorkflowRuntimeLike) {
@@ -140,7 +140,8 @@ export function createReconcileIntegrationNode(runtime: WorkflowRuntimeLike) {
 			}
 		}
 
-		if (plan.tasks.length > 1) {
+		// The fresh integration checkout has no node_modules. A one-task quality plan uses that checkout too.
+		if (freshIntegrationCheckout(plan)) {
 			try {
 				await timedSpan(runtime.runtimeStore, 'prepare', 'hydrate integration worktree', () => hydrateWorktree({
 					worktreeDir: reconcileResult.integrationWorktreePath,

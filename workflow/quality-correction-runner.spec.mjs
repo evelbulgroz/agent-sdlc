@@ -276,6 +276,7 @@ for (const interruption of ['none', 'consumer-conflict', 'completion', 'completi
 			return;
 		}
 	}
+	if (interruption === 'none') snapshot = { ...snapshot, lastError: { code: 'INPUT_OVERSIZED', message: 'Assembled prompt exceeds packing ceiling' } };
 	const callsBeforeRecovery = f.runtime.governor.calls.length;
 	const next = durableRoute
 		? (await createApplyQualityAnswerNode(f.runtime)({ snapshot, humanResponse: answer })).snapshot

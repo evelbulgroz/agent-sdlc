@@ -149,7 +149,11 @@ test('createPlanTasksNode freezes and binds the full v2 plan projection before p
 		assert.equal(critic.review.artifactHash, hashTaskPlanProjection(plan));
 		const criticPrompt = fixture.governor.calls.find((call) => call.profile === 'critic-review')?.prompt;
 		assert.ok(criticPrompt?.includes('checkpoint-evidence-v1'));
-		assert.ok(criticPrompt?.includes('obligation-ac-01'));
+		assert.ok(criticPrompt?.includes(planned.snapshot.taskPlanHash));
+		assert.ok(criticPrompt?.includes('"obligationIndex"'));
+		assert.ok(criticPrompt?.includes('"criterionId":"AC-01"'));
+		assert.equal(criticPrompt?.includes('obligation-ac-01'), false);
+		assert.equal(criticPrompt?.includes('The result is displayed.'), false);
 		assert.ok(criticPrompt?.includes('planning-test'));
 		assert.ok(criticPrompt?.includes(legacyPlan.slices[0].sliceId));
 		const criticRequest = fixture.governor.calls.find((call) => call.profile === 'critic-review');

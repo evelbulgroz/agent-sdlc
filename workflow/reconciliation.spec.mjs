@@ -5,9 +5,19 @@ import path from 'node:path';
 import test from 'node:test';
 import { makeFixture } from '../testing/test-support.mjs';
 import {
+	freshIntegrationCheckout,
 	reconcileTasks,
 	resetIntegrationWorktree,
 } from './reconciliation.ts';
+
+test('a one-task quality plan checks out a fresh integration worktree', () => {
+	assert.equal(freshIntegrationCheckout({ schemaVersion: '1.0.0', tasks: [{ taskId: 'only' }] }), false);
+	assert.equal(freshIntegrationCheckout({ schemaVersion: '2.0.0', tasks: [{ taskId: 'only' }] }), true);
+	assert.equal(
+		freshIntegrationCheckout({ schemaVersion: '1.0.0', tasks: [{ taskId: 'a' }, { taskId: 'b' }] }),
+		true,
+	);
+});
 
 test('reconcileTasks performs identity reconcile for single-task runs without second checkout', async () => {
 	const fixture = makeFixture('recon-identity', []);

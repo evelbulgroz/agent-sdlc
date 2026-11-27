@@ -309,3 +309,177 @@ test('staged correction closures remain reviewable but cannot pass the Git deliv
 		fs.rmSync(runDir, { recursive: true, force: true });
 	}
 });
+
+test('a completed correction current revision remains a reviewable final candidate', () => {
+	const fixture = qualityFixture();
+	const runDir = path.resolve('tools/.agent-sdlc/test-fixtures', `quality-published-correction-${process.pid}`);
+	const worktreeDir = path.join(runDir, 'checkpoint-worktrees', 'final-one');
+	fs.mkdirSync(worktreeDir, { recursive: true, mode: 0o700 });
+	try {
+		const closure = fixture.runtimeStore.quality.listClosures()[0];
+		closure.status = 'accepted';
+		closure.selectedRevisions[0].executionRevision = 1;
+		const published = {
+			taskId: 'task-one',
+			executionRevision: 1,
+			correctionId: 'correction-one',
+		};
+		fixture.runtimeStore.quality.getTaskRevision = () => published;
+		fixture.runtimeStore.quality.getCurrentTaskRevision = () => published;
+		fixture.runtimeStore.quality.getCorrection = () => ({
+			status: 'completed',
+			binding: { affectedTaskIds: ['task-one'] },
+		});
+		fixture.runtimeStore.quality.getWorktree = () => ({
+			registryId: 'final-one',
+			kind: 'final',
+			ownerId: null,
+			relativePath: 'checkpoint-worktrees/final-one',
+			bindingHash: fixture.bindingHash,
+		});
+		fixture.runtimeStore.quality.hasIncompleteCorrection = () => false;
+		const snapshot = {
+			...fixture.state,
+			qualityPolicy: fixture.runtimeStore.getTaskPlan().qualityPolicy,
+			pendingInterruptId: null,
+			preflightBindingArtifact: hash('8'),
+		};
+		const runtime = {
+			runtimeStore: fixture.runtimeStore,
+			artifactStore: {
+				artifactsDir: path.join(runDir, 'artifacts'),
+				readJson: () => ({ status: 'OK', canonical: true, targetTreeSha: snapshot.qualityCheckpointTreeSha }),
+			},
+		};
+
+		const context = resolveCheckpointQualityContext(runtime, snapshot);
+		assert.equal(context.correctionId, undefined);
+		assert.equal(context.closure.status, 'accepted');
+
+		fixture.runtimeStore.quality.getCurrentTaskRevision = () => ({
+			taskId: 'task-one',
+			executionRevision: 0,
+			correctionId: null,
+		});
+		assert.throws(
+			() => resolveCheckpointQualityContext(runtime, snapshot),
+			/Checkpoint is not a staged closure for its active correction/,
+		);
+	} finally {
+		fs.rmSync(runDir, { recursive: true, force: true });
+	}
+});
+
+test('a completed correction accepts unchanged current revisions beside its affected tasks', () => {
+	const fixture = qualityFixture();
+	const runDir = path.resolve('tools/.agent-sdlc/test-fixtures', `quality-partial-correction-${process.pid}`);
+	const worktreeDir = path.join(runDir, 'checkpoint-worktrees', 'final-one');
+	fs.mkdirSync(worktreeDir, { recursive: true, mode: 0o700 });
+	try {
+		const closure = fixture.runtimeStore.quality.listClosures()[0];
+		closure.status = 'accepted';
+		closure.selectedRevisions[0].executionRevision = 1;
+		closure.selectedRevisions.push({ taskId: 'task-two', executionRevision: 0, patchHash: hash('6') });
+		const revisions = {
+			'task-one': { taskId: 'task-one', executionRevision: 1, correctionId: 'correction-one' },
+			'task-two': { taskId: 'task-two', executionRevision: 0, correctionId: null },
+		};
+		fixture.runtimeStore.quality.getTaskRevision = (_runId, taskId, executionRevision) => {
+			const revision = revisions[taskId];
+			return revision?.executionRevision === executionRevision ? revision : undefined;
+		};
+		fixture.runtimeStore.quality.getCurrentTaskRevision = (_runId, taskId) => revisions[taskId];
+		fixture.runtimeStore.quality.getCorrection = () => ({
+			status: 'completed',
+			binding: { affectedTaskIds: ['task-one'] },
+		});
+		fixture.runtimeStore.quality.getWorktree = () => ({
+			registryId: 'final-one',
+			kind: 'final',
+			ownerId: null,
+			relativePath: 'checkpoint-worktrees/final-one',
+			bindingHash: fixture.bindingHash,
+		});
+		fixture.runtimeStore.quality.hasIncompleteCorrection = () => false;
+		const snapshot = {
+			...fixture.state,
+			qualityPolicy: fixture.runtimeStore.getTaskPlan().qualityPolicy,
+			pendingInterruptId: null,
+			preflightBindingArtifact: hash('8'),
+		};
+		const runtime = {
+			runtimeStore: fixture.runtimeStore,
+			artifactStore: {
+				artifactsDir: path.join(runDir, 'artifacts'),
+				readJson: () => ({ status: 'OK', canonical: true, targetTreeSha: snapshot.qualityCheckpointTreeSha }),
+			},
+		};
+
+		const context = resolveCheckpointQualityContext(runtime, snapshot);
+		assert.equal(context.correctionId, undefined);
+		assert.equal(context.closure.status, 'accepted');
+
+		revisions['task-two'] = { taskId: 'task-two', executionRevision: 4, correctionId: null };
+		assert.throws(
+			() => resolveCheckpointQualityContext(runtime, snapshot),
+			/Checkpoint is not a staged closure for its active correction/,
+		);
+	} finally {
+		fs.rmSync(runDir, { recursive: true, force: true });
+	}
+});
+
+test('completed current revisions from separate corrections stay reviewable', () => {
+	const fixture = qualityFixture();
+	const runDir = path.resolve('tools/.agent-sdlc/test-fixtures', `quality-published-corrections-${process.pid}`);
+	fs.mkdirSync(path.join(runDir, 'checkpoint-worktrees', 'final-one'), { recursive: true, mode: 0o700 });
+	try {
+		const closure = fixture.runtimeStore.quality.listClosures()[0];
+		closure.status = 'accepted';
+		closure.selectedRevisions[0].executionRevision = 1;
+		closure.selectedRevisions.push({ taskId: 'task-two', executionRevision: 1, patchHash: hash('6') });
+		const revisions = {
+			'task-one': { taskId: 'task-one', executionRevision: 1, correctionId: 'correction-one' },
+			'task-two': { taskId: 'task-two', executionRevision: 1, correctionId: 'correction-two' },
+		};
+		const corrections = {
+			'correction-one': { status: 'completed', binding: { affectedTaskIds: ['task-one'] } },
+			'correction-two': { status: 'completed', binding: { affectedTaskIds: ['task-two'] } },
+		};
+		fixture.runtimeStore.quality.getTaskRevision = (_runId, taskId, executionRevision) => {
+			const revision = revisions[taskId];
+			return revision?.executionRevision === executionRevision ? revision : undefined;
+		};
+		fixture.runtimeStore.quality.getCurrentTaskRevision = (_runId, taskId) => revisions[taskId];
+		fixture.runtimeStore.quality.getCorrection = (_runId, correctionId) => corrections[correctionId];
+		fixture.runtimeStore.quality.getWorktree = () => ({
+			registryId: 'final-one', kind: 'final', ownerId: null,
+			relativePath: 'checkpoint-worktrees/final-one', bindingHash: fixture.bindingHash,
+		});
+		fixture.runtimeStore.quality.hasIncompleteCorrection = () => false;
+		const snapshot = {
+			...fixture.state,
+			qualityPolicy: fixture.runtimeStore.getTaskPlan().qualityPolicy,
+			pendingInterruptId: null,
+			preflightBindingArtifact: hash('8'),
+		};
+		const runtime = {
+			runtimeStore: fixture.runtimeStore,
+			artifactStore: {
+				artifactsDir: path.join(runDir, 'artifacts'),
+				readJson: () => ({ status: 'OK', canonical: true, targetTreeSha: snapshot.qualityCheckpointTreeSha }),
+			},
+		};
+		const context = resolveCheckpointQualityContext(runtime, snapshot);
+		assert.equal(context.correctionId, undefined);
+		corrections['correction-one'].binding.affectedTaskIds = ['task-one', 'task-two'];
+		assert.equal(resolveCheckpointQualityContext(runtime, snapshot).correctionId, undefined);
+		corrections['correction-two'].status = 'rebuilding';
+		assert.throws(
+			() => resolveCheckpointQualityContext(runtime, snapshot),
+			/Checkpoint mixes revisions from multiple corrections/,
+		);
+	} finally {
+		fs.rmSync(runDir, { recursive: true, force: true });
+	}
+});

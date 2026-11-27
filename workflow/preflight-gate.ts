@@ -41,6 +41,16 @@ function boundQualityContext(runtime: WorkflowRuntimeLike, snapshot: Readonly<Ru
 	}
 }
 
+function qualityContextForCallerFailure(runtime: WorkflowRuntimeLike, snapshot: Readonly<RuntimeState>) {
+	try {
+		return boundQualityContext(runtime, snapshot);
+	} catch (error: unknown) {
+		// A stale final binding must not replace the verifier or preparation error.
+		if (error instanceof SdlcError && error.code === 'POLICY_VIOLATION') return null;
+		throw error;
+	}
+}
+
 export async function blockFinalCoverageFailure(
 	runtime: WorkflowRuntimeLike,
 	snapshot: Readonly<RuntimeState>,
@@ -352,7 +362,7 @@ export async function executePreflightForSnapshot(
 	});
 
 	if (verifierResult.status === 'FAIL') {
-		const qualityContext = boundQualityContext(runtime, snapshot);
+		const qualityContext = qualityContextForCallerFailure(runtime, snapshot);
 		if (qualityContext) {
 			return {
 				snapshot: await blockQualityCheckpoint({
@@ -426,7 +436,7 @@ export async function executePreflightForSnapshot(
 		finalQualityFields = await timedSpan(runtime.runtimeStore, 'prepare', 'final checkpoint preparation',
 			() => prepareFinalQualityCheckpoint(runtime, snapshot, worktreeDir));
 	} catch (error: unknown) {
-		const qualityContext = boundQualityContext(runtime, snapshot);
+		const qualityContext = qualityContextForCallerFailure(runtime, snapshot);
 		if (qualityContext) {
 			return {
 				snapshot: await blockQualityCheckpoint({

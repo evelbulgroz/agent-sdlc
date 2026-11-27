@@ -62,10 +62,29 @@ export async function prepareFinalQualityCheckpoint(
 		revisionSetHash: sha256(selectedRevisions),
 		preparationHash: sourcePreparationHash(task, preparationHash),
 	};
+	const bindingHash = sha256(binding);
+	const existing = quality.getClosure(snapshot.runId, checkpointId, binding.candidateRevision);
+	const existingRegistration = existing ? quality.getWorktree(snapshot.runId, checkpointId) : null;
+	// The correction path already published this exact final. Re-putting it would reject the same identity.
+	if (
+		existing &&
+		existing.status !== 'invalidated' &&
+		existing.status !== 'failed' &&
+		sha256(existing.binding) === bindingHash &&
+		existingRegistration?.bindingHash === bindingHash &&
+		existingRegistration.kind === 'final' &&
+		existingRegistration.ownerId === null
+	) {
+		return {
+			qualityPolicy: plan.qualityPolicy, qualityCheckpointId: checkpointId, qualityCheckpointKind: 'final',
+			qualityCheckpointSliceId: undefined, qualityCheckpointTreeSha: snapshot.targetTreeSha,
+			qualityCheckpointBindingHash: bindingHash,
+		};
+	}
 	quality.registerWorktree({
 		runId: snapshot.runId, registryId: checkpointId, kind: 'final', ownerId: null,
 		relativePath: path.relative(path.join(liveRunRoot(runtime.rootDir), snapshot.runId), worktreeDir),
-		bindingHash: sha256(binding), sourceHash: sha256(snapshot.targetTreeSha),
+		bindingHash, sourceHash: sha256(snapshot.targetTreeSha),
 	});
 	const receiptHashes = await executeCheckpointObligations({
 		runtime, snapshot, plan, binding, worktreeDir, registryId: checkpointId,
@@ -80,6 +99,6 @@ export async function prepareFinalQualityCheckpoint(
 	return {
 		qualityPolicy: plan.qualityPolicy, qualityCheckpointId: checkpointId, qualityCheckpointKind: 'final',
 		qualityCheckpointSliceId: undefined, qualityCheckpointTreeSha: snapshot.targetTreeSha,
-		qualityCheckpointBindingHash: sha256(binding),
+		qualityCheckpointBindingHash: bindingHash,
 	};
 }

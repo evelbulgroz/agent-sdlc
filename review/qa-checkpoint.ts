@@ -16,7 +16,7 @@ import { packQualityEvidencePacket } from './quality-evidence-packing.ts';
 import { makeQualityRetrievalRequest, retrieveQualitySource } from './quality-evidence-retrieval.ts';
 import { governedQaDispatch, qaDispatchIntent, qaDispatchLimits, qaReplayAccounted,
 	recoverAbandonedQaDispatches, settleUndispatchedQa } from './qa-resources.ts';
-import { qaReviewScope } from './qa-slice-scope.ts';
+import { promptPacketText, qaReviewScope } from './qa-slice-scope.ts';
 import { checkpointQaDispatchSlot } from './qa-dispatch-slot.ts';
 
 export interface QaCheckpointContext {
@@ -217,7 +217,7 @@ export async function runCheckpointQaCritic({
 			specSummary: scope.specSummary,
 			acceptanceCriteria: scope.acceptanceCriteria,
 			touchedFiles: [],
-			testOutput: packet.text,
+			testOutput: promptPacketText(packet.text, closure.binding.checkpointKind),
 			requireUntruncatedInput: true,
 			artifactHash,
 			attemptKey: dispatchAttemptKey,
@@ -308,10 +308,10 @@ export async function runCheckpointQaCritic({
 						synthetic: runtime.governor?.synthetic === true,
 					}),
 					promptPolicy: loaded.promptPolicy,
-					specSummary: typeof draft.goal === 'string' ? draft.goal : '',
-					acceptanceCriteria: obligations.map((obligation) => obligation.criterionId),
+					specSummary: scope.specSummary,
+					acceptanceCriteria: scope.acceptanceCriteria,
 					touchedFiles: [],
-					testOutput: `${packet.text}\nFollow-up retrieval: ${JSON.stringify(retrieval.response)}`,
+					testOutput: `${promptPacketText(packet.text, closure.binding.checkpointKind)}\nFollow-up retrieval: ${JSON.stringify(retrieval.response)}`,
 					requireUntruncatedInput: true,
 					artifactHash: followUpArtifactHash,
 					attemptKey: followUpAttemptKey,

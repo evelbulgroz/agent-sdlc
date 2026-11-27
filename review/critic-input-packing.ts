@@ -1,7 +1,7 @@
 // Document packing for critic prompts: plan, spec, and QA excerpts. Leaf module.
 
 import { canonicalJson } from '../policy/contracts.ts';
-import { projectTaskPlan } from '../policy/contracts/dag-schema.ts';
+import { hashTaskPlanProjection, projectTaskPlan } from '../policy/contracts/dag-schema.ts';
 import { SdlcError } from '../policy/errors.ts';
 import { truncateBody } from '@evelbulgroz/model-usage-govenor/sanitize-failure-text';
 
@@ -48,8 +48,7 @@ export interface SpecDocumentPackingInput {
 export const PLAN_DOCUMENT_MAX_BYTES = 20480;
 
 export function packPlanDocument(plan: PlanDocumentPackingInput): string {
-	const immutableTaskPlan =
-		plan.schemaVersion === '2.0.0' ? projectTaskPlan(plan) : undefined;
+	const projected = plan.schemaVersion === '2.0.0' ? projectTaskPlan(plan) : undefined;
 	const document = {
 		planPolicyHash: plan.planPolicyHash,
 		baseCommitSha: plan.baseCommitSha,
@@ -74,19 +73,34 @@ export function packPlanDocument(plan: PlanDocumentPackingInput): string {
 			humanReviewEvidence: task.humanReviewEvidence,
 			verificationCommand: task.verificationCommand,
 		})),
-		...(immutableTaskPlan ? { immutableTaskPlan } : {}),
+		...(projected === undefined ? {} : citePlan(plan, projected)),
 	};
 	const packed = canonicalJson(document);
 	if (
-		immutableTaskPlan &&
+		projected !== undefined &&
 		Buffer.byteLength(packed, 'utf8') > PLAN_DOCUMENT_MAX_BYTES
 	) {
 		throw new SdlcError(
 			'INVALID_CONTRACT',
-			`Plan critic document exceeds ${PLAN_DOCUMENT_MAX_BYTES} bytes; the complete immutable v2 plan cannot be reviewed`,
+			`Plan critic document exceeds ${PLAN_DOCUMENT_MAX_BYTES} bytes`,
 		);
 	}
 	return packed;
+}
+
+function citePlan(plan: PlanDocumentPackingInput, projected: ReturnType<typeof projectTaskPlan>) {
+	const { evidenceObligations, ...immutableTaskPlan } = projected;
+	return {
+		taskPlanHash: hashTaskPlanProjection(plan),
+		obligationIndex: evidenceObligations.map((obligation) => ({
+			criterionId: obligation.criterionId,
+			caseId: obligation.caseId,
+			ownerKind: obligation.owner.kind,
+			ownerId: obligation.owner.id,
+			profileId: obligation.profileId,
+		})),
+		immutableTaskPlan,
+	};
 }
 
 export function derivePlanChangeClass(

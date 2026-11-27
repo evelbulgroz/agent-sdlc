@@ -100,27 +100,47 @@ export function resolveCheckpointQualityContext(
 		return taskRevision?.correctionId ? [taskRevision.correctionId] : [];
 	}));
 	let stagedCorrectionId: string | null = null;
-	if (stagedCorrectionIds.size > 0) {
-		if (stagedCorrectionIds.size !== 1) {
+	// A completed correction keeps correctionId on its published revision. That revision is a
+	// normal candidate while it remains the current selection, not an in-progress stage.
+	let publishedCorrection = false;
+	// A selected revision is published on its own provenance. A later correction may replace
+	// one task from an older correction without that older affected set staying selected.
+	const selectedRevisionIsPublished = (revision: { taskId: string; executionRevision: number }): boolean => {
+		const current = quality.getCurrentTaskRevision(snapshot.runId, revision.taskId);
+		const selected = quality.getTaskRevision(snapshot.runId, revision.taskId, revision.executionRevision);
+		if (!selected || !current || current.executionRevision !== revision.executionRevision) return false;
+		if (current.correctionId !== selected.correctionId) return false;
+		if (!selected.correctionId) return true;
+		return quality.getCorrection(snapshot.runId, selected.correctionId)?.status === 'completed';
+	};
+	if (stagedCorrectionIds.size > 1) {
+		if (!closure.selectedRevisions.every(selectedRevisionIsPublished)) {
 			throw new SdlcError('POLICY_VIOLATION', 'Checkpoint mixes revisions from multiple corrections');
 		}
+		publishedCorrection = true;
+	} else if (stagedCorrectionIds.size === 1) {
 		const correctionId = [...stagedCorrectionIds][0];
 		if (!correctionId) {
 			throw new SdlcError('POLICY_VIOLATION', 'Staged correction identity is missing');
 		}
-		stagedCorrectionId = correctionId;
-		const correction = quality.getCorrection(snapshot.runId, stagedCorrectionId);
+		const correction = quality.getCorrection(snapshot.runId, correctionId);
+		publishedCorrection = correction?.status === 'completed' &&
+			closure.selectedRevisions.every(selectedRevisionIsPublished);
 		if (
-			!correction ||
-			!['rebuilding', 'verifying'].includes(correction.status) ||
-			correction.binding.affectedTaskIds.some((taskId) => {
-				const staged = closure.selectedRevisions.find((revision) => revision.taskId === taskId);
-				if (!staged) return false;
-				return quality.getTaskRevision(snapshot.runId, taskId, staged.executionRevision)?.correctionId !== stagedCorrectionId;
-			})
+			!publishedCorrection &&
+			(
+				!correction ||
+				!['rebuilding', 'verifying'].includes(correction.status) ||
+				correction.binding.affectedTaskIds.some((taskId) => {
+					const staged = closure.selectedRevisions.find((revision) => revision.taskId === taskId);
+					if (!staged) return false;
+					return quality.getTaskRevision(snapshot.runId, taskId, staged.executionRevision)?.correctionId !== correctionId;
+				})
+			)
 		) {
 			throw new SdlcError('POLICY_VIOLATION', 'Checkpoint is not a staged closure for its active correction');
 		}
+		if (!publishedCorrection) stagedCorrectionId = correctionId;
 	} else if (quality.hasIncompleteCorrection(snapshot.runId)) {
 		throw new SdlcError('POLICY_VIOLATION', 'An incomplete quality correction blocks review');
 	}
@@ -155,7 +175,9 @@ export function resolveCheckpointQualityContext(
 		binding.qualityPolicyHash !== sha256(policy) ||
 		(checkpointKind === 'slice' && binding.ownerId !== snapshot.qualityCheckpointSliceId) ||
 		(checkpointKind === 'final' && binding.ownerId !== null) ||
-		(closure.status !== 'reviewing' && !(allowAccepted && closure.status === 'accepted')) ||
+		(closure.status !== 'reviewing' &&
+			!(allowAccepted && closure.status === 'accepted') &&
+			!(publishedCorrection && closure.status === 'accepted')) ||
 		closure.receiptHashes.length === 0
 	) {
 		throw new SdlcError('POLICY_VIOLATION', 'Quality checkpoint is stale or lacks verified evidence');

@@ -77,10 +77,18 @@ export type ReconcileTasksResult =
 			reconciliationRecord: ReconciliationRecord;
 	  };
 
+/** A schema 1.0.0 one-task plan reuses its task worktree. Every other plan checks out worktrees/integration. */
+export function freshIntegrationCheckout(plan: {
+	readonly schemaVersion: string;
+	readonly tasks: readonly unknown[];
+}): boolean {
+	return !(plan.tasks.length === 1 && plan.schemaVersion === '1.0.0');
+}
+
 /**
  * Reconciles completed tasks in deterministic integrationOrder.
- * For single-task runs, performs an identity reconcile on the legacy worktree.
- * For multi-task runs, applies binary diff patches onto a fresh integration worktree.
+ * A schema 1.0.0 one-task plan reuses the hydrated task worktree.
+ * Every other plan applies patches onto a fresh integration worktree.
  */
 export async function reconcileTasks({
 	runId,
@@ -101,8 +109,8 @@ export async function reconcileTasks({
 	taskPlanFrozen?: boolean;
 	snapshot?: { taskPlanFrozen?: boolean } | null;
 }): Promise<ReconcileTasksResult> {
-	// 1. Single-task run: Identity reconcile (P2-1)
-	if (taskPlan.tasks.length === 1 && taskPlan.schemaVersion === '1.0.0') {
+	// 1. Schema 1.0.0 one-task plan: identity reconcile on the already hydrated task worktree.
+	if (!freshIntegrationCheckout(taskPlan)) {
 		const task = taskPlan.tasks[0];
 		if (!task) {
 			throw new SdlcError('TASK_PLAN_INVALID', 'Single-task plan is missing task entry');

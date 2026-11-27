@@ -123,6 +123,8 @@ export async function runApprovedQualityCorrection({
 			await hydrateWorktree({ worktreeDir, allowedPackages: auth.allowedPackages, targetPackage: task.targetPackage,
 				runner: runtime.execCli, checkpoint: checkpointHydrationBinding(plan, snapshot, auth) });
 			const owner = answer.correction.owners.find(entry => entry.taskId === taskId);
+			// A captured verifying revision is the review-only retry. A packing-ceiling
+			// message does not authorize skipping an approved owner edit.
 			if (owner && staged?.status !== 'verifying') {
 				quality.saveTaskRevision({ ...progress, status: 'executing' });
 				const executor = new MinimalExecutor({ governor: runtime.governor, runtimeStore: runtime.runtimeStore,
