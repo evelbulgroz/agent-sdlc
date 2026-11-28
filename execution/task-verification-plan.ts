@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isTestFilePath } from '../policy/contracts.ts';
+import { approvedAcIds, parseTestCitations } from './ac-citations.ts';
 import type { GitShowFn } from './ac-worktree-coverage.ts';
 import type { CompletionValidatorFn } from './minimal-verification.ts';
 import { acceptRegisteredUnitArgv, createAcceptanceEvidenceValidator } from './task-acceptance-evidence.ts';
@@ -113,6 +114,29 @@ function resolveAuthoredTestPaths(task: VerificationPlanTask): string[] {
 		.map((authoredPath) => authoredPath.slice(packagePrefix.length));
 }
 
+function isPackageE2ePath(testPath: string): boolean {
+	return testPath.split('\\').join('/').split('/').includes('e2e');
+}
+
+function selectRunnableTests(
+	packageJson: PackageJsonLike,
+	testPaths: readonly string[],
+): { name: string; command: string; paths: readonly string[] } | null {
+	const targeted = resolveTargetedTestScript(packageJson, testPaths);
+	if (!targeted) return null;
+	const unitPaths = testPaths.filter((testPath) => !isPackageE2ePath(testPath));
+	// Package e2e paths never stay on a unit script, including a compound `test` script.
+	if (unitPaths.length === testPaths.length) {
+		return { name: targeted.name, command: targeted.command, paths: testPaths };
+	}
+	if (unitPaths.length > 0) {
+		return { name: targeted.name, command: targeted.command, paths: unitPaths };
+	}
+	const e2eCommand = packageJson.scripts?.['test:e2e'];
+	if (typeof e2eCommand !== 'string' || !TEST_FRAMEWORK_PATTERN.test(e2eCommand)) return null;
+	return { name: 'test:e2e', command: e2eCommand, paths: testPaths };
+}
+
 function resolveTargetedTestScript(
 	packageJson: PackageJsonLike,
 	testPaths: readonly string[],
@@ -164,21 +188,14 @@ export function resolveTargetedVerificationCommand(
 	}
 	const testPaths = resolveAuthoredTestPaths(task);
 	if (testPaths.length === 0) return null;
-	const targetedScript = resolveTargetedTestScript(packageJson, testPaths);
-	if (!targetedScript) return null;
-	if (targetedScript.name !== 'test') {
+	const selected = selectRunnableTests(packageJson, testPaths);
+	if (!selected) return null;
+	if (selected.name !== 'test') {
 		const packageName = packageJson.name;
 		if (typeof packageName !== 'string' || packageName.length === 0) return null;
-		return [
-			'pnpm',
-			'--filter',
-			packageName,
-			'run',
-			targetedScript.name,
-			...testPaths,
-		];
+		return ['pnpm', '--filter', packageName, 'run', selected.name, ...selected.paths];
 	}
-	return [...verificationCommand, '--', ...testPaths];
+	return [...verificationCommand, '--', ...selected.paths];
 }
 
 export function resolveAcceptanceEvidenceCommand(
@@ -192,18 +209,15 @@ export function resolveAcceptanceEvidenceCommand(
 	if (repositorySuite === JSON.stringify(['pnpm', 'run', 'test:unit'])) {
 		return verificationCommand;
 	}
+	const selected = selectRunnableTests(packageJson, resolveAuthoredTestPaths(task));
 	const targeted = resolveTargetedVerificationCommand(task, packageJson);
-	const targetedScript = resolveTargetedTestScript(
-		packageJson,
-		resolveAuthoredTestPaths(task),
-	)?.command;
-	if (!targeted || typeof targetedScript !== 'string') return null;
+	if (!targeted || !selected) return null;
 	// A compound shell command must not receive a reporter or a spec path. Those
 	// tokens would be forwarded past `&&` and the build fails closed instead.
-	if (targetedScript.includes('&&')) return verificationCommand;
-	if (/\bvitest\b/.test(targetedScript)) return [...targeted, '--reporter=json'];
-	if (/\bjest\b/.test(targetedScript)) return [...targeted, '--json'];
-	if (/\bnode\s+--test\b/.test(targetedScript)) return targeted;
+	if (selected.command.includes('&&')) return verificationCommand;
+	if (/\bvitest\b/.test(selected.command)) return [...targeted, '--reporter=json'];
+	if (/\bjest\b/.test(selected.command)) return [...targeted, '--json'];
+	if (/\bnode\s+--test\b/.test(selected.command)) return targeted;
 	return null;
 }
 
@@ -241,6 +255,114 @@ export function resolveTestFrameworkGuidance(
 		}
 	}
 	return lines.length > 0 ? lines.join(' ') : null;
+}
+
+function packageRelativePath(targetPackage: string, filePath: string): string {
+	const prefix = `${targetPackage.replace(/\/+$/, '')}/`.split('\\').join('/');
+	const normalized = filePath.split('\\').join('/');
+	return normalized.startsWith(prefix) ? normalized.slice(prefix.length) : normalized;
+}
+
+function commandListsRelativePath(command: readonly string[], relativePath: string): boolean {
+	const token = relativePath.split('\\').join('/');
+	return command.some((arg) => arg.split('\\').join('/') === token);
+}
+
+function citedCriterionIds(source: string): readonly string[] {
+	const ids = new Set<string>();
+	for (const row of parseTestCitations(source)) {
+		for (const id of row.acIds) ids.add(id);
+		for (const caseId of row.caseIds) {
+			const parent = caseId.slice(0, caseId.lastIndexOf('.'));
+			if (parent.length > 0) ids.add(parent);
+		}
+	}
+	return [...ids];
+}
+
+function requiredAcceptanceCriteria(
+	criteria: readonly string[],
+	testPaths: readonly string[],
+	command: readonly string[],
+	worktreeDir: string,
+	targetPackage: string,
+): readonly string[] {
+	const rows = testPaths.map((filePath) => ({
+		filePath,
+		relativePath: packageRelativePath(targetPackage, filePath),
+	}));
+	if (!rows.some((row) => commandListsRelativePath(command, row.relativePath))) return criteria;
+	const omitted = new Set(
+		rows
+			.filter(
+				(row) =>
+					isPackageE2ePath(row.relativePath) &&
+					!commandListsRelativePath(command, row.relativePath),
+			)
+			.map((row) => row.filePath),
+	);
+	if (omitted.size === 0) return criteria;
+	const inOmitted = new Set<string>();
+	const elsewhere = new Set<string>();
+	for (const row of rows) {
+		const absolute = path.join(worktreeDir, row.filePath);
+		if (!fs.existsSync(absolute)) continue;
+		const dest = omitted.has(row.filePath) ? inOmitted : elsewhere;
+		for (const id of citedCriterionIds(fs.readFileSync(absolute, 'utf8'))) dest.add(id);
+	}
+	return criteria.filter((entry) => {
+		const id = approvedAcIds([entry])[0];
+		return !id || !inOmitted.has(id) || elsewhere.has(id);
+	});
+}
+
+function pathsListedOnCommand(
+	testPaths: readonly string[],
+	command: readonly string[],
+	targetPackage: string,
+): readonly string[] {
+	const listed = testPaths.filter((filePath) =>
+		commandListsRelativePath(command, packageRelativePath(targetPackage, filePath)),
+	);
+	// Untargeted commands name no spec, so coverage keeps the full authored set.
+	return listed.length > 0 ? listed : testPaths;
+}
+
+function bindPartitionedValidator(
+	options: Parameters<typeof createAcceptanceEvidenceValidator>[0] & {
+		readonly targetPackage: string;
+	},
+): CompletionValidatorFn | null {
+	if (!options.acceptanceEvidenceCommand) return createAcceptanceEvidenceValidator(options);
+	const { targetPackage, ...validatorOptions } = options;
+	const build = () => {
+		const command = validatorOptions.acceptanceEvidenceCommand ?? [];
+		const required = requiredAcceptanceCriteria(
+			validatorOptions.acceptanceCriteria,
+			validatorOptions.authoredTestPaths,
+			command,
+			validatorOptions.worktreeDir,
+			targetPackage,
+		);
+		if (required.length === 0) return null;
+		return createAcceptanceEvidenceValidator({
+			...validatorOptions,
+			authoredTestPaths: pathsListedOnCommand(
+				validatorOptions.authoredTestPaths,
+				command,
+				targetPackage,
+			),
+			acceptanceCriteria: required,
+			knownAcceptanceCriteria: [
+				...new Set([
+					...(validatorOptions.knownAcceptanceCriteria ?? []),
+					...validatorOptions.acceptanceCriteria,
+				]),
+			],
+		});
+	};
+	const validator: CompletionValidatorFn = (input) => build()?.(input) ?? { pass: true };
+	return Object.assign(validator, { staticCheck: () => build()?.staticCheck?.() ?? null });
 }
 
 export function resolveTaskVerificationContext({
@@ -343,7 +465,7 @@ export function resolveTaskVerificationContext({
 	const sliceAuthoredTestPaths = [
 		...new Set([...sliceCompletedTestPaths, ...authoredTestPaths]),
 	];
-	const completionValidator = createAcceptanceEvidenceValidator({
+	const completionValidator = bindPartitionedValidator({
 		acceptanceCriteria: effectiveTaskPromptContext.acceptanceCriteria ?? acceptanceCriteria,
 		knownAcceptanceCriteria:
 			acceptanceCriteria?.length > 0
@@ -355,6 +477,7 @@ export function resolveTaskVerificationContext({
 		authoredTestPaths: sliceAuthoredTestPaths,
 		allowedPathPrefixes: sliceEvidenceTask.pathPrefixes,
 		acceptanceEvidenceCommand,
+		targetPackage: task.targetPackage,
 	});
 	const scopedSpecSummary = scopeSpecSummaryForTask({
 		specSummary,
