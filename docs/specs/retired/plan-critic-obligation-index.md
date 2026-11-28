@@ -1,6 +1,6 @@
 # Intent
 
-Status: ready.
+Status: retired 2026-11-28 (implemented on `e95e270`). This file is no longer a `check-spec` goal.
 
 ## Goal
 
